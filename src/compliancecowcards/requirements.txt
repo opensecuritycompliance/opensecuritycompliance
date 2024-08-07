@@ -1,0 +1,7 @@
+Django
+jmespath
+minio
+pandas
+protobuf
+requests
+SQLAlchemy

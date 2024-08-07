@@ -1,0 +1,38 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 12/12/2023
+name: AzureADMFAEnabled
+displayName: Azure AD MFA Enabled
+version: '1.0'
+description: Azure AD MFA Enabled
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AzureADUsersAuthDataPath
+  description: AzureADUsersAuthDataPath
+  type: file
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+outputs:
+- name: AzureADMFAEnabled
+  description: AzureADMFAEnabled
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: ComplianceStatus_
+  type: string
+- name: CompliancePCT_
+  description: CompliancePCT_
+  type: int

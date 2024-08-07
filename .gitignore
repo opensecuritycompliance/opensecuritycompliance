@@ -1,0 +1,30 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+etc/.credentials.env
+# Test binary, built with `go test -c`
+*.test
+*.egg-info
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+Output.json
+output.json
+# Dependency directories (remove the comment below to include it)
+# vendor/
+src/cowmethods/python/build
+src/compliancecowcards/build
+
+task_inputs.json
+task_input.json
+task_output.json
+
+.DS_Store
+
+test/
+localcatalog/
+#codeowners created for default reviewer
+.github

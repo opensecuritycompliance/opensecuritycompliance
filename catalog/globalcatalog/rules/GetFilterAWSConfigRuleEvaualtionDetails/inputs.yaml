@@ -1,0 +1,20 @@
+userObject:
+  app:
+    name: AWSAppConnector
+    appURL: https://aws.amazon.com
+    appPort: "0"
+    userDefinedCredentials:
+      AWSIAM:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+      AWSRole:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+        RoleARN: "$AWS_ROLE_ARN"
+userInputs:
+  AWSConfigRule: # To identify the AWSConfigRule, please refer to the 'RuleName' field in the 'RuleConfig.json' file.
+  AWSConfigRulesFile: <<MINIO_FILE_PATH>>
+  AWSConfigRuleEvaluationStatusFile: <<MINIO_FILE_PATH>>
+  RuleConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2023-12-14
+toDate: 2023-12-14 

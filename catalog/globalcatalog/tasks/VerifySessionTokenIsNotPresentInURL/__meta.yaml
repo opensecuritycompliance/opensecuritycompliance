@@ -1,0 +1,38 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 01/03/2024
+name: VerifySessionTokenIsNotPresentInURL
+displayName: Verify Session Token Is Not Present In URL
+version: '1.0'
+description: Verify Session Token Is Not Present In URL
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: HARFile # A unique identifier of the task input
+  description: HARFile # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+outputs:
+- name: URIsWithSRIDetails
+  description: URIs With SRI Details
+  type: file
+- name: LogFile
+  description: Log File
+  type: file
+- name: ComplianceStatus_
+  description: compliance status of the task
+  type: string
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  type: int

@@ -1,0 +1,47 @@
+authors:
+- lokesh.b@continube.com
+domain: continube
+createdDate: 08/04/2024
+name: EvaluateCISBenchmarkForKubernetes
+displayName: EvaluateCISBenchmarkForKubernetes
+version: '1.0'
+description: EvaluateCISBenchmarkForKubernetes
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: go
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: ControlNumber
+  description: CIS bench mark rule number
+  dataType: STRING
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: "*" # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true
+- name: RuleConfig
+  description: CIS bench mark rule config
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: "*" # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: CISBenchmarkForKubernetesFile
+  description: CIS Benchmark for kubernetes report
+  dataType: STRING
+- name: LogFile
+  description: Audit file
+  dataType: STRING

@@ -1,0 +1,8 @@
+userObject:
+  name: NoCredApp
+userInputs:
+  appPort: 0
+  appURL: http://localhost.com
+  userDefinedCredentials:
+    NoCred:
+      Dummy: ""

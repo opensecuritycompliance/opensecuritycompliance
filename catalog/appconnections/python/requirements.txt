@@ -1,0 +1,8 @@
+jmespath
+minio
+requests
+SQLAlchemy
+xmltodict
+PyYAML
+boto3
+paramiko

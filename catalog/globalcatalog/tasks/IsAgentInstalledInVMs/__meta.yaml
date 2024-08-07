@@ -1,0 +1,52 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 14/12/2023
+name: IsAgentInstalledInVMs
+displayName: Is Agent Installed In Vritual Machines
+version: '1.0'
+description: Is Agent Installed In Vritual Machines
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: VMsExtensionsDataFilePath
+  description: VMsExtensionsDataFilePath
+  type: file
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+- name: ControlConfigFilePath
+  description: ControlConfigFilePath
+  type: file
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+- name: ControlName
+  description: ControlName
+  type: string
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+outputs:
+- name: CompliancePCT_
+  description: Compliance Percentage
+  type: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  type: string
+- name: AgentInstalledInVMs
+  description: AgentInstalledInVMs
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file

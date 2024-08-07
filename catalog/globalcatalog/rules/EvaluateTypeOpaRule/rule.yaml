@@ -1,0 +1,52 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: EvaluateTypeOpaRule
+  purpose: Evaluate type opa rule against kubernetes manifest data
+  description: Evaluate type opa rule against kubernetes manifest data
+  labels:
+    appType:
+    - kubernetes
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - kubernetes
+spec:
+  tasks:
+  - name: FetchAndFilterKubernetesManifestData
+    alias: t1
+    type: task
+    purpose: Fetch the Kubernetes manifest data and filter it based on include and exclude criteria.
+    description: Fetch the Kubernetes manifest data and filter it based on include and exclude criteria.
+  - name: EvaluateOpaAgainstCollectedManifestData
+    alias: t2
+    type: task
+    purpose: Evaluate the rego policies against the collected manifest data.
+    description: Evaluate the rego policies against the collected manifest data.
+  - name: OrganizedOpaReports
+    alias: t3
+    type: task
+    purpose: Structure the filtered data in a way that is easy to read.
+    description: Structure the filtered data in a way that is easy to read.
+  ioMap:
+  - 't1.Input.IncludeCriteria:=*.Input.IncludeCriteria'
+  - 't1.Input.ExcludeCriteria:=*.Input.ExcludeCriteria'
+  - 't1.Input.OpaConfigurationFile:=*.Input.OpaConfigurationFile'
+  - 't2.Input.OutputFileName:=*.Input.OutputFileName'
+  - 't2.Input.ConfigFile:=*.Input.ConfigFile'
+  - 't2.Input.RegoFile:=*.Input.RegoFile'
+  - 't2.Input.Query:=*.Input.Query'
+  - 't2.Input.OpaConfigurationFile:=*.Input.OpaConfigurationFile'
+  - 't2.Input.Source:=t1.Output.Source'
+  - 't2.Input.DataFile:=t1.Output.DataFile'
+  - 't2.Input.LogFile:=t1.Output.LogFile'
+  - 't3.Input.LogFile:=t2.Output.LogFile'
+  - 't3.Input.DataFile:=t1.Output.DataFile'
+  - '*.Output.OpaPolicyReport:=t2.Output.OpaPolicyReport'
+  - '*.Output.DataFile:=t3.Output.DataFile'
+  - '*.Output.LogFile:=t3.Output.LogFile'
+  - '*.Output.CompliancePCT_:=t3.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t3.Output.ComplianceStatus_'

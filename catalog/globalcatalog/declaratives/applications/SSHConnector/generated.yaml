@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: SSHConnector
+  displayName: SSHConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - sshconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - sshconnector
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 22
+  validation:
+    taskName: ValidateSSHConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: SSH
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: SSH
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

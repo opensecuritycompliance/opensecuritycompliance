@@ -1,0 +1,36 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: AWSMFAPolicySimulatorReport
+  purpose: Check if given service:action definitions and conditions are implemented in the policy
+  description: Check if given service:action definitions and conditions are implemented in the policy
+  labels:
+    appType:
+    - aws
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - aws
+spec:
+  tasks:
+  - name: AWSMFAPolicySimulatorReport
+    alias: t1
+    type: task
+    purpose: Check if given service:action definitions and conditions are implemented in the policy
+    description: Check if given service:action definitions and conditions are implemented in the policy
+  ioMap:
+  - t1.Input.Users:=*.Input.Users
+  - t1.Input.UserStatus:=*.Input.UserStatus
+  - t1.Input.Groups:=*.Input.Groups
+  - t1.Input.GroupStatus:=*.Input.GroupStatus
+  - t1.Input.Roles:=*.Input.Roles
+  - t1.Input.RoleStatus:=*.Input.RoleStatus
+  - t1.Input.MFARecommendationFile:=*.Input.MFARecommendationFile
+  - t1.Input.AccountAuthorizationDetails:=*.Input.AccountAuthorizationDetails
+  - '*.Output.MFAPolicySimulatorReport:=t1.Output.MFAPolicySimulatorReport'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'

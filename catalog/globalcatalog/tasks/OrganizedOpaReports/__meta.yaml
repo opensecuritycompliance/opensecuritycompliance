@@ -1,0 +1,57 @@
+authors:
+- lokesh.b@continube.com
+domain: continube
+createdDate: 29/04/2024
+name: OrganizedOpaReports
+displayName: Organized Opa Reports
+version: '1.0'
+description: Organized Opa Reports
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-suitcase
+type: python
+tags:
+- application
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: ControlNumber
+  description: ControlNumber
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: hash
+  showField: true
+  required: true
+- name: DataFile
+  description: DataFile
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: InputsTomlFile
+  description: InputsTomlFile
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+outputs:
+- name: OpaPolicyReport
+  description: Opa Policy Report
+  dataType: FILE
+- name: LogFile
+  description: Audit File
+  dataType: FILE

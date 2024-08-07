@@ -1,0 +1,87 @@
+[K8sContainerLimits]
+  [K8sContainerLimits.COMPLIANT]
+  ComplianceStatusReason = "Defining container limits ensures predictable resource allocation."
+  ValidationStatusCode = "CN_LMT_DEF"
+  ValidationStatusNotes = "Container Limit defined"
+
+  [K8sContainerLimits.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because container limits are not defined, which can lead to unpredictable resource allocation."
+  ValidationStatusCode = "CN_LMT_ND"
+  ValidationStatusNotes = "Container Limit Not defined"
+
+[K8sImageDigests]
+  [K8sImageDigests.COMPLIANT]
+  ComplianceStatusReason = "Image digests ensure image integrity and authenticity."
+  ValidationStatusCode = "ID_NP"
+  ValidationStatusNotes = "Image digest present"
+
+  [K8sImageDigests.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because image digests are not used, which compromises image integrity and authenticity."
+  ValidationStatusCode = "ID_PR"
+  ValidationStatusNotes = "Image digest not present"
+
+[K8sBlockLoadBalancer]
+  [K8sBlockLoadBalancer.COMPLIANT]
+  ComplianceStatusReason = "Blocking LoadBalancer services enhances security."
+  ValidationStatusCode = "LB_BLK"
+  ValidationStatusNotes = "LoadBalancer Service blocked"
+
+  [K8sBlockLoadBalancer.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non-compliant because LoadBalancer services are not blocked, which may weaken security."
+  ValidationStatusCode = "LB_N_BLK"
+  ValidationStatusNotes = "LoadBalancer Service not blocked"
+
+[K8sPSPPrivilegedContainer]
+  [K8sPSPPrivilegedContainer.COMPLIANT]
+  ComplianceStatusReason = "Controlling privileged mode reduces security risks."
+  ValidationStatusCode = "PM_PR"
+  ValidationStatusNotes = "Privileged mode present"
+
+  [K8sPSPPrivilegedContainer.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because privileged mode is not controlled, which increases security risks."
+  ValidationStatusCode = "PM_NP"
+  ValidationStatusNotes = "Privileged mode not present"
+
+[K8sPspReadOnlyRootFileSystem]
+  [K8sPspReadOnlyRootFileSystem.COMPLIANT]
+  ComplianceStatusReason = "Readonly root filesystem enhances security."
+  ValidationStatusCode = "RO_FS_PR"
+  ValidationStatusNotes = "Readonly root filesystem present"
+
+  [K8sPspReadOnlyRootFileSystem.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because root filesystem is not set to read-only, which may increase security risks."
+  ValidationStatusCode = "RO_FS_NP"
+  ValidationStatusNotes = "Readonly root filesystem not present"
+
+[K8sPspHostNetworkingPorts]
+  [K8sPspHostNetworkingPorts.COMPLIANT]
+  ComplianceStatusReason = "Host network namespace management improves security."
+  ValidationStatusCode = "HN_PR"
+  ValidationStatusNotes = "Host network namespace present"
+
+  [K8sPspHostNetworkingPorts.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because host network namespace is not managed, which may compromise security."
+  ValidationStatusCode = "HN_NP"
+  ValidationStatusNotes = "Host network namespace not present"
+
+[K8sContainerRatios]
+  [K8sContainerRatios.COMPLIANT]
+  ComplianceStatusReason = "Adhering to resource request ratio optimizes resource usage."
+  ValidationStatusCode = "CRR_PR"
+  ValidationStatusNotes = "Container resource to request ratio present"
+
+  [K8sContainerRatios.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because resource request ratio is not adhered to, which can lead to suboptimal resource usage."
+  ValidationStatusCode = "CRR_NP"
+  ValidationStatusNotes = "Container resource to request ratio not present"
+
+[K8sAllowedRepos]
+  [K8sAllowedRepos.COMPLIANT]
+  ComplianceStatusReason = "Kubernetes images should be from allowed repositories."
+  ValidationStatusCode = "K_AR"
+  ValidationStatusNotes = "Kubernetes image is from allowed repository."
+
+  [K8sAllowedRepos.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because Kubernetes images are sourced from unauthorized repositories, which could pose security risks."
+  ValidationStatusCode = "K_NAR"
+  ValidationStatusNotes = "Kubernetes image is from unauthorized repository."

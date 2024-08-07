@@ -1,0 +1,42 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 14/12/2023
+name: GetAWSConfigRuleEvaluationDetails
+displayName: Get AWS ConfigRule EvaluationDetail
+version: '1.0'
+description: GetAWSConfigRuleEvaluationDetails
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: go
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: Region
+  description: Region
+  dataType: string 
+  repeated: false
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+outputs:
+- name: CompliancePCT_
+  description: Compliance Percentage
+  dataType: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  dataType: string
+- name: AWSConfigRulesJSON
+  description: AWSConfigRulesJSON
+  dataType: string
+- name: LogFile
+  description: LogFile
+  dataType: string
+- name: AWSConfigRuleEvaluationStatusJSON
+  description: AWSConfigRuleEvaluationStatusJSON
+  dataType: string

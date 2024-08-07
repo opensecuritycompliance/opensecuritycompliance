@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: AzureAppConnector
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      Azure:
+        clientID: "$AZURE_CLIENT_ID"
+        clientSecret: "$AZURE_CLIENT_SECRET"
+        tenantID: "$AZURE_TENANT_ID"
+        subscriptionID: "$AZURE_SUBSCRIPTION_ID"
+userInputs:
+  ControlName: # To identify the ControlName, please refer to the 'ControlName' field in the 'ControlConfig.json' file.
+  ControlConfigFilePath: <<MINIO_FILE_PATH>>
+  AzurePolicyRunResultFilePath: <<MINIO_FILE_PATH>>
+fromDate: 2023-11-07
+toDate: 2023-11-07

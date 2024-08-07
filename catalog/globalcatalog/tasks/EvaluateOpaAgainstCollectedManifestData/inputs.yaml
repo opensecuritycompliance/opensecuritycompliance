@@ -1,0 +1,23 @@
+userObject:
+  app:
+    name: Kubernetes
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      Jumphost:
+        UserID: "$INSTANCE_USER_NAME"
+        LoginUrl: "$INSTANCE_LOGIN_URL"
+        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
+userInputs:
+  ConfigFile: <<MINIO_FILE_PATH>>
+  DataFile: <<MINIO_FILE_PATH>>
+  ExcludeCriteria: ""
+  IncludeCriteria: ""
+  LogFile: ""
+  OpaConfigurationFile: ""
+  OutputFileName: ""
+  Query: ""
+  RegoFile: <<MINIO_FILE_PATH>>
+  Source: ""
+fromDate: 2023-11-24
+toDate: 2023-11-24

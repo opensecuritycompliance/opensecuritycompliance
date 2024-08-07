@@ -1,0 +1,15 @@
+userObject:
+  app:
+    name: AzureAppConnector
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      Azure:
+        clientID: "$AZURE_CLIENT_ID"
+        clientSecret: "$AZURE_CLIENT_SECRET"
+        tenantID: "$AZURE_TENANT_ID"
+        subscriptionID: "$AZURE_SUBSCRIPTION_ID"
+userInputs:
+  ServiceBusDiagnosticSettingsDataFilePath: <<MINIO_FILE_PATH>>
+fromDate: 2023-11-29
+toDate: 2023-11-29

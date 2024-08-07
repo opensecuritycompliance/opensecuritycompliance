@@ -1,0 +1,96 @@
+version: "3.8"
+services:
+  cowlibrary:
+    platform: linux/x86_64
+    build:
+      context: ./
+      dockerfile: ./Dockerfiles/alpine/Dockerfile.cowlibrary
+      args:
+        buildno: 1
+    image: cowlibrary:1.1
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+    hostname: cowlibrary
+    container_name: cowlibrary
+  cowstorage:
+    image: minio/minio:RELEASE.2024-07-04T14-25-45Z
+    container_name: cowstorage
+    hostname: cowstorage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - etc/policycow.env
+    volumes:
+      - ${HOME}/tmp/cowctl/minio:/data
+    command: server /data --address :9000 --console-address :9001
+    # command: server /data
+    networks:
+      internal:
+        aliases:
+          - cowstorage
+      default:
+        aliases:
+          - cowstorage
+  cowctl:
+    platform: linux/x86_64
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    build:
+      context: ./
+      dockerfile: ./Dockerfiles/alpine/Dockerfile.cowctl
+      args:
+        buildno: 1
+    image: cowctl:1.1
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+      - etc/.credentials.env
+    volumes:
+      - ./catalog/globalcatalog/dashboards:/policycow/catalog/globalcatalog/dashboards
+      - ./catalog/globalcatalog/rules:/policycow/catalog/globalcatalog/rules
+      - ./catalog/appconnections:/policycow/catalog/appconnections
+      - ./catalog/applicationscope:/policycow/catalog/applicationscope
+      - ./catalog/globalcatalog/methods:/policycow/catalog/globalcatalog/methods
+      - ./catalog/globalcatalog/rulegroups:/policycow/catalog/globalcatalog/rulegroups
+      - ./catalog/globalcatalog/tasks:/policycow/catalog/globalcatalog/tasks
+      - ./catalog/globalcatalog/cowexecutions:/policycow/catalog/globalcatalog/cowexecutions
+      - ./catalog/globalcatalog/synthesizers:/policycow/catalog/globalcatalog/synthesizers
+      - ./catalog/localcatalog/:/policycow/catalog/localcatalog/
+      - ./catalog/globalcatalog/:/policycow/catalog/globalcatalog/
+      - ./etc/cowconfig.yaml:/policycow/etc/cowconfig.yaml
+      - ./exported-data:/policycow/exported-data
+      - ./catalog/globalcatalog/declaratives/applications:/policycow/catalog/globalcatalog/declaratives/applications
+      - ./catalog/globalcatalog/declaratives/credentials:/policycow/catalog/globalcatalog/declaratives/credentials
+      - ./catalog/globalcatalog/yamlfiles/applications:/policycow/catalog/globalcatalog/yamlfiles/applications
+      - ./catalog/globalcatalog/yamlfiles/credentials:/policycow/catalog/globalcatalog/yamlfiles/credentials
+      - ./cowexecutions:/policycow/cowexecutions
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    hostname: cowctl
+    container_name: cowctl
+    depends_on:
+      - cowlibrary
+      - cowstorage
+    networks:
+      internal:
+        aliases:
+          - cowctl
+      default:
+        aliases:
+          - cowctl
+networks:
+  default:
+    name: policycow_default
+  internal:
+    name: policycow_internal

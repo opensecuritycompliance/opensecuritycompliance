@@ -1,0 +1,38 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 12/12/2023
+name: IsDiagnosticLogEnabledInServiceBus
+displayName: IsDiagnosticLogEnabledInServiceBus
+version: '1.0'
+description: IsDiagnosticLogEnabledInServiceBus
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: ServiceBusDiagnosticSettingsDataFilePath
+  description: ServiceBusDiagnosticSettingsDataFilePath
+  type: string
+  allowedValues: []
+  defaultValue: demo
+  showField: true
+  isRequired: true
+outputs:
+- name: CompliancePCT_
+  description: Compliance Percentage
+  type: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  type: string
+- name: DiagnosticLogsInServiceBusNameSpace
+  description: DiagnosticLogsInServiceBusNameSpace
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file

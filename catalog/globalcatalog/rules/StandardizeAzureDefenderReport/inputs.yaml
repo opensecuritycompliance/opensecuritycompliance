@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: AzureAppConnector
+    appURL: https://portal.azure.com
+    appPort: "0"
+    userDefinedCredentials:
+      Azure:
+        clientID: $AZURE_CLIENT_ID
+        clientSecret: $AZURE_CLIENT_SECRET
+        tenantID: $AZURE_TENANT_ID
+        subscriptionID:  $AZURE_SUBSCRIPTION_ID
+userInputs:
+  RuleDisplayName : # To identify the RuleDisplayName, please refer to the 'RuleDisplayName' field in the 'RuleConfig.json' file.
+  RuleConfig : <<MINIO_FILE_PATH>>
+  AzureReportData : <<MINIO_FILE_PATH>>
+fromDate: 2023-11-05
+toDate: 2023-11-05

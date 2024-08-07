@@ -1,0 +1,19 @@
+userObject:
+  app:
+    name: Kubernetes
+    appPort: "0"
+    appURL: "$INSTANCE_LOGIN_URL"
+    userDefinedCredentials:
+      Jumphost:
+        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
+        UserID: "$INSTANCE_USER_NAME"
+userInputs:
+  IncludeCriteria:  "" # sample include criteria -->  /cluster/*/namespace/*/pod/pod1,pod2,pod3,pod4
+  ExcludeCriteria: ""  # sample exclude criteria -->  /cluster/*/namespace/*/pod/pod1,pod2
+  RegoFile: "<<MINIO_FILE_PATH>>"
+  Query: ""
+  OpaConfigurationFile: "<<MINIO_FILE_PATH>>"
+  ConfigFile: "<<MINIO_FILE_PATH>>"
+  OutputFileName: "" 
+fromDate: 2023-11-24
+toDate: 2023-11-24

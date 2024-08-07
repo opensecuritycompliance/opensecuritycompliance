@@ -1,0 +1,211 @@
+[
+    {
+        "RuleDisplayName": "Diagnostic logs in Service Bus should be enabled",
+        "EvidenceName": "DiagnosticLogsForServiceBus",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are enabled",
+            "ValidationStatusCode": "healthy",
+            "ValidationStatusNotes": "Diagnostic log settings are found"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are not enabled",
+            "ValidationStatusCode": "unhealthy",
+            "ValidationStatusNotes": "Diagnostic log settings are not found"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Diagnostic logs enabled status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Assessment for this resource did not happen"
+        }
+    },
+    {
+        "RuleDisplayName": "Diagnostic logs in Logic Apps should be enabled",
+        "EvidenceName": "DiagnosticLogsForLogicApps",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are enabled",
+            "ValidationStatusCode": "healthy",
+            "ValidationStatusNotes": "Diagnostic log settings are found"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are disabled",
+            "ValidationStatusCode": "unhealthy",
+            "ValidationStatusNotes": "There are no diagnostic log settings"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Diagnostic logs enabled status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Assessment for this resource did not happen"
+        }
+    },
+    {
+        "RuleDisplayName": "Diagnostic logs in Key Vault should be enabled",
+        "EvidenceName": "DiagnosticLogsForKeyVault",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are enabled",
+            "ValidationStatusCode": "healthy",
+            "ValidationStatusNotes": "Diagnostic log settings are found"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are disabled",
+            "ValidationStatusCode": "unhealthy",
+            "ValidationStatusNotes": "There are no diagnostic log settings"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Diagnostic logs enabled status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Assessment for this resource did not happen"
+        }
+    },
+    {
+        "RuleDisplayName": "Diagnostic logs in Kubernetes services should be enabled",
+        "EvidenceName": "DiagnosticLogsForKubernetesServices",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are enabled",
+            "ValidationStatusCode": "healthy",
+            "ValidationStatusNotes": "Diagnostic log settings are found"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are disabled",
+            "ValidationStatusCode": "unhealthy",
+            "ValidationStatusNotes": "There are no diagnostic log settings"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Diagnostic logs enabled status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Assessment for this resource did not happen"
+        }
+    },
+    {
+        "RuleDisplayName": "Diagnostic logs in App Service should be enabled",
+        "EvidenceName": "DiagnosticLogsForAppService",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are enabled",
+            "ValidationStatusCode": "healthy",
+            "ValidationStatusNotes": "Diagnostic log settings are found"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Diagnostic logs are disabled",
+            "ValidationStatusCode": "unhealthy",
+            "ValidationStatusNotes": "There are no diagnostic log settings"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Diagnostic logs enabled status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Assessment for this resource did not happen"
+        }
+    },
+    {
+        "RuleDisplayName": "Virtual networks should be protected by Azure Firewall",
+        "EvidenceName": "VirtualNetworkAzureFirewallAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as virtual network protected by azure firewall",
+            "ValidationStatusCode": "AZURE_VNET_WITH_FIREWALL",
+            "ValidationStatusNotes": "Virtual network protected by azure firewall"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as virtual network not protected by azure firewall",
+            "ValidationStatusCode": "AZURE_VNET_WITHOUT_FIREWALL",
+            "ValidationStatusNotes": "Virtual network not protected by azure firewall"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "The status of the virtual network protected by Azure Firewall could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "not determined"
+        }
+    },
+    {
+        "RuleDisplayName": "Management ports should be closed on your virtual machines",
+        "EvidenceName": "OpenManagementPortsOnVirtualMachinesAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as virtual machine management ports are closed",
+            "ValidationStatusCode": "VM_MANAGEMENT_PORTS_CLOSED",
+            "ValidationStatusNotes": "Virtual machine management ports are closed"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as virtual machine management ports are open",
+            "ValidationStatusCode": "VM_MANAGEMENT_PORTS_OPEN",
+            "ValidationStatusNotes": "Virtual machine management ports are open"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "The status of virtual machine management ports could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "not determined"
+        }
+    },
+    {
+        "RuleDisplayName": "Subnets should be associated with a network security group",
+        "EvidenceName": "NetworkSecurityGroupsOnSubnetsAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as subnet associated with network security group",
+            "ValidationStatusCode": "SUBNET_NSG_ENABLED",
+            "ValidationStatusNotes": "Subnet associated with network security groupd"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as subnet not associated with network security group",
+            "ValidationStatusCode": "SUBNET_NSG_DISABLED",
+            "ValidationStatusNotes": "Subnet not associated with network security group"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Subnet associated with network security group status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "not determined"
+        }
+    },
+    {
+        "RuleDisplayName": "IP forwarding on your virtual machine should be disabled",
+        "EvidenceName": "IPForwardingOnVirtualMachinesAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as virtual machine IP forwarding disabled",
+            "ValidationStatusCode": "VM_IP_FORWARDING_DISABLED",
+            "ValidationStatusNotes": "Virtual machine ip forwarding disabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as virtual machine IP forwarding enabled",
+            "ValidationStatusCode": "VM_IP_FORWARDING_ENABLED",
+            "ValidationStatusNotes": "Virtual machine ip forwarding enabled"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Virtual machine IP forwarding status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "not determined"
+        }
+    },
+    {
+        "RuleDisplayName": "Azure DDoS Protection Standard should be enabled",
+        "EvidenceName": "EnableDDoSProtectionAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as virtual network DDoS protection is enabled",
+            "ValidationStatusCode": "DDOS_PROTECTION_ENABLED",
+            "ValidationStatusNotes": "Virtual network DDoS protection enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as virtual network DDoS protection is disabled",
+            "ValidationStatusCode": "DDOS_PROTECTION_DISABLED",
+            "ValidationStatusNotes": "Virtual network DDoS protection disabled"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Virtual network DDoS protection status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "not determined"
+        }
+    },
+    {
+        "RuleDisplayName": "Microsoft Defender for Key Vault should be enabled",
+        "EvidenceName": "DefenderEnabledInKeyVault",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as Azure Defender enabled in Key Vault",
+            "ValidationStatusCode": "KEY_VAULT_ENABLED",
+            "ValidationStatusNotes": "Azure Defender enabled in Key Vault"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as Azure Defender disabled in Key Vault",
+            "ValidationStatusCode": "KEY_VAULT_DISABLED",
+            "ValidationStatusNotes": "Azure Defender disabled in Key Vault"
+        },
+        "NotApplicable": {
+            "ComplianceStatusReason": "Azure Defender status in Key Vault could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Status not determined"
+        }
+    }
+]

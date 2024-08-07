@@ -1,0 +1,52 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 12/12/2023
+name: AzurePolicyFilterAndFormatRunResult
+displayName: Azure Policy Filter And Format Run Result
+version: '1.0'
+description: Azure Policy Filter And Format Run Result
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: ControlConfigFilePath
+  description: ControlConfigFilePath
+  type: string
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+- name: AzurePolicyRunResultFilePath
+  description: AzurePolicyRunResultFilePath
+  type: string
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+- name: ControlName
+  description: ControlName
+  type: string
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+outputs:
+- name: FilteredAndFormattedControlEvidence
+  description: FilteredAndFormattedControlEvidence
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: ComplianceStatus_
+  type: string
+- name: CompliancePCT_
+  description: CompliancePCT_
+  type: int

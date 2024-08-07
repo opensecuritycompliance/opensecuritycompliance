@@ -1,0 +1,25 @@
+userObject:
+  app:
+    name: AWSAppConnector
+    appURL: https://aws.amazon.com
+    appPort: "0"
+    userDefinedCredentials:
+      AWSRole:
+        AccessKey: "$AWS_ROLE_ACCESS_KEY"
+        SecretKey: "$AWS_ROLE_SECRET_KEY"
+        RoleARN: "$AWS_ROLE_ARN"
+      AWSIAM:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+userInputs:
+    Users: # Specify the user names as comma separated values, or use '*' to indicate all users.
+    UserStatus: # Specify the status as 'include' to include the users or 'exclude' to exclude the users. 
+    Groups: # Specify the group names as comma separated values, or use '*' to indicate all groups. 
+    GroupStatus: # Specify the status as 'include' to include the groups or 'exclude' to exclude the groups. 
+    Roles: # Specify the role names as comma separated values, or use '*' to indicate all roles. 
+    RoleStatus: # Specify the status as 'include' to include the roles or 'exclude' to exclude the roles. 
+    MFARecommendationFile: <<MINIO_FILE_PATH>> # Refer to the MFARecommendationFile template from /catalog/globalcatalog/rules/AWSMFAPolicySimulatorReport/MFARecommendationFile-Template.json.
+    AccountAuthorizationDetails: <<MINIO_FILE_PATH>>
+fromDate: 2024-02-13
+toDate: 2024-02-13
+

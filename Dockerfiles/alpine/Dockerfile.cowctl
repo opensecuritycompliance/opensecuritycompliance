@@ -1,0 +1,12 @@
+FROM cowlibrary:1.1
+LABEL author=raj.krishnamurthy@continube.com
+COPY ./catalog/appconnections /policycow/catalog/appconnections
+COPY ./src/cowctl /policycow/src/cowctl
+WORKDIR /policycow/src/cowctl
+RUN go mod tidy
+RUN go install cowctl 
+WORKDIR /policycow
+
+ENV TERM xterm-256color
+
+CMD ["/bin/sh", "-c","tail -f /dev/null"]

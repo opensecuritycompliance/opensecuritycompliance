@@ -1,0 +1,43 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: AzureAppConnector
+  displayName: AzureAppConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - azureappconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - azureappconnector
+  version: ""
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateAzureAppConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: Azure
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: Azure
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

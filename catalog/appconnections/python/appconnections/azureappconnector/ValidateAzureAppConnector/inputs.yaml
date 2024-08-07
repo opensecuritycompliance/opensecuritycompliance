@@ -1,0 +1,11 @@
+userObject:
+  name: AzureAppConnector
+userInputs:
+  appPort: 0
+  appURL: http://localhost.com
+  userDefinedCredentials:
+    Azure:
+      clientID: $AZURE_CLIENT_ID
+      clientSecret: $AZURE_CLIENT_SECRET
+      tenantID: $AZURE_TENANT_ID
+      subscriptionID:  $AZURE_SUBSCRIPTION_ID

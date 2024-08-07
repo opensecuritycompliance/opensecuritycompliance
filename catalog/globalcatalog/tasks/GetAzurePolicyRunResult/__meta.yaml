@@ -1,0 +1,32 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 12/12/2023
+name: GetAzurePolicyRunResult
+displayName: Get Azure Policy Run Result
+version: '1.0'
+description: Get Azure Policy Run Result
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- {}
+outputs:
+- name: AzurePolicyRunResult
+  description: AzurePolicyRunResult
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: ComplianceStatus_
+  type: string
+- name: CompliancePCT_
+  description: CompliancePCT_
+  type: int

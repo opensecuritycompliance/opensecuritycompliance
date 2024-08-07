@@ -1,0 +1,47 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 26/06/2024
+name: KubernetesPVList
+displayName: KubernetesPVList
+version: '1.0'
+description: KubernetesPVList
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: IncludeCriteria # A unique identifier of the task input
+  description: IncludeCriteria # A concise description of the task input
+  dataType: string
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true
+- name: ExcludeCriteria # A unique identifier of the task input
+  description: ExcludeCriteria # A concise description of the task input
+  dataType: string
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true
+outputs:
+- name: KubernetesPVList
+  description: KubernetesPVList
+  dataType: string
+- name: KubernetesPVListLogFile
+  description: KubernetesPVListLogFile
+  dataType: string
+- name: ComplianceStatus_
+  description: Compliance status of the task
+  dataType: string
+- name: CompliancePCT_
+  description: Compliance percentage of the task
+  dataType: int

@@ -1,0 +1,45 @@
+authors:
+- lokesh.b@continube.com
+domain: continube
+createdDate: 17/04/2024
+name: AzureLogAnalyticsWkSpaceRetentionPeriodReport
+displayName: Azure Log Analytics WorkSpace Retention Period Report
+version: '1.0'
+description: Azure Log Analytics WorkSpace Retention Period Report
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AzureLogAnalyticsWorkSpaceData # A unique identifier of the task input
+  description:  AzureLogAnalyticsWorkSpaceData # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+- name: RetentionInDays # A unique identifier of the task input
+  description:  RetentionInDays # A concise description of the task input
+  type: int # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+outputs:
+- name: LogAnalyticsWkSpaceRetentionPeriodReport
+  description: Log Analytics Work Space Retention Period Report
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: compliance status of the task
+  type: string
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  type: int

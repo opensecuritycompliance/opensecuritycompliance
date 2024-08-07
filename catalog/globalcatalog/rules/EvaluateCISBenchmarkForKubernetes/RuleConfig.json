@@ -1,0 +1,946 @@
+[
+    {
+        "ControlNumber": "4.1.1",
+        "EvidenceName": "4_1_1_KubebenchPermissions",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the kubelet service file permissions are set to 600 or more restrictive (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate permissions are set to 600 or more restrictive (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "File permissions meet the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate permissions are more permissive than 600 (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet service file permissions to 600 or more restrictive."
+        }
+    },
+    {
+        "ControlNumber": "4.1.2",
+        "EvidenceName": "4_1_2_KubebenchOwnership",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the kubelet service file ownership is set to root:root (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate ownership is set to root:root (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "File ownership meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate ownership is not set to root:root (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet service file ownership to root:root."
+        }
+    },
+    {
+        "ControlNumber": "4.1.3",
+        "EvidenceName": "4_1_3_ProxyKubeconfigFilePermissions",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "If proxy kubeconfig file exists ensure permissions are set to 644 or more restrictive (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Proxy kubeconfig file permissions are set to 644 or more restrictive (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Proxy kubeconfig file permissions are not set to 644 or more restrictive (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file permissions to 644 or more restrictive."
+        }
+    },
+    {
+        "ControlNumber": "4.1.4",
+        "EvidenceName": "4_1_4_ProxyKubeconfigOwnership",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "If proxy kubeconfig file exists ensure ownership is set to root:root (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Proxy kubeconfig file ownership is set to root:root (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Proxy kubeconfig file ownership is not set to root:root (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file ownership to root:root."
+        }
+    },
+    {
+        "ControlNumber": "4.1.5",
+        "EvidenceName": "4_1_5_KubebenchPermissions",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the --kubeconfig kubelet.conf file permissions are set to 600 or more restrictive (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate permissions are set to 600 or more restrictive (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "File permissions meet the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate permissions are more permissive than 600 (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file permissions to 600 or more restrictive."
+        }
+    },
+    {
+        "ControlNumber": "4.1.6",
+        "EvidenceName": "4_1_6_KubebenchOwnership",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the --kubeconfig kubelet.conf file ownership is set to root:root (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate ownership is set to root:root (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "File ownership meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate ownership is not set to root:root (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file ownership to root:root."
+        }
+    },
+    {
+        "ControlNumber": "4.1.7",
+        "EvidenceName": "4_1_7_CertificateAuthoritiesFilePermissions",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the certificate authorities file permissions are set to 644 or more restrictive (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Certificate authorities file permissions are set to 644 or more restrictive (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Certificate authorities file permissions are not set to 644 or more restrictive (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set certificate authorities file permissions to 644 or more restrictive."
+        }
+    },
+    {
+        "ControlNumber": "4.1.8",
+        "EvidenceName": "4_1_8_ClientCertificateAuthoritiesOwnership",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the client certificate authorities file ownership is set to root:root (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Client certificate authorities file ownership is set to root:root (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Client certificate authorities file ownership is not set to root:root (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set client certificate authorities file ownership to root:root."
+        }
+    },
+    {
+        "ControlNumber": "4.1.9",
+        "EvidenceName": "4_1_9_KubeletConfigFilePermissions",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the kubelet --config configuration file has permissions set to 644 or more restrictive (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file permissions are set to 644 or more restrictive (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file permissions are not set to 644 or more restrictive (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file permissions to 644 or more restrictive."
+        }
+    },
+    {
+        "ControlNumber": "4.1.10",
+        "EvidenceName": "4_1_10_KubeletConfigFileOwnership",
+        "ParentControlInfo": "Worker Node Configuration Files",
+        "ControlDescription": "Ensure that the kubelet --config configuration file ownership is set to root:root (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file ownership is set to root:root (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file ownership is not set to root:root (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file ownership to root:root."
+        }
+    },
+    {
+        "ControlNumber": "4.2.1",
+        "EvidenceName": "4_2_1_KubebenchAnonymous",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --anonymous-auth argument is set to false (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --anonymous-auth argument is set to false (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --anonymous-auth argument is not set to false (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --anonymous-auth argument to false."
+        }
+    },
+    {
+        "ControlNumber": "4.2.2",
+        "EvidenceName": "4_2_2_KubebenchAuthorization",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --authorization-mode argument is not set to AlwaysAllow (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --authorization-mode argument is not set to AlwaysAllow (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --authorization-mode argument is set to AlwaysAllow (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --authorization-mode argument to a value other than AlwaysAllow."
+        }
+    },
+    {
+        "ControlNumber": "4.2.3",
+        "EvidenceName": "4_2_3_KubebenchClientCa",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --client-ca-file argument is set as appropriate (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --client-ca-file argument is set appropriately (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --client-ca-file argument is not set appropriately (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --client-ca-file argument to an appropriate value."
+        }
+    },
+    {
+        "ControlNumber": "4.2.4",
+        "EvidenceName": "4_2_4_KubeletReadOnlyPort",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --read-only-port argument is set to 0 (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --read-only-port argument is set to 0 (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --read-only-port argument is not set to 0 (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --read-only-port argument to 0."
+        }
+    },
+    {
+        "ControlNumber": "4.2.5",
+        "EvidenceName": "4_2_5_KubeletStreamingConnectionIdleTimeout",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --streaming-connection-idle-timeout argument is not set to 0 (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --streaming-connection-idle-timeout argument is not set to 0 (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --streaming-connection-idle-timeout argument is set to 0 (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --streaming-connection-idle-timeout argument to a value other than 0."
+        }
+    },
+    {
+        "ControlNumber": "4.2.6",
+        "EvidenceName": "4_2_6_KubebenchIptables",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --make-iptables-util-chains argument is set to true (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --make-iptables-util-chains argument is set to true (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --make-iptables-util-chains argument is not set to true (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --make-iptables-util-chains argument to true."
+        }
+    },
+    {
+        "ControlNumber": "4.2.7",
+        "EvidenceName": "4_2_7_KubeletMakeIptablesUtilChains",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --make-iptables-util-chains argument is set to true (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --make-iptables-util-chains argument is set to true (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --make-iptables-util-chains argument is not set to true (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --make-iptables-util-chains argument to true."
+        }
+    },
+    {
+        "ControlNumber": "4.2.8",
+        "EvidenceName": "4_2_8_KubeletHostnameOverride",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --hostname-override argument is not set (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --hostname-override argument is not set (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --hostname-override argument is set (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Ensure kubelet --hostname-override argument is not set."
+        }
+    },
+    {
+        "ControlNumber": "4.2.9",
+        "EvidenceName": "4_2_9_KubeletEventQPS",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --event-qps argument is set to 0 or a level which ensures appropriate event capture (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --event-qps argument is set to 0 or a level which ensures appropriate event capture (verified manually)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kubelet --event-qps argument is not set to 0 or a level which ensures appropriate event capture (verified manually)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --event-qps argument to 0 or a level which ensures appropriate event capture."
+        }
+    },
+    {
+        "ControlNumber": "4.2.10",
+        "EvidenceName": "4_2_10_KubebenchRotateCertificates",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --rotate-certificates argument is not set to false (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --rotate-certificates argument is not set to false (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate --rotate-certificates argument is set to false (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set --rotate-certificates argument to a value other than false."
+        }
+    },
+    {
+        "ControlNumber": "4.2.11",
+        "EvidenceName": "4_2_11_KubeletRotateCertificates",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the --rotate-certificates argument is not set to false (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --rotate-certificates argument is not set to false (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate kubelet --rotate-certificates argument is set to false (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set kubelet --rotate-certificates argument to a value other than false."
+        }
+    },
+    {
+        "ControlNumber": "4.2.12",
+        "EvidenceName": "4_2_12_KubebenchCiphers",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that the Kubelet only makes use of Strong Cryptographic Ciphers (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate Kubelet is using Strong Cryptographic Ciphers (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate Kubelet is not using Strong Cryptographic Ciphers (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure Kubelet to use Strong Cryptographic Ciphers."
+        }
+    },
+    {
+        "ControlNumber": "4.2.13",
+        "EvidenceName": "4_2_13_KubebenchPidLimit",
+        "ParentControlInfo": "Kubelet",
+        "ControlDescription": "Ensure that a limit is set on pod PIDs (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate a limit is set on pod PIDs (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate a limit is not set on pod PIDs (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure a limit on pod PIDs."
+        }
+    },
+    {
+        "ControlNumber": "4.3.1",
+        "EvidenceName": "4_3_1_KubeProxyMetricsService",
+        "ParentControlInfo": "Kube-proxy",
+        "ControlDescription": "Ensure that the kube-proxy metrics service is bound to localhost (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Automated checks confirm that the kube-proxy metrics service is bound to localhost (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Automated checks indicate that the kube-proxy metrics service is not bound to localhost (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the kube-proxy metrics service to bind to localhost."
+        }
+    },
+    {
+        "ControlNumber": "5.1.1",
+        "EvidenceName": "5_1_1_ManualControlClusterAdmin",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Ensure that the cluster-admin role is only used where required (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that the cluster-admin role is only used where required (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Cluster-admin role usage meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that the cluster-admin role is used inappropriately (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Restrict cluster-admin role usage as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.2",
+        "EvidenceName": "5_1_2_ManualControlSecretsAccess",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to secrets (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to secrets is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Secret access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to secrets is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize secret access as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.3",
+        "EvidenceName": "5_1_3_ManualControlWildcardUse",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize wildcard use in Roles and ClusterRoles (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that wildcard use in Roles and ClusterRoles is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Wildcard usage in Roles and ClusterRoles meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that wildcard use in Roles and ClusterRoles is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize wildcard usage in Roles and ClusterRoles as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.4",
+        "EvidenceName": "5_1_4_ManualControlPodCreation",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to create pods (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to create pods is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Pod creation access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to create pods is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to create pods as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.5",
+        "EvidenceName": "5_1_5_ManualControlDefaultServiceAccounts",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Ensure that default service accounts are not actively used (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that default service accounts are not actively used (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Default service account usage meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that default service accounts are actively used (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Disable default service account usage as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.6",
+        "EvidenceName": "5_1_6_ManualControlServiceAccountTokens",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Ensure that Service Account Tokens are only mounted where necessary (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that Service Account Tokens are only mounted where necessary (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Service Account Token mounting meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that Service Account Tokens are mounted inappropriately (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Restrict Service Account Token mounting as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.7",
+        "EvidenceName": "5_1_7_ManualControlSystemMasters",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Avoid use of system:masters group (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that the system:masters group is not used (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "system:masters group usage meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that the system:masters group is used (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Avoid system:masters group usage as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.8",
+        "EvidenceName": "5_1_8_ManualControlBindImpersonateEscalatePermissions",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that Bind, Impersonate and Escalate permissions are limited (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Bind, Impersonate and Escalate permissions meet the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that Bind, Impersonate and Escalate permissions are not limited (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Limit Bind, Impersonate and Escalate permissions as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.9",
+        "EvidenceName": "5_1_9_ManualControlPersistentVolumes",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to create persistent volumes (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to create persistent volumes is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Persistent volume creation access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to create persistent volumes is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to create persistent volumes as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.10",
+        "EvidenceName": "5_1_10_ManualControlProxySubresource",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to the proxy sub-resource of nodes (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the proxy sub-resource of nodes is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Proxy sub-resource access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the proxy sub-resource of nodes is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to the proxy sub-resource of nodes as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.11",
+        "EvidenceName": "5_1_11_ManualControlCertificatesigningrequests",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to the approval sub-resource of certificatesigningrequests objects (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the approval sub-resource of certificatesigningrequests objects is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Certificatesigningrequests approval access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the approval sub-resource of certificatesigningrequests objects is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to the approval sub-resource of certificatesigningrequests objects as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.12",
+        "EvidenceName": "5_1_12_ManualControlWebhookConfiguration",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to webhook configuration objects (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to webhook configuration objects is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Webhook configuration object access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to webhook configuration objects is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to webhook configuration objects as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.1.13",
+        "EvidenceName": "5_1_13_ManualControlServiceAccountTokenCreation",
+        "ParentControlInfo": "RBAC and Service Accounts",
+        "ControlDescription": "Minimize access to the service account token creation (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the service account token creation is minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Service account token creation access meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that access to the service account token creation is not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize access to the service account token creation as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.2.1",
+        "EvidenceName": "5_2_1_ManualControlPolicyControlMechanism",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Ensure that the cluster has at least one active policy control mechanism in place (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that at least one active policy control mechanism is in place (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Policy control mechanism meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that no active policy control mechanism is in place (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Implement an active policy control mechanism as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.2.2",
+        "EvidenceName": "5_2_2_ManualControlPrivilegedContainers",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of privileged containers (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that privileged containers are minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Privileged container admission meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that privileged containers are not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize privileged container admission as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.2.3",
+        "EvidenceName": "5_2_3_AutomatedControlHostProcessIdNamespace",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of containers wishing to share the host process ID namespace (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that containers wishing to share the host process ID namespace are minimized (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Host process ID namespace sharing meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Audit logs indicate that containers wishing to share the host process ID namespace are not minimized (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Minimize container admission with host process ID namespace sharing as per CIS Benchmark."
+        }
+    },
+    {
+        "ControlNumber": "5.2.4",
+        "EvidenceName": "5_2_4_AdmissionControl",
+        "ParentControlInfo": "Pod Security Admission Control",
+        "ControlDescription": "Minimize the admission of containers wishing to share the host IPC namespace (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is set to minimize the admission of containers wishing to share the host IPC namespace (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The admission control policy is set to minimize the admission of containers wishing to share the host IPC namespace."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host IPC namespace."
+        }
+    },
+    {
+        "ControlNumber": "5.2.5",
+        "EvidenceName": "5_2_5_AdmissionControl",
+        "ParentControlInfo": "Pod Security Admission Control",
+        "ControlDescription": "Minimize the admission of containers wishing to share the host network namespace (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is set to minimize the admission of containers wishing to share the host network namespace (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The admission control policy is set to minimize the admission of containers wishing to share the host network namespace."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host network namespace."
+        }
+    },
+    {
+        "ControlNumber": "5.2.6",
+        "EvidenceName": "5_2_6_AdmissionControl",
+        "ParentControlInfo": "Pod Security Admission Control",
+        "ControlDescription": "Minimize the admission of containers with allowPrivilegeEscalation (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is set to minimize the admission of containers with allowPrivilegeEscalation (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The admission control policy is set to minimize the admission of containers with allowPrivilegeEscalation."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with allowPrivilegeEscalation."
+        }
+    },
+    {
+        "ControlNumber": "5.2.7",
+        "EvidenceName": "5_2_7_AdmissionControl",
+        "ParentControlInfo": "Pod Security Admission Control",
+        "ControlDescription": "Minimize the admission of root containers (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is set to minimize the admission of root containers (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The admission control policy is set to minimize the admission of root containers."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of root containers."
+        }
+    },
+    {
+        "ControlNumber": "5.2.8",
+        "EvidenceName": "5_2_8_AdmissionControl",
+        "ParentControlInfo": "Pod Security Admission Control",
+        "ControlDescription": "Minimize the admission of containers with the NET_RAW capability (Automated)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is set to minimize the admission of containers with the NET_RAW capability (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The admission control policy is set to minimize the admission of containers with the NET_RAW capability."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with the NET_RAW capability."
+        }
+    },
+    {
+        "ControlNumber": "5.2.9",
+        "EvidenceName": "5_2_9_MinimizeContainerCapabilities",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of containers with added capabilities (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Manual review confirms that containers with added capabilities are minimized (details in review logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Manual review indicates that containers with added capabilities are not minimized (details in review logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Review and minimize containers with added capabilities."
+        }
+    },
+    {
+        "ControlNumber": "5.2.10",
+        "EvidenceName": "5_2_10_MinimizeContainerCapabilitiesAssigned",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of containers with capabilities assigned (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Manual review confirms that containers with assigned capabilities are minimized (details in review logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Manual review indicates that containers with assigned capabilities are not minimized (details in review logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Review and minimize containers with assigned capabilities."
+        }
+    },
+    {
+        "ControlNumber": "5.2.11",
+        "EvidenceName": "5_2_11_MinimizeWindowsHostProcessContainers",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of Windows HostProcess containers (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Manual review confirms that the admission of Windows HostProcess containers is minimized (details in review logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Manual review indicates that the admission of Windows HostProcess containers is not minimized (details in review logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Review and minimize the admission of Windows HostProcess containers."
+        }
+    },
+    {
+        "ControlNumber": "5.2.12",
+        "EvidenceName": "5_2_12_MinimizeHostPathVolumes",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of HostPath volumes (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Manual review confirms that the use of HostPath volumes is minimized (details in review logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Manual review indicates that the use of HostPath volumes is not minimized (details in review logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPath volumes."
+        }
+    },
+    {
+        "ControlNumber": "5.2.13",
+        "EvidenceName": "5_2_13_MinimizeContainersUsingHostPorts",
+        "ParentControlInfo": "Pod Security Standards",
+        "ControlDescription": "Minimize the admission of containers which use HostPorts (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Manual review confirms that the use of HostPorts in containers is minimized (details in review logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Configuration meets the CIS Benchmark requirement."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Manual review indicates that the use of HostPorts in containers is not minimized (details in review logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPorts in containers."
+        }
+    },
+    {
+        "ControlNumber": "5.3.1",
+        "EvidenceName": "5_3_1_NetworkPolicy",
+        "ParentControlInfo": "Network Policies and CNI",
+        "ControlDescription": "Ensure that the CNI in use supports Network Policies (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the CNI in use supports Network Policies (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The CNI in use supports Network Policies."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that the CNI in use does not support Network Policies (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure the CNI in use to support Network Policies."
+        }
+    },
+    {
+        "ControlNumber": "5.3.2",
+        "EvidenceName": "5_3_2_NamespaceNetworkPolicy",
+        "ParentControlInfo": "Network Policies and CNI",
+        "ControlDescription": "Ensure that all Namespaces have Network Policies defined (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that all Namespaces have Network Policies defined (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "All Namespaces have Network Policies defined."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that not all Namespaces have Network Policies defined (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Define Network Policies for all Namespaces."
+        }
+    },
+    {
+        "ControlNumber": "5.4.1",
+        "EvidenceName": "5_4_1_SecretsAsFiles",
+        "ParentControlInfo": "Secrets Management",
+        "ControlDescription": "Prefer using secrets as files over secrets as environment variables (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that secrets are preferably used as files over secrets as environment variables (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Secrets are preferably used as files over secrets as environment variables."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that secrets are preferably used as environment variables over secrets as files (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure secrets to be used as files instead of environment variables."
+        }
+    },
+    {
+        "ControlNumber": "5.4.2",
+        "EvidenceName": "5_4_2_ExternalSecretStorage",
+        "ParentControlInfo": "Secrets Management",
+        "ControlDescription": "Consider external secret storage (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that external secret storage is being used (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "External secret storage is being used."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate that external secret storage is not being used (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Consider using external secret storage."
+        }
+    },
+    {
+        "ControlNumber": "5.5.1",
+        "EvidenceName": "5_5_1_ImageProvenance",
+        "ParentControlInfo": "Extensible Admission Control",
+        "ControlDescription": "Configure Image Provenance using ImagePolicyWebhook admission controller (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate Image Provenance is configured using ImagePolicyWebhook admission controller (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Image Provenance is configured using ImagePolicyWebhook admission controller."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate Image Provenance is not configured using ImagePolicyWebhook admission controller (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Configure Image Provenance using ImagePolicyWebhook admission controller."
+        }
+    },
+    {
+        "ControlNumber": "5.7.1",
+        "EvidenceName": "5_7_1_AdministrativeBoundaries",
+        "ParentControlInfo": "General Policies",
+        "ControlDescription": "Create administrative boundaries between resources using namespaces (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate administrative boundaries are created between resources using namespaces (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Administrative boundaries are created between resources using namespaces."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate administrative boundaries are not created between resources using namespaces (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Create administrative boundaries between resources using namespaces."
+        }
+    },
+    {
+        "ControlNumber": "5.7.2",
+        "EvidenceName": "5_7_2_SeccompProfile",
+        "ParentControlInfo": "General Policies",
+        "ControlDescription": "Ensure that the seccomp profile is set to docker/default in your pod definitions (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate the seccomp profile is set to docker/default in pod definitions (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The seccomp profile is set to docker/default in pod definitions."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate the seccomp profile is not set to docker/default in pod definitions (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Set the seccomp profile to docker/default in pod definitions."
+        }
+    },
+    {
+        "ControlNumber": "5.7.3",
+        "EvidenceName": "5_7_3_SecurityContext",
+        "ParentControlInfo": "General Policies",
+        "ControlDescription": "Apply Security Context to Your Pods and Containers (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate security context is applied to pods and containers (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "Security context is applied to pods and containers."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate security context is not applied to pods and containers (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Apply security context to pods and containers."
+        }
+    },
+    {
+        "ControlNumber": "5.7.4",
+        "EvidenceName": "5_7_4_DefaultNamespace",
+        "ParentControlInfo": "General Policies",
+        "ControlDescription": "The default namespace should not be used (Manual)",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate the default namespace is not in use (details in logs)",
+            "ValidationStatusCode": "PS",
+            "ValidationStatusNotes": "The default namespace is not in use."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Kube-bench logs indicate the default namespace is in use (details in logs)",
+            "ValidationStatusCode": "FL",
+            "ValidationStatusNotes": "Remediation required: Do not use the default namespace."
+        }
+    }
+]

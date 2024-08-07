@@ -1,0 +1,27 @@
+FROM python:3.12
+LABEL author=raj.krishnamurthy@continube.com
+RUN apt-get update && apt-get install zip
+
+ARG GOVERSION=go1.21.3.linux-amd64.tar.gz
+RUN wget https://golang.org/dl/${GOVERSION}
+RUN rm -rf /usr/local/go && tar -C /usr/local -xzf ${GOVERSION}
+RUN ls /usr/local/go/bin
+ENV PATH=$PATH:/usr/local/go/bin
+
+ENV GOPATH="/usr/local"
+ENV COW_DATA_PERSISTENCE_TYPE="minio"
+
+COPY ./src/cowlibrary /policycow/src/cowlibrary
+COPY ./catalog/appconnections/go /policycow/catalog/appconnections/go
+WORKDIR /policycow/src/cowlibrary
+RUN go mod tidy  
+RUN rm -rf /policycow/catalog/
+
+COPY ./src/compliancecowcards /policycow/src/compliancecowcards
+COPY ./src/requirements.txt /policycow/requirements.txt
+
+RUN pip install --upgrade pip
+
+RUN pip install -r /policycow/requirements.txt 
+RUN pip install -r /policycow/src/compliancecowcards/requirements.txt 
+RUN pip install /policycow/src/compliancecowcards/

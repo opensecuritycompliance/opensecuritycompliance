@@ -1,0 +1,13 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  HarFile: <<MINIO_FILE_PATH>>
+  CookieDBFile: <<MINIO_FILE_PATH>> #file can be found in rules/HARCookieAnalyzer/CookieDBFile.csv
+fromDate: 2024-02-01
+toDate: 2024-02-01

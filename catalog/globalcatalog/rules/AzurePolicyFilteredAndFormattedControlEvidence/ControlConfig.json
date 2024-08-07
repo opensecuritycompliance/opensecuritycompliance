@@ -1,0 +1,395 @@
+[
+    {
+        "ControlName": "containerregistriesshouldnotallowunrestrictednetworkaccessmonitoringeffect",
+        "EvidenceName": "PublicNetworkAccessDisabledInContainerRegistries",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Only allowed networks can access the container registry",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_DISABLED",
+            "ValidationStatusNotes": "Only Allowed Networks should be able to access Container Registry"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "All networks can access the container registry",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_ENABLED",
+            "ValidationStatusNotes": "Disable public network access to the container registry"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "kubernetesservicerbacenabledmonitoring",
+        "EvidenceName": "RBACEnabledInKuberNetesClusters",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "RBAC is enabled",
+            "ValidationStatusCode": "RBAC_ENABLED",
+            "ValidationStatusNotes": "No action required"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "RBAC is disabled",
+            "ValidationStatusCode": "RBAC_DISABLED",
+            "ValidationStatusNotes": "RBAC should be Enabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "authenticationtolinuxmachinesshouldrequiresshkeysmonitoringeffect",
+        "EvidenceName": "SSHEnabledInVirtualMachines",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "SSH Key config is Enabled",
+            "ValidationStatusCode": "SSH_KEY_ENABLED",
+            "ValidationStatusNotes": "User should access the linux machine only using SSH "
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "All networks can access the container registry",
+            "ValidationStatusCode": "SSH_KEY_DISABLED",
+            "ValidationStatusNotes": "User should access the linux machine only using SSH "
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "storagedisallowpublicaccess",
+        "EvidenceName": "PublicNetworkAccessDisabledInContainerStorage",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Access to storage is restricted from the public network",
+            "ValidationStatusCode": "BLOB_PUBLIC_ACCESS_DISABLED",
+            "ValidationStatusNotes": "Only allowed networks can access the container registry"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "All networks can access storage",
+            "ValidationStatusCode": "BLOB_PUBLIC_ACCESS_ENABLED",
+            "ValidationStatusNotes": "Access to storage should be restricted from the public network"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "keyvaultsshouldhavesoftdeleteenabledmonitoringeffect",
+        "EvidenceName": "SoftDeleteEnabledInKeyVaults",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Soft Delete Enabled In Key Vaults",
+            "ValidationStatusCode": "SOFT_DELETE_ENABLED",
+            "ValidationStatusNotes": "Soft Delete should be Enabled In Key Vaults"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Soft Delete Disabled In Key Vaults",
+            "ValidationStatusCode": "SOFT_DELETE_DISABLED",
+            "ValidationStatusNotes": "Soft Delete should be Enabled In Key Vaults"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "firewallshouldbeenabledonkeyvaultmonitoringeffect",
+        "EvidenceName": "FireWallEnabledEnabledInKeyVaults",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Fire Wall Enabled In Key Vaults",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_DISABLED",
+            "ValidationStatusNotes": "Public Network Access is disabled In Key Vaults"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Firewall disabled in Key Vaults",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_ENABLED",
+            "ValidationStatusNotes": "Public network access should be disabled in Key Vault"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "networksecuritygroupsoninternalvirtualmachinesmonitoring",
+        "EvidenceName": "InternalVMNetworkSecurityGroupMonitoring",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as an internal virtual machine network security group has been created",
+            "ValidationStatusCode": "INTERNAL_VM_NSG_CREATED",
+            "ValidationStatusNotes": "Internal virtual machine network security group created"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as an internal virtual machine network security group has not been created",
+            "ValidationStatusCode": "INTERNAL_VM_NSG_NOT_CREATED",
+            "ValidationStatusNotes": "Internal virtual machine network security group not created"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "azuredefenderfordnsshouldbeenabledmonitoringeffect",
+        "EvidenceName": "EnableAzureDefenderOnDnsAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as Azure Defender for DNS is enabled",
+            "ValidationStatusCode": "AZURE_DEFENDER_DNS_ENABLED",
+            "ValidationStatusNotes": "Azure Defender for DNS is enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as Azure Defender for DNS is disabled",
+            "ValidationStatusCode": "AZURE_DEFENDER_DNS_DISABLED",
+            "ValidationStatusNotes": "Azure Defender for DNS is disabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "containerregistriesshoulduseprivatelinkmonitoringeffect",
+        "EvidenceName": "ContainerRegistryPrivateLinkValidation",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as a private link has been created",
+            "ValidationStatusCode": "PRIVATE_LINK_CREATED",
+            "ValidationStatusNotes": "Container registry private link created"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as a private link has not been created",
+            "ValidationStatusCode": "PRIVATE_LINK_NOT_CREATED",
+            "ValidationStatusNotes": "Container registry private link not created"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "storageaccountshoulduseaprivatelinkconnectionmonitoringeffect",
+        "EvidenceName": "StorageAccountPrivateEndpointEnabledAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as storage account private link created",
+            "ValidationStatusCode": "PRIVATE_LINK_CREATED",
+            "ValidationStatusNotes": "Storage account private link created"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as storage account private link not created",
+            "ValidationStatusCode": "PRIVATE_LINK_NOT_CREATED",
+            "ValidationStatusNotes": "Storage account private link not created"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "jitnetworkaccessmonitoring",
+        "EvidenceName": "JITNetworkAccessAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as Just-in-Time network access is enabled",
+            "ValidationStatusCode": "JIT_NETWORK_ACCESS_ENABLED",
+            "ValidationStatusNotes": "Just-in-Time network access is enabled on the virtual machine"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as Just-in-Time network access is disabled",
+            "ValidationStatusCode": "JIT_NETWORK_ACCESS_DISABLED",
+            "ValidationStatusNotes": "Just-in-Time network access is disabled on the virtual machine"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "publicnetworkaccessshouldbedisabledforcognitiveservicesaccountsmonitoringeffect",
+        "EvidenceName": "CognitiveServicesDisablePublicNetworkAccess",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as public network access is disabled",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_DISABLED",
+            "ValidationStatusNotes": "Cognitive service account public network access is disabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as public network access is enabled",
+            "ValidationStatusCode": "PUBLIC_NETWORK_ACCESS_ENABLED",
+            "ValidationStatusNotes": "Cognitive service account public network access is enabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "disableipforwardingmonitoring",
+        "EvidenceName": "IPForwardingOnVirtualMachinesAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as IP forwarding is disabled",
+            "ValidationStatusCode": "VM_IP_FORWARDING_DISABLED",
+            "ValidationStatusNotes": "IP forwarding is disabled on the virtual machine"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as IP forwarding is enabled",
+            "ValidationStatusCode": "VM_IP_FORWARDING_ENABLED",
+            "ValidationStatusNotes": "IP forwarding is enabled on the virtual machine"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "kubernetesserviceauthorizediprangesenabledmonitoring",
+        "EvidenceName": "KubernetesIPRangeMonitoring",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record is compliant as Kubernetes services IP range is enabled",
+            "ValidationStatusCode": "KUBERNETES_IP_RANGE_ENABLED",
+            "ValidationStatusNotes": "Kubernetes services IP range is enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record is not compliant as Kubernetes services IP range is disabled",
+            "ValidationStatusCode": "KUBERNETES_IP_RANGE_DISABLED",
+            "ValidationStatusNotes": "Kubernetes services IP range is disabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "userbacrulesmonitoring",
+        "EvidenceName": "UseRbacRulesMonitoring",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "RBAC is enabled",
+            "ValidationStatusCode": "RBAC_ENABLED",
+            "ValidationStatusNotes": "No action required"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "RBAC is disabled",
+            "ValidationStatusCode": "RBAC_DISABLED",
+            "ValidationStatusNotes": "RBAC should be Enabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NOT_DETERMINED",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "Could not Evaluate the Control Compliance Status"
+        }
+    },
+    {
+        "ControlName": "identitydesignatemorethanoneownermonitoring",
+        "EvidenceName": "DesignateOwnerMonitoring",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "The count of users with the owner role is more than one and less than four",
+            "ValidationStatusCode": "DES_OWNR_MONT",
+            "ValidationStatusNotes": "Designate owner monitired"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "The count of users with the owner role is not within the range of one to four",
+            "ValidationStatusCode": "DES_OWNR_NT_MONT",
+            "ValidationStatusNotes": "Designate owner not monitired"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Compliance status could not be determined",
+            "ValidationStatusCode": "NOT_DETERMINED",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "adaptivenetworkhardeningsmonitoring",
+        "EvidenceName": "AdaptiveNetworkHardeningMonitor",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as adaptive network hardening enabled",
+            "ValidationStatusCode": "ADAPTIVE_NETWORK_HARDENING_ENABLED",
+            "ValidationStatusNotes": "Adaptive network hardening enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as adaptive network hardening disabled",
+            "ValidationStatusCode": "ADAPTIVE_NETWORK_HARDENING_DISABLED",
+            "ValidationStatusNotes": "Adaptive network hardening disabled"
+        }
+    },
+    {
+        "ControlName": "networkwatchershouldbeenabledmonitoringeffect",
+        "EvidenceName": "CheckNetworkWatcherAvailability",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as network watcher enabled",
+            "ValidationStatusCode": "NETWORK_WATCHER_ENABLED",
+            "ValidationStatusNotes": "Network watcher enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as network watcher disabled",
+            "ValidationStatusCode": "NETWORK_WATCHER_DISABLED",
+            "ValidationStatusNotes": "Network watcher not disabled"
+        }
+    },
+    {
+        "ControlName": "nextgenerationfirewallmonitoring",
+        "EvidenceName": "UnprotectedEndpointsAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as network ports are restricted",
+            "ValidationStatusCode": "ENDPOINTS_PROTECTED",
+            "ValidationStatusNotes": "Network ports are restricted"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as network ports are unrestricted",
+            "ValidationStatusCode": "ENDPOINTS_UNPROTECTED",
+            "ValidationStatusNotes": "Network ports are not unrestricted"
+        }
+    },
+    {
+        "ControlName": "cognitiveservicesaccountsshouldrestrictnetworkaccessmonitoringeffect",
+        "EvidenceName": "CognitiveServicesNetworkAclsAudit",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record complaint as network access restricted",
+            "ValidationStatusCode": "NETWORK_ACCESS_RESTRICTED",
+            "ValidationStatusNotes": "Cognitive service accounts network access restricted"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not complaint as network access unrestricted",
+            "ValidationStatusCode": "NETWORK_ACCESS_UNRESTRICTED",
+            "ValidationStatusNotes": "Cognitive Services accounts network access unrestricted"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "NetworkAclsDefaultAction is empty",
+            "ValidationStatusCode": "NETWORK_ACLS_DEFAULT_ACTION_EMPTY",
+            "ValidationStatusNotes": "NOT_DETERMINED"
+        }
+    },
+    {
+        "ControlName": "networksecuritygroupsonvirtualmachinesmonitoring",
+        "EvidenceName": "VMNetworkSecurityGroupMonitoring",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as virtual machine network security group created",
+            "ValidationStatusCode": "VM_NSG_CREATED",
+            "ValidationStatusNotes": "Virtual machine network security group created"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as virtual machine network security group not created",
+            "ValidationStatusCode": "VM_NSG_NOT_CREATED",
+            "ValidationStatusNotes": "Virtual machine network security group not created"
+        }
+    },
+    {
+        "ControlName": "azurefirewalleffect",
+        "EvidenceName": "AllInternetTrafficShouldRoutedViaAzureFirewall",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as internet traffic is routed via Azure Firewall",
+            "ValidationStatusCode": "INTERNET_TRAFFIC_VIA_AZURE_FIREWALL",
+            "ValidationStatusNotes": "Internet traffic is routed via Azure Firewall"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as internet traffic is not routed via Azure Firewall",
+            "ValidationStatusCode": "INTERNET_TRAFFIC_NOT_VIA_AZURE_FIREWALL",
+            "ValidationStatusNotes": "Internet traffic is not routed via Azure Firewall"
+        }
+    }
+] 

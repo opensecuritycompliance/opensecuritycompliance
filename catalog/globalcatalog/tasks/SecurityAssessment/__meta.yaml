@@ -1,0 +1,32 @@
+authors:
+- lokesh.b@continube.com
+domain: continube
+createdDate: 14/12/2023
+name: SecurityAssessment
+displayName: Security Assessment
+version: '1.0'
+description: Security Assessment
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: go
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- {}
+outputs:
+- name: CompliancePCT_
+  description: Compliance Percentage
+  type: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  type: string
+- name: AzureReport
+  description: AzureReport
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file

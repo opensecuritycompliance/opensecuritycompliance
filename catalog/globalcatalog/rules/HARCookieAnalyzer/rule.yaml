@@ -1,0 +1,30 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: HARCookieAnalyzer
+  purpose: Analyze the har cookies
+  description: Get the cookies from the HAR file of a given URL and analyse and generate a report
+  labels:
+    appType:
+    - nocredapp
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - nocredapp
+spec:
+  tasks:
+  - name: HARCookieAnalyzer
+    alias: t1
+    type: task
+    purpose: Analyze the har cookies
+    description: Get the cookies from the HAR file of a given URL and analyse and generate a report
+  ioMap:
+  - 't1.Input.HarFile:=*.Input.HarFile'
+  - 't1.Input.CookieDBFile:=*.Input.CookieDBFile'
+  - '*.Output.HARCookieReport:=t1.Output.HARCookieReport'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'

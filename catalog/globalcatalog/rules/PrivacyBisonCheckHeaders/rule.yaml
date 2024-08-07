@@ -1,0 +1,44 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: PrivacyBisonCheckHeaders
+  purpose: Check for vulnarability in Headers
+  description: Check for vulnarability in Headers
+  labels:
+    appType:
+    - nocredapp
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - nocredapp
+spec:
+  tasks:
+  - name: CheckHeaders
+    alias: t1
+    type: task
+    purpose: Check for vulnarability in Headers
+    description: Check for vulnarability in Headers
+  ioMap:
+  - 't1.Input.HarFilePath:=*.Input.HarFilePath'
+  - '*.Output.StrictTransportSecurityLog:=t1.Output.StrictTransportSecurityLog'
+  - '*.Output.StdStrictTransportSecurityLog:=t1.Output.StdStrictTransportSecurityLog'
+  - '*.Output.PublicKeyPinsLog:=t1.Output.PublicKeyPinsLog'
+  - '*.Output.StdPublicKeyPinsLog:=t1.Output.StdPublicKeyPinsLog'
+  - '*.Output.ExpectCTLog:=t1.Output.ExpectCTLog'
+  - '*.Output.StdExpectCTLog:=t1.Output.StdExpectCTLog'
+  - '*.Output.XFrameOptionsLog:=t1.Output.XFrameOptionsLog'
+  - '*.Output.StdXFrameOptionsLog:=t1.Output.StdXFrameOptionsLog'
+  - '*.Output.AccessControlAllowOriginLog:=t1.Output.AccessControlAllowOriginLog'
+  - '*.Output.StdAccessControlAllowOriginLog:=t1.Output.StdAccessControlAllowOriginLog'
+  - '*.Output.XContentTypeOptionsLog:=t1.Output.XContentTypeOptionsLog'
+  - '*.Output.StdXContentTypeOptionsLog:=t1.Output.StdXContentTypeOptionsLog'
+  - '*.Output.RefererPolicyLog:=t1.Output.RefererPolicyLog'
+  - '*.Output.StdRefererPolicyLog:=t1.Output.StdRefererPolicyLog'
+  - '*.Output.ETagLog:=t1.Output.ETagLog'
+  - '*.Output.StdETagLog:=t1.Output.StdETagLog'
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=t1.Output.LogFile'

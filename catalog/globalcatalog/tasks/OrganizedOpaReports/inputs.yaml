@@ -1,0 +1,15 @@
+userObject:
+  app:
+    name: Kubernetes
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      Jumphost:
+        UserID: "$INSTANCE_USER_NAME"
+        LoginUrl: "$INSTANCE_LOGIN_URL"
+        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
+userInputs:
+  DataFile: "<<MINIO_FILE_PATH>>"
+  LogFile : "<<MINIO_FILE_PATH>>"
+fromDate: 2023-11-24
+toDate: 2023-11-24

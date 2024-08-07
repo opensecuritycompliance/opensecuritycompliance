@@ -1,0 +1,6 @@
+requests
+pandas
+pyarrow
+minio 
+pyyaml
+yapf

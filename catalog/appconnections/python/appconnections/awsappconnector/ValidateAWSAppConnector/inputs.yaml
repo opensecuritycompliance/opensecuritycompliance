@@ -1,0 +1,13 @@
+userObject:
+  name: AWSAppConnector
+userInputs:
+  appPort: 0
+  appURL: https://aws.amazon.com
+  userDefinedCredentials:
+    AWSIAM:
+      AccessKey: "$AWS_ACCESS_KEY" 
+      SecretKey: "$AWS_SECRET_KEY"
+    AWSRole:
+      AccessKey: "$AWS_ROLE_ACCESS_KEY"
+      SecretKey: "$AWS_ROLE_SECRET_KEY"
+      RoleARN: "$AWS_ROLE_ARN"

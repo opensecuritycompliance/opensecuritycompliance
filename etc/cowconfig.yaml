@@ -1,0 +1,25 @@
+version: "1.0"
+pathConfiguration:
+  tasksPath: /policycow/catalog/globalcatalog/tasks
+  rulesPath: /policycow/catalog/globalcatalog/rules
+  executionPath: /policycow/cowexecutions
+  ruleGroupPath: /policycow/catalog/globalcatalog/rulegroups
+  synthesizersPath: /policycow/catalog/globalcatalog/synthesizers
+  applicationScopePath: /policycow/catalog/applicationscope
+  yamlFilesPath: /policycow/catalog/globalcatalog/yamlfiles
+  downloadsPath: /policycow/exported-data
+  dashboardsPath: /policycow/catalog/globalcatalog/dashboards
+  localCatalogPath: /policycow/catalog/localcatalog
+  declarativePath: /policycow/catalog/globalcatalog/declaratives
+  appConnectionPath: /policycow/catalog/appconnections
+  applicationClassPath: /policycow/catalog/globalcatalog/yamlfiles/applications
+  credentialsPath: /policycow/catalog/globalcatalog/yamlfiles/credentials
+
+  portNo: 13300
+userData:
+  credentials:
+    compliancecow:
+      clientId: ""
+      clientSecret: ""
+      subDomain: "dev"
+

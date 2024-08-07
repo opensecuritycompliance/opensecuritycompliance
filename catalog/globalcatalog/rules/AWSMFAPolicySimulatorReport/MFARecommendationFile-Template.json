@@ -1,0 +1,10 @@
+[
+   {
+      "Action": "ec2:StopInstances,ec2:TerminateInstances,iam:DeleteUser,iam:DeleteGroupPolicy",
+      "Resource": "*"
+   },
+   {
+      "Action": "s3:PutObject,s3:DeleteObject",
+      "Resource": "*"
+   }
+]

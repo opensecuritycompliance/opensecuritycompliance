@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: NoCredApp
+  displayName: NoCredApp
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - nocredapp
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - nocredapp
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateNoCredApp
+    taskVersion: ""
+  credentialTypes:
+  - name: NoCred
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: NoCred
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

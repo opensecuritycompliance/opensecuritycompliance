@@ -1,0 +1,9 @@
+userObject:
+  name: SSHConnector
+userInputs:
+  appPort: 22
+  appURL: http://localhost.com
+  userDefinedCredentials:
+    SSH:
+      UserName: "$USERNAME"
+      SSHKey: "$SSH_PRIVATE_KEY"

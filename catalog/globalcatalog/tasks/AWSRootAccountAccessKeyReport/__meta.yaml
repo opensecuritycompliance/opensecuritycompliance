@@ -1,0 +1,38 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 11/12/2023
+name: AWSRootAccountAccessKeyReport
+displayName: AWS Root Account Access Key Report
+version: '1.0'
+description: Generate a compliance report of AWS root account access key report
+shaToken: ''
+showInCatalog: true
+icon: fas fa-sort-amount-down-alt
+type: go
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AWSCredentialReport
+  description: AWS Credential Report
+  type: string
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  isRequired: true
+outputs:
+- name: NoAccessKeyWithRootAccount
+  description: No AccessKey With Root Account
+  type: string
+- name: LogFile
+  description: Log File
+  type: string
+- name: CompliancePCT_
+  description: Compliance Percentage
+  type: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  type: string

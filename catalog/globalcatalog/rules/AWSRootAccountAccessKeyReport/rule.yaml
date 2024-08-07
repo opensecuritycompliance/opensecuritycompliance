@@ -1,0 +1,29 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: AWSRootAccountAccessKeyReport
+  purpose: Generate a compliance report of AWS root account access key report
+  description: Generate a compliance report of AWS root account access key report
+  labels:
+    appType:
+    - aws
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - aws
+spec:
+  tasks:
+  - name: AWSRootAccountAccessKeyReport
+    alias: t1
+    type: task
+    purpose: Generate a compliance report of AWS root account access key report
+    description: Generate a compliance report of AWS root account access key report
+  ioMap:
+  - t1.Input.AWSCredentialReport:=*.Input.AWSCredentialReport
+  - '*.Output.NoAccessKeyWithRootAccount:=t1.Output.NoAccessKeyWithRootAccount'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'

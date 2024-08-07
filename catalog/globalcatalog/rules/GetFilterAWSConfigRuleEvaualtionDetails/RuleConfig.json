@@ -1,0 +1,189 @@
+[
+	{
+		"RuleName": "access-keys-rotated",
+		"EvidenceName" : "AccessKeysRotated",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Aurora MySQL cluster has backtracking enabled",
+				"ValidationStatusCode": "BK_ENABLED",
+				"ValidationStatusNotes": "Aurora MySQL cluster has backtracking enabled"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Aurora MySQL cluster has backtracking disabled",
+				"ValidationStatusCode": "BK_DISABLED",
+				"ValidationStatusNotes": "Aurora MySQL cluster has backtracking disabled"
+			}
+		]
+	},
+	{
+		"RuleName": "securityhub-s3-bucket-logging-enabled-4e7a6d0d",
+		"EvidenceName" : "s3BucketLoggingEnabled",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Logging is enabled for the S3 bucket",
+				"ValidationStatusCode": "SAL_ENABLED",
+				"ValidationStatusNotes": "Server access logging is enabled"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Logging is disabled for the S3 bucket",
+				"ValidationStatusCode": "SAL_DISABLED",
+				"ValidationStatusNotes": "Server access logging is disabled"
+			}
+		]
+	},
+	{
+		"RuleName": "cloud-trail-cloud-watch-logs-enabled",
+		"EvidenceName" : "CloudTrailLogsSentToCloudWatch",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "This CloudTrail log is sent to CloudWatch",
+				"ValidationStatusCode": "CT_CW_INTEG",
+				"ValidationStatusNotes": "CloudWatch Logs is configured for this trail"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "This CloudTrail log is not sent to CloudWatch",
+				"ValidationStatusCode": "CT_CW_NOT_INTEG",
+				"ValidationStatusNotes": "CloudWatch Logs is not configured for this trail"
+			}
+		]
+	},
+	{
+		"RuleName": "cloudtrail-s3-dataevents-enabled",
+		"EvidenceName" : "CloudTrailS3DataEventsLoggingEnabled",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Dataevents logging for all S3 buckets is enabled",
+				"ValidationStatusCode": "CT_CONF_LOG_S3DATAEV",
+				"ValidationStatusNotes": "One or more CloudTrail Trail(s) configured to log data events for Amazon S3 for the account"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Dataevents logging for all S3 buckets is NOT enabled",
+				"ValidationStatusCode": "NO_CT_CONF_LOG_S3DATAEV",
+				"ValidationStatusNotes": "No CloudTrail Trail is configured to log data events for Amazon S3 for the account"
+			}
+		],
+		"NOT_DETERMINED": [
+			{
+				"ComplianceStatusReason": "Dataevents logging for all S3 buckets status could not be assessed",
+				"ValidationStatusCode": "NT_DTR",
+				"ValidationStatusNotes": "one of the required/optional parameters is not valid, or not of the correct type, or is formatted incorrectly/No S3 buckets"
+			}
+		]
+	},
+	{
+		"RuleName": "cw-loggroup-retention-period-check",
+		"EvidenceName" : "CloudWatchLogGrpRetentionPeriodCheck",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "retentionInDays is equal to more than MinRetentionTime 365 days",
+				"ValidationStatusCode": "RP_GT_MINRP",
+				"ValidationStatusNotes": "Retention Period in days is equal to more than Minumum retention period(default being 365 days)"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "retentionInDays is less than MinRetentionTime 365 days",
+				"ValidationStatusCode": "RP_LT_MINRP",
+				"ValidationStatusNotes": "Retention Period in days is less than Minumum retention period(default being 365 days)"
+			}
+		]
+	},
+	{
+		"RuleName": "multi-region-cloudtrail-enabled",
+		"EvidenceName" : "MultiRegionCloudtrailEnabled",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Atleast one multi region CloudTrail trail is present for the account",
+				"ValidationStatusCode": "MUL_REG_CT_EXISTS",
+				"ValidationStatusNotes": "Multi region CloudTrail trail that includes management events logging is present"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "There are no multi region CloudTrail trails for the account",
+				"ValidationStatusCode": "MUL_REG_CT_NOT_EXISTS",
+				"ValidationStatusNotes": "Multi region CloudTrail trail that includes management events logging is absent"
+			}
+		]
+	},
+	{
+		"RuleName": "iam-user-group-membership-check",
+		"EvidenceName" : "IamUserIsInAtleastOneGroup",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "User is Part of One or more Groups",
+				"ValidationStatusCode": "USER_IS_PART_OF_ONE_OR_MORE_GROUPS",
+				"ValidationStatusNotes": "User is Part of One or more Groups"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "NOT Attached with Any Groups",
+				"ValidationStatusCode": "USER_IS_NOT_PART_OF_ANY_GROUPS",
+				"ValidationStatusNotes": "User is not Part of One or more Group"
+			}
+		]
+	},
+	{
+		"RuleName": "backup-recovery-point-encrypted",
+		"EvidenceName" : "BackupRecoveryPointEncrypted",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Record compliant as backup recovery point is encrypted",
+				"ValidationStatusCode": "BACKUP_RECOVERY_POINT_ENCRYPTED",
+				"ValidationStatusNotes": "Backup recovery point is encrypted"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Record not compliant as backup recovery point is not encrypted",
+				"ValidationStatusCode": "BACKUP_RECOVERY_POINT_NOT_ENCRYPTED",
+				"ValidationStatusNotes": "Backup recovery point is not encrypted"
+			}
+		]
+	},
+    {
+		"RuleName": "iam-no-inline-policy-check",
+		"EvidenceName" : "IamNoInlinePolicyCheck",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "No inline policy is not attached with Iam user,IAM role or IAM group",
+				"ValidationStatusCode":   "IAM_NO_INLINE_POLICY_CHECK",
+				"ValidationStatusNotes": "No policy is directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Inline policy is not attached with Iam user,IAM role or IAM group",
+				"ValidationStatusCode": "IAM_INLINE_POLICY_CHECK",
+				"ValidationStatusNotes": "One or more policy is directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role"
+			}
+		]
+	},
+	{
+		"RuleName": "ec2-instance-profile-attached",
+		"EvidenceName": "Ec2InstanceProfileAttached",
+		"COMPLIANT": [
+			{
+				"ValidationStatusCode": "EC2_INSTANCE_PROFILE_ATTACHED",
+				"ValidationStatusNotes": "An IAM profile is attached to the Amazon EC2 instance.",
+				"ComplianceStatusReason": "The Amazon EC2 instance has an IAM profile attached. This allows for secure and controlled access to AWS resources by granting specific permissions"
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+			  "ValidationStatusCode": "EC2_INSTANCE_PROFILE_NOT_ATTACHED",
+				"ValidationStatusNotes": "No IAM profile is attached to the Amazon EC2 instance.",
+				"ComplianceStatusReason": "The Amazon EC2 instance does not have an IAM profile attached. Without an IAM profile attached an EC2 instance lacks access to required AWS resources, potentially causing functionality issues or security gaps"
+			}
+		]
+	}
+]

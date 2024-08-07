@@ -1,0 +1,59 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 02/07/2024
+name: FetchAzureBackupStorageAccessUsersList
+displayName: FetchAzureBackupStorageAccessUsersList
+version: '1.0'
+description: FetchAzureBackupStorageAccessUsersList
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AzureRoleAssignmentsData # A unique identifier of the task input
+  description: AzureRoleAssignmentsData # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+- name: AzureUsersList # A unique identifier of the task input
+  description: AzureUsersList # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+- name: AzureStorageAccountsData # A unique identifier of the task input
+  description: AzureStorageAccountsData # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+- name: BackupStorageRegexPattern # A unique identifier of the task input
+  description: BackupStorageRegexPattern # A concise description of the task input
+  type: string # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: backup # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+outputs:
+- name: AzureBackupStorageAccessUsersList
+  description: AzureBackupStorageAccessUsersList
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: compliance status of the task
+  type: string
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  type: int

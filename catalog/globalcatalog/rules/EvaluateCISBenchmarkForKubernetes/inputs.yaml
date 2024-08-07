@@ -1,0 +1,14 @@
+userObject:
+  app:
+    name: Kubernetes
+    appPort: "0"
+    appURL: "$INSTANCE_LOGIN_URL"
+    userDefinedCredentials:
+      Jumphost:
+        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
+        UserID: "$INSTANCE_USER_NAME"
+userInputs:
+  ControlNumber : "" # To view all control reports, enter '*' or leave the field blank. To view a specific control report, provide the control number
+  RuleConfig :   <<MINIO_FILE_PATH>>
+fromDate: 2023-11-24
+toDate: 2023-11-24

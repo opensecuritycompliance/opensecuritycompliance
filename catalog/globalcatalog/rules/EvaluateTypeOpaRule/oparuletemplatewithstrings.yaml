@@ -1,0 +1,55 @@
+apiVersion: v2beta
+kind: OPARule
+metadata: 
+  name: OPARuleSample
+  purpose: "OPA Rule Sample Template"
+  description: "In order to create your own OPA rule fill in the below details"
+spec: 
+  format: "yaml"
+  ruleselector: ""
+  source : kubernetes
+  # source can be :
+    # - kubernetes
+    # - aws
+  query: "data.main.deny[x]"
+  rego:
+    type: "regostring"        
+    # type can be :
+    # localfile : "deploy.rego"
+    # networkfile : "url"
+    # regostring
+
+    regostring: |
+              package main
+
+              deny[msg] {
+                input.kind == "Deployment"
+                not input.spec.template.spec.securityContext.runAsNonRoot
+
+                msg := "Containers must not run as root"
+              }
+
+              deny[msg] {
+                input.kind == "Deployment"
+                not input.spec.selector.matchLabels.app
+
+                msg := "Containers must provide app label for pod selectors"
+              }
+  # The below include and exclude criteria are optional and can be used to filter resources specific to Kubernetes 
+  includeCriteria: "cluster/*/namespace/*/deployment/*" 
+  excludecriteria: "cluster/*/namespace/default" 
+  input:
+    type: "regostring"        
+    # type can be :
+    # localfile : "deploy.rego"
+    # networkfile : "url"
+    # regostring
+  outputs: 
+    # compliancepct: 100
+    # compliancestatus : Compliant
+    files: 
+      - name: EvaluationOutput
+        shortname: EvaluationOutput
+        # format: csv
+
+    

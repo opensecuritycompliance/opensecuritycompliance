@@ -1,0 +1,35 @@
+authors:
+- musadhiek.p@continube.com
+domain: continube
+createdDate: 12/12/2023
+name: GetAzureVirtualMachinesData
+displayName: Get Azure Virtual Machines Data
+version: '1.0'
+description: Get Azure Virtual Machines Data
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- {}
+outputs:
+- name: AzureVirtualMachinesData
+  description: AzureVirtualMachinesData
+  type: file
+- name: AzureVirtualMachinesExtensionsData
+  description: AzureVirtualMachinesExtensionsData
+  type: file
+- name: LogFile
+  description: LogFile
+  type: file
+- name: ComplianceStatus_
+  description: ComplianceStatus_
+  type: string
+- name: CompliancePCT_
+  description: CompliancePCT_
+  type: int

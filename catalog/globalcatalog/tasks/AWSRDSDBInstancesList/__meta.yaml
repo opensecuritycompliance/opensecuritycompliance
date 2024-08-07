@@ -1,0 +1,38 @@
+authors:
+- sangavi.l@continube.com
+domain: continube
+createdDate: 29/02/2024
+name: AWSRDSDBInstancesList
+displayName: AWS RDS DB Instances List
+version: '1.0'
+description: Fetch the AWS RDS DB instances
+shaToken: ''
+showInCatalog: true
+icon: fas fa-sort-amount-down-alt
+type: python
+tags:
+- application
+applicationType: application
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: Region
+  description: Region
+  type: string
+  allowedValues: []
+  defaultValue:
+  showField: true
+  isRequired: true
+outputs:
+- name: RDSDBInstancesList
+  description: RDS DB Instances List
+  type: string
+- name: LogFile
+  description: LogFile
+  type: string
+- name: CompliancePCT_
+  description: Compliance Percentage
+  type: int
+- name: ComplianceStatus_
+  description: Compliance Status
+  type: string

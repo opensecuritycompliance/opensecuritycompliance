@@ -1,0 +1,12 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  HarFile: <<MINIO_FILE_PATH>>
+fromDate: 2024-07-05 
+toDate: 2024-07-05

@@ -1,0 +1,16 @@
+userObject:
+  app:
+    name: AzureAppConnector
+    appURL: https://portal.azure.com
+    appPort: "0"
+    userDefinedCredentials:
+      Azure:
+        clientID: $AZURE_CLIENT_ID
+        clientSecret: $AZURE_CLIENT_SECRET
+        tenantID: $AZURE_TENANT_ID
+        subscriptionID:  $AZURE_SUBSCRIPTION_ID
+userInputs:
+  AzureLogAnalyticsWorkSpaceData: <<MINIO_FILE_PATH>>
+  RetentionInDays: 
+fromDate: 2024-01-17
+toDate: 2024-01-17

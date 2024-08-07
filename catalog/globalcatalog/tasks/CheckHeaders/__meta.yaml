@@ -1,0 +1,86 @@
+authors:
+- musa.p@continube.com
+domain: continube
+createdDate: 04/02/2024
+name: CheckHeaders
+displayName: Check Headers
+version: '1.0'
+description: Check Headers
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: go
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: HarFilePath # A unique identifier of the task input
+  description: HarFilePath # A concise description of the task input
+  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  isRequired: true # boolean: true | false
+outputs:
+- name: StrictTransportSecurityLog
+  description: StrictTransportSecurityLog
+  type: file
+- name: StdStrictTransportSecurityLog
+  description: StdStrictTransportSecurityLog
+  type: file
+- name: PublicKeyPinsLog
+  description: PublicKeyPinsLog
+  type: file
+- name: StdPublicKeyPinsLog
+  description: StdPublicKeyPinsLog
+  type: file
+- name: ExpectCTLog
+  description: ExpectCTLog
+  type: file
+- name: StdExpectCTLog
+  description: StdExpectCTLog
+  type: file
+- name: XFrameOptionsLog
+  description: XFrameOptionsLog
+  type: file
+- name: StdXFrameOptionsLog
+  description: StdXFrameOptionsLog
+  type: file
+- name: AccessControlAllowOriginLog
+  description: AccessControlAllowOriginLog
+  type: file
+- name: StdAccessControlAllowOriginLog
+  description: StdAccessControlAllowOriginLog
+  type: file
+- name: XContentTypeOptionsLog
+  description: XContentTypeOptionsLog
+  type: file
+- name: StdXContentTypeOptionsLog
+  description: StdXContentTypeOptionsLog
+  type: file
+- name: RefererPolicyLog
+  description: RefererPolicyLog
+  type: file
+- name: StdRefererPolicyLog
+  description: StdRefererPolicyLog
+  type: file
+- name: ETagLog
+  description: ETagLog
+  type: file
+- name: StdETagLog
+  description: StdETagLog
+  type: file
+- name: ErrorDetails
+  description: ErrorDetails
+  type: string
+- name: LogFile
+  description: LogFile
+  type: file    
+- name: ComplianceStatus_
+  description: compliance status of the task
+  type: string
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  type: int

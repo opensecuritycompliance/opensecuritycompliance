@@ -1,0 +1,19 @@
+userObject:
+  app:
+    name: AWSAppConnector
+    appURL: https://aws.amazon.com
+    appPort: "0"
+    userDefinedCredentials:
+      AWSIAM:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+      AWSRole:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+        RoleARN: "$AWS_ROLE_ARN"
+userInputs:
+   Region: []
+   AWSProductName:
+   FindingsRecordState:
+fromDate: 2023-11-25
+toDate: 2023-11-25

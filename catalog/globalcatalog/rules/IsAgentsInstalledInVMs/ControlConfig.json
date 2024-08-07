@@ -1,0 +1,63 @@
+[
+    {
+        "ControlName": "ascdependencyagentauditlinuxeffect",
+        "Linux": {
+            "AgentType": "DependencyAgentLinux",
+            "COMPLIANT": {
+                "ComplianceStatusReason": "Azure Security Center dependency agents are installed for Linux VM",
+                "ValidationStatusCode": "DEPAGTS_LX_PROV",
+                "ValidationStatusNotes": "No Actions Required"
+            },
+            "NON_COMPLIANT": {
+                "ComplianceStatusReason": "Azure Security Center dependency agents are not installed for Linux VM",
+                "ValidationStatusCode": "DEPAGTS_LX_NOT_PROV",
+                "ValidationStatusNotes": "Install the DependencyAgentLinux extension for Linux VM"
+            }
+        }
+    },
+    {
+        "ControlName": "ascdependencyagentauditwindowseffect",
+        "Windows": {
+            "AgentType": "DependencyAgentWindows",
+            "COMPLIANT": {
+                "ComplianceStatusReason": "Azure Security Center dependency agents are installed for Windows VM",
+                "ValidationStatusCode": "DEPAGTS_WIN_PROV",
+                "ValidationStatusNotes": "No Actions Required"
+            },
+            "NON_COMPLIANT": {
+                "ComplianceStatusReason": "Azure Security Center dependency agents are not installed for Windows VM",
+                "ValidationStatusCode": "DEPAGTS_WIN_NOT_PROV",
+                "ValidationStatusNotes": "Install the DependencyAgentWindows extension for Windows VM"
+            }
+        }
+    },
+    {
+        "ControlName": "installloganalyticsagentonvmmonitoring",
+        "Windows": {
+            "AgentType": "AzureMonitorWindowsAgent",
+            "COMPLIANT": {
+                "ComplianceStatusReason": "MicrosoftMonitoringAgent extension is found",
+                "ValidationStatusCode": "MMA_EXT_INSTALLED",
+                "ValidationStatusNotes": "No Actions Required"
+            },
+            "NON_COMPLIANT": {
+                "ComplianceStatusReason": "MicrosoftMonitoringAgent extension is not found",
+                "ValidationStatusCode": "MMA_EXT_NOT_INSTALLED",
+                "ValidationStatusNotes": "Install MicrosoftMonitoringAgent to become compliant"
+            }
+        },
+        "Linux": {
+            "AgentType": "AzureMonitorLinuxAgent",
+            "COMPLIANT": {
+                "ComplianceStatusReason": "OmsAgentForLinux extension is found",
+                "ValidationStatusCode": "OMS_EXT_INSTALLED",
+                "ValidationStatusNotes": "No Actions Required"
+            },
+            "NON_COMPLIANT": {
+                "ComplianceStatusReason": "OmsAgentForLinux extension is not found",
+                "ValidationStatusCode": "OMS_EXT_NOT_INSTALLED",
+                "ValidationStatusNotes": "Install OmsAgentForLinux to become compliant"
+            }
+        }
+    }
+]
