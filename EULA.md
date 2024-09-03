@@ -1,6 +1,6 @@
-# End-User License Agreement for POLICYCOW™ Community Version by COMPLIANCECOW™
+# End-User License Agreement for Open Security Compliance™ Community Version by COMPLIANCECOW™
 
-This End-User License Agreement (this “EULA”, "LICENSE") is a legal agreement between you (either an individual or an entity) (“Customer” or “you”) and ContiNube, Inc. (DBA "ComplianceCow") governing the terms of use by Customer of the software identified as POLICYCOW™ Community Version (the “Software”) and any associated media, printed materials and online or electronic documentation that may be provided by ComplianceCow™ with respect to the Software (collectively, the “Software Materials”). The Software and the Software Materials are sometimes referred to collectively as the “Software Product.”
+This End-User License Agreement (this “EULA”, "LICENSE") is a legal agreement between you (either an individual or an entity) (“Customer” or “you”) and ContiNube, Inc. (DBA "ComplianceCow") governing the terms of use by Customer of the software identified as Open Security Compliance™ Community Version (the “Software”) and any associated media, printed materials and online or electronic documentation that may be provided by ComplianceCow™ with respect to the Software (collectively, the “Software Materials”). The Software and the Software Materials are sometimes referred to collectively as the “Software Product.”
 
 **BY CLICKING “I AGREE” OR TAKING ANY STEP TO INSTALL, COPY OR USE THE SOFTWARE OR ANY SOFTWARE MATERIALS, YOU ARE AGREEING TO BE BOUND BY THE TERMS AND CONDITIONS OF THIS EULA. IF YOU DO NOT AGREE WITH ANY SUCH TERMS AND CONDITIONS, DO NOT CLICK “I AGREE” OR OTHERWISE TAKE ANY STEP TO INSTALL, COPY OR USE THE SOFTWARE OR ANY SOFTWARE MATERIALS.**
 
