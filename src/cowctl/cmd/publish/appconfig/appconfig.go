@@ -38,6 +38,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().String("sub-domain", "", "where to publish? dev/partner. default partner ")
 	cmd.Flags().String("host", "", "where to publish? (eg:dev.compliancecow.live) ")
 	cmd.Flags().Bool("can-override", false, "rule already exists in the system")
+	cmd.Flags().Bool("binary", false, "whether using cowctl binary")
 
 	return cmd
 }
@@ -51,7 +52,9 @@ func runE(cmd *cobra.Command) error {
 
 	namePointer := &vo.CowNamePointersVO{}
 
+	var binaryEnabled bool
 	if cmd.Flags().HasFlags() {
+		binaryEnabled, _ = cmd.Flags().GetBool("binary")
 
 		if appNameFlag := cmd.Flags().Lookup("name"); appNameFlag != nil {
 			namePointer.Name = appNameFlag.Value.String()
@@ -80,7 +83,7 @@ func runE(cmd *cobra.Command) error {
 
 	}
 
-	err = publishApplicationRecursively(namePointer, additionalInfo, "Primary")
+	err = publishApplicationRecursively(namePointer, additionalInfo, "Primary", binaryEnabled)
 	if err != nil {
 		return err
 	}
@@ -88,7 +91,7 @@ func runE(cmd *cobra.Command) error {
 	return err
 }
 
-func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo, appType string) error {
+func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo, appType string, binaryEnabled bool) error {
 	defaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
 
 	appDeclarativesPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, constants.UserDefinedApplicationPath)
@@ -112,26 +115,27 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 			return fmt.Errorf("application not available")
 		}
 	}
-
-	linkedApplications, _ := applications.GetLinkedApplications(namePointer, additionalInfo)
-	if len(linkedApplications) > 0 {
-		linkedAppNames := make([]string, 0)
-		for _, linkedApp := range linkedApplications {
-			linkedAppNames = append(linkedAppNames, linkedApp.Name)
-		}
-		d := color.New(color.FgGreen, color.Bold)
-		d.Printf("\nLinked application types found for '%s'. We are publishing these linked applications: %v\n", namePointer.Name, strings.Join(linkedAppNames, ","))
-		for _, linkedApp := range linkedApplications {
-			newNamePointer := &vo.CowNamePointersVO{
-				Name:    linkedApp.Name,
-				Version: linkedApp.Version,
+	if !binaryEnabled {
+		linkedApplications, _ := applications.GetLinkedApplications(namePointer, additionalInfo)
+		if len(linkedApplications) > 0 {
+			linkedAppNames := make([]string, 0)
+			for _, linkedApp := range linkedApplications {
+				linkedAppNames = append(linkedAppNames, linkedApp.Name)
 			}
-			newAdditionalInfo := &vo.AdditionalInfo{
-				PolicyCowConfig: additionalInfo.PolicyCowConfig,
-			}
-			err := publishApplicationRecursively(newNamePointer, newAdditionalInfo, "Linked")
-			if err != nil {
-				return err
+			d := color.New(color.FgGreen, color.Bold)
+			d.Printf("\nLinked application types found for '%s'. We are publishing these linked applications: %v\n", namePointer.Name, strings.Join(linkedAppNames, ","))
+			for _, linkedApp := range linkedApplications {
+				newNamePointer := &vo.CowNamePointersVO{
+					Name:    linkedApp.Name,
+					Version: linkedApp.Version,
+				}
+				newAdditionalInfo := &vo.AdditionalInfo{
+					PolicyCowConfig: additionalInfo.PolicyCowConfig,
+				}
+				err := publishApplicationRecursively(newNamePointer, newAdditionalInfo, "Linked", binaryEnabled)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -152,7 +156,7 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 	errorDetails := applications.PublishApplication(namePointer, additionalInfo)
 	if len(errorDetails) > 0 {
 		if strings.Contains(errorDetails[0].Issue, constants.ErrorAppAlreadyPresent) {
-			if !defaultConfigPath && !additionalInfo.CanOverride {
+			if !defaultConfigPath || binaryEnabled && !additionalInfo.CanOverride {
 				return errors.New("The application type is already present in the system. To override with a new implementation, set the 'can-override' flag as true")
 			}
 			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The application type is already present in the system, and it will be overridden with a new implementation. Do you want to go ahead?")

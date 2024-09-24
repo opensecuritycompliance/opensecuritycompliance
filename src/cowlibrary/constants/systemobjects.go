@@ -105,6 +105,23 @@ const SystemObjects = `[
         ],
         "Server": {
             "servername": "semgrep-cli"
+        }	
+    },
+	{
+		"Credentials": [
+            {
+				"othercredinfomap": {
+					"OrgEmailID": "$QULAYS_SSL_LAB_ORG_EMAIL_ID"
+				}
+            }
+        ],
+		"App": {
+            "appName": "ssltls",
+            "appTags": {
+                "app": [
+                    "ssltls"
+                ]
+            }
         }
-    }
+	}
 ]`

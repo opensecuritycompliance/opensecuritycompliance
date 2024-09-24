@@ -3,6 +3,7 @@ package application
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -35,11 +36,28 @@ func runE(cmd *cobra.Command) error {
 	}
 	apps := utils.GetApplicationNamesForBinary([]string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
 	jsonData, err := json.Marshal(apps)
-    if err != nil {
+	if err != nil {
 		fmt.Println("err:", err)
-        return err
-    }
+		return err
+	}
 
-	fmt.Println(string(jsonData))
+	folderPath := "./export"
+	filePath := folderPath + "/applications.json"
+
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err := os.Mkdir(folderPath, os.ModePerm) // Create the folder
+		if err != nil {
+			fmt.Println("err:", err)
+			return err
+		}
+	}
+
+	// Write jsonData to a file
+	err = os.WriteFile(filePath, jsonData, os.ModePerm)
+	if err != nil {
+		fmt.Println("err:", err)
+		return err
+	}
+
 	return err
 }

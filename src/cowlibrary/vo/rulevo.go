@@ -57,7 +57,6 @@ type Rule struct {
 	FailThresholdPCT  int       `json:"failThresholdPCT,omitempty"`
 
 	TasksInfo      []interface{}       `json:"tasksinfo,omitempty"`
-	InputsMeta__   []*RuleUserInputVO  `json:"inputsMeta__,omitempty"`
 	RuleIOValues   *IOValues           `json:"ruleiovalues,omitempty"`
 	RefMaps        []*RefStruct        `json:"refmaps,omitempty"`
 	RuleTags       map[string][]string `json:"ruleTags,omitempty"`
@@ -126,6 +125,7 @@ type SynthesizeVO struct {
 
 type IOValues struct {
 	Inputs          map[string]interface{} `json:"inputs,omitempty"`
+	InputsMeta__    []*RuleUserInputVO     `json:"inputsMeta__,omitempty"`
 	Outputs         map[string]interface{} `json:"outputs,omitempty"`
 	Facts           map[string]interface{} `json:"facts,omitempty"`
 	OutputFiles     map[string]string      `json:"outputFiles,omitempty"`
@@ -438,4 +438,20 @@ type PublishRuleVO struct {
 type DomainDetailVO struct {
 	ClientID   string `json:"clientId"`
 	DomainName string `json:"domainName"`
+}
+
+type LogEntry struct {
+	CreatedTime string            `json:"createdTime"`
+	Payload     map[string]string `json:"payload"`
+}
+
+type TaskLog struct {
+	TaskName string     `json:"taskName"`
+	Logs     []LogEntry `json:"logs"`
+}
+
+type RuleLogData struct {
+	RuleName        string    `json:"ruleName"`
+	ApplicationName string    `json:"applicationName"`
+	Tasks           []TaskLog `json:"tasks"`
 }

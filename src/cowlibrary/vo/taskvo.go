@@ -25,20 +25,20 @@ type PolicyCowTaskVO struct {
 type PolicyCowTaskInputVO struct {
 	Name            string        `json:"name,omitempty" yaml:"name,omitempty"`
 	Description     string        `json:"description,omitempty" yaml:"description,omitempty"`
-	Type            string        `json:"type,omitempty" yaml:"type,omitempty"`
+	DataType        string        `json:"dataType,omitempty" yaml:"dataType,omitempty"`
 	Repeated        bool          `json:"repeated,omitempty" yaml:"repeated,omitempty"`
 	DisplayName     string        `json:"displayName,omitempty" yaml:"displayName,omitempty"`
 	AllowedValues   []interface{} `json:"allowedValues,omitempty" yaml:"allowedValues,omitempty"`
 	DefaultValue    string        `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty"`
 	ShowField       bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
-	IsRequired      bool          `json:"isRequired,omitempty" yaml:"isRequired,omitempty"`
+	Required        bool          `json:"required,omitempty" yaml:"required,omitempty"`
 	AllowUserValues bool          `json:"allowUserValues" yaml:"allowUserValues,omitempty"`
 }
 
 type PolicyCowTaskOutputVO struct {
 	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-	Type        string `json:"type,omitempty" yaml:"type,omitempty"`
+	DataType    string `json:"dataType,omitempty" yaml:"dataType,omitempty"`
 }
 type CowTaskCriteriaVO struct {
 	CriteriaVO
@@ -53,4 +53,5 @@ type CowTaskCriteriaVO struct {
 	Type            []string `json:"type,omitempty" in:"query=type,Type,type[],Type[]"`
 	Tags            []string `json:"tags,omitempty" in:"query=tags,Tags,tags[],Tags[]"`
 	ApplicationType []string `json:"applicationType,omitempty" in:"query=application_type,application_type[],applicationType,applicationType[]"`
+	ApplicationName string   `json:"applicationName,omitempty" in:"query=application_name,application_name[],applicationName,applicationName[]"`
 }

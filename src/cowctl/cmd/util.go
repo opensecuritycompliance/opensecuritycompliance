@@ -249,7 +249,7 @@ func SuggestionPrompt(prefix string, completer func(d prompt.Document) []prompt.
 	}
 	result := prompt.Input(prefix, completer,
 		prompt.OptionTitle(""),
-		prompt.OptionHistory([]string{""}),
+		prompt.OptionHistory([]string{}),
 		prompt.OptionPrefixTextColor(theme.PrefixTextColor),
 		prompt.OptionSelectedSuggestionBGColor(theme.SelectedSuggestionBGColor),
 		prompt.OptionSuggestionBGColor(theme.SuggestionBGColor),

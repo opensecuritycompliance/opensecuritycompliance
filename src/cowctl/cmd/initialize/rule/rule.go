@@ -41,6 +41,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().String("tasks-json-path", "", "json path for tasks.")
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
 	cmd.Flags().String("catalog", "", `use "globalcatalog" to init rule in globalcatalog/rules`)
+	cmd.Flags().Bool("can-override", false, "rule already exists in the system")
 	cmd.Flags().Bool("binary", false, "whether using cowctl binary")
 
 	return cmd
@@ -56,6 +57,14 @@ func runE(cmd *cobra.Command) error {
 	if additionalInfo.GlobalCatalog {
 		path = additionalInfo.PolicyCowConfig.PathConfiguration.RulesPath
 	}
+	isDefaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
+
+	if currentFlag := cmd.Flags().Lookup("can-override"); currentFlag != nil && currentFlag.Changed {
+		if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+			currentFlag.Value.Set("false")
+			additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
+		}
+	}
 
 	binaryEnabled, _ := cmd.Flags().GetBool("binary")
 	if !binaryEnabled {
@@ -63,69 +72,79 @@ func runE(cmd *cobra.Command) error {
 			ruleName = utils.GetFlagValueAndResetFlag(cmd, "name", "")
 			path = utils.GetFlagValueAndResetFlag(cmd, "path", path)
 		}
-	
+
 		if cowlibutils.IsNotEmpty(path) && cowlibutils.IsFolderNotExist(path) {
 			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Path is not available. Are you going to initialize the folder ?")
 			if !isConfirmed || err != nil {
 				return err
 			}
-	
+
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {
 				return err
 			}
-	
+
 		}
-	
-		ruleGetLabelName := "Rule Name (only alphabets and must start with a capital letter)"
-	
+
+		ruleGetLabelName := "Rule Name (only alphabets and numbers and must start with a capital letter)"
+
 		if cowlibutils.IsNotEmpty(ruleName) {
-			err := validationutils.ValidateAlphaName(ruleName)
+			err := validationutils.ValidateAlphaNumeric(ruleName)
 			if err != nil {
-				ruleGetLabelName = "Please enter a valid rule name(only alphabets and must start with a capital letter)"
+				ruleGetLabelName = "Please enter a valid rule name(only alphabets and numbers and must start with a capital letter)"
 				ruleName = ""
 			}
 		}
-	
+
 		if cowlibutils.IsEmpty(ruleName) {
-			ruleNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(ruleGetLabelName, true, validationutils.ValidateAlphaName)
+			ruleNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(ruleGetLabelName, true, validationutils.ValidateAlphaNumeric)
 			if err != nil || cowlibutils.IsEmpty(ruleNameFromCmd) {
 				return err
 			}
 			ruleName = ruleNameFromCmd
 		}
-	
+
 		rulePath, err := cowlibutils.GetRulePath(path, ruleName)
-	
+
 		if err != nil {
 			return err
 		}
-	
-		if cowlibutils.IsFolderExist(rulePath) {
+
+		if cowlibutils.IsFolderExist(rulePath) && !additionalInfo.CanOverride {
+			if !isDefaultConfigPath && !additionalInfo.CanOverride {
+				return fmt.Errorf("The rule is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
+			}
+
 			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Rule already presented in the directory. Are you sure you going to re-initialize ?")
 			if !isConfirmed || err != nil {
 				return err
 			}
-	
+
 			err = cowlibutils.RemoveChildrensFromFolder(rulePath)
 			if err != nil {
 				return err
 			}
-	
+
 		}
 		selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
 		if err != nil {
 			return err
 		}
-	
+
+		applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+		if err != nil {
+			return err
+		}
+		additionalInfo.ApplicationInfo = applicationInfo
+
 		taskNameMap := make(map[string]struct{}, 0)
-	
+
 		taskCount, err := utils.GetValueAsIntFromCmdPrompt("Enter the task count", true, 1, 5, utils.ValidateInt)
 		if err != nil || taskCount == -1 {
 			return err
 		}
 		taskNames := make([]*vo.TaskInputVO, 0)
-	
+
 		var taskPaths = make([]string, 0)
 		var useExistingTasks = make([]bool, 0)
 
@@ -154,18 +173,18 @@ func runE(cmd *cobra.Command) error {
 								filteredAvailableTaskNames = append(filteredAvailableTaskNames, taskName)
 							}
 						}
-	
+
 						selectedTaskName, err := utils.GetTaskNameFromCmdPromptInCatalogs("Select the existing task ", true, filteredAvailableTaskNames, catalogTypes)
 						if err != nil {
 							return err
 						}
-	
+
 						taskPath = cowlibutils.GetTaskPathFromCatalogForInit(additionalInfo, selectedTaskName, existingTask)
 						languageFromPath := cowlibutils.GetTaskLanguage(taskPath)
 						languageFromCmd := languageFromPath.String()
-	
+
 						taskNames = append(taskNames, &vo.TaskInputVO{TaskName: selectedTaskName, Language: languageFromCmd})
-	
+
 						emoji.Println("\n", selectedTaskName, " is selected :smiling_face_with_sunglasses: ")
 						if i < taskCount {
 							emoji.Println("\nChoose the next task or create a new task :person_surfing_tone1: ")
@@ -185,9 +204,9 @@ func runE(cmd *cobra.Command) error {
 				}
 				if !existingTask {
 					label := fmt.Sprintf("Enter the task '%d' name (only alphabets and must start with a capital letter):", i)
-	
+
 				TaskNameGetter:
-	
+
 					taskNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(label, true, validationutils.ValidateAlphaName)
 					if err != nil || cowlibutils.IsEmpty(taskNameFromCmd) {
 						return err
@@ -201,17 +220,17 @@ func runE(cmd *cobra.Command) error {
 						label = fmt.Sprintf("The task name has already been provided.\nEnter the task '%d' name (only alphabets and must start with a capital letter):", i)
 						goto TaskNameGetter
 					}
-	
+
 					for _, taskName := range availableTaskNames {
 						taskName = strings.ToLower(taskName)
 						if taskName == compareTaskName {
 							existingTask = true
 							isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Task already presented in the directory. Are you sure you going to re-initialize ?")
-	
+
 							if err != nil {
 								return err
 							}
-	
+
 							if !isConfirmed {
 								goto TaskNameGetter
 							}
@@ -220,33 +239,29 @@ func runE(cmd *cobra.Command) error {
 							if err != nil {
 								return err
 							}
-							
+
 						} else {
 							existingTask = false
 							taskPath = cowlibutils.GetTaskPathFromCatalogForInit(additionalInfo, taskNameFromCmd, existingTask)
 						}
 					}
-	
+
 					languageFromCmd, err := utils.GetConfirmationFromCmdPromptWithOptions("Select the programming language for task "+strconv.Itoa(i)+" python/go (default:go):", "go", []string{"go", "python"})
 					if err != nil || cowlibutils.IsEmpty(taskNameFromCmd) {
 						languageFromCmd = "go"
 					}
-	
+
 					taskNameMap[compareTaskName] = struct{}{}
-	
+
 					taskNames = append(taskNames, &vo.TaskInputVO{TaskName: taskNameFromCmd, Language: languageFromCmd})
-	
+
 					selectedTaskNames[compareTaskName] = true
 				}
 				taskPaths = append(taskPaths, taskPath)
 				useExistingTasks = append(useExistingTasks, existingTask)
 			}
 		}
-		applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
-		if err != nil {
-			return err
-		}
-		additionalInfo.ApplicationInfo = applicationInfo
+
 		directoryPath, err := rule.InitRule(ruleName, path, taskNames, additionalInfo)
 		if err != nil {
 			return err
@@ -284,7 +299,7 @@ func runE(cmd *cobra.Command) error {
 				}
 			}
 		}
-	
+
 		emoji.Println(" Rule creation is now complete :smiling_face_with_sunglasses:! You can start coding!!:person_surfing_tone1:")
 		additionalInfo.GlobalCatalog = false
 	} else {
@@ -302,7 +317,7 @@ func runE(cmd *cobra.Command) error {
 		if err != nil {
 			return err
 		}
-		
+
 		var tasks []taskJson.TaskJson
 		if err := json.Unmarshal(byteValue, &tasks); err != nil {
 			return err
@@ -313,7 +328,7 @@ func runE(cmd *cobra.Command) error {
 		for _, taskData := range tasks {
 			currentTask := vo.TaskInputVO{}
 			currentTask.TaskName = taskData.Name
-			
+
 			currentTask.Language = taskData.Language
 			var supportedLang constants.SupportedLanguage
 			supportedLanguage, err := supportedLang.GetSupportedLanguage(currentTask.Language)
@@ -337,26 +352,34 @@ func runE(cmd *cobra.Command) error {
 
 		}
 
-		_, err = rule.InitRule(ruleName, path, taskNames, additionalInfo)
+		directoryPath, err := rule.InitRule(ruleName, path, taskNames, additionalInfo)
 		if err != nil {
 			return err
 		}
+		additionalInfo.Path = directoryPath
 
 		for i, taskData := range taskNames {
-			var supportedLang constants.SupportedLanguage
-			supportedLanguage, err := supportedLang.GetSupportedLanguage(taskData.Language)
-			if err != nil {
-				return err
-			}
+			if tasks[i].Create {
+				var supportedLang constants.SupportedLanguage
+				supportedLanguage, err := supportedLang.GetSupportedLanguage(taskData.Language)
+				if err != nil {
+					return err
+				}
+				taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
 
-			taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
-			taskWithSpecicficLanguage.InitTask(tasks[i].Name, tasks[i].Path, &vo.TaskInputVO{}, additionalInfo)
+				if cowlibutils.IsFolderExist(filepath.Join(tasks[i].Path, tasks[i].Name)) {
+					err := cowlibutils.RemoveChildrensFromFolder(filepath.Join(tasks[i].Path, tasks[i].Name))
+					if err != nil {
+						return err
+					}
+				}
+
+				taskWithSpecicficLanguage.InitTask(tasks[i].Name, tasks[i].Path, &vo.TaskInputVO{}, additionalInfo)
+			}
 		}
-	
+
 		additionalInfo.GlobalCatalog = false
 	}
-
-	
 
 	return nil
 }

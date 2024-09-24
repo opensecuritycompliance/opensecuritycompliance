@@ -74,6 +74,15 @@ var ValidateAlphaName = func(input string) error {
 
 }
 
+var ValidateAlphaNumeric = func(input string) error {
+	pattern := "^[A-Z][A-Za-z0-9]*$"
+	regex := regexp.MustCompile(pattern)
+	if !regex.MatchString(input) {
+		return errors.New("invalid name")
+	}
+	return nil
+}
+
 var ValidateFilePath = func(input string) error {
 	if cowlibutils.IsEmpty(input) {
 		return errors.New("invalid path")
@@ -101,6 +110,14 @@ var ValidateVersionTyping = func(input string) error {
 	matched, err := regexp.MatchString(`^[0-9.]+$`, input)
 	if err != nil || !matched {
 		return errors.New("invalid version")
+	}
+	return nil
+}
+
+var ValidateStringAndFileURL = func(input string) error {
+	matched, err := regexp.MatchString(fmt.Sprintf(`^[A-Za-z][A-Za-z0-9\s&,.\-_()<>!?:/\\]{0,%d}$`, MaxLen), input)
+	if err != nil || !matched {
+		return errors.New("invalid input")
 	}
 	return nil
 }

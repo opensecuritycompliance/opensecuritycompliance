@@ -896,9 +896,13 @@ spec:
   inputs:
     BucketName: demo
   inputsMeta__:
-    - type: STRING
-      name: BucketName
-      value: demo
+    - name: BucketName
+      dataType: STRING
+      repeated: false
+      defaultValue: demo
+      allowedValues: []
+      showField: true
+      required: true
   tasks:
     - alias: t1
       name: taskName

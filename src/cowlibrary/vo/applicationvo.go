@@ -251,19 +251,19 @@ type ApplicationValidatorVO struct {
 	ApplicationType  string                 `json:"applicationType,omitempty" yaml:"applicationType,omitempty" validate:"required,alpha" binding:"required,alpha"`
 	CredentialType   string                 `json:"credentialType,omitempty" yaml:"credentialType,omitempty" validate:"required,alpha" binding:"required,alpha"`
 	CredentialValues map[string]interface{} `json:"credentialValues,omitempty" yaml:"credentialValues,omitempty" validate:"required" binding:"required"`
-	Language         string                 `json:"language,omitempty" yaml:"language,omitempty" validate:"required,oneof='go' 'python'" binding:"required,oneof='go' 'python'"`
 	ApplicationURL   string                 `json:"appURL,omitempty" yaml:"appURL,omitempty" validate:"required" binding:"required"`
 }
 
 type ApplicationValidatorRespVO struct {
+	AppName string `json:"appName,omitempty" yaml:"appName,omitempty"`
 	Valid   bool   `json:"valid" yaml:"valid"`
 	Message string `json:"message,omitempty" yaml:"message,omitempty"`
 }
 
 type ApplicationVO struct {
 	AuthConfigVO
-	Name     string `json:"name,omitempty" validate:"required,alpha" binding:"required,alpha"`
-	Language string `json:"language,omitempty" validate:"oneof='go' 'python'" binding:"omitempty,oneof='go' 'python'"`
+	Name              string          `json:"name,omitempty" validate:"required,alpha" binding:"required,alpha"`
+	LinkedApplication []ApplicationVO `json:"linkedApps,omitempty" yaml:"linkedApps,omitempty"`
 }
 
 type ApplicationValidationResult struct {
@@ -279,4 +279,20 @@ type LinkedAppsCredentials struct {
 	CredentialType     string                   `json:"credentialType,omitempty" yaml:"credentialType,omitempty"`
 	ApplicationURL     string                   `json:"appURL,omitempty" yaml:"appURL,omitempty" binding:"required"`
 	LinkedApplications []*LinkedAppsCredentials `json:"linkedApps,omitempty" yaml:"linkedApps,omitempty"`
+}
+
+type ApplicationPublishResponse struct {
+	AppName string         `json:"appName,omitempty"`
+	Message string         `json:"message,omitempty"`
+	Error   *ErrorDetailVO `json:",omitempty"`
+}
+
+type PublishAppVO struct {
+	RuleName   string         `json:"ruleName" yaml:"ruleName" validate:"required" binding:"required"`
+	AppDetails *ApplicationVO `json:"appDetails" yaml:"appDetails" validate:"required" binding:"required"`
+}
+
+type ApplicationValidationReqVO struct {
+	RuleName   string                   `json:"ruleName" yaml:"ruleName" validate:"required" binding:"required"`
+	AppDetails []ApplicationValidatorVO `json:"appDetails" yaml:"appDetails" validate:"required,dive" binding:"required,dive"`
 }

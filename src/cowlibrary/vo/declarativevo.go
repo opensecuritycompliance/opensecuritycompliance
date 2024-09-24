@@ -4,6 +4,7 @@ type Meta struct {
 	Name        string              `yaml:"name" json:"name" binding:"required,rulename,lte=120" validate:"required,rulename,lte=120"`
 	Purpose     string              `yaml:"purpose,omitempty" json:"purpose,omitempty"`
 	Description string              `yaml:"description,omitempty" json:"description,omitempty"`
+	Icon        string              `json:"icon,omitempty" yaml:"icon,omitempty"`
 	AliasRef    string              `yaml:"alias,omitempty"  json:"aliasRef,omitempty" binding:"omitempty,alphanum" validate:"omitempty,alphanum"`
 	Type        string              `yaml:"type,omitempty" json:"type,omitempty"`
 	App         string              `yaml:"app,omitempty" json:"app,omitempty" binding:"required,alpha" validate:"required,alpha"`
@@ -19,12 +20,12 @@ type MetaDataTemplate struct {
 }
 
 type YamlBase struct {
-	APIVersion string `yaml:"apiVersion" binding:"required,oneof='rule.policycow.live/v1alpha1'" validate:"required,oneof='rule.policycow.live/v1alpha1'"`
-	Kind       string `yaml:"kind" binding:"required,oneof='rule' 'ruleGroup' 'rulegroup' 'ruleRun' 'ruleGroupRun' 'applicationScope'" validate:"required,oneof='rule' 'ruleGroup' 'rulegroup' 'ruleRun' 'ruleGroupRun' 'applicationScope'"`
+	APIVersion string `json:"apiVersion" yaml:"apiVersion" binding:"required,oneof='rule.policycow.live/v1alpha1'" validate:"required,oneof='rule.policycow.live/v1alpha1'"`
+	Kind       string `json:"kind" yaml:"kind" binding:"required,oneof='rule' 'ruleGroup' 'rulegroup' 'ruleRun' 'ruleGroupRun' 'applicationScope'" validate:"required,oneof='rule' 'ruleGroup' 'rulegroup' 'ruleRun' 'ruleGroupRun' 'applicationScope'"`
 }
 type BaseAndMeta struct {
 	YamlBase `yaml:",inline"`
-	Meta     *Meta `yaml:"meta"`
+	Meta     *Meta `json:"meta" yaml:"meta"`
 }
 
 // used with apply command
@@ -41,15 +42,16 @@ type YamlRuleVO struct {
 // Used with init command
 type RuleYAMLVO struct {
 	BaseAndMeta `yaml:",inline"`
-	Spec        *RuleYAMLSpecVO `yaml:"spec" binding:"required" validate:"required"`
+	Spec        *RuleYAMLSpecVO `json:"spec" yaml:"spec" binding:"required" validate:"required"`
+	Catalog     string          `json:"catalog,omitempty" yaml:"catalog,omitempty"`
 }
 
 type RuleYAMLSpecVO struct {
-	Input        map[string]interface{} `yaml:"inputs,omitempty"`
-	UserInputs   []*RuleUserInputVO     `yaml:"userInputs,omitempty" binding:"omitempty,dive" validate:"omitempty,dive"`
-	InputsMeta__ []*RuleUserInputVO     `yaml:"inputsMeta__,omitempty" binding:"omitempty,dive"  validate:"omitempty,dive"`
-	Tasks        []*TaskVO              `yaml:"tasks" binding:"required" validate:"required,dive"`
-	IoMap        []string               `yaml:"ioMap" binding:"required" validate:"required"`
+	Input        map[string]interface{} `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	UserInputs   []*RuleUserInputVO     `json:"userInputs,omitempty" yaml:"userInputs,omitempty" binding:"omitempty,dive" validate:"omitempty,dive"`
+	InputsMeta__ []*RuleUserInputVO     `json:"inputsMeta__,omitempty" yaml:"inputsMeta__,omitempty" binding:"omitempty,dive"  validate:"omitempty,dive"`
+	Tasks        []*TaskVO              `json:"tasks" yaml:"tasks" binding:"required" validate:"required,dive"`
+	IoMap        []string               `json:"ioMap" yaml:"ioMap" binding:"required" validate:"required"`
 }
 
 type ApplicationClassVO struct {
@@ -109,8 +111,12 @@ type RuleGroupYAMLVO struct {
 }
 
 type RuleUserInputVO struct {
-	Type   string      `json:"type" yaml:"type,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'"`
-	Format string      `json:"format" yaml:"format,omitempty" binding:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx'" validate:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx'"`
-	Name   string      `json:"name,omitempty" yaml:"name,omitempty"`
-	Value  interface{} `json:"value,omitempty" yaml:"value,omitempty" binding:"required" validate:"required"`
+	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'"`
+	Repeated      bool          `json:"repeated" yaml:"repeated"`
+	Format        string        `json:"format,omitempty" yaml:"format,omitempty" binding:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego'" validate:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego'"`
+	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty" binding:"required" validate:"required"`
+	AllowedValues []interface{} `json:"allowedValues" yaml:"allowedValues"`
+	ShowField     bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
+	Required      bool          `json:"required,omitempty" yaml:"required,omitempty"`
 }

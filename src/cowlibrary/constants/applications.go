@@ -214,6 +214,8 @@ class {{APPLICATION_STRUCT_NAME}}:
             app_url = obj.get("AppURL","")
             if not app_url:
                 app_url = obj.get("appURL","")
+            if not app_url:
+                app_url = obj.get("appurl","")
             app_port = obj.get("AppPort",0)
             if not app_port:
                 app_port = obj.get("appPort",0)

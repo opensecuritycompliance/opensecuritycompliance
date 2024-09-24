@@ -5,4 +5,5 @@ type TaskJson struct {
 	Language        string `json:"language"`
 	Path            string `json:"path"`
 	ApplicationPath string `json:"applicationPath"`
+	Create          bool   `json:"create"`
 }

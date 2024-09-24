@@ -198,6 +198,10 @@ const (
 
 const RuleExecutionLogFile = "logs.txt"
 const RuleExecutionLogKey = "logs"
+const RuleExecutionLogDataFile = "RuleLogs.json"
+const RuleExecutionLogDataKey = "RuleLogs_"
+const TaskExecutionLogDataFile = "TaskLogs.ndjson"
+
 const (
 	BucketNameLog        = "logs"
 	BucketNameRuleInputs = "ruleinputs"
@@ -232,3 +236,10 @@ const (
 )
 
 const ProgressFolderName = "progress"
+
+// Auth headers
+var (
+	AuthToken       = "Authtoken"
+	Authorization   = "Authorization"
+	SecurityContext = "X-Cow-Security-Context"
+)
