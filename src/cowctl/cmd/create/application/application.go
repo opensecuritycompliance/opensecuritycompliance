@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/kyokomi/emoji"
@@ -33,6 +34,9 @@ func NewCommand() *cobra.Command {
 
 	cmd.Flags().StringP("file-name", "f", "", "Set your file name")
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
+	cmd.Flags().String("applicationpath", "", "path for the application")
+	cmd.Flags().Bool("can-override", false, "application already exists in the system")
+
 	return cmd
 }
 
@@ -43,15 +47,28 @@ func runE(cmd *cobra.Command) error {
 		return err
 	}
 
-	yamlFileName, yamlFilePath := ``, ``
+	yamlFileName, yamlFilePath, applicationPath := ``, ``, ``
 
 	if cmd.Flags().HasFlags() {
+		if flagName := cmd.Flags().Lookup("applicationpath"); flagName != nil {
+			applicationPath = flagName.Value.String()
+		}
 		if flagName := cmd.Flags().Lookup("yaml-file"); flagName != nil {
 			yamlFileName = flagName.Value.String()
 		}
+		if currentFlag := cmd.Flags().Lookup("can-override"); currentFlag != nil && currentFlag.Changed {
+			if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+				currentFlag.Value.Set("false")
+				additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
+			}
+		}
+	}
+	if cowlibutils.IsNotEmpty(applicationPath) {
+		yamlFileName = filepath.Base(applicationPath)
+		yamlFilePath = applicationPath
 	}
 
-	if cowlibutils.IsNotEmpty(yamlFileName) {
+	if cowlibutils.IsNotEmpty(yamlFileName) && cowlibutils.IsEmpty(yamlFilePath) {
 		yamlFilePath = cowlibutils.GetYamlFilesPathFromApplicationCatalog(additionalInfo, yamlFileName)
 	}
 
@@ -104,11 +121,15 @@ func runE(cmd *cobra.Command) error {
 
 	packagePath := filepath.Join(filePath, strings.ToLower(applicationVO.Meta.Name))
 
-	if cowlibutils.IsFolderExist(packagePath) {
+	if cowlibutils.IsFolderExist(packagePath) && !additionalInfo.CanOverride {
 		isConfirmed, err := terminalutils.GetConfirmationFromCmdPrompt("An application class implementation already exists for this name (the version will be excluded). Are you sure you want to re-create it?")
 		if !isConfirmed || err != nil {
 			return err
 		}
+		applicationVO.IsVersionToBeOverride = true
+	}
+
+	if additionalInfo.CanOverride {
 		applicationVO.IsVersionToBeOverride = true
 	}
 

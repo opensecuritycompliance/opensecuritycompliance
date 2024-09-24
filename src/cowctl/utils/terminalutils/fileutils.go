@@ -194,7 +194,7 @@ start:
 	}
 	credentials = append(credentials, vo.CredentialItem{Name: credName, Version: selectedVersion, Directory: selectedDir})
 
-	credWithVersionsMap[selectedDir] = removeSelectedVersion(selectedVersion, credWithVersionsMap[selectedDir])
+	delete(credWithVersionsMap, credName)
 
 	tempFilteredDirctorires := make([]dropdownutils.Item, 0)
 	for key, val := range credWithVersionsMap {

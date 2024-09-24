@@ -259,10 +259,10 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 								labelname := fmt.Sprintf("Enter value for %s (current value: %v): ", inputName, ruleSet.Rules[0].RuleIOValues.Inputs[inputName])
 								if metaInput.Name == inputName {
 									userInput, _ = utils.GetValueAsStrFromCmdPrompt(labelname, true, func(input string) error {
-										switch metaInput.Type {
-										case "string", "file":
-											return validationutils.ValidateString(input)
-										case "int":
+										switch metaInput.DataType {
+										case "STRING", "FILE":
+											return validationutils.ValidateStringAndFileURL(input)
+										case "INT":
 											return validationutils.ValidateInt(input)
 										}
 										return nil

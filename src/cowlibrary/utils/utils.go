@@ -647,6 +647,13 @@ func IsValidCredentials(additionalInfo *vo.AdditionalInfo) bool {
 
 func GetAuthToken(additionalInfo *vo.AdditionalInfo) (*vo.AuthorizationResponse, error) {
 
+	authResponse := &vo.AuthorizationResponse{}
+
+	if additionalInfo.InternalFlow && additionalInfo.SecurityContext != nil && IsNotEmpty(additionalInfo.SecurityContext.AuthToken) {
+		authResponse.AuthToken = additionalInfo.SecurityContext.AuthToken
+		return authResponse, nil
+	}
+
 	clientID, clientSecret := constants.CowClientID, constants.CowClientSecret
 
 	if additionalInfo.PolicyCowConfig.UserData != nil {
@@ -671,7 +678,6 @@ func GetAuthToken(additionalInfo *vo.AdditionalInfo) (*vo.AuthorizationResponse,
 	url := fmt.Sprintf("%s/v1/oauth2/token", apiServEndpoint)
 
 	client := resty.New()
-	authResponse := &vo.AuthorizationResponse{}
 
 	resp, err := client.R().SetFormData(map[string]string{
 		"grant_type":    "client_credentials",
@@ -697,6 +703,9 @@ func GetCowAPIEndpoint(additionalInfo *vo.AdditionalInfo) string {
 }
 
 func GetCowDomain(additionalInfo *vo.AdditionalInfo) string {
+	if additionalInfo.InternalFlow {
+		return constants.COWAPIServiceURL
+	}
 	subDomain := constants.CowPublishSubDomain
 	host := additionalInfo.Host
 	if host != "" {
@@ -728,8 +737,14 @@ func GetAuthHeader(additionalInfo *vo.AdditionalInfo) (map[string]string, error)
 		return nil, err
 	}
 
+	authToken := fmt.Sprintf("%s %s", authResponse.TokenType, authResponse.AuthToken)
+
+	if additionalInfo.InternalFlow && additionalInfo.SecurityContext != nil && IsNotEmpty(additionalInfo.SecurityContext.AuthToken) {
+		authToken = additionalInfo.SecurityContext.AuthToken
+	}
+
 	header := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", authResponse.TokenType, authResponse.AuthToken),
+		"Authorization": authToken,
 	}
 
 	return header, nil
@@ -1324,11 +1339,24 @@ func GetTasks(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 				}
 
 				if err == nil {
-					taskVO.CatalogType = catalogType
-					availableTasks = append(availableTasks, taskVO)
+					inputYAMLFile := filepath.Join(filepath.Dir(path), constants.TaskInputYAMLFile)
+					if IsFileExist(inputYAMLFile) {
+						taskInputVO := &vo.TaskInputV2{}
+						bytes, _ := os.ReadFile(inputYAMLFile)
+						err := yaml.Unmarshal(bytes, taskInputVO)
+						if err == nil {
+							taskVO.CatalogType = catalogType
+							if additionalInfo.ApplicationInfo != nil {
+								if taskInputVO.UserObject != nil && taskInputVO.UserObject.App.ApplicationName == additionalInfo.ApplicationInfo.App.Meta.Name {
+									availableTasks = append(availableTasks, taskVO)
+								}
+							} else {
+								availableTasks = append(availableTasks, taskVO)
+							}
+						}
+					}
 				}
 			}
-
 		}
 	}
 
@@ -1341,29 +1369,35 @@ func GetTasksV2(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 	availableTasks := make([]*vo.PolicyCowTaskVO, 0)
 	localcatalogPath := additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath
 
-	pathPrefixs := []string{
-		filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, "*"),
-	}
-
+	var pathPrefixs string
 	if !additionalInfo.GlobalCatalog {
-		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "tasks", "*"))
+		pathPrefixs = filepath.Join(localcatalogPath, "tasks", "*")
+	} else {
+		pathPrefixs = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, "*")
 	}
 
-	for _, pattern := range pathPrefixs {
-		catalogType := "globalcatalog"
-		if strings.Contains(pattern, "localcatalog") {
-			catalogType = "localcatalog"
-		}
-		matches, _ := filepath.Glob(pattern)
-		for _, path := range matches {
-			if info, err := os.Stat(path); err == nil && info.IsDir() {
-				taskName := filepath.Base(path)
-
-				taskVO := &vo.PolicyCowTaskVO{
-					Name:        taskName,
-					CatalogType: catalogType,
+	catalogType := "globalcatalog"
+	if strings.Contains(pathPrefixs, "localcatalog") {
+		catalogType = "localcatalog"
+	}
+	matches, _ := filepath.Glob(pathPrefixs)
+	for _, path := range matches {
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			inputYAMLFile := filepath.Join(path, constants.TaskInputYAMLFile)
+			if IsFileExist(inputYAMLFile) {
+				taskInputVO := &vo.TaskInputV2{}
+				bytes, _ := os.ReadFile(inputYAMLFile)
+				err := yaml.Unmarshal(bytes, taskInputVO)
+				if err == nil {
+					if taskInputVO.UserObject != nil && taskInputVO.UserObject.App.ApplicationName == additionalInfo.ApplicationInfo.App.Meta.Name {
+						taskName := filepath.Base(path)
+						taskVO := &vo.PolicyCowTaskVO{
+							Name:        taskName,
+							CatalogType: catalogType,
+						}
+						availableTasks = append(availableTasks, taskVO)
+					}
 				}
-				availableTasks = append(availableTasks, taskVO)
 			}
 		}
 	}
@@ -1693,6 +1727,7 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 					err = yaml.Unmarshal(bytes, rulevo)
 				}
 				if err == nil {
+					rulevo.Catalog = folder
 					if rulevo.Spec != nil {
 						for key, value := range rulevo.Spec.Input {
 							if inputsMap, ok := value.(map[interface{}]interface{}); ok {
@@ -1700,8 +1735,8 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 							}
 						}
 						for key, input := range rulevo.Spec.InputsMeta__ {
-							if inputsMetaMap, ok := input.Value.(map[interface{}]interface{}); ok {
-								rulevo.Spec.InputsMeta__[key].Value = ConvertMap(inputsMetaMap)
+							if inputsMetaMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
+								rulevo.Spec.InputsMeta__[key].DefaultValue = ConvertMap(inputsMetaMap)
 							}
 						}
 					}
@@ -2056,6 +2091,49 @@ func ConvertMap(inputMap map[interface{}]interface{}) map[string]interface{} {
 		}
 	}
 	return resultMap
+}
+
+func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.AdditionalInfo) (string, error) {
+	rulePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "rules")
+	if IsFileExist(filepath.Join(rulePath, ruleName)) {
+		rulePath = filepath.Join(rulePath, ruleName)
+	} else {
+		rulePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.RulesPath, ruleName)
+	}
+
+	if IsNotEmpty(additionalInfo.Path) {
+		rulePath = additionalInfo.Path
+	}
+
+	ruleyamlpath := filepath.Join(rulePath, constants.RuleYamlFile)
+	ruleYaml := &vo.RuleYAMLVO{}
+
+	ruleFile, err := os.ReadFile(ruleyamlpath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read rule YAML file: %w", err)
+	}
+
+	err = yaml.Unmarshal(ruleFile, &ruleYaml)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
+	}
+	var language string
+	for _, task := range ruleYaml.Spec.Tasks {
+		var taskPath string
+		if IsFileExist(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, task.Name)) {
+			taskPath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, task.Name)
+		} else {
+			taskPath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "tasks", task.Name)
+		}
+
+		if IsFileExist(taskPath) {
+			language = GetTaskLanguage(taskPath).String()
+			if IsNotEmpty(language) {
+				break
+			}
+		}
+	}
+	return language, nil
 }
 
 func IsDefaultConfigPath(path string) bool {

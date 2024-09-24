@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Tuple
 from abc import abstractmethod
 from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils
-from compliancecowcards.structs import cowvo
+from compliancecowcards.structs import cowvo, cowsynthesizerservice_pb2
 import pandas as pd
 import uuid
 import os
@@ -383,3 +384,18 @@ class AbstractTask(object):
         pass
 
 
+class Logger(object):
+    def __init__(self, log_file="TaskLogs.ndjson"):
+        self.log_file = log_file
+
+    def log_data(self, data):        
+        if not isinstance(data, dict):
+            raise TypeError("Expected data to be a dictionary")
+
+        log_entry = {
+            "createdTime": datetime.now().isoformat(),
+            "payload": data
+        }
+
+        with open(self.log_file, 'a') as file:
+            file.write(json.dumps(log_entry) + '\n')

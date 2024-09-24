@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/kyokomi/emoji"
 	"github.com/spf13/cobra"
@@ -30,6 +31,10 @@ func NewCommand() *cobra.Command {
 
 	cmd.Flags().StringP("file-name", "f", "", "Set your file name")
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
+	cmd.Flags().String("credential-path", "", "path for the credential")
+	cmd.Flags().String("cred-yamlpath", "", "path for the credential yaml")
+	cmd.Flags().Bool("can-override", false, "credential already exists in the system")
+
 	return cmd
 }
 
@@ -40,15 +45,31 @@ func runE(cmd *cobra.Command) error {
 		return err
 	}
 
-	yamlFileName, yamlFilePath := ``, ``
+	yamlFileName, yamlFilePath, credentialPath := ``, ``, ``
 
 	if cmd.Flags().HasFlags() {
 		if flagName := cmd.Flags().Lookup("yaml-file"); flagName != nil {
 			yamlFileName = flagName.Value.String()
 		}
+		if flagName := cmd.Flags().Lookup("credential-path"); flagName != nil {
+			credentialPath = flagName.Value.String()
+		}
+		if flagName := cmd.Flags().Lookup("cred-yamlpath"); flagName != nil {
+			yamlFilePath = flagName.Value.String()
+		}
+		if currentFlag := cmd.Flags().Lookup("can-override"); currentFlag != nil && currentFlag.Changed {
+			if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+				currentFlag.Value.Set("false")
+				additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
+			}
+		}
 	}
 
-	if cowlibutils.IsNotEmpty(yamlFileName) {
+	if cowlibutils.IsNotEmpty(credentialPath) {
+		yamlFileName = filepath.Base(yamlFilePath)
+	}
+
+	if cowlibutils.IsNotEmpty(yamlFileName) && cowlibutils.IsEmpty(yamlFilePath) {
 		yamlFilePath = cowlibutils.GetYamlFilesPathFromApplicationCatalog(additionalInfo, yamlFileName)
 	}
 
@@ -76,11 +97,17 @@ func runE(cmd *cobra.Command) error {
 
 	additionalInfo.ApplictionScopeConfigVO = &vo.ApplictionScopeConfigVO{FileData: yamlFileByts}
 
-	if credentials.IsCredentialAlreadyPresent(credential, additionalInfo) {
-		isConfirmed, err := utils.GetConfirmationFromCmdPrompt("credential already presented in the directory. Are you sure you going to re-initialize ?")
-		if !isConfirmed || err != nil {
-			return err
+	if cowlibutils.IsEmpty(credentialPath) {
+		if credentials.IsCredentialAlreadyPresent(credential, additionalInfo) {
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("credential already presented in the directory. Are you sure you going to re-initialize ?")
+			if !isConfirmed || err != nil {
+				return err
+			}
+			credential.IsVersionToBeOverride = true
 		}
+	}
+
+	if additionalInfo.CanOverride {
 		credential.IsVersionToBeOverride = true
 	}
 

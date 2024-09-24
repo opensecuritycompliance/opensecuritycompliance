@@ -102,6 +102,8 @@ type AdditionalInfo struct {
 	RuleProgressVO             *RuleProgressVO          `json:"ruleProgressVO,omitempty"`
 	RuleOutputs                map[string]interface{}   `json:"-"`
 	LinkedApplications         []LinkedApplicationVO    `json:"linkedApplications,omitempty"`
+	SecurityContext            *SecurityContext         `json:"securityContext,omitempty"`
+	InternalFlow               bool                     `json:"internalFlow,omitempty"`
 	RuleProgressWorker         *RuleProgressWorkerVO
 	TerminateFlow              bool
 	ClientCredentials

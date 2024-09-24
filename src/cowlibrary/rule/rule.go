@@ -1,6 +1,7 @@
 package rule
 
 import (
+	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -128,6 +129,10 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 		}
 
 		if len(additionalInfo.RuleYAMLVO.Spec.InputsMeta__) > 0 {
+			for _, input := range additionalInfo.RuleYAMLVO.Spec.InputsMeta__ {
+				input.ShowField = true
+				input.Required = true
+			}
 			rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.InputsMeta__
 		} else if len(additionalInfo.RuleYAMLVO.Spec.UserInputs) > 0 {
 			// ruleInputs := make([]*vo.RuleUserInputVO, 0)
@@ -137,6 +142,10 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			// 	ruleInputs = append(ruleInputs, &userInputClone)
 			// }
 
+			for _, input := range additionalInfo.RuleYAMLVO.Spec.UserInputs {
+				input.ShowField = true
+				input.Required = true
+			}
 			rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.UserInputs
 
 		}
@@ -263,7 +272,7 @@ func ExecuteRulesAndReturnOutputs(filePath, ruleExp string, includeRules, exclud
 		additionalInfo.ExecutionID = uuid_.String()
 	}
 	if stringUtils.IsEmpty(filePath) {
-
+		additionalInfo.PreserveRuleExecutionSetUp = true
 		if utils.IsNotEmpty(additionalInfo.RuleName) {
 			filePath = utils.GetRulePathFromCatalog(additionalInfo, additionalInfo.RuleName)
 			if utils.IsNotValidRulePath(filePath) {
@@ -985,6 +994,9 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 		}
 	}
 	ruleYamlPath := filepath.Join(tmpRuleDir, constants.RuleYamlFile)
+
+	var taskInput vo.TaskInput
+
 	if utils.IsFileExist(ruleYamlPath) {
 
 		_, err := GetRuleYAML(ruleYamlPath)
@@ -999,7 +1011,6 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 		inputYAMLFileByts, err := os.ReadFile(filepath.Join(tmpRuleDir, constants.TaskInputYAMLFile))
 		if err == nil {
-			var taskInput vo.TaskInput
 			err = yaml.Unmarshal(inputYAMLFileByts, &taskInput)
 			if err != nil {
 				return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
@@ -1019,6 +1030,11 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 						}
 					}
 					ruleSet.Rules[0].RuleIOValues.Inputs[key] = userInputValue
+					for _, input := range ruleSet.Rules[0].RuleIOValues.InputsMeta__ {
+						if input.Name == key {
+							input.DefaultValue = userInputValue
+						}
+					}
 				}
 
 			}
@@ -1036,6 +1052,12 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 						maps.Copy(userInputs, inputsMap)
 
 						taskInput.UserInputs = userInputs
+
+						for _, input := range ruleSet.Rules[0].RuleIOValues.InputsMeta__ {
+							if value, exists := taskInput.UserInputs[input.Name]; exists {
+								input.DefaultValue = value
+							}
+						}
 					}
 				}
 
@@ -1051,7 +1073,7 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 				if len(additionalInfo.RuleExecutionVO.LinkedApplications) > 0 {
 					updateLinkedApplicationCredentials(taskInput.UserObject.App.LinkedApplications, additionalInfo.RuleExecutionVO.LinkedApplications)
 				}
-			
+
 				if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.FromDate) && utils.IsNotEmpty(additionalInfo.RuleExecutionVO.ToDate) {
 					taskInput.FromDate_, _ = time.Parse("2006-01-02", additionalInfo.RuleExecutionVO.FromDate)
 					taskInput.ToDate_, _ = time.Parse("2006-01-02", additionalInfo.RuleExecutionVO.ToDate)
@@ -1301,6 +1323,81 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 				//return err TODO : Need to handle the O/P Unavailability
 			}
 
+			taskFolders, err := os.ReadDir(tmpRuleDir)
+			if err != nil {
+				return fmt.Errorf("error reading ruledir. error: %v", err.Error())
+			}
+
+			var ruleLog vo.RuleLogData
+			ruleLog.RuleName = ruleName
+			ruleLog.ApplicationName = taskInput.UserObject.App.ApplicationName
+			logDataFileExist := false
+
+			for _, taskFolder := range taskFolders {
+				if taskFolder.IsDir() {
+					logFilePath := filepath.Join(tmpRuleDir, taskFolder.Name(), constants.TaskExecutionLogDataFile)
+					if utils.IsFileExist(logFilePath) {
+						logFile, err := os.Open(logFilePath)
+						if err != nil {
+							return fmt.Errorf("error opening TaskLogs.ndjson: %v", err)
+						}
+						defer logFile.Close()
+
+						var taskLog vo.TaskLog
+						taskLog.TaskName = taskFolder.Name()
+
+						scanner := bufio.NewScanner(logFile)
+						for scanner.Scan() {
+							var logEntry vo.LogEntry
+							if err := json.Unmarshal(scanner.Bytes(), &logEntry); err != nil {
+								return fmt.Errorf("error parsing in TaskLogs.ndjson: %v", err)
+							}
+							taskLog.Logs = append(taskLog.Logs, logEntry)
+						}
+
+						if err := scanner.Err(); err != nil {
+							return fmt.Errorf("error reading TaskLogs.ndjson: %v", err)
+						}
+						ruleLog.Tasks = append(ruleLog.Tasks, taskLog)
+						logDataFileExist = true
+					}
+				}
+			}
+			if logDataFileExist {
+				ruleLogDataBytes, err := json.MarshalIndent(ruleLog, "", "  ")
+				if err != nil {
+					return fmt.Errorf("error marshalling ruleLog data: %v", err)
+				}
+
+				logFilePath := filepath.Join(tmpRuleDir, constants.RuleExecutionLogDataFile)
+				if err := os.WriteFile(logFilePath, ruleLogDataBytes, os.ModePerm); err != nil {
+					return fmt.Errorf("error writing RuleLogs.json:%v", err)
+				}
+
+				if utils.IsFileExist(logFilePath) {
+					minioEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
+
+					log.SetOutput(io.Discard)
+					minioClient, err := cowStorage.RegisterMinio(minioEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
+
+					if err == nil && minioClient != nil {
+						folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogDataFile
+						_, err = minioClient.FPutObject(constants.BucketNameLog, folderPath, logFilePath, minio.PutObjectOptions{ContentType: "text"})
+
+						if err == nil {
+							outputs[constants.RuleExecutionLogDataKey] = "http://" + minioEndpoint + "/" + constants.BucketNameLog + "/" + folderPath
+						}
+					}
+					outputsBytes, err := json.MarshalIndent(outputs, "", "  ")
+					if err != nil {
+						return fmt.Errorf("error marshalling outputs: %v", err)
+					}
+					if err := os.WriteFile(outputFile, outputsBytes, os.ModePerm); err != nil {
+						return fmt.Errorf("error writing in outputs.json: %v", err)
+					}
+				}
+			}
+
 			calculateComplianceInfo(outputs, additionalInfo) // TODO: Ignore the error as of now
 
 			func() {
@@ -1445,6 +1542,8 @@ func calculateComplianceInfo(outputData map[string]interface{}, additionalInfo *
 	if tempDir == "/tmp" {
 		uuid := uuid.New().String()
 		tempDir = filepath.Join(tempDir, uuid)
+	} else {
+		tempDir = filepath.Join(tempDir, "CalculateCompliance")
 	}
 
 	defer os.Remove(tempDir)
@@ -1517,7 +1616,7 @@ func calculateComplianceInfo(outputData map[string]interface{}, additionalInfo *
 		additionalInfo.RuleOutputs["CompliancePCT_"] = 0
 		additionalInfo.RuleOutputs["ComplianceStatus_"] = "N/A"
 	}
-	
+
 	return nil
 
 }
@@ -1567,11 +1666,11 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 	}
 	rule.RuleIOValues.Inputs = DefaultInputs
 
-	rule.InputsMeta__ = ruleYaml.Spec.InputsMeta__
+	rule.RuleIOValues.InputsMeta__ = ruleYaml.Spec.InputsMeta__
 
-	for _, input := range rule.InputsMeta__ {
-		if inputMap, ok := input.Value.(map[interface{}]interface{}); ok {
-			input.Value = utils.ConvertMap(inputMap)
+	for _, input := range rule.RuleIOValues.InputsMeta__ {
+		if inputMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
+			input.DefaultValue = utils.ConvertMap(inputMap)
 		}
 	}
 
@@ -1915,11 +2014,11 @@ func handleRuleInputs(rulePath, ruleName, ruleNameWithGroup string, ruleOutputs 
 					if err != nil {
 						fmt.Println("Error unmarshaling YAML:", err)
 					}
-					
+
 					if userInputs, ok := yamlTaskInputMap["userInputs"].(map[string]interface{}); ok {
 						yamlInput.UserInputs = userInputs
 					}
-					
+
 					updatedYAMLInputBytes, err := yaml.Marshal(&yamlInput)
 					if err == nil {
 						os.WriteFile(inputsFilePath, updatedYAMLInputBytes, os.ModePerm)
@@ -3338,7 +3437,7 @@ func DownloadFileFromMinio(absoluteFilePath string) (*vo.MinioFileVO, error) {
 
 }
 
-func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, additionalInfo *vo.AdditionalInfo) (*vo.ApplicationValidatorRespVO, *vo.ErrorResponseVO) {
+func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, ruleName string, additionalInfo *vo.AdditionalInfo) (*vo.ApplicationValidatorRespVO, *vo.ErrorResponseVO) {
 
 	if additionalInfo == nil {
 		addInfo, err := utils.GetAdditionalInfoFromEnv()
@@ -3350,9 +3449,13 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, addi
 
 		additionalInfo = addInfo
 	}
+	language, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
+	if err != nil || utils.IsEmpty(language) {
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+			Message: "Failed to get application language", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+	}
 
 	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
-
 	fmt.Println("appClassPath :", appClassPath)
 
 	if utils.IsFileNotExist(appClassPath) {
@@ -3368,9 +3471,9 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, addi
 	}
 	additionalInfo.ApplicationInfo = applicationInfo
 
-	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, applicationValidatorVO.Language)
+	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, language)
 
-	if constants.SupportedLanguagePython.String() == applicationValidatorVO.Language {
+	if constants.SupportedLanguagePython.String() == language {
 		baseFolder = filepath.Join(baseFolder, constants.AppConnections)
 	}
 
@@ -3478,11 +3581,24 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, addi
 	defer func() {
 		os.Remove(filepath.Join(validateApplicationTask, constants.FileNameTaskInput))
 		os.Remove(filepath.Join(validateApplicationTask, constants.FileNameTaskOutput))
+		os.RemoveAll(filepath.Join(validateApplicationTask, filepath.Base(baseFolder)))
 	}()
 
 	var cmd *exec.Cmd
+	if constants.SupportedLanguagePython.String() == language {
 
-	if constants.SupportedLanguagePython.String() == applicationValidatorVO.Language {
+		tmpDir := os.TempDir()
+		tmpAppConnectionDir := filepath.Join(tmpDir, constants.AppConnections)
+		err := cp.Copy(baseFolder, tmpAppConnectionDir)
+		if err != nil {
+			fmt.Println("Error copying appconnections to temporary directory:", err)
+		}
+
+		err = cp.Copy(tmpAppConnectionDir, filepath.Join(validateApplicationTask, filepath.Base(baseFolder)))
+		if err != nil {
+			fmt.Println("Error copying files to validateApplicationTask:", err)
+		}
+
 		if requirementsFilePath := filepath.Join(baseFolder, "requirements.txt"); utils.IsFileExist(requirementsFilePath) {
 			cmd := exec.Command("python3", "-m", "pip", "install", "-r", "requirements.txt")
 			cmd.Dir = baseFolder
@@ -3647,7 +3763,7 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 
 	for _, userInput := range ruleInputs {
 
-		if userInput.Type == constants.DeclarativesDataTypeFILE {
+		if userInput.DataType == constants.DeclarativesDataTypeFILE {
 			folderPath := fmt.Sprintf("%s/%s", ruleName, userInput.Name)
 
 			fileName := userInput.Name
@@ -3655,7 +3771,7 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 				fileName += "." + userInput.Format
 			}
 
-			fileBytes, err := getFileBytesFromInterface(userInput.Value)
+			fileBytes, err := getFileBytesFromInterface(userInput.DefaultValue)
 			if err != nil {
 				return nil, &vo.ErrorVO{
 					Message: "not a valid file data", Description: fmt.Sprintf("File content is invalid for '%s'", userInput.Name)}
@@ -3671,7 +3787,7 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 
 			userInputs[userInput.Name] = minioUploadResp.FileURL
 		} else {
-			userInputs[userInput.Name] = userInput.Value
+			userInputs[userInput.Name] = userInput.DefaultValue
 		}
 
 	}
@@ -3712,9 +3828,9 @@ func updateRuleInputFilePath(tempDir string, additionalInfo *vo.AdditionalInfo) 
 		return
 	}
 
-	for _, inputMeta := range ruleSet.Rules[0].InputsMeta__ {
-		if inputMeta.Type == constants.InputMetaFileType {
-			inputMeta.Value = constants.MinioFilePath
+	for _, inputMeta := range ruleSet.Rules[0].RuleIOValues.InputsMeta__ {
+		if inputMeta.DataType == constants.InputMetaFileType {
+			inputMeta.DefaultValue = constants.MinioFilePath
 			ruleSet.Rules[0].RuleIOValues.Inputs[inputMeta.Name] = constants.MinioFilePath
 		}
 	}

@@ -12,8 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
 	"strconv"
+
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
@@ -49,6 +50,12 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().String("host", "", "where to publish? (eg:dev.compliancecow.live) ")
 	cmd.Flags().String("catalog", "", "search in globalcatalog/rules only for the rule")
 	cmd.Flags().Bool("can-override", false, "rule already exists in system")
+	cmd.Flags().Bool("binary", false, "whether using cowctl binary")
+	cmd.Flags().Bool("publish-app", false, "whether using cowctl binary")
+	cmd.Flags().Bool("publish-rule", false, "whether using cowctl binary")
+	cmd.Flags().String("app-name", "", "application name")
+	cmd.Flags().String("rule-path", "", "path of the rule")
+
 	return cmd
 }
 
@@ -62,9 +69,14 @@ func runE(cmd *cobra.Command) error {
 	localcatalogPath := additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath
 
 	additionalInfo.RulePublisher = &vo.RulePublisher{}
+	var binaryEnabled bool
+	var appPublish bool
+	var appName string
+	rulePublish := true
 
 	if cmd.Flags().HasFlags() {
-		rulesPath = utils.GetFlagValueAndResetFlag(cmd, "path", "")
+		binaryEnabled, _ = cmd.Flags().GetBool("binary")
+		rulesPath = utils.GetFlagValueAndResetFlag(cmd, "rule-path", "")
 		additionalInfo.RuleName = utils.GetFlagValueAndResetFlag(cmd, "rule-name", "")
 		additionalInfo.DownloadsPath = utils.GetFlagValueAndResetFlag(cmd, "downloads-path", downloadsPath)
 		additionalInfo.ExportFileType = utils.GetFlagValueAndResetFlag(cmd, "export-file-type", "tar")
@@ -81,8 +93,16 @@ func runE(cmd *cobra.Command) error {
 				additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
 			}
 		}
-
+		if currentFlag := cmd.Flags().Lookup("publish-rule"); currentFlag != nil && currentFlag.Changed {
+			if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+				currentFlag.Value.Set("false")
+				rulePublish, _ = strconv.ParseBool(flagValue)
+			}
+		}
+		appName = utils.GetFlagValueAndResetFlag(cmd, "app-name", "")
+		appPublish, _ = cmd.Flags().GetBool("publish-app")
 	}
+
 	defaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
 
 	if cowlibutils.IsNotEmpty(additionalInfo.ClientID) || cowlibutils.IsNotEmpty(additionalInfo.ClientSecret) || cowlibutils.IsNotEmpty(additionalInfo.SubDomain) || cowlibutils.IsNotEmpty(additionalInfo.Host) {
@@ -142,13 +162,13 @@ func runE(cmd *cobra.Command) error {
 			rulesPath = pathFromCmd
 
 		}
+		additionalInfo.Path = rulesPath
 	}
-
 	if cowlibutils.IsEmpty(additionalInfo.RulePublisher.Name) {
 		additionalInfo.RulePublisher.Name = additionalInfo.RuleName
 	}
 
-	err = GetValidRuleName("Unable to publish with the same name", additionalInfo)
+	err = GetValidRuleName("Unable to publish with the same name", additionalInfo, binaryEnabled)
 	if err != nil {
 		return err
 	}
@@ -158,7 +178,7 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	if cowlibutils.IsEmpty(additionalInfo.RulePublisher.Description) && !additionalInfo.CanOverride {
-		if !defaultConfigPath {
+		if !defaultConfigPath || binaryEnabled {
 			return errors.New("Give the rule description to publish by using the flag 'publish-description'")
 		}
 		synthesizerNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("Rule Description to publish", false, utils.ValidateString)
@@ -178,56 +198,35 @@ func runE(cmd *cobra.Command) error {
 			return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
 		}
 		applicationName := appInfo.UserObject.App.ApplicationName
-		applicationValidatorResp, err := applications.GetAvailableApplications(applicationName, additionalInfo)
-		if err != nil {
-			return err
+
+		namePointer := &vo.CowNamePointersVO{}
+		namePointer.Name = applicationName
+		if binaryEnabled {
+			namePointer.Name = appName
 		}
-		if !applicationValidatorResp.Valid {
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The application used in this rule is not published yet. Do you want to publish the application now? ")
-			if err != nil {
-				return err
-			}
-			if isConfirmed {
-				namePointer := &vo.CowNamePointersVO{}
-				namePointer.Name = additionalInfo.ApplicationInfo.App.Meta.Name
-				appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
-				packageName := strings.ToLower(namePointer.Name)
-
-				if cowlibutils.IsFolderExist(filepath.Join(appPath, "go", packageName)) && cowlibutils.IsFolderExist(filepath.Join(appPath, "python", "appconnections", packageName)) {
-					languageFromCmd, err := utils.GetConfirmationFromCmdPromptWithOptions("Two implementations have been found for this application class. Which language do you intend to publish it in? python/go (default:go):", "go", []string{"go", "python"})
-					if err != nil {
-						return err
-					}
-					additionalInfo.Language = languageFromCmd
-				}
-
-				error := applications.PublishApplication(namePointer, additionalInfo)
-				if len(error) > 0 {
-					return errors.New(error[0].Issue)
-				}
-				d := color.New(color.FgCyan, color.Bold)
-				d.Println("Hurray!.. Application Configuration has been published on behalf of you")
-			} else {
-				isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Do you want to continue with rule publishing? ")
-				if !isConfirmed || err != nil {
-					return err
-				}
+		if cowlibutils.IsNotEmpty(namePointer.Name) {
+			if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
+				return fmt.Errorf("error during publishing application : %s", err)
 			}
 		}
+
 	}
 
 	if !isRuleAlreadyPublished {
 		additionalInfo.CanOverride = false
 	}
 
-	err = rule.PublishRule(rulesPath, additionalInfo)
+	if rulePublish {
+		err = rule.PublishRule(rulesPath, additionalInfo)
+	}
+
 	additionalInfo.GlobalCatalog = false
 
 	return err
 
 }
 
-func GetValidRuleName(errorDesc string, additionalInfo *vo.AdditionalInfo) error {
+func GetValidRuleName(errorDesc string, additionalInfo *vo.AdditionalInfo, binaryEnabled bool) error {
 	defaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
 
 	isRuleAlreadyPresent, err := rule.IsRuleAlreadyPresent(additionalInfo.RulePublisher.Name, additionalInfo)
@@ -236,7 +235,7 @@ func GetValidRuleName(errorDesc string, additionalInfo *vo.AdditionalInfo) error
 	}
 
 	if isRuleAlreadyPresent && !additionalInfo.CanOverride {
-		if !defaultConfigPath && !additionalInfo.CanOverride {
+		if !defaultConfigPath || binaryEnabled && !additionalInfo.CanOverride {
 			return errors.New("Rule name is already present in the system. To want to override with new implementation, set the 'can-override' flag as true")
 		}
 
@@ -263,14 +262,79 @@ func GetValidRuleName(errorDesc string, additionalInfo *vo.AdditionalInfo) error
 			ruleErrorDesc = "Provide an alternative rule name "
 		}
 
-		ruleNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(ruleErrorDesc, true, validationutils.ValidateAlphaName)
+		ruleNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(ruleErrorDesc, true, validationutils.ValidateAlphaNumeric)
 		if err != nil || cowlibutils.IsEmpty(ruleNameFromCmd) {
 			return err
 		}
 		additionalInfo.RulePublisher.Name = ruleNameFromCmd
-		return GetValidRuleName("Rule name already present", additionalInfo)
+		return GetValidRuleName("Rule name already present", additionalInfo, binaryEnabled)
 	}
 
 	return nil
 
+}
+
+func publishApplication(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo, binaryEnabled bool, appPublish bool) error {
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	packageName := strings.ToLower(namePointer.Name)
+	language, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
+	if err != nil || cowlibutils.IsEmpty(language) {
+		return fmt.Errorf("failed to get application language")
+	}
+	additionalInfo.Language = language
+
+	if !binaryEnabled {
+		linkedApplications, _ := applications.GetLinkedApplications(namePointer, additionalInfo)
+		if len(linkedApplications) > 0 {
+			for _, linkedApp := range linkedApplications {
+				newNamePointer := &vo.CowNamePointersVO{Name: linkedApp.Name}
+				if err := publishApplication(newNamePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	applicationValidatorResp, err := applications.GetAvailableApplications(namePointer.Name, additionalInfo)
+	if err != nil {
+		return err
+	}
+	appConnectionPath := filepath.Join(appPath, additionalInfo.Language, packageName)
+	if additionalInfo.Language == "python" {
+		appConnectionPath = filepath.Join(appPath, additionalInfo.Language, filepath.Base(appPath), packageName)
+	}
+
+	if !applicationValidatorResp.Valid {
+		if cowlibutils.IsFolderExist(appConnectionPath) {
+			errorDetails := applications.PublishApplication(namePointer, additionalInfo)
+			if len(errorDetails) > 0 {
+				return errors.New(errorDetails[0].Issue)
+			}
+		}
+	} else {
+		if binaryEnabled && !appPublish {
+			return fmt.Errorf("The application '%s' is already published. Do you want to publish the application again?", namePointer.Name)
+		}
+		isConfirmed := true
+		if !binaryEnabled {
+			isConfirmed, err = utils.GetConfirmationFromCmdPrompt(fmt.Sprintf("The application '%s' is already published. Do you want to publish the application again?", namePointer.Name))
+			if err != nil {
+				return err
+			}
+		}
+
+		if isConfirmed {
+			if cowlibutils.IsFolderExist(appConnectionPath) {
+				additionalInfo.CanOverride = true
+				errorDetails := applications.PublishApplication(namePointer, additionalInfo)
+				if len(errorDetails) > 0 {
+					return errors.New(errorDetails[0].Issue)
+				}
+				d := color.New(color.FgCyan, color.Bold)
+				d.Println("Hurray!.. Application Configuration has been published on behalf of you")
+			}
+		}
+	}
+
+	return nil
 }

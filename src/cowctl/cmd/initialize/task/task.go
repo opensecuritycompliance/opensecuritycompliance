@@ -5,6 +5,8 @@ import (
 	task "cowlibrary/task"
 	cowlibutils "cowlibrary/utils"
 	"cowlibrary/vo"
+	"fmt"
+	"strconv"
 
 	"os"
 	"path/filepath"
@@ -35,6 +37,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().String("tasks-path", "", "path of the tasks.")
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
 	cmd.Flags().String("exec-path", "", "maintain the history about the executions")
+	cmd.Flags().Bool("can-override", false, "task already exists in the system")
 	cmd.Flags().String("catalog", "", `use "globalcatalog" to init task in globalcatalog/tasks`)
 	cmd.Flags().Bool("binary", false, "whether using cowctl binary")
 	cmd.Flags().String("applicationpath", "", "application path")
@@ -52,6 +55,14 @@ func runE(cmd *cobra.Command) error {
 	tasksPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "tasks")
 	if additionalInfo.GlobalCatalog {
 		tasksPath = additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath
+	}
+	isDefaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
+
+	if currentFlag := cmd.Flags().Lookup("can-override"); currentFlag != nil && currentFlag.Changed {
+		if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+			currentFlag.Value.Set("false")
+			additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
+		}
 	}
 
 	binaryEnabled, _ := cmd.Flags().GetBool("binary")
@@ -76,18 +87,18 @@ func runE(cmd *cobra.Command) error {
 
 		}
 
-		taskGetLabelName := "Task Name (only alphabets and must start with a capital letter)"
+		taskGetLabelName := "Task Name (only alphabets and numbers and must start with a capital letter)"
 
 		if cowlibutils.IsNotEmpty(taskName) {
-			err := validationutils.ValidateAlphaName(taskName)
+			err := validationutils.ValidateAlphaNumeric(taskName)
 			if err != nil {
-				taskGetLabelName = "Please enter a valid task name(only alphabets and must start with a capital letter)"
+				taskGetLabelName = "Please enter a valid task name(only alphabets and numbers and must start with a capital letter)"
 				taskName = ""
 			}
 		}
 
 		if cowlibutils.IsEmpty(taskName) {
-			taskNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(taskGetLabelName, true, validationutils.ValidateAlphaName)
+			taskNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt(taskGetLabelName, true, validationutils.ValidateAlphaNumeric)
 			if err != nil || cowlibutils.IsEmpty(taskNameFromCmd) {
 				return err
 			}
@@ -95,7 +106,10 @@ func runE(cmd *cobra.Command) error {
 		}
 		taskPath := filepath.Join(tasksPath, taskName)
 
-		if cowlibutils.IsFolderExist(taskPath) {
+		if cowlibutils.IsFolderExist(taskPath) && !additionalInfo.CanOverride {
+			if !isDefaultConfigPath && !additionalInfo.CanOverride {
+				return fmt.Errorf("The task is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
+			}
 			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Task already presented in the directory. Are you sure you going to re-initialize ?")
 			if !isConfirmed || err != nil {
 				return err
@@ -162,6 +176,7 @@ func runE(cmd *cobra.Command) error {
 				return err
 			}
 		}
+		taskPath := filepath.Join(tasksPath, taskName)
 
 		currentTask := vo.TaskInputVO{}
 		currentTask.TaskName = taskName
@@ -175,18 +190,32 @@ func runE(cmd *cobra.Command) error {
 
 		applicationpath := utils.GetFlagValueAndResetFlag(cmd, "applicationpath", "")
 
-		applicationInfo, err := utils.GetApplicationWithCredential(applicationpath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
-		if err != nil {
-			return err
+		if cowlibutils.IsNotEmpty(applicationpath) {
+			applicationInfo, err := utils.GetApplicationWithCredential(applicationpath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			if err != nil {
+				return err
+			}
+			additionalInfo.ApplicationInfo = applicationInfo
 		}
 
-		additionalInfo.ApplicationInfo = applicationInfo
+		if cowlibutils.IsFolderExist(taskPath) {
+			err = cowlibutils.RemoveChildrensFromFolder(taskPath)
+			if err != nil {
+				return err
+			}
+		}
 
 		additionalInfo.IsTasksToBePrepare = true
 
 		taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
 		taskWithSpecicficLanguage.InitTask(taskName, tasksPath, &vo.TaskInputVO{}, additionalInfo)
 
+		if additionalInfo.ApplicationInfo != nil {
+			_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

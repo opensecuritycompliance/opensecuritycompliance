@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/kyokomi/emoji"
@@ -32,6 +33,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("name", "n", "", "Set your credential name")
 	cmd.Flags().String("version", "", "version of credential.")
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
+	cmd.Flags().Bool("can-override", false, "credential already exists in the system")
 	return cmd
 }
 
@@ -43,6 +45,12 @@ func runE(cmd *cobra.Command) error {
 	}
 	credentialName := utils.GetFlagValueAndResetFlag(cmd, "name", "")
 	credentialVersion := utils.GetFlagValueAndResetFlag(cmd, "version", "")
+	if currentFlag := cmd.Flags().Lookup("can-override"); currentFlag != nil && currentFlag.Changed {
+		if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+			currentFlag.Value.Set("false")
+			additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
+		}
+	}
 
 	if cowlibutils.IsEmpty(credentialName) {
 		credentialNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("Credential Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)

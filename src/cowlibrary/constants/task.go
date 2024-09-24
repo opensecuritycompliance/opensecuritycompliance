@@ -910,16 +910,17 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: BucketName # A unique identifier of the task input
   description: minio bucket name for the process # A concise description of the task input
-  type: string # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  dataType: STRING # data type of the input. Available Types STRING, INT, FLOAT, FILE, JSON
+  repeated: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue: demo # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true # boolean: true | false
+  required: true # boolean: true | false
 outputs:
 - name: ComplianceStatus_
   description: compliance status of the task
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: compliance percentage of the task
-  type: int
+  dataType: INT
 `
