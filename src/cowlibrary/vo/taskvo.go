@@ -53,5 +53,5 @@ type CowTaskCriteriaVO struct {
 	Type            []string `json:"type,omitempty" in:"query=type,Type,type[],Type[]"`
 	Tags            []string `json:"tags,omitempty" in:"query=tags,Tags,tags[],Tags[]"`
 	ApplicationType []string `json:"applicationType,omitempty" in:"query=application_type,application_type[],applicationType,applicationType[]"`
-	ApplicationName string   `json:"applicationName,omitempty" in:"query=application_name,application_name[],applicationName,applicationName[]"`
+	ApplicationName []string `json:"applicationName,omitempty" in:"query=application_name,application_name[],applicationName,applicationName[]"`
 }

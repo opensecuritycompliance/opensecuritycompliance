@@ -198,9 +198,9 @@ func GenerateTaskYAML(taskPath string, taskName string, additionalInfo *vo.Addit
 		fmt.Printf("Error in marshalling task, error : %s", err)
 	}
 
-	dateValue := strings.ReplaceAll(string(taskInputByts), "'{{FROM_DATE}}'", time.Now().Format("2006-01-02"))
-	dateValue = strings.ReplaceAll(dateValue, "\"{{FROM_DATE}}\"", time.Now().Format("2006-01-02"))
-	dateValue = strings.ReplaceAll(dateValue, "{{FROM_DATE}}", time.Now().Format("2006-01-02"))
+	dateValue := strings.ReplaceAll(string(taskInputByts), "'{{FROM_DATE}}'", time.Now().Format(constants.DateTimeFormatDefault))
+	dateValue = strings.ReplaceAll(dateValue, "\"{{FROM_DATE}}\"", time.Now().Format(constants.DateTimeFormatDefault))
+	dateValue = strings.ReplaceAll(dateValue, "{{FROM_DATE}}", time.Now().Format(constants.DateTimeFormatDefault))
 
 	taskYAMLPath := filepath.Join(taskPath, "inputs.yaml")
 

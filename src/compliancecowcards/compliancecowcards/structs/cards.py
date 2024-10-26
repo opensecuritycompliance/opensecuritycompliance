@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Tuple
 from abc import abstractmethod
 from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils
-from compliancecowcards.structs import cowvo, cowsynthesizerservice_pb2
+from compliancecowcards.structs import cowvo
 import pandas as pd
 import uuid
 import os

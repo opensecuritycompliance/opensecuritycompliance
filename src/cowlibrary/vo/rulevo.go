@@ -427,6 +427,7 @@ type AuthConfigVO struct {
 	ClientSecret string `json:"clientSecret"`
 	SubDomain    string `json:"subDomain"`
 	Host         string `json:"host"`
+	UserDomain   string `json:"userDomain"`
 }
 type PublishRuleVO struct {
 	AuthConfigVO

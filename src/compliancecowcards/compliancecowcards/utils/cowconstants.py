@@ -232,6 +232,24 @@ DefaultSystemObjects = [
             "servername": "semgrep-cli"
         }
     },
+    {
+        "Credentials": [
+            {
+                "credtags": {
+                    "type": [
+                        "$TRIVY_REPO_TYPE"
+                    ]
+                },
+                "sourcetype": "server",
+                "loginurl": "$TRIVY_LOGIN_URL",
+                "sshprivatekey": "$TRIVY_SSH_PRIVATE_KEY",
+                "userID": "$TRIVY_USER_ID"
+            }
+        ],
+        "Server": {
+            "servername": "trivy-cli"
+        }
+    },
 	{
 		"Credentials": [
             {

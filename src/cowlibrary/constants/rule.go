@@ -148,7 +148,7 @@ func main() {
 						writeProgressFile(ruleProgressVO)
 					}
 
-					taskProgressVO := TaskProgressVO{Name: taskName}
+					taskProgressVO := TaskProgressVO{Name: task.AliasRef + "-" + taskName}
 
 					if len(inputYamlByts) > 0 {
 
@@ -253,9 +253,9 @@ func main() {
 						return
 					}
 
-				}
+					outputHandler(task, rule.RefMaps, taskName)
 
-				outputHandler(taskInfos, rule.RefMaps, taskFolderNames)
+				}
 
 				ruleProgressVO.Status = "COMPLETED"
 
@@ -307,7 +307,7 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 			if ref.SourceRef.AliasRef == "*" {
 				if ruleIOValues != nil && len(ruleIOValues.Inputs) > 0 {
 					if val, ok := ruleIOValues.Inputs[ref.SourceRef.VarName]; ok {
-						inputMap[ref.SourceRef.VarName] = val
+						inputMap[ref.TargetRef.VarName] = val
 					}
 				}
 			} else {
@@ -539,32 +539,40 @@ func readFileHelper(fileName string, target interface{}, nestedLevelLimit int, c
 	json.Unmarshal(byts, target)
 }
 
-func outputHandler(taskInfos []*TaskInfo, refstruct []*RefStruct, taskNames []string) error {
+func outputHandler(taskInfos *TaskInfo, refstruct []*RefStruct, taskName string) error {
 
 	taskOutputs := make(map[string]map[string]interface{})
 
-	for _, taskName := range taskNames {
-		if byts, err := os.ReadFile(filepath.Join(taskName, "task_output.json")); err == nil && len(byts) > 2 {
+	if byts, err := os.ReadFile(filepath.Join(taskName, "task_output.json")); err == nil && len(byts) > 2 {
 
-			data := make(map[string]interface{})
-			err = json.Unmarshal(byts, &data)
-			if err != nil {
-				return err
+		data := make(map[string]interface{})
+		err = json.Unmarshal(byts, &data)
+		if err != nil {
+			return err
+		}
+
+		if val, ok := data["Outputs"]; ok {
+			data, ok := val.(map[string]interface{})
+			if !ok {
+				return errors.New("no o/p available")
 			}
-
-			if val, ok := data["Outputs"]; ok {
-				data, ok := val.(map[string]interface{})
-				if !ok {
-					return errors.New("no o/p available")
-				}
-				taskOutputs[taskName] = data
-			}
-
+			taskOutputs[taskInfos.AliasRef+"-"+taskName] = data
 		}
 
 	}
+	
+	existingTaskOutputs := make(map[string]map[string]interface{})
+	if byts, err := os.ReadFile("task_level_output.json"); err == nil && len(byts) > 2 {
+		err = json.Unmarshal(byts, &existingTaskOutputs)
+		if err != nil {
+			return err
+		}
+	}
 
-	if taskOutputsByts, err := json.MarshalIndent(taskOutputs, "", "	"); err == nil {
+	for alias, outputData := range taskOutputs {
+		existingTaskOutputs[alias] = outputData
+	}
+	if taskOutputsByts, err := json.MarshalIndent(existingTaskOutputs, "", "	"); err == nil {
 		err = os.WriteFile("task_level_output.json", taskOutputsByts, os.ModePerm)
 		if err != nil {
 			writeErrorMessage(err)
@@ -572,31 +580,35 @@ func outputHandler(taskInfos []*TaskInfo, refstruct []*RefStruct, taskNames []st
 	}
 
 	outputs := make(map[string]interface{})
+	if byts, err := os.ReadFile("output.json"); err == nil  && len(byts) > 2{
+		err = json.Unmarshal(byts, &outputs)
+		if err != nil {
+			return err
+		}
+	}
 	for _, ref := range refstruct {
 		if ref.TargetRef.AliasRef == "*" && ref.TargetRef.FieldType == "Output" {
-			for _, otherTask := range taskInfos {
-				if otherTask.AliasRef == ref.SourceRef.AliasRef {
-					otherTaskName := strings.ReplaceAll(otherTask.TaskGUID, "{{", "")
-					otherTaskName = strings.ReplaceAll(otherTaskName, "}}", "")
-					// if _, ok := taskOutputs[otherTaskName]; !ok {
-					// 	byts, err := os.ReadFile(otherTaskName + string(os.PathSeparator) + "task_output.json")
-					// 	if err != nil {
-					// 		return err
-					// 	}
+			// for _, otherTask := range taskInfos {
+			// if otherTask.AliasRef == ref.SourceRef.AliasRef {
+			// 	otherTaskName := strings.ReplaceAll(otherTask.TaskGUID, "{{", "")
+			// 	otherTaskName = strings.ReplaceAll(otherTaskName, "}}", "")
+			// if _, ok := taskOutputs[otherTaskName]; !ok {
+			// 	byts, err := os.ReadFile(otherTaskName + string(os.PathSeparator) + "task_output.json")
+			// 	if err != nil {
+			// 		return err
+			// 	}
 
-					// }
-
-					if taskOutput, ok := taskOutputs[otherTaskName]; ok {
-						if val, newOk := taskOutput[ref.SourceRef.VarName]; newOk {
-							outputs[ref.TargetRef.VarName] = val
-						}
+			// }
+			if taskOutput, ok := taskOutputs[taskInfos.AliasRef+"-"+taskName]; ok {
+				if taskInfos.AliasRef == ref.SourceRef.AliasRef {
+					if val, newOk := taskOutput[ref.SourceRef.VarName]; newOk {
+						outputs[ref.TargetRef.VarName] = val
 					}
-
 				}
-
 			}
 
 		}
+
 	}
 
 	if len(outputs) > 0 {
@@ -611,7 +623,7 @@ func outputHandler(taskInfos []*TaskInfo, refstruct []*RefStruct, taskNames []st
 
 		}
 
-		if taskOutputsByts, err := json.MarshalIndent(taskOutputs, "", "	"); err == nil {
+		if taskOutputsByts, err := json.MarshalIndent(existingTaskOutputs, "", "	"); err == nil {
 			err = os.WriteFile("task_level_output.json", taskOutputsByts, os.ModePerm)
 			if err != nil {
 				writeErrorMessage(err)

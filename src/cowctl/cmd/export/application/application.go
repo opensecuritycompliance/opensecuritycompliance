@@ -36,28 +36,28 @@ func runE(cmd *cobra.Command) error {
 	}
 	apps := utils.GetApplicationNamesForBinary([]string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
 	jsonData, err := json.Marshal(apps)
-	if err != nil {
+    if err != nil {
 		fmt.Println("err:", err)
-		return err
-	}
+        return err
+    }
 
 	folderPath := "./export"
-	filePath := folderPath + "/applications.json"
+    filePath := folderPath + "/applications.json"
 
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-		err := os.Mkdir(folderPath, os.ModePerm) // Create the folder
-		if err != nil {
+        err := os.Mkdir(folderPath, os.ModePerm) // Create the folder
+        if err != nil {
 			fmt.Println("err:", err)
 			return err
-		}
-	}
+        }
+    }
 
-	// Write jsonData to a file
-	err = os.WriteFile(filePath, jsonData, os.ModePerm)
-	if err != nil {
-		fmt.Println("err:", err)
+    // Write jsonData to a file
+    err = os.WriteFile(filePath, jsonData, os.ModePerm)
+    if err != nil {
+        fmt.Println("err:", err)
 		return err
-	}
+    }
 
 	return err
 }

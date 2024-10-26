@@ -30,6 +30,15 @@ var ValidateDate = func(input string) error {
 	return nil
 }
 
+var ValidateDateTime = func(input string) error {
+	pattern := `^[0-9-TZ:]+$`
+	re := regexp.MustCompile(pattern)
+	if !re.MatchString(input) {
+		return fmt.Errorf("invalid date format (expected YYYY-MM-DD)")
+	}
+	return nil
+}
+
 var ValidateVersion = func(input string) error {
 	matched, err := regexp.MatchString(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`, input)
 	if err != nil || (!matched && input != "latest") {
