@@ -243,3 +243,11 @@ var (
 	Authorization   = "Authorization"
 	SecurityContext = "X-Cow-Security-Context"
 )
+
+const (
+	DateTimeFormatDefault           = "2006-01-02T15:04:05Z"
+	DateTimeFormatDefaultV2         = "2006-01-02T15:04:05"
+	DateTimeFormatWithoutSecondsUTC = "2006-01-02T15:04"
+	DateTimeFormatWithoutSeconds    = "2006-01-02 15:04"
+	DateFormatDefault               = "2006-01-02"
+)

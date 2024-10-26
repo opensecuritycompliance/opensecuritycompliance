@@ -679,19 +679,30 @@ func GetAuthToken(additionalInfo *vo.AdditionalInfo) (*vo.AuthorizationResponse,
 
 	client := resty.New()
 
-	resp, err := client.R().SetFormData(map[string]string{
+	formData := map[string]string{
 		"grant_type":    "client_credentials",
 		"client_id":     clientID,
 		"client_secret": clientSecret,
-	}).SetResult(authResponse).Post(url)
+	}
+
+	if IsNotEmpty(additionalInfo.UserDomain) {
+		formData["domain_name"] = additionalInfo.UserDomain
+	}
+
+	errorVO := &vo.ErrorVO{}
+
+	resp, err := client.R().SetFormData(formData).SetResult(authResponse).SetError(errorVO).Post(url)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode() != http.StatusOK || authResponse == nil ||
-		IsEmpty(authResponse.AuthToken) || IsEmpty(authResponse.TokenType) {
-		return nil, errors.New("cannot get auth token")
+	if resp.StatusCode() != http.StatusOK {
+		if errorVO != nil && (IsNotEmpty(errorVO.Description)) {
+			return nil, errors.New(errorVO.Description)
+		} else if authResponse == nil || IsEmpty(authResponse.AuthToken) || IsEmpty(authResponse.TokenType) {
+			return nil, errors.New("cannot get auth token")
+		}
 	}
 
 	return authResponse, nil
@@ -1339,22 +1350,8 @@ func GetTasks(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 				}
 
 				if err == nil {
-					inputYAMLFile := filepath.Join(filepath.Dir(path), constants.TaskInputYAMLFile)
-					if IsFileExist(inputYAMLFile) {
-						taskInputVO := &vo.TaskInputV2{}
-						bytes, _ := os.ReadFile(inputYAMLFile)
-						err := yaml.Unmarshal(bytes, taskInputVO)
-						if err == nil {
-							taskVO.CatalogType = catalogType
-							if additionalInfo.ApplicationInfo != nil {
-								if taskInputVO.UserObject != nil && taskInputVO.UserObject.App.ApplicationName == additionalInfo.ApplicationInfo.App.Meta.Name {
-									availableTasks = append(availableTasks, taskVO)
-								}
-							} else {
-								availableTasks = append(availableTasks, taskVO)
-							}
-						}
-					}
+					taskVO.CatalogType = catalogType
+					availableTasks = append(availableTasks, taskVO)
 				}
 			}
 		}
@@ -2072,6 +2069,7 @@ func UpdateAuthConfig(authConfig *vo.AuthConfigVO, additionalInfo *vo.Additional
 		additionalInfo.PolicyCowConfig.UserData.Credentials.Compliancecow.ClientSecret = authConfig.ClientSecret
 		additionalInfo.PolicyCowConfig.UserData.Credentials.Compliancecow.SubDomain = authConfig.SubDomain
 		additionalInfo.Host = authConfig.Host
+		additionalInfo.UserDomain = authConfig.UserDomain
 
 		if strings.HasSuffix(additionalInfo.Host, "/") {
 			additionalInfo.Host = strings.TrimRight(additionalInfo.Host, "/")
@@ -2134,6 +2132,23 @@ func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.Addition
 		}
 	}
 	return language, nil
+}
+
+var dateFormats = []string{
+	constants.DateFormatDefault,
+	constants.DateTimeFormatDefault,
+	constants.DateTimeFormatWithoutSecondsUTC,
+	constants.DateTimeFormatWithoutSeconds,
+}
+
+func ParseDateString(dateStr string) (time.Time, error) {
+	for _, format := range dateFormats {
+		parsedTime, err := time.Parse(format, dateStr)
+		if err == nil {
+			return parsedTime, nil
+		}
+	}
+	return time.Time{}, errors.New("unable to parse date string")
 }
 
 func IsDefaultConfigPath(path string) bool {

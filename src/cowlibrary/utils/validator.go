@@ -44,7 +44,7 @@ func init() {
 	})
 
 	Validate.RegisterValidation("taskname", func(fl validator.FieldLevel) bool {
-		matched, err := regexp.MatchString(`^[A-Z][A-Za-z]{0,49}$`, fl.Field().String())
+		matched, err := regexp.MatchString(`^[A-Z][A-Za-z0-9]{0,49}$`, fl.Field().String())
 		if err != nil {
 			return false
 		}

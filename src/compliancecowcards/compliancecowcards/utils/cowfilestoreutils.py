@@ -3,6 +3,7 @@ import json
 import os
 import uuid
 from minio import Minio
+from minio.error import S3Error
 from compliancecowcards.structs import cowvo
 from compliancecowcards.utils import cowdictutils, cowstorageserviceutils
 import hashlib
@@ -10,23 +11,40 @@ from urllib import parse
 import pandas as pd
 from posixpath import join as urljoin
 
+file_store_bucket_name = os.getenv("COW_STORAGE_BUCKET_NAME")
+file_store_prefix = os.getenv("COW_STORAGE_FILE_PREFIX")
+create_bucket = os.getenv("COW_STORAGE_CREATE_BUCKET", "true").lower() == "true"
+
 
 def get_file_content(task_inputs: cowvo.TaskInputs, minio_client: Minio, bucket_name: str, object_name: str, file_name: str) -> bytes and str and dict:
 
     file_content, error = None, None
     if not bucket_name and task_inputs is not None:
-        url, _, _, bucket_name, err = get_minio_credentials(
-            task_inputs)
+        url, _, _, bucket_name, err = get_minio_credentials(task_inputs)
         if not bucket_name:
             bucket_name = "demo"
 
     if object_name.startswith("http://") or object_name.startswith("https://"):
-        path = parse.urlparse(object_name).path
-        path = path[1:]
+        src_object_path = object_name
+        parsed_url = parse.urlparse(object_name)
+        src_path = parsed_url.path
+        path = src_path[1:]
         path_arr = path.split("/")
         bucket_name = path_arr[0]
         object_name = "/".join(path_arr[1:])
-        file_name = path_arr[len(path_arr)-1]
+        file_name = path_arr[len(path_arr) - 1]
+
+        if is_amazon_s3_host(src_object_path):
+            src_path_arr = src_path.split("/")
+            if len(src_path_arr) < 4:
+                return None, None, {"error": "invalid URL structure, cannot extract bucket and object"}
+
+            bucket_name = src_path_arr[3]
+            object_name = "/".join(src_path_arr[4:])
+
+            prefix_arr = parse.parse_qs(parsed_url.query).get("prefix")
+            if isinstance(prefix_arr, list) and prefix_arr:
+                object_name = prefix_arr[0]
 
     found = minio_client.bucket_exists(bucket_name)
     if found:
@@ -38,40 +56,45 @@ def get_file_content(task_inputs: cowvo.TaskInputs, minio_client: Minio, bucket_
 
 def upload_file_with_path(task_inputs: cowvo.TaskInputs, minio_client: Minio, bucket_name: str, object_name: str, file_name: str, content_type: str = "application/json") -> str and str and dict:
     if not bucket_name:
-        url, _, _, bucket_name, err = get_minio_credentials(
-            task_inputs)
+        url, _, _, bucket_name, err = get_minio_credentials(task_inputs)
         if not bucket_name:
             bucket_name = "demo"
+
+    bucket_name, prefix = get_bucket_and_prefix(bucket_name)
+
     found = minio_client.bucket_exists(bucket_name)
     if not found:
-        return None, None, {'error': "Bucket doesn't exist"}
+        return None, None, {"error": "Bucket doesn't exist"}
 
-    folder_structure = get_folder_name(task_inputs)
-    new_object_name = folder_structure+"/"+object_name
+    folder_structure = prefix + get_folder_name(task_inputs)
+    new_object_name = folder_structure + "/" + object_name
 
-    tag = minio_client.fput_object(
-        bucket_name, new_object_name, file_name, content_type)
+    tag = minio_client.fput_object(bucket_name, new_object_name, file_name, content_type)
 
-    url, access_key, secret_key, bucket_name, err = get_minio_credentials(
-        task_inputs)
+    if is_amazon_s3_host(minio_client._base_url.host):
+        file_name, error = build_object_url_with_host(minio_client=minio_client, bucket=bucket_name, object_name=new_object_name)
+        if error:
+            return None, None, error
+    else:
+        url, _, _, bucket_name, _ = get_minio_credentials(task_inputs)
 
-    if "http://" not in url:
-        url = "http://"+url
+        if "http://" not in url:
+            url = "http://" + url
 
-    file_name = url + "/" + bucket_name + "/" + new_object_name
+        file_name = url + "/" + bucket_name + "/" + new_object_name
 
     return file_name, folder_structure, None
 
 
-def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio, bucket_name: str, object_name: str,
-                             file_name: str, file_content=None, content_type: str = "application/json") -> str and str and dict:
+def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio, bucket_name: str, object_name: str, file_name: str, file_content=None, content_type: str = "application/json") -> str and str and dict:
     url = "localhost:9000"
     error = None
     if not bucket_name:
-        url, _, _, bucket_name, err = get_minio_credentials(
-            task_inputs)
+        url, _, _, bucket_name, err = get_minio_credentials(task_inputs)
         if not bucket_name:
             bucket_name = "demo"
+
+    bucket_name, prefix = get_bucket_and_prefix(bucket_name)
 
     found = minio_client.bucket_exists(bucket_name)
     if not found:
@@ -85,27 +108,23 @@ def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio,
 
         if task_inputs is not None:
             folder_structure = get_folder_name(task_inputs)
-            new_object_name = folder_structure+"/"+object_name
+            new_object_name = folder_structure + "/" + object_name
         elif "/" in folder_structure:
             folder_structure_arr = folder_structure.split("/")
-            folder_structure = "/".join(
-                folder_structure_arr[:len(folder_structure_arr)-1])
+            folder_structure = "/".join(folder_structure_arr[: len(folder_structure_arr) - 1])
 
         content_length = 0
         if isinstance(file_content, pd.DataFrame):
             if new_object_name.endswith(".ndjson"):
-                file_content = file_content.to_json(
-                    orient='records', lines=True)
+                file_content = file_content.to_json(orient="records", lines=True)
             elif new_object_name.endswith(".json"):
-                file_content = file_content.to_json(
-                    orient='records')
+                file_content = file_content.to_json(orient="records")
             elif new_object_name.endswith(".csv"):
                 file_content = file_content.to_csv(index=False)
             else:
 
                 f = io.BytesIO()
-                file_content.to_parquet(f, index=False, engine='auto',
-                                        compression='snappy')
+                file_content.to_parquet(f, index=False, engine="auto", compression="snappy")
                 f.seek(0)
                 file_content = f.read()
 
@@ -120,17 +139,22 @@ def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio,
                 content_length = len(file_content)
                 file_content = io.BytesIO(file_content)
 
-            etag = minio_client.put_object(
-                bucket_name=bucket_name, object_name=new_object_name, data=file_content, length=content_length)
+            new_object_name = prefix + new_object_name
+            folder_structure = prefix + folder_structure
 
-            if "http://" not in url:
-                url = "http://"+url
+            etag = minio_client.put_object(bucket_name=bucket_name, object_name=new_object_name, data=file_content, length=content_length)
 
-            file_name = url + "/" + bucket_name + "/" + new_object_name
+            if is_amazon_s3_host(minio_client._base_url.host):
+                file_name, error = build_object_url_with_host(minio_client=minio_client, bucket=bucket_name, object_name=new_object_name)
+            else:
+                if "http://" not in url:
+                    url = "http://" + url
+
+                file_name = url + "/" + bucket_name + "/" + new_object_name
         else:
             error = {"error": "not a valid data"}
     else:
-        error = {'error': "Bucket doesn't exist"}
+        error = {"error": "Bucket doesn't exist"}
     return file_name, folder_structure, error
 
 
@@ -176,11 +200,15 @@ def get_hash(*argv):
 
 def get_minio_client(url, access_key, secret_key) -> Minio:
 
+    secure = False
+    if is_amazon_s3_host(url):
+        secure = True
+
     return Minio(
         url,
         access_key=access_key,
         secret_key=secret_key,
-        secure=False,
+        secure=secure,
     )
 
 
@@ -202,8 +230,7 @@ def get_input_object(task_inputs: cowvo.TaskInputs, app_name: str = None, tag_na
 
 def get_minio_client_with_inputs(task_inputs: cowvo.TaskInputs) -> Minio and dict:
 
-    url, access_key, secret_key, _, err = get_minio_credentials(
-        task_inputs)
+    url, access_key, secret_key, _, err = get_minio_credentials(task_inputs)
     if err and bool(err):
         return None, err
     return get_minio_client(url, access_key, secret_key), None
@@ -212,7 +239,7 @@ def get_minio_client_with_inputs(task_inputs: cowvo.TaskInputs) -> Minio and dic
 def get_minio_credentials(task_inputs: cowvo.TaskInputs) -> str and str and str and str and dict:
     minio_system_obj = get_system_object(task_inputs, "minio")
     if minio_system_obj is None or not minio_system_obj.credentials or not isinstance(minio_system_obj.credentials, list):
-        return None, None, None, None, {'error': 'minio credentials not found'}
+        return None, None, None, None, {"error": "minio credentials not found"}
 
     access_key, secret_key, url, bucket_name = None, None, None, None
 
@@ -220,55 +247,54 @@ def get_minio_credentials(task_inputs: cowvo.TaskInputs) -> str and str and str 
         if hasattr(credential, "login_url") and isinstance(credential.login_url, str) and hasattr(credential, "other_cred_info") and isinstance(credential.other_cred_info, dict):
             url = credential.login_url
             if cowdictutils.is_valid_key(credential.other_cred_info, "MINIO_ACCESS_KEY") and cowdictutils.is_valid_key(credential.other_cred_info, "MINIO_SECRET_KEY"):
-                access_key = credential.other_cred_info['MINIO_ACCESS_KEY']
-                secret_key = credential.other_cred_info['MINIO_SECRET_KEY']
-                bucket_name = credential.other_cred_info.get(
-                    'BucketName', 'demo')
+                access_key = credential.other_cred_info["MINIO_ACCESS_KEY"]
+                secret_key = credential.other_cred_info["MINIO_SECRET_KEY"]
+                bucket_name = credential.other_cred_info.get("BucketName", "demo")
                 break
 
     if not url or not access_key or not secret_key:
-        return None, None, None, None, {'error': 'minio credentials not found'}
+        return None, None, None, None, {"error": "minio credentials not found"}
 
     return url, access_key, secret_key, bucket_name, None
 
 
 def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_name=None, file_name=None, file_content=None, header=None, content_type=None) -> str and str and dict:
-    """ File download can be handled by the following(persistence).
+    """File download can be handled by the following(persistence).
 
-        1.  Minio
-        2.  Trigger call to storage service(internal)
-        3.  Local file system(tmp/ruleengine/outputs/{run_id}/{task_guid}/{file_name}) -
-        No need external dependency. Instead of docker they can test it in their local, so the unit testing will be easier for them
-        (Obiviously they can do it in their docker set up too.) And as of now, we're not mainitaining any history regarding run(in PolicyCow).
-        Do we need to do it?.   And also it'll be used to club the rules and synthesizer in PolicyCow.
-        Can we club synthesizer and rules in PolicyCow?  -   Raja suggested this. And I aggreed to this.
+    1.  Minio
+    2.  Trigger call to storage service(internal)
+    3.  Local file system(tmp/ruleengine/outputs/{run_id}/{task_guid}/{file_name}) -
+    No need external dependency. Instead of docker they can test it in their local, so the unit testing will be easier for them
+    (Obiviously they can do it in their docker set up too.) And as of now, we're not mainitaining any history regarding run(in PolicyCow).
+    Do we need to do it?.   And also it'll be used to club the rules and synthesizer in PolicyCow.
+    Can we club synthesizer and rules in PolicyCow?  -   Raja suggested this. And I aggreed to this.
 
-        The above 3 types can be identified based on the env variables
+    The above 3 types can be identified based on the env variables
 
-        COW_PERSISTENCE_TYPE: MINIO | LOCAL_FILE_STORE_PATH | STORAGE_SERVICE_PATH
+    COW_PERSISTENCE_TYPE: MINIO | LOCAL_FILE_STORE_PATH | STORAGE_SERVICE_PATH
 
-        MINIO:
-            "MINIO_ACCESS_KEY": "",
-            "MINIO_SECRET_KEY": "",
-            "MINIO_HOST":"",
-            "MINIO_PORT":"",
+    MINIO:
+        "MINIO_ACCESS_KEY": "",
+        "MINIO_SECRET_KEY": "",
+        "MINIO_HOST":"",
+        "MINIO_PORT":"",
 
-        LOCAL_FILE_STORE_PATH:
+    LOCAL_FILE_STORE_PATH:
 
-        STORAGE_SERVICE_PATH:
-            "COW_STORAGE_SERVICE_PROTOCOL":""
-            "COW_STORAGE_SERVICE_HOST_NAME":""
-            "COW_STORAGE_SERVICE_PORT_NUMBER":""
+    STORAGE_SERVICE_PATH:
+        "COW_STORAGE_SERVICE_PROTOCOL":""
+        "COW_STORAGE_SERVICE_HOST_NAME":""
+        "COW_STORAGE_SERVICE_PORT_NUMBER":""
 
-        Attributes
-        ----------
-        file_name : str
-            name of the file name to be upload
-        file_content : bytes
-            file content
-        minio_client : minio.Minio
-            you can pass minio client(based on the persistence u chose).
-        bucket_name : str
+    Attributes
+    ----------
+    file_name : str
+        name of the file name to be upload
+    file_content : bytes
+        file content
+    minio_client : minio.Minio
+        you can pass minio client(based on the persistence u chose).
+    bucket_name : str
 
     """
 
@@ -276,14 +302,14 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
 
     is_local_file_system, is_minio, is_storage = False, False, True
 
-    file_hash, file_path, error = None, None,  None
+    file_hash, file_path, error = None, None, None
 
     is_policy_cow_flow = False
     is_policy_cow_flow = os.getenv("IS_POLICY_COW_FLOW", None)
     if is_policy_cow_flow and is_policy_cow_flow == "true":
         is_policy_cow_flow = True
 
-    is_valid_content=False
+    is_valid_content = False
 
     if isinstance(file_content, pd.DataFrame):
         if not file_content.empty:
@@ -291,24 +317,19 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
     elif file_content:
         is_valid_content = True
 
-
     if (persistence_type == "minio" or is_policy_cow_flow) and is_valid_content:
 
         if is_policy_cow_flow and minio_client is None:
-            minio_url = "%s:%s" % (
-                os.getenv("MINIO_HOST_NAME", "cowstorage"),
-                os.getenv("MINIO_PORT_NUMBER", "9000"))
+            minio_url = "%s:%s" % (os.getenv("MINIO_HOST_NAME", "cowstorage"), os.getenv("MINIO_PORT_NUMBER", "9000"))
 
-            minio_client = Minio(
-                minio_url,
-                access_key=os.getenv("MINIO_ROOT_USER"),
-                secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-                secure=False,
-            )
+            minio_login_url = os.getenv("MINIO_LOGIN_URL")
+            if minio_login_url:
+                minio_url = minio_login_url
+
+            minio_client = get_minio_client(minio_url, os.getenv("MINIO_ROOT_USER"), os.getenv("MINIO_ROOT_PASSWORD"))
 
         if minio_client is None:
-            minio_client, error = get_minio_client_with_inputs(
-                task_inputs)
+            minio_client, error = get_minio_client_with_inputs(task_inputs)
             if error and bool(error):
                 return file_hash, file_url, error
 
@@ -319,9 +340,7 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
                 object_name = file_name
             # file_url = object_name
 
-            file_url, file_hash, error = upload_file_with_content(
-                task_inputs=task_inputs, minio_client=minio_client, bucket_name=bucket_name, object_name=object_name,
-                file_name=file_name, file_content=file_content, content_type=content_type)
+            file_url, file_hash, error = upload_file_with_content(task_inputs=task_inputs, minio_client=minio_client, bucket_name=bucket_name, object_name=object_name, file_name=file_name, file_content=file_content, content_type=content_type)
             return file_hash, file_url, None
             # except Exception as err:
             #     print("err :", err)
@@ -329,16 +348,14 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
 
     elif persistence_type == "storage":
         """We'll consider this as a internal process - means the process is in our system - We'll use storage service"""
-        file_resp = cowstorageserviceutils.savefile(
-            bucket_name, file_name, file_content, header)
+        file_resp = cowstorageserviceutils.savefile(bucket_name, file_name, file_content, header)
         if not object_name:
             object_name = file_name
-        file_path = bucket_name+"/"+object_name
+        file_path = bucket_name + "/" + object_name
         if cowdictutils.is_valid_key(file_resp, "error"):
             return file_hash, file_path, file_resp
 
-        url_hash_resp = cowstorageserviceutils.getfilehash(
-            file_path, header)
+        url_hash_resp = cowstorageserviceutils.getfilehash(file_path, header)
         if cowdictutils.is_valid_key(url_hash_resp, "hash"):
             file_hash = url_hash_resp["hash"]
 
@@ -357,42 +374,42 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
 
 
 def download_file(task_inputs: cowvo.TaskInputs = None, minio_client=None, bucket_name=None, object_name=None, file_name=None, hash=None, header=None) -> str and bytes and dict:
-    """ File download can be handled by the following(persistence).
+    """File download can be handled by the following(persistence).
 
-        1.  Minio
-        2.  Trigger call to storage service(internal)
-        3.  Local file system(tmp/ruleengine/outputs/{run_id}/{task_guid}/{file_name}) -
-        No need external dependency. Instead of docker they can test it in their local, so the unit testing will be easier for them
-        (Obiviously they can do it in their docker set up too.) And as of now, we're not mainitaining any history regarding run(in PolicyCow).
-        Do we need to do it?.   And also it'll be used to club the rules and synthesizer in PolicyCow.
-        Can we club synthesizer and rules in PolicyCow?  -   Raja suggested this. And I aggreed to this.
+    1.  Minio
+    2.  Trigger call to storage service(internal)
+    3.  Local file system(tmp/ruleengine/outputs/{run_id}/{task_guid}/{file_name}) -
+    No need external dependency. Instead of docker they can test it in their local, so the unit testing will be easier for them
+    (Obiviously they can do it in their docker set up too.) And as of now, we're not mainitaining any history regarding run(in PolicyCow).
+    Do we need to do it?.   And also it'll be used to club the rules and synthesizer in PolicyCow.
+    Can we club synthesizer and rules in PolicyCow?  -   Raja suggested this. And I aggreed to this.
 
-        The above 3 types can be identified based on the env variables
+    The above 3 types can be identified based on the env variables
 
-        COW_PERSISTENCE_TYPE: MINIO | LOCAL_FILE_STORE_PATH | STORAGE_SERVICE_PATH
+    COW_PERSISTENCE_TYPE: MINIO | LOCAL_FILE_STORE_PATH | STORAGE_SERVICE_PATH
 
-        MINIO:
-            "MINIO_ACCESS_KEY": "",
-            "MINIO_SECRET_KEY": "",
-            "MINIO_HOST":"",
-            "MINIO_PORT":"",
+    MINIO:
+        "MINIO_ACCESS_KEY": "",
+        "MINIO_SECRET_KEY": "",
+        "MINIO_HOST":"",
+        "MINIO_PORT":"",
 
-        LOCAL_FILE_STORE_PATH:
+    LOCAL_FILE_STORE_PATH:
 
-        STORAGE_SERVICE_PATH:
-            "COW_STORAGE_SERVICE_PROTOCOL":""
-            "COW_STORAGE_SERVICE_HOST_NAME":""
-            "COW_STORAGE_SERVICE_PORT_NUMBER":""
+    STORAGE_SERVICE_PATH:
+        "COW_STORAGE_SERVICE_PROTOCOL":""
+        "COW_STORAGE_SERVICE_HOST_NAME":""
+        "COW_STORAGE_SERVICE_PORT_NUMBER":""
 
-        Attributes
-        ----------
-        file_name : str
-            name of the file name to be upload
-        file_content : bytes
-            file content
-        minio_client : minio.Minio
-            you can pass minio client(based on the persistence u chose).
-        bucket_name : str
+    Attributes
+    ----------
+    file_name : str
+        name of the file name to be upload
+    file_content : bytes
+        file content
+    minio_client : minio.Minio
+        you can pass minio client(based on the persistence u chose).
+    bucket_name : str
 
     """
 
@@ -409,8 +426,7 @@ def download_file(task_inputs: cowvo.TaskInputs = None, minio_client=None, bucke
 
         if minio_client:
             try:
-                resp_file_name, resp_file_bytes, error = get_file_content(
-                    task_inputs, minio_client, bucket_name, object_name, file_name)
+                resp_file_name, resp_file_bytes, error = get_file_content(task_inputs, minio_client, bucket_name, object_name, file_name)
             except:
                 error = {"error": "cannot download the file"}
 
@@ -452,4 +468,61 @@ def add_extension_if_missing(filename, extension):
 
 
 def get_absolute_path(minio_url: str = "localhost:9000", folder_path: str = None, file_name: str = None) -> str:
-    return "http://"+minio_url+urljoin(folder_path, file_name)
+    return "http://" + minio_url + urljoin(folder_path, file_name)
+
+
+def build_object_url(minio_client, bucket, object_name):
+    """Build the object URL."""
+    return build_object_url_with_host(minio_client, bucket, object_name, "")
+
+
+def build_object_url_with_host(minio_client: Minio = None, bucket: str = None, object_name: str = None, host: str = None):
+    """Build the object URL with the host."""
+    if not host:
+
+        host = minio_client._base_url.host  # Get the host from Minio client
+
+    is_amazon_s3 = is_amazon_s3_host(host)
+
+    try:
+        region = minio_client._get_region(bucket_name=bucket)
+    except S3Error as err:
+        return None, {"error": f"Error happened while getting bucket region {err}"}
+
+    scheme = "https" if minio_client._base_url.is_https else "http"
+    base_url = f"{scheme}://{host}"
+
+    if is_amazon_s3:
+        # s3_url = f"https://{region}.console.aws.amazon.com/s3/buckets/{bucket}?region={region}&prefix={object_name}"
+        s3_url = f"https://{region}.console.aws.amazon.com/s3/buckets/{bucket}?prefix={object_name}"
+    else:
+        s3_url = f"{base_url}/{bucket}/{object_name}"
+
+    return s3_url, None
+
+
+def is_amazon_s3_host(host):
+    """Check if the host is Amazon S3."""
+    return "s3.amazonaws.com" in host or host.startswith("s3.") or "console.aws.amazon.com" in host
+
+
+def get_bucket_and_prefix(bucket_name):
+    """Get the bucket and prefix based on environment settings."""
+    new_bucket_name = bucket_name
+    prefix = ""
+
+    if file_store_bucket_name:
+        new_bucket_name = file_store_bucket_name
+        prefix = bucket_name + "/"
+        if file_store_prefix:
+            prefix += file_store_prefix + "/"
+
+    return new_bucket_name, prefix
+
+
+def load_bool(value, default_value):
+    """Parse boolean values from strings."""
+    try:
+        return value.lower() == "true"
+    except Exception:
+        return default_value

@@ -31,7 +31,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/iancoleman/strcase"
 	"github.com/kyokomi/emoji"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	tablewriter "github.com/olekukonko/tablewriter"
 	"github.com/otiai10/copy"
 	cp "github.com/otiai10/copy"
@@ -1378,15 +1378,17 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 					minioEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
 
 					log.SetOutput(io.Discard)
+
 					minioClient, err := cowStorage.RegisterMinio(minioEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
 
 					if err == nil && minioClient != nil {
 						folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogDataFile
-						_, err = minioClient.FPutObject(constants.BucketNameLog, folderPath, logFilePath, minio.PutObjectOptions{ContentType: "text"})
 
+						minioFileVO, err := cowStorage.UploadFileToMinioV2(minioClient, constants.BucketNameLog, folderPath, logFilePath, "application/text")
 						if err == nil {
-							outputs[constants.RuleExecutionLogDataKey] = "http://" + minioEndpoint + "/" + constants.BucketNameLog + "/" + folderPath
+							outputs[constants.RuleExecutionLogDataKey] = minioFileVO.ObjectPath
 						}
+
 					}
 					outputsBytes, err := json.MarshalIndent(outputs, "", "  ")
 					if err != nil {
@@ -1411,18 +1413,9 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 					if err == nil && minioClient != nil {
 						folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogFile
-						_, err = minioClient.FPutObject(constants.BucketNameLog, folderPath, logFile, minio.PutObjectOptions{ContentType: "text"})
-
-						// var urlValues url.Values
-
-						// url, err := minioClient.PresignedGetObject(constants.BucketNameLog, folderPath, 7*time.Hour*24, urlValues)
-
-						if err == nil {
-							outputs[constants.RuleExecutionLogKey] = "http://localhost:9001/" + constants.BucketNameLog + "/" + folderPath
-						}
-						// else {
-						// 	outputs[constants.RuleExecutionLogKey] = url.String()
-						// }
+						bucketName, prefix := cowStorage.GetBucketAndPrefix(constants.BucketNameLog)
+						folderPath = prefix + folderPath
+						_, _ = minioClient.FPutObject(context.Background(), bucketName, folderPath, logFile, minio.PutObjectOptions{})
 
 					}
 
@@ -2570,15 +2563,20 @@ func DrawSummaryTable(ruleOutputs []*vo.RuleOutputs, additionalInfo *vo.Addition
 			d.Println("\nYou can view the minio file outputs here")
 			for key, value := range ruleOutput.Outputs {
 				minioLoginURL := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
-				if str, ok := value.(string); ok && strings.Contains(str, minioLoginURL) {
-					splitPath := strings.Split(str, "/")
-					bucketName := splitPath[3]
-					fileName := strings.TrimSuffix(path.Base(str), path.Ext(path.Base(str)))
-					filePathParts := splitPath[4 : len(splitPath)-1]
-					filePath := strings.Join(filePathParts, "/")
-					minioURL := "http://localhost:9001/browser/" + bucketName + "/" + filePath + "/" + fileName
-					link := utils.ColorLink(key, minioURL, "italic green")
-					links = append(links, link)
+				if str, ok := value.(string); ok {
+					if strings.Contains(str, minioLoginURL) {
+						splitPath := strings.Split(str, "/")
+						bucketName := splitPath[3]
+						fileName := strings.TrimSuffix(path.Base(str), path.Ext(path.Base(str)))
+						filePathParts := splitPath[4 : len(splitPath)-1]
+						filePath := strings.Join(filePathParts, "/")
+						minioURL := "http://localhost:9001/browser/" + bucketName + "/" + filePath + "/" + fileName
+						link := utils.ColorLink(key, minioURL, "italic green")
+						links = append(links, link)
+					} else if cowStorage.IsAmazonS3Host(str) {
+						link := utils.ColorLink(key, str, "italic green")
+						links = append(links, link)
+					}
 				}
 			}
 			urlLinks := strings.Join(links, ", ")
@@ -3422,8 +3420,24 @@ func DownloadFileFromMinio(absoluteFilePath string) (*vo.MinioFileVO, error) {
 		return nil, errors.New("cannot create minio client")
 	}
 
-	fileURL.Path = strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
-	object, err := minioClient.GetObject(bucketName, fileURL.Path, minio.GetObjectOptions{})
+	objectPath := strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
+	bucketName, prefix := cowStorage.GetBucketAndPrefix(bucketName)
+	objectPath = prefix + objectPath
+
+	if cowStorage.IsAmazonS3Host(absoluteFilePath) {
+		parts := strings.Split(fileURL.Path, "/")
+		if len(parts) < 4 {
+			return nil, errors.New("invalid URL structure, cannot extract bucket and object")
+		}
+		bucketName = parts[3]
+		objectPath = strings.Join(parts[4:], "/")
+
+		if prefix := fileURL.Query().Get("prefix"); prefix != "" {
+			objectPath = prefix
+		}
+	}
+
+	object, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
 	}

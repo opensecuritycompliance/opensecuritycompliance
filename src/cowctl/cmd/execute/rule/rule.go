@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"
@@ -313,24 +312,24 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 					f := color.New(color.FgRed, color.Bold)
 
 				GetFromDate:
-					fromDate, err := utils.GetValueAsStrFromCmdPrompt("Enter the date for from_date [format: YYYY-MM-DD]: ", true, validationutils.ValidateDate)
+					fromDate, err := utils.GetValueAsStrFromCmdPrompt("Enter the date for from_date [format: YYYY-MM-DD] or [format: YYYY-MM-DDTHH:mm:ssZ]: ", true, validationutils.ValidateDateTime)
 					if err != nil {
 						return err
 					}
 					if cowlibutils.IsNotEmpty(fromDate) {
-						if taskInput.FromDate_, err = time.Parse("2006-01-02", fromDate); err != nil {
+						if taskInput.FromDate_, err = cowlibutils.ParseDateString(fromDate); err != nil {
 							f.Println("Invalid from_date format. Error:", err)
 							goto GetFromDate
 						}
 					}
 
 				GetToDate:
-					toDate, err := utils.GetValueAsStrFromCmdPrompt("Enter the date for to_date [format: YYYY-MM-DD]: ", true, validationutils.ValidateDate)
+					toDate, err := utils.GetValueAsStrFromCmdPrompt("Enter the date for to_date [format: YYYY-MM-DD] or [format: YYYY-MM-DDTHH:mm:ssZ]: ", true, validationutils.ValidateDateTime)
 					if err != nil {
 						return err
 					}
 					if cowlibutils.IsNotEmpty(toDate) {
-						if taskInput.ToDate_, err = time.Parse("2006-01-02", toDate); err != nil {
+						if taskInput.ToDate_, err = cowlibutils.ParseDateString(toDate); err != nil {
 							f.Println("Invalid to_date format. Error:", err)
 							goto GetToDate
 						}

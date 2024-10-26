@@ -3,6 +3,7 @@ package minio
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"cowlibrary/constants"
 	cowlibutils "cowlibrary/utils"
 	"cowlibrary/vo"
@@ -19,10 +20,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/gocarina/gocsv"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	goparquet "github.com/parquet-go/parquet-go"
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -35,6 +38,16 @@ const (
 	DEFAULT_PAGE_SIZE                  = 8 * 1024
 	DEFAULT_COMPRESSION                = parquet.CompressionCodec_SNAPPY
 )
+
+var (
+	fileStoreBucketName = os.Getenv("COW_STORAGE_BUCKET_NAME")
+	fileStorePrefix     = os.Getenv("COW_STORAGE_FILE_PREFIX")
+	createBucket        = loadBool("COW_STORAGE_CREATE_BUCKET", true)
+)
+
+type MinioFileVO struct {
+	ObjectPath string `json:"objectPath,omitempty"`
+}
 
 func GetMinioCredential(systemInputs cowvo.SystemInputs) (string, string, string, error) {
 	var endpoint, accessKey, secretKey string
@@ -67,19 +80,33 @@ func GetMinioCredential(systemInputs cowvo.SystemInputs) (string, string, string
 }
 
 func RegisterMinio(endpoint string, accessKey string, secretKey string, bucketName string) (*minio.Client, error) {
-	minioClient, err := minio.New(endpoint, accessKey, secretKey, false)
+
+	secure := false
+	if IsAmazonS3Host(endpoint) {
+		secure = true
+	}
+
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: secure,
+	})
 	if err != nil {
 		return nil, err
 	}
-	exists, err := minioClient.BucketExists(bucketName)
-	if !exists && err == nil {
-		err = minioClient.MakeBucket(bucketName, "")
-		if err != nil {
-			return nil, err
+	if createBucket {
+		bucketName, _ = GetBucketAndPrefix(bucketName)
+		exists, err := minioClient.BucketExists(context.Background(), bucketName)
+		if !exists && err == nil {
+			// Bucket does not exist. Create one
+			err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
+			if err != nil {
+				log.Printf("%v", err)
+				return nil, err
+			}
 		}
-	}
-	if err == nil && exists {
-		log.Printf("We already own %s", bucketName)
+		if err == nil && exists {
+			log.Printf("We already own %s\n", bucketName)
+		}
 	}
 	return minioClient, err
 }
@@ -174,12 +201,14 @@ func CreateAndUploadJSONFile(data interface{}, fileName string, bucketName strin
 	if err != nil {
 		return "", "", err
 	}
-	if err = UploadFileToMinio(minioClient, bucketName, folderName+fileName, tempFileName, "application/json"); err != nil {
+	minioFileVO, err := UploadFileToMinioV2(minioClient, bucketName, folderName+fileName, tempFileName, "application/json")
+	if err != nil {
 		return "", "", err
 	}
-	fileName = "http://" + endpoint + "/" + bucketName + "/" + folderName + fileName
+	fileName = minioFileVO.ObjectPath
 	defer os.Remove(tempFileName)
-	return fileName, folderName, nil
+	_, prefix := GetBucketAndPrefix(bucketName)
+	return fileName, prefix + folderName, nil
 }
 
 func UploadJSONFile(fileName string, fileContent interface{}, systemInputs interface{}) (string, error) {
@@ -203,11 +232,15 @@ func UploadJSONFile(fileName string, fileContent interface{}, systemInputs inter
 	}
 	reader := bytes.NewReader(payload)
 	objectName := folderName + fileName
-	_, err = minioClient.PutObject(bucketName, objectName, reader, int64(len(payload)), minio.PutObjectOptions{ContentType: "application/json"})
+
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	objectName = prefix + objectName
+
+	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, int64(len(payload)), minio.PutObjectOptions{ContentType: "application/json"})
 	if err != nil {
 		return "", err
 	}
-	absoluteFilePath, err := url.JoinPath("http://", endpoint, bucketName, objectName)
+	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
 	if err != nil {
 		return "", err
 	}
@@ -258,12 +291,16 @@ func UploadNDJSONFile(fileName string, fileContent interface{}, systemInputs int
 	reader := bytes.NewReader(buffer.Bytes())
 
 	objectName := folderName + fileName
-	_, err = minioClient.PutObject(bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/ndjson"})
+
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	objectName = prefix + objectName
+
+	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/ndjson"})
 	if err != nil {
 		return "", err
 	}
 
-	absoluteFilePath, err := url.JoinPath("http://", endpoint, bucketName, objectName)
+	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
 	if err != nil {
 		return "", err
 	}
@@ -294,11 +331,15 @@ func UploadCSVFile(fileName string, fileContent interface{}, systemInputs interf
 	}
 	reader := bytes.NewReader(csvBytes)
 	objectName := folderName + fileName
-	_, err = minioClient.PutObject(bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/csv"})
+
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	objectName = prefix + objectName
+
+	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/csv"})
 	if err != nil {
 		return "", err
 	}
-	absoluteFilePath, err := url.JoinPath("http://", endpoint, bucketName, objectName)
+	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
 	if err != nil {
 		return "", err
 	}
@@ -323,12 +364,20 @@ func UploadZipFile(fileName string, outputBytes []byte, systemInputs interface{}
 	folderName := GetFolderName(systemInputsVO.MetaData)
 	contentBuffer := bytes.NewReader(outputBytes)
 
-	_, err = minioClient.PutObject(bucketName, folderName+fileName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	objectName := prefix + folderName + fileName
+
+	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
 	if err != nil {
 		return "", err
 	}
-	fileName = fmt.Sprintf("http://%v/%v/%v", endpoint, bucketName, filepath.Join(folderName, fileName))
-	return fileName, nil
+
+	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
+	if err != nil {
+		return "", err
+	}
+
+	return absoluteFilePath, nil
 }
 
 func UploadParquetFile[T any](fileName string, instance interface{}, fileContent []T, systemInputs interface{}) (string, error) {
@@ -372,14 +421,12 @@ func UploadParquetFile[T any](fileName string, instance interface{}, fileContent
 		return "", fmt.Errorf("failed to stop Parquet writer: %v", err)
 	}
 
-	if err = UploadFileToMinio(minioClient, bucketName, folderName+fileName, fileName, "application/parquet"); err != nil {
+	minioFileVO, err := UploadFileToMinioV2(minioClient, bucketName, folderName+fileName, fileName, "application/parquet")
+	if err != nil {
 		return "", fmt.Errorf("failed to upload file to Minio: %v", err)
 	}
-	absoluteFilePath, err := url.JoinPath("http://", endpoint, bucketName, folderName, fileName)
-	if err != nil {
-		return "", err
-	}
-	return absoluteFilePath, nil
+
+	return minioFileVO.ObjectPath, nil
 }
 
 func DownloadParquetFile(absoluteFilePath string, systemInputs interface{}) ([]interface{}, error) {
@@ -399,6 +446,24 @@ func DownloadParquetFile(absoluteFilePath string, systemInputs interface{}) ([]i
 		}
 	}
 	fileName := filepath.Base(fileURL.Path)
+
+	objectPath := fileURL.Path
+	if hash != "" {
+		objectPath = hash
+	}
+
+	if IsAmazonS3Host(absoluteFilePath) {
+		parts := strings.Split(fileURL.Path, "/")
+		if len(parts) < 4 {
+			return nil, fmt.Errorf("invalid URL structure, cannot extract bucket and object")
+		}
+		bucketName = parts[3]
+		objectPath = strings.Join(parts[4:], "/")
+	}
+
+	if prefix := fileURL.Query().Get("prefix"); prefix != "" {
+		objectPath = prefix
+	}
 
 	systemInputsVO, err := LoadSystemInputsFromInterface(systemInputs)
 	if err != nil {
@@ -422,12 +487,7 @@ func DownloadParquetFile(absoluteFilePath string, systemInputs interface{}) ([]i
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	objectName := fileURL.Path
-	if hash != "" {
-		objectName = hash
-	}
-
-	err = minioClient.FGetObject(bucketName, objectName, tmpFile.Name(), minio.GetObjectOptions{})
+	err = minioClient.FGetObject(context.Background(), bucketName, objectPath, tmpFile.Name(), minio.GetObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch object from Minio: %w", err)
 	}
@@ -470,12 +530,28 @@ func DownloadFile(absoluteFilePath string, systemInputs interface{}) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
+
+	objectPath := strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
+
+	if IsAmazonS3Host(absoluteFilePath) {
+		parts := strings.Split(fileURL.Path, "/")
+		if len(parts) < 4 {
+			return nil, fmt.Errorf("invalid URL structure, cannot extract bucket and object")
+		}
+		bucketName = parts[3]
+		objectPath = strings.Join(parts[4:], "/")
+	}
+
+	if prefix := fileURL.Query().Get("prefix"); prefix != "" {
+		objectPath = prefix
+	}
+
 	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
 	if err != nil {
 		return nil, err
 	}
-	fileURL.Path = strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
-	object, err := minioClient.GetObject(bucketName, fileURL.Path, minio.GetObjectOptions{})
+
+	object, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -581,12 +657,14 @@ func CreateAndUploadCSVFile(data [][]string, fileName string, bucketName string,
 	if err != nil {
 		return "", "", err
 	}
-	if err = UploadFileToMinio(minioClient, bucketName, folderName+fileName, tempFileName, "application/csv"); err != nil {
+	minioFileVO, err := UploadFileToMinioV2(minioClient, bucketName, folderName+fileName, tempFileName, "application/csv")
+	if err != nil {
 		return "", "", err
 	}
-	fileName = "http://" + endpoint + "/" + bucketName + "/" + folderName + fileName
+	fileName = minioFileVO.ObjectPath
 	defer os.Remove(tempFileName)
-	return fileName, folderName, nil
+	_, prefix := GetBucketAndPrefix(bucketName)
+	return fileName, prefix + folderName, nil
 }
 
 func CreateAndUploadYAMLFile(data []byte, fileName string, bucketName string, systemInputs interface{}) (string, string, error) {
@@ -613,12 +691,14 @@ func CreateAndUploadYAMLFile(data []byte, fileName string, bucketName string, sy
 	if err != nil {
 		return "", "", err
 	}
-	if err = UploadFileToMinio(minioClient, bucketName, folderName+fileName, tempFileName, "application/yaml"); err != nil {
+	minioFileVO, err := UploadFileToMinioV2(minioClient, bucketName, folderName+fileName, tempFileName, "application/yaml")
+	if err != nil {
 		return "", "", err
 	}
-	fileName = "http://" + endpoint + "/" + bucketName + "/" + folderName + fileName
+	fileName = minioFileVO.ObjectPath
 	defer os.Remove(tempFileName)
-	return fileName, folderName, nil
+	_, prefix := GetBucketAndPrefix(bucketName)
+	return fileName, prefix + folderName, nil
 }
 
 func UploadZipFileInMinio(outputBytes []byte, fileName string, bucketName string, systemInputs interface{}) (string, string, error) {
@@ -641,20 +721,76 @@ func UploadZipFileInMinio(outputBytes []byte, fileName string, bucketName string
 	folderName := GetFolderName(systemInputsVO.MetaData)
 	contentBuffer := bytes.NewReader(outputBytes)
 
-	_, err = minioClient.PutObject(bucketName, folderName+fileName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	_, err = minioClient.PutObject(context.Background(), bucketName, prefix+folderName+fileName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
 	if err != nil {
 		return "", "", err
 	}
-	fileName = fmt.Sprintf("http://%v/%v/%v", endpoint, bucketName, filepath.Join(folderName, fileName))
+	fileName, err = BuildObjectURLWithHost(minioClient, bucketName, filepath.Join(folderName, fileName), endpoint)
+	if err != nil {
+		return "", "", err
+	}
 	return fileName, folderName, nil
 }
 
 func UploadFileToMinio(minioClient *minio.Client, bucketName string, objectName string, fileName string, contentType string) (err error) {
-	_, err = minioClient.FPutObject(bucketName, objectName, fileName, minio.PutObjectOptions{ContentType: contentType})
+	_, err = UploadFileToMinioV2(minioClient, bucketName, objectName, fileName, contentType)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func UploadFileToMinioV2(minioClient *minio.Client, bucketName string, objectName string, fileName string, contentType string) (*MinioFileVO, error) {
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	objectName = prefix + objectName
+	_, err := minioClient.FPutObject(context.Background(), bucketName, objectName, fileName, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		return nil, err
+	}
+
+	objectPath, err := BuildObjectURL(minioClient, bucketName, objectName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &MinioFileVO{ObjectPath: objectPath}, nil
+}
+
+func BuildObjectURL(minioClient *minio.Client, bucket string, object string) (string, error) {
+	return BuildObjectURLWithHost(minioClient, bucket, object, "")
+}
+
+func BuildObjectURLWithHost(minioClient *minio.Client, bucket, object, host string) (string, error) {
+	if host == "" {
+		host = minioClient.EndpointURL().Host
+	}
+	isAmazonS3 := IsAmazonS3Host(host)
+	region, err := minioClient.GetBucketLocation(context.Background(), bucket)
+	if err != nil {
+		return "", err
+	}
+
+	scheme := "https"
+	if minioClient.EndpointURL().Scheme != "https" {
+		scheme = "http"
+	}
+	baseURL := fmt.Sprintf("%s://%s", scheme, host)
+
+	var s3URL string
+	if isAmazonS3 {
+		// s3URL = fmt.Sprintf("https://%s.console.aws.amazon.com/s3/buckets/%s?region=%s&prefix=%s", region, bucket, region, object)
+		s3URL = fmt.Sprintf("https://%s.console.aws.amazon.com/s3/buckets/%s?prefix=%s", region, bucket, object)
+	} else {
+		s3URL = fmt.Sprintf("%s/%s/%s", baseURL, bucket, object)
+	}
+
+	return s3URL, nil
+}
+
+func IsAmazonS3Host(host string) bool {
+	return strings.Contains(host, "s3.amazonaws.com") || strings.HasPrefix(host, "s3.") || strings.Contains(host, "console.aws.amazon.com")
 }
 
 func DownloadFileFromMinio(systemInputs interface{}, bucketName string, hash string, fileName string) error {
@@ -675,7 +811,8 @@ func DownloadFileFromMinio(systemInputs interface{}, bucketName string, hash str
 		hash += "/"
 	}
 	objectName := hash + fileName
-	err = minioClient.FGetObject(bucketName, objectName, fileName, minio.GetObjectOptions{})
+	bucketName, prefix := GetBucketAndPrefix(bucketName)
+	err = minioClient.FGetObject(context.Background(), bucketName, prefix+objectName, fileName, minio.GetObjectOptions{})
 	if err != nil {
 		return err
 	}
@@ -742,4 +879,23 @@ func ParseCSVToMap(csvData []byte) ([]map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func GetBucketAndPrefix(bucketName string) (string, string) {
+	newBucketName, prefix := bucketName, ""
+	if fileStoreBucketName != "" {
+		newBucketName = fileStoreBucketName
+		prefix = bucketName + "/"
+		if fileStorePrefix != "" {
+			prefix += fileStorePrefix + "/"
+		}
+	}
+	return newBucketName, prefix
+}
+func loadBool(name string, defaultValue bool) bool {
+	boolV, err := strconv.ParseBool(name)
+	if err != nil {
+		return defaultValue
+	}
+	return boolV
 }
