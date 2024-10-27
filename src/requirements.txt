@@ -1,6 +1,10 @@
 requests
 pandas
 pyarrow
+sqlalchemy
+jmespath
 minio 
 pyyaml
+msal
+requests
 yapf

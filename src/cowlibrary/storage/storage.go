@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"cowlibrary/constants"
 	"cowlibrary/utils"
 	"cowlibrary/vo"
@@ -18,7 +19,7 @@ import (
 
 	cowStorage "appconnections/minio"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 )
 
 func UploadFileToMinio(minioFileVO *vo.MinioFileVO) (*vo.MinioFileInfoVO, error) {
@@ -44,13 +45,17 @@ func UploadFileToMinio(minioFileVO *vo.MinioFileVO) (*vo.MinioFileInfoVO, error)
 		contentType = fileExtension
 	}
 
-	_, err = minioClient.PutObject(minioFileVO.BucketName, folderPath, bytes.NewBuffer(minioFileVO.FileContent), int64(len(minioFileVO.FileContent)), minio.PutObjectOptions{ContentType: contentType})
+	bucketName, prefix := cowStorage.GetBucketAndPrefix(minioFileVO.BucketName)
+
+	folderPath = prefix + folderPath
+
+	_, err = minioClient.PutObject(context.Background(), bucketName, folderPath, bytes.NewBuffer(minioFileVO.FileContent), int64(len(minioFileVO.FileContent)), minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		return nil, err
 	}
 	var urlValues url.Values
 
-	url, err := minioClient.PresignedGetObject(minioFileVO.BucketName, folderPath, 7*time.Hour*24, urlValues)
+	url, err := minioClient.PresignedGetObject(context.Background(), bucketName, folderPath, 7*time.Hour*24, urlValues)
 
 	url.RawQuery = ""
 
@@ -83,6 +88,26 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 	log.SetOutput(io.Discard)
 	fileURL.Host = minoEndpoint
 
+	objectPath := strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
+
+	bucketName, prefix := cowStorage.GetBucketAndPrefix(bucketName)
+	objectPath = prefix + objectPath
+
+	if cowStorage.IsAmazonS3Host(minioFileInfoVO.FileURL) {
+		parts := strings.Split(fileURL.Path, "/")
+		if len(parts) < 4 {
+			return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+				Message: "invalid URL structure", Description: "invalid URL structure, cannot extract bucket and object",
+				ErrorDetails: utils.GetValidationError(fmt.Errorf("invalid URL structure, cannot extract bucket and object: %w", err))}}
+		}
+		bucketName = parts[3]
+		objectPath = strings.Join(parts[4:], "/")
+	}
+
+	if prefix := fileURL.Query().Get("prefix"); prefix != "" {
+		objectPath = prefix
+	}
+
 	minioClient, err := cowStorage.RegisterMinio(minoEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), bucketName)
 
 	if err != nil {
@@ -97,9 +122,7 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 			ErrorDetails: utils.GetValidationError(errors.New("cannot create minio client"))}}
 	}
 
-	fileURL.Path = strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
-
-	fileObject, err := minioClient.GetObject(bucketName, fileURL.Path, minio.GetObjectOptions{})
+	fileObject, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
 			Message: "cannot find the file", Description: "cannot find the file",
@@ -114,6 +137,6 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 
 	fmt.Println("fileContent :", string(fileContent))
 
-	return &vo.MinioFileVO{FileContent: fileContent, FileName: filepath.Base(fileURL.Path)}, nil
+	return &vo.MinioFileVO{FileContent: fileContent, FileName: filepath.Base(objectPath)}, nil
 
 }

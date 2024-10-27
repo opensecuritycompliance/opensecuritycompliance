@@ -104,6 +104,7 @@ type AdditionalInfo struct {
 	LinkedApplications         []LinkedApplicationVO    `json:"linkedApplications,omitempty"`
 	SecurityContext            *SecurityContext         `json:"securityContext,omitempty"`
 	InternalFlow               bool                     `json:"internalFlow,omitempty"`
+	UserDomain                 string                   `json:"userDomain,omitempty"`
 	RuleProgressWorker         *RuleProgressWorkerVO
 	TerminateFlow              bool
 	ClientCredentials

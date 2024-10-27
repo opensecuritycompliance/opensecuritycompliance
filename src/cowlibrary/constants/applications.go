@@ -290,8 +290,6 @@ meta:
   name: {{APPLICATION_CLASS_NAME}} # only alpha
   displayName: {{APPLICATION_CLASS_NAME}} # Display name
   labels: # required. The rule orchestrator selects the INSTANCE of the APPLICATION CLASS based on the labels described here
-    environment: [logical] # Application group type
-    execlevel: [app] # Application group level is 'app' (supported types are 'app' and 'server')
     appType: [{{APPLICATION_CLASS_TAG}}]
   annotations: # optional. These are user defined labels for reporting purposes
     annotateType: [{{APPLICATION_CLASS_TAG}}]
