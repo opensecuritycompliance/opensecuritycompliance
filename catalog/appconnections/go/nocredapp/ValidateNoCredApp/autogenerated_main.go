@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
+	"github.com/google/uuid"
 
 	"cowlibrary/constants"
 )
@@ -32,7 +32,7 @@ func main() {
 	taskInput := &TaskInputs{}
 	taskOutput := &TaskOutputs{Outputs: &Outputs{}}
 	errorOutput := make(map[string]string)
-
+	
 	inputObj := &TaskInputs{}
 	if _, err := os.Stat("inputs.yaml"); err == nil {
 		byts, err := os.ReadFile("inputs.yaml")
@@ -133,3 +133,4 @@ func writeToFile(fileName string, data interface{}) error {
 type TaskInstance struct {
 	*SystemInputs
 }
+

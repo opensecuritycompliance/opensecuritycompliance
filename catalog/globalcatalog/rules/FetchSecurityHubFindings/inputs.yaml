@@ -1,8 +1,15 @@
 userObject:
-  app:
-    name: AWSAppConnector
+  apps:
+  - name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSIAM:
         AccessKey: "$AWS_ACCESS_KEY"
@@ -12,8 +19,8 @@ userObject:
         SecretKey: "$AWS_SECRET_KEY"
         RoleARN: "$AWS_ROLE_ARN"
 userInputs:
-   Region: []
-   AWSProductName: #Security Hub
-   FindingsRecordState: #ACTIVE
-fromDate: 2023-11-25
-toDate: 2023-11-25
+  Region: []
+  AWSProductName: # Security Hub
+  FindingsRecordState: # ACTIVE
+fromDate: "2023-11-25T06:07:54Z"
+toDate: "2023-11-25T06:07:54Z"

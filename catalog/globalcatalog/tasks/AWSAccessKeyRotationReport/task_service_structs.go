@@ -9,4 +9,5 @@ type UserInputs struct {
 type Outputs struct {
 	AccessKeyRotationReport string
 	LogFile                 string
+	MetaFile                string
 }

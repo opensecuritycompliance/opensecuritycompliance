@@ -15,10 +15,27 @@ meta:
     annotateType:
     - aws
 spec:
+  inputs:
+    Region: 
+  inputsMeta__:
+  - name: Region
+    dataType: STRING
+    repeated: true
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: GetAWSConfigRuleEvaluationDetails
     alias: t1
     type: task
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Get AwsConfig rule evaluation details 
     description: Get AwsConfig rule evaluation details 
   ioMap:
@@ -28,3 +45,4 @@ spec:
   - '*.Output.AWSConfigRulesJSON:=t1.Output.AWSConfigRulesJSON'
   - '*.Output.AWSConfigRuleEvaluationStatusJSON:=t1.Output.AWSConfigRuleEvaluationStatusJSON' 
   - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.MetaDataFile:=t1.Output.MetaDataFile'

@@ -1,0 +1,9 @@
+userObject:
+  name: PrivacyBisonConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: http://privacybison.com
+  userDefinedCredentials:
+    NoCred:
+      Dummy: ""

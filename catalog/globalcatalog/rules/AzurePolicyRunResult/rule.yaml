@@ -19,8 +19,16 @@ spec:
   - name: GetAzurePolicyRunResult
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: GetAzurePolicyRunResult
     description: GetAzurePolicyRunResult
+
   ioMap:
   - '*.Output.AzurePolicyRunResult:=t1.Output.AzurePolicyRunResult'
   - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'

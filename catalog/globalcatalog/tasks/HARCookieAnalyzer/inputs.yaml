@@ -1,13 +1,20 @@
 userObject:
   app:
-    name: NoCredApp
-    appURL: http://localhost.com
+    name: PrivacyBisonConnector
+    appURL: http://privacybison.com
     appPort: "0"
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       NoCred:
         Dummy: ""
 userInputs:
   HarFile: <<MINIO_FILE_PATH>>
   CookieDBFile: <<MINIO_FILE_PATH>> #file can be found in rules/HARCookieAnalyzer/CookieDBFile.csv
-fromDate: 2024-02-01
-toDate: 2024-02-01
+fromDate: "2024-02-01T07:33:25Z"
+toDate: "2024-02-01T07:33:25Z"

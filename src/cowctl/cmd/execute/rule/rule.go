@@ -370,7 +370,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 
 	if err == nil {
 		d := color.New(color.FgCyan, color.Bold)
-		d.Println("The execution log can be located in the 'cowexecutions/cowexecutions.ndjson' file, with the most recent run log appearing on the last line.")
+		d.Println("The execution log can be located in the 'cowexecutions/execution.ndjson' file, with the most recent run log appearing on the last line.")
 	}
 
 	additionalInfo.GlobalCatalog = false

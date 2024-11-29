@@ -16,10 +16,35 @@ meta:
     annotateType:
     - kubernetes
 spec:
+  inputs:
+    ControlNumber : "" 
+    RuleConfig : <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: ControlNumber
+    dataType: STRING
+    repeated: false
+    defaultValue: ""
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RuleConfig
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: EvaluateCISBenchmarkForKubernetes
     alias: t1
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Evaluate CIS Benchmark For Kubernetes
     description: Evaluate CIS Benchmark For Kubernetes
   ioMap:

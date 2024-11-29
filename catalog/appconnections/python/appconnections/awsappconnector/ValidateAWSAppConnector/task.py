@@ -10,6 +10,7 @@ import awsappconnector
 
 from typing import overload
 from compliancecowcards.structs import cards, cowvo
+import json
 
 
 class ValidateAWSAppConnector(cards.AbstractTask):
@@ -26,10 +27,14 @@ class ValidateAWSAppConnector(cards.AbstractTask):
                                                               ),
                                                               region=[])
  
-        is_valid, error = awsappconnector_obj.validate()
+        is_valid, validation_message = awsappconnector_obj.validate()
         
+        if validation_message and not isinstance(validation_message, str):
+            validation_message = json.dumps(validation_message)
+ 
         response = {
             "IsValidated": is_valid,
+            "ValidationMessage": "Credentials Validated Successfully" if is_valid else validation_message
         }
 
         return response

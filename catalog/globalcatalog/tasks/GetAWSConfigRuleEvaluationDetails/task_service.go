@@ -99,7 +99,28 @@ func (inst *TaskInstance) GetAWSConfigRuleEvaluationDetailsNew(inputs *UserInput
 		}
 	}
 
+	// Meta data file
+	if len(outputRuleDetails) > 0 {
+		outputs.MetaDataFile, err = inst.uploadFieldMetaFile(outputRuleDetails, awsConnector)
+		if err != nil {
+			return fmt.Errorf("Failed to upload meta file to minio: %v" + err.Error())
+		}
+	}
+
 	return nil
+}
+
+func (inst *TaskInstance) uploadFieldMetaFile(outputData []FinalOutput, awsConnector awsconnector.AWSAppConnector) (string, error) {
+	if len(outputData) > 0 {
+		fieldMetaData := awsConnector.CreateMetaFileData(outputData[0])
+		metaFileNameWithUUID := fmt.Sprintf("%v-%v%v", "MetaDataFile", uuid.New().String(), ".json")
+		outputFilePath, err := storage.UploadJSONFile(metaFileNameWithUUID, fieldMetaData, inst.SystemInputs)
+		if err != nil {
+			return "", fmt.Errorf("cannot upload meta file to minio: %w", err)
+		}
+		return outputFilePath, nil
+	}
+	return "", nil
 }
 
 type FinalOutput struct {

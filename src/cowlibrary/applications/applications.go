@@ -991,7 +991,7 @@ func GetAvailableApplications(applicationName string, additionalInfo *vo.Additio
 	if err != nil {
 		return nil, err
 	}
-	additionalInfo.ApplicationInfo = applicationInfo
+
 	apps := make([]*vo.UserDefinedApplicationVO, 0)
 	collection := &vo.Collection{}
 	collection.Items = &apps
@@ -1006,8 +1006,8 @@ func GetAvailableApplications(applicationName string, additionalInfo *vo.Additio
 	url := fmt.Sprintf("%s/v1/app-configs", apiEndpoint)
 
 	resp, err := client.R().SetHeaders(headerMap).SetQueryParams(map[string]string{
-		"name":    additionalInfo.ApplicationInfo.App.Meta.Name,
-		"version": additionalInfo.ApplicationInfo.App.Meta.Version,
+		"name":    applicationInfo.App.Meta.Name,
+		"version": applicationInfo.App.Meta.Version,
 	}).SetResult(collection).SetError(&errorData).Get(url)
 
 	if err != nil || resp.StatusCode() != http.StatusOK {

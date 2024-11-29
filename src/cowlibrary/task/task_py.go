@@ -5,14 +5,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/iancoleman/strcase"
-	cp "github.com/otiai10/copy"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 
 	"cowlibrary/constants"
 	"cowlibrary/method"
@@ -32,14 +33,55 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 			return err
 		}
 	}
+	ruleAppTags := make(map[string][]string)
 
 	// make sure file exists
 	if utils.IsFileExist(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile)) {
-		err := cp.Copy(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile), filepath.Join(taskPath, constants.TaskInputYAMLFile))
+		ruleInputYAMLBytes, err := os.ReadFile(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read rule inputs.yaml: %s", err)
 		}
-
+		var taskInput vo.TaskInputV2
+		err = yaml.Unmarshal(ruleInputYAMLBytes, &taskInput)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling taskInput.yaml: %s", err)
+		}
+		ruleYAMLBytes, err := os.ReadFile(filepath.Join(additionalInfo.Path, constants.RuleYamlFile))
+		if err != nil {
+			return fmt.Errorf("failed to read rule.yaml: %s", err)
+		}
+		var rule vo.RuleYAMLVO
+		err = yaml.Unmarshal(ruleYAMLBytes, &rule)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling rule.yaml: %s", err)
+		}
+		for _, taskInfo := range rule.Spec.Tasks {
+			if taskInfo.Name == taskName {
+				if taskInfo.AppTags != nil {
+					var selectedApp *vo.AppAbstract
+					for _, app := range taskInput.UserObject.Apps {
+						if app != nil && reflect.DeepEqual(app.AppTags, taskInfo.AppTags) {
+							selectedApp = app
+							ruleAppTags = taskInfo.AppTags
+							break
+						}
+					}
+					taskInput.UserObject.App = selectedApp
+					taskInput.UserObject.Apps = nil
+				} else {
+					taskInput.UserObject = nil
+				}
+				break
+			}
+		}
+		updatedTaskInputYAML, err := yaml.Marshal(&taskInput)
+		if err != nil {
+			return fmt.Errorf("error marshalling updated taskInput.yaml: %w", err)
+		}
+		err = os.WriteFile(filepath.Join(taskPath, constants.TaskInputYAMLFile), updatedTaskInputYAML, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("error writing updated taskInput.yaml: %w", err)
+		}
 	}
 
 	// if err := CreateJsonFiles(taskDetails.TaskPath, taskName); err != nil {
@@ -50,28 +92,34 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 
 	classAvailable := false
 	var validationMethod string
-	if additionalInfo.ApplicationInfo != nil && additionalInfo.ApplicationInfo.App != nil && additionalInfo.ApplicationInfo.App.Meta != nil {
-		appClassName := additionalInfo.ApplicationInfo.App.Meta.Name
-		if utils.IsNotEmpty(appClassName) {
-			packageName := strings.ToLower(appClassName)
-			if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
-				classAvailable = true
-				importPackage := "#As per the selected app, we're importing the app package \nfrom appconnections." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
-				taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_with_imports}}", importPackage)
-				taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_STRUCT_NAME}}", strcase.ToCamel(appClassName))
-				taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_PACKAGE_NAME}}", strings.ToLower(appClassName))
-			}
-			validationMethod = fmt.Sprintf(`
+	if len(additionalInfo.ApplicationInfo) > 0 {
+		for _, appInfo := range additionalInfo.ApplicationInfo {
+			if appInfo != nil && appInfo.App != nil && appInfo.App.Meta != nil && ruleAppTags != nil {
+				if reflect.DeepEqual(appInfo.App.AppTags, ruleAppTags) {
+					appClassName := appInfo.App.Meta.Name
+					if utils.IsNotEmpty(appClassName) {
+						packageName := strings.ToLower(appClassName)
+						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+							classAvailable = true
+							importPackage := "#As per the selected app, we're importing the app package \nfrom appconnections." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
+							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_with_imports}}", importPackage)
+							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_STRUCT_NAME}}", strcase.ToCamel(appClassName))
+							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_PACKAGE_NAME}}", strings.ToLower(appClassName))
+						}
+						validationMethod = fmt.Sprintf(`
 		# You can use validate_attributes function to validate the attributes of %s Credentials`, appClassName)
-			for _, cred := range additionalInfo.ApplicationInfo.Credential {
-				credentialName := strcase.ToSnake(cred.Meta.Name)
-				validationCode := fmt.Sprintf(`
+						for _, cred := range appInfo.Credential {
+							credentialName := strcase.ToSnake(cred.Meta.Name)
+							validationCode := fmt.Sprintf(`
 		# Validate attributes for %s
 		# %s = app.user_defined_credentials.%s
 		# if isinstance(%s, %s.%s):
 		# 	validation_result = %s.validate_attributes()`, cred.Meta.Name, credentialName, credentialName, credentialName, packageName, cred.Meta.Name, credentialName)
 
-				validationMethod += validationCode
+							validationMethod += validationCode
+						}
+					}
+				}
 			}
 		}
 

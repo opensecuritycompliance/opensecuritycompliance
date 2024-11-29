@@ -1,7 +1,14 @@
 userObject:
-  app:
-    name: Kubernetes
+  apps:
+  - name: Kubernetes
     appPort: "0"
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     appURL: "$INSTANCE_LOGIN_URL"
     userDefinedCredentials:
       Jumphost:
@@ -10,5 +17,5 @@ userObject:
 userInputs:
   ControlNumber : "" # To view all control reports, enter '*' or leave the field blank. To view a specific control report, provide the control number
   RuleConfig :   <<MINIO_FILE_PATH>>
-fromDate: 2023-11-24
-toDate: 2023-11-24
+fromDate: 2023-11-24T06:03:00Z
+toDate: 2023-11-24T06:03:00Z

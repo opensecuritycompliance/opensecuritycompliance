@@ -1,0 +1,21 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: ruleGroupRun #not validated
+metaData:
+  name: AWS_RG
+  # aliasRef: r1
+  # type: sequential -default
+  # app: aws_role-not needed for rulegroup run
+spec:
+  # scope: domain #not validated
+  # domain: cc #not validated
+  rules:
+    - name: CWT
+      # applicationScope: CWT_ONE
+      # systemScope: SystemObject
+      dependsOn:
+    - name: CWT
+      # applicationScope: CWT_ONE
+      # systemScope: SystemObject
+  applicationScope: CWT_ONE
+  systemScope: SystemObject
+  # appScope: cwt_aws

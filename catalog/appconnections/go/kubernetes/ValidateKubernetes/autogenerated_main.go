@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"github.com/google/uuid"
+	"gopkg.in/yaml.v3"
 
 	"cowlibrary/constants"
 )
@@ -22,6 +22,7 @@ func handlePanic() {
 	if r != nil {
 		os.WriteFile("logs.txt", debug.Stack(), os.ModePerm)
 		os.WriteFile("task_output.json", []byte(`{"error":"`+fmt.Sprintf("%v, %s", r, "Please review the stack trace in the logs.txt file within the task.")+`"}`), os.ModePerm)
+		panic(r)
 	}
 }
 
@@ -32,11 +33,12 @@ func main() {
 	taskInput := &TaskInputs{}
 	taskOutput := &TaskOutputs{Outputs: &Outputs{}}
 	errorOutput := make(map[string]string)
-	
+
 	inputObj := &TaskInputs{}
 	if _, err := os.Stat("inputs.yaml"); err == nil {
 		byts, err := os.ReadFile("inputs.yaml")
 		if err == nil {
+			byts = []byte(os.ExpandEnv(string(byts)))
 			err = yaml.Unmarshal(byts, inputObj)
 			if err != nil {
 				taskInputObj := &TaskInputsV2{}
@@ -133,4 +135,3 @@ func writeToFile(fileName string, data interface{}) error {
 type TaskInstance struct {
 	*SystemInputs
 }
-

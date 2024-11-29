@@ -3,6 +3,7 @@ from typing import List
 from datetime import datetime, timedelta, timezone
 import urllib.parse
 
+
 class NoCred:
     dummy: str
 
@@ -22,6 +23,7 @@ class NoCred:
         result["Dummy"] = self.dummy
         return result
 
+
 class UserDefinedCredentials:
     no_cred: NoCred
 
@@ -39,6 +41,7 @@ class UserDefinedCredentials:
         result: dict = {}
         result["NoCred"] = self.no_cred.to_dict()
         return result
+
 
 class NoCredApp:
     app_url: str
@@ -88,90 +91,3 @@ class NoCredApp:
         # PLACE-HOLDER
         return True, None
     
-    def get_compliance_status(self, compliant_count = 0, non_compliant_count = 0):
-        total_count = compliant_count + non_compliant_count
-        if not non_compliant_count == 0:
-            complianceStatus = "NON_COMPLIANT"
-            compliancePCT = 100 - ((non_compliant_count * 100) / total_count)
-        elif total_count == 0:
-            complianceStatus = "NOT_DETERMINED"
-            compliancePCT = 0
-        else:
-            complianceStatus = "COMPLIANT"
-            compliancePCT = 100
-
-        return compliancePCT, complianceStatus
-    
-    def replace_empty_dicts_with_none(self, json_obj):
-        if isinstance(json_obj, dict):
-            for key, value in json_obj.items():
-                if isinstance(value, dict):
-                    if not value:
-                        json_obj[key] = None
-                    else:
-                        self.replace_empty_dicts_with_none(value)
-                elif isinstance(value, list):
-                    if not value:
-                        json_obj[key] = None
-                    for item in value:
-                        self.replace_empty_dicts_with_none(item)
-        elif isinstance(json_obj, list):
-            for item in json_obj:
-                self.replace_empty_dicts_with_none(item)
-        return json_obj
-
-    def get_company_name_from_har_file(self, file):
-        try:
-            harfile = json.loads(file)
-        except json.JSONDecodeError as e:
-            return "", Exception(f"Invalid harfile structure - {e}")
-
-        found_name = False
-        referer = ""
-        origin = ""
-        parser_referer = ""
-        
-        for entry in harfile["log"]["entries"]:
-            if entry["_initiator"]["type"] == "other":
-                for header in entry["request"]["headers"]:
-                    header_name = header["name"].lower()
-                    if header_name == "origin":
-                        found_name = True
-                        origin = header["value"]
-                        break
-                    if header_name == "referer":
-                        referer = header["value"]
-                if found_name:
-                    break
-                
-            elif entry["_initiator"]["type"] == "parser" and parser_referer=="" :
-                for header in entry["request"]["headers"]:
-                    header_name = header["name"].lower()
-                    if header_name == "referer":
-                        parser_referer = header["value"]
-        
-        site_url = origin if origin else referer
-        
-        if site_url =="" and parser_referer !="" :
-            site_url = parser_referer
-
-        if site_url:
-            try:
-                parsed_url = urllib.parse.urlparse(site_url)
-                host = parsed_url.netloc
-                host = host.replace("www.", "")
-                return host, None
-            except ValueError as ve:
-                return "", Exception(f"Invalid URL structure - {ve}")
-            except Exception as e:
-                site_url = site_url.replace("http://", "").replace("https://", "").replace("www.", "")
-                return site_url, None
-        else:
-            return "", None
-
-    def get_current_datetime(self):       
-        current_time = datetime.now(timezone.utc)
-        formatted_time = current_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        return formatted_time        
-
-# INFO : You can implement methods (to access the application) which can be then invoked from your task code

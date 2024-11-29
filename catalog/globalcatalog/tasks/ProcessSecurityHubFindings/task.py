@@ -127,7 +127,11 @@ class Task(cards.AbstractTask):
             service = resource_info.get('service', None)
             resource = resource_info.get('resource', None)
 
-            if 'MULTIPLE_RESOURCE_URLS' in mapping_dict:
+            multiple_resource_urls = mapping_dict.get('MULTIPLE_RESOURCE_URLS', None)
+            if (multiple_resource_urls is not None 
+                and isinstance(multiple_resource_urls, list) 
+                and not pd.isna(multiple_resource_urls).all()):
+                
                 for data in mapping_dict['MULTIPLE_RESOURCE_URLS']:
                     url_parts = data.split(":")
                     resource_info_dict = {

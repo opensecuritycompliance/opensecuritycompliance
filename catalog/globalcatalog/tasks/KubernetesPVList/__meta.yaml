@@ -18,30 +18,30 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: IncludeCriteria # A unique identifier of the task input
   description: IncludeCriteria # A concise description of the task input
-  dataType: string
+  dataType: STRING
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 - name: ExcludeCriteria # A unique identifier of the task input
   description: ExcludeCriteria # A concise description of the task input
-  dataType: string
+  dataType: STRING
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 outputs:
 - name: KubernetesPVList
   description: KubernetesPVList
-  dataType: string
+  dataType: FILE
 - name: KubernetesPVListLogFile
   description: KubernetesPVListLogFile
-  dataType: string
+  dataType: FILE
 - name: ComplianceStatus_
-  description: Compliance status of the task
-  dataType: string
+  description: compliance status of the task
+  dataType: STRING
 - name: CompliancePCT_
-  description: Compliance percentage of the task
-  dataType: int
+  description: compliance percentage of the task
+  dataType: INT

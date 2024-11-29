@@ -1,4 +1,7 @@
+from typing import List, Any, Dict
 from appconnections.awsappconnector import awsappconnector
+from appconnections.servicenowconnector import servicenowconnector
+from appconnections.argocdconnector import argocdconnector
 import io
 from typing import List
 import paramiko
@@ -47,27 +50,50 @@ class Jumphost:
 
 class LinkedApplications:
     aws_app_connector_app: List[awsappconnector.AWSAppConnector]
+    service_now_connector_app: List[servicenowconnector.ServiceNowConnector]
+    argo_cd_connector_app: List[argocdconnector.ArgoCDConnector]
 
     def __init__(
-            self, aws_app_connector_app: List[awsappconnector.AWSAppConnector]
+            self, aws_app_connector_app: List[awsappconnector.AWSAppConnector],
+            service_now_connector_app: List[
+                servicenowconnector.ServiceNowConnector],
+            argo_cd_connector_app: List[argocdconnector.ArgoCDConnector]
     ) -> None:
         self.aws_app_connector_app = aws_app_connector_app
+        self.service_now_connector_app = service_now_connector_app
+        self.argo_cd_connector_app = argo_cd_connector_app
 
     @staticmethod
     def from_dict(obj) -> 'LinkedApplications':
-        aws_app_connector_app = []
+        aws_app_connector_app,service_now_connector_app,argo_cd_connector_app = [],[],[]
         if isinstance(obj, dict):
             aws_app_connector_app = [
                 awsappconnector.AWSAppConnector.from_dict(item)
                 for item in obj.get("AWSAppConnector", [])
             ]
+            service_now_connector_app = [
+                servicenowconnector.ServiceNowConnector.from_dict(item)
+                for item in obj.get("ServiceNowConnector", [])
+            ]
+            argo_cd_connector_app = [
+                argocdconnector.ArgoCDConnector.from_dict(item)
+                for item in obj.get("ArgoCDConnector", [])
+            ]
 
-        return LinkedApplications(aws_app_connector_app)
+        return LinkedApplications(aws_app_connector_app,
+                                  service_now_connector_app,
+                                  argo_cd_connector_app)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["AWSAppConnector"] = [
             item.to_dict() for item in self.aws_app_connector_app
+        ]
+        result["ServiceNowConnector"] = [
+            item.to_dict() for item in self.service_now_connector_app
+        ]
+        result["ArgoCDConnector"] = [
+            item.to_dict() for item in self.argo_cd_connector_app
         ]
         return result
 
@@ -115,11 +141,14 @@ class Kubernetes:
 
     @staticmethod
     def from_dict(obj) -> 'Kubernetes':
-        app_url, app_port, user_defined_credentials, linked_applications = "", "", None, None
+        app_url, app_port, user_defined_credentials = "", "", None
+        linked_applications = None
         if isinstance(obj, dict):
             app_url = obj.get("AppURL", "")
             if not app_url:
                 app_url = obj.get("appURL", "")
+            if not app_url:
+                app_url = obj.get("appurl", "")
             app_port = obj.get("AppPort", 0)
             if not app_port:
                 app_port = obj.get("appPort", 0)
@@ -173,6 +202,7 @@ class Kubernetes:
         if not ssh_private_key:
             cred.append("ssh_private key is empty")
         app_url = self.app_url
+        # change variable name
         port,host = None,None
         if app_url:
             parsed_url = urlparse(self.app_url)
@@ -269,7 +299,7 @@ class Kubernetes:
 
         try:
             if not include:
-                return None, ["Include cluster details is mandatory to retrieve cluster information."]
+                return None, ["Include cluster details is mandatory to retrieve cluster information."], []
 
             # Forming command to include clusters
             include_command = self._build_grep_command(include, include_map, True)
@@ -278,22 +308,19 @@ class Kubernetes:
             final_command = self.GET_CLUSTER_CONTEXT + include_command
             response_str, error = self.connect_instance(final_command)
             if error:
-                return None, [f"An error occurred while fetching the Kubernetes cluster list. {error}"]
+                return None, [f"An error occurred while fetching the Kubernetes cluster list. {error}"], []
 
             if response_str:
                 err = self._parse_response(response_str, include_map, cluster_map)
                 if err:
                     error_list.append("Failed while processing query response. Please contact support for further details.")
-                    return cluster_map, error_list
+                    return cluster_map, error_list, []
             invalid_include = [key for key, value in include_map.items() if not value]
 
             if not response_str and not error:
-                return None, ["Failed to fetch the user-provided cluster details."]
+                return None, [], []
 
-            if invalid_include:
-                error_list.append("Failed to fetch the following included cluster(s): " + ", ".join(invalid_include))
-
-            return cluster_map, error_list
+            return cluster_map, error_list, invalid_include
 
         except (KeyError, ValueError) as e:
             return None, ["Failed to fetch cluster context details. Please contact support for further details"]

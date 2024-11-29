@@ -1,0 +1,298 @@
+[
+    {
+        "ControlName": "EC2.6",
+        "EvidenceName": "VPCFlowLogsEnabled",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as vpc flow logs are created",
+            "ValidationStatusCode": "VPC_FLOW_LOGS_CREATED",
+            "ValidationStatusNotes": "VPC flow logs are created"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as vpc flow logs are not created",
+            "ValidationStatusCode": "VPC_FLOW_LOGS_NOT_CREATED",
+            "ValidationStatusNotes": "VPC flow logs are not created"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "VPC flow logs status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "EC2.2",
+        "EvidenceName": "VPCDefaultSecurityGroupClosed",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as vpc default security group closed",
+            "ValidationStatusCode": "VPC_DEFAULT_SECURITY_GROUP_CLOSED",
+            "ValidationStatusNotes": "VPC default security group closed"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as vpc default security group not closed",
+            "ValidationStatusCode": "VPC_DEFAULT_SECURITY_GROUP_NOT_CLOSED",
+            "ValidationStatusNotes": "VPC default security group not closed"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "VPC default security group status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "EC2.13",
+        "EvidenceName": "RestrictedSSH",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as incoming ssh traffic disabled",
+            "ValidationStatusCode": "IPv4_INCOMING_SSH_DISABLED",
+            "ValidationStatusNotes": "Incoming ssh traffic disabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as incoming ssh traffic enabled",
+            "ValidationStatusCode": "IPv4_INCOMING_SSH_ENABLED",
+            "ValidationStatusNotes": "Incoming ssh traffic enabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Incoming ssh traffic status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "EC2.14",
+        "EvidenceName": "RestrictedRDP",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as incoming rdp traffic disabled",
+            "ValidationStatusCode": "RDP_INCOMING_TRAFFIC_DISABLED",
+            "ValidationStatusNotes": "Incoming rdp traffic disabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as incoming rdp traffic enabled",
+            "ValidationStatusCode": "RDP_INCOMING_TRAFFIC_ENABLED",
+            "ValidationStatusNotes": "Incoming rdp traffic enabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Incoming rdp traffic status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "KMS.4",
+        "EvidenceName": "CustomerManagedKeyRotationEnabled",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as customer-managed key rotation is enabled",
+            "ValidationStatusCode": "CMK_KEY_ROTATION_ENABLED",
+            "ValidationStatusNotes": "Customer managed key rotation is enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as customer-managed key rotation is disabled",
+            "ValidationStatusCode": "CMK_KEY_ROTATION_DISABLED",
+            "ValidationStatusNotes": "Customer managed key rotation is disabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Customer managed key rotation status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudTrail.2",
+        "EvidenceName": "CloudTrailEncryptionEnabled",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Record compliant as cloud trail encryption is enabled",
+            "ValidationStatusCode": "CLOUD_TRAIL_ENCRYPTION_ENABLED",
+            "ValidationStatusNotes": "Cloud trail encryption is enabled"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Record not compliant as cloud trail encryption is disabled",
+            "ValidationStatusCode": "CLOUD_TRAIL_ENCRYPTION_DISABLED",
+            "ValidationStatusNotes": "Cloud trail encryption is disabled"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Cloud trail encryption status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.3",
+        "EvidenceName": "LogMetricFilterAndAlarmForMCWithoutMFA",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring management console sign-in without mfa",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm not present for monitoring management console sign-in without mfa",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.6",
+        "EvidenceName": "LogMetricFilterAndAlarmForMCAuthFailures",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring management console authentication failures",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm not present for monitoring management console authentication failures",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.4",
+        "EvidenceName": "LogMetricFilterAndAlarmForIAMPolicyChanges",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring IAM policy changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and Alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm not present for monitoring IAM policy changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.7",
+        "EvidenceName": "LogMetricFilterAndAlarmForCMKDeletion",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring CMK deletion",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm not present for monitoring CMK deletion",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.5",
+        "EvidenceName": "LogMetricFilterAndAlarmForCloudTrailConfigChanges",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring CloudTrail configuration changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and Alarm not present for monitoring CloudTrail configuration changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "CloudWatch.9",
+        "EvidenceName": "LogMetricFilterAndAlarmForAWSConfigChanges",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm present for monitoring AWS configuration changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is present"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Log metric filter and alarm not present for monitoring AWS configuration changes",
+            "ValidationStatusCode": "LOG_METRIC_FILTER_AND_ALARM_NOT_PRESENT",
+            "ValidationStatusNotes": "Log metric filter and alarm is not present"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Log metric filter and alarm status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "IAM.20",
+        "EvidenceName": "AvoidUseOfRootUser",
+        "Service" : "AwscloudWatchMetricList",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Root user not used for activity",
+            "ValidationStatusCode": "ROOT_USER_NOT_USED",
+            "ValidationStatusNotes": "Root user did not perform activity"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Root user used for activity",
+            "ValidationStatusCode": "ROOT_USER_USED",
+            "ValidationStatusNotes": "Root user performed activity"
+        },
+        "NOT_DETERMINED": {
+            "ComplianceStatusReason": "Avoid the use of the root user status could not be determined",
+            "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+            "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+    },
+    {
+        "ControlName": "IAM.8",
+        "EvidenceName": "UnusedIAMUserCredentialReport",
+        "COMPLIANT": {
+          "ComplianceStatusReason": "Record compliant as credentials are used",
+          "ValidationStatusCode": "CREDENTIAL_USED",
+          "ValidationStatusNotes": "Credentials are used"
+        },
+        "NON_COMPLIANT": {
+          "ComplianceStatusReason": "Record not compliant as credentials are not used",
+          "ValidationStatusCode": "CREDENTIAL_NOT_USED",
+          "ValidationStatusNotes": "Credentials are not used"
+        },
+        "NOT_DETERMINED": {
+          "ComplianceStatusReason": "Credentials unused status could not be determined",
+          "ValidationStatusCode": "ComplianceStatusReasons.[0].ReasonCode",
+          "ValidationStatusNotes": "ComplianceStatusReasons.[0].Description"
+        }
+      },
+      {
+        "ControlName": "IAM.18",
+        "EvidenceName": "RoleWithPolicyDocument",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Support role created to handle incidents",
+            "ValidationStatusCode": "AWS_SUPPORT_ROLE_EXITS",
+            "ValidationStatusNotes": "The Support role in AWS serves a crucial purpose in managing and interacting with AWS Support services and resources"
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Support role not created to handle incidents",
+            "ValidationStatusCode": "AWS_SUPPORT_ROLE_NOT_EXITS",
+            "ValidationStatusNotes": "The Support role in AWS serves a crucial purpose in managing and interacting with AWS Support services and resources"
+        }
+    },
+    {
+        "ControlName": "IAM.6",
+        "EvidenceName": "MFAEnabledForUsers",
+        "COMPLIANT": {
+            "ComplianceStatusReason": "Hardware MFA enabled for root user",
+            "ValidationStatusCode": "HARDWARE_MFA_ENABLED",
+            "ValidationStatusNotes": "Hardware MFA enabled for root user.The root user is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a user name and password."
+        },
+        "NON_COMPLIANT": {
+            "ComplianceStatusReason": "Hardware MFA not enabled for root user",
+            "ValidationStatusCode": "HARDWARE_MFA_DISABLED",
+            "ValidationStatusNotes": "Hardware MFA not enabled for root user.The root user is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a user name and password."
+        }
+    }
+      
+]

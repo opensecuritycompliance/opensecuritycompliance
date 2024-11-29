@@ -76,6 +76,11 @@ func (inst *TaskInstance) AWSMFAPolicySimulatorReport(inputs *UserInputs, output
 			errorDetails = ErrorVO{Error: err.Error()}
 			return nil
 		}
+		outputs.MetaFile, err = inst.uploadMetaFile(awsConnector, policySimulatorReport)
+		if err != nil {
+			errorDetails = ErrorVO{Error: err.Error()}
+			return nil
+		}
 	}
 
 	return deferredErr
@@ -336,6 +341,16 @@ func (inst *TaskInstance) uploadLogFile(errInfo ErrorVO) (string, error) {
 	outputFilePath, err := storage.UploadJSONFile(logFileNameWithUUID, errInfo, inst.SystemInputs)
 	if err != nil {
 		return "", fmt.Errorf("Failed to upload log file to Minio: %w", err)
+	}
+	return outputFilePath, nil
+}
+
+func (inst *TaskInstance) uploadMetaFile(awsConnector awsconnector.AWSAppConnector, outputData []PolicySimulatorVO) (string, error) {
+	fieldMetaData := awsConnector.CreateMetaFileData(outputData[0])
+	metaFileNameWithUUID := fmt.Sprintf("%v-%v%v", "MetaFile", uuid.New().String(), ".json")
+	outputFilePath, err := storage.UploadJSONFile(metaFileNameWithUUID, fieldMetaData, inst.SystemInputs)
+	if err != nil {
+		return "", fmt.Errorf("Failed to upload policy simulator meta file to Minio: %w", err)
 	}
 	return outputFilePath, nil
 }

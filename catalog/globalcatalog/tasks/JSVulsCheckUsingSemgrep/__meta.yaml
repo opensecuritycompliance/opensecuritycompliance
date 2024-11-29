@@ -18,24 +18,25 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: HarFile # A unique identifier of the task input
   description: HarFile # A concise description of the task input
-  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  dataType: FILE
+  repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true # boolean: true | false
+  required: true
 outputs:
 - name: StdSemgrepVulsReport
   description: StdSemgrepVulsReport
-  type: file
+  dataType: FILE
 - name: SemgrepVulsReport
   description: SemgrepVulsReport
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file    
+  dataType: FILE
 - name: ComplianceStatus_
   description: compliance status of the task
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: compliance percentage of the task
-  type: int
+  dataType: INT

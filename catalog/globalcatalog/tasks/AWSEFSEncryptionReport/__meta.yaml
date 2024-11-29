@@ -18,52 +18,52 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: AWSEFSList # A unique identifier of the task input
   description: AWS EFS List # A concise description of the task input
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 - name: KubernetesPVList # A unique identifier of the task input
   description: Kubernetes Persistent Volume List # A concise description of the task input
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 - name: KubernetesPVListLogFile # A unique identifier of the task input
   description: KubernetesPVListLogFile # A concise description of the task input
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 - name: AWSEFSListLogFile # A unique identifier of the task input
   description: AWSEFSListLogFile # A concise description of the task input
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
-  isRequired: true
+  required: true
 outputs:
 - name: ComplianceStatus_
-  description: Compliance status of the task
-  dataType: string
+  description: compliance status of the task
+  dataType: STRING
 - name: CompliancePCT_
   description: compliance percentage of the task
-  dataType: int
+  dataType: INT
 - name: AWSEFSEncryptionReportLogFile
   description: AWS EFS Encryption Report LogFile
-  dataType: string
+  dataType: FILE
 - name: AWSEFSEncryptionReport
   description: AWS EFS Encryption Report
-  dataType: string
+  dataType: FILE
 - name: KubernetesPVListLogFile
   description: Kubernetes PV List LogFile
-  dataType: string
+  dataType: FILE
 - name: AWSEFSListLogFile
   description: AWS EFS Lis tLogFile
-  dataType: string
+  dataType: FILE

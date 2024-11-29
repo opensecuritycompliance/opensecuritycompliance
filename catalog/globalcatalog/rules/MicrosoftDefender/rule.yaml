@@ -19,6 +19,13 @@ spec:
   - name: SecurityAssessment
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: SecurityAssessment
     description: SecurityAssessment
   ioMap:

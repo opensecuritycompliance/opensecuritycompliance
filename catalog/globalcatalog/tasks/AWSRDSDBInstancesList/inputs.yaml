@@ -3,6 +3,13 @@ userObject:
     name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSRole:
         AccessKey: "$AWS_ROLE_ACCESS_KEY"
@@ -13,5 +20,5 @@ userObject:
         SecretKey: "$AWS_SECRET_KEY"
 userInputs:
   Region: []
-fromDate: 2024-02-29
-toDate: 2024-02-29
+fromDate: "2024-02-29T06:07:54Z"
+toDate: "2024-02-29T06:07:54Z"

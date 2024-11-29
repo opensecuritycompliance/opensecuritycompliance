@@ -1,0 +1,10 @@
+userObject:
+  name: ComplianceCow
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: "$LOGIN_URL"
+  userDefinedCredentials:
+    OAuth:
+      ClientID: "$CC_CLIENT_ID"
+      ClientSecret: "$CC_CLIENT_SECRET"

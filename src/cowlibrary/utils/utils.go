@@ -1284,6 +1284,42 @@ func InitializeGoModFile(folderPath, Name string) error {
 	return nil
 }
 
+// func GetCowLibraryPath() (string, error) {
+// 	return findFolder("src/cowlibrary")
+// }
+
+// func GetAppConnectionsPath() (string, error) {
+// 	return findFolder("catalog/appconnections")
+// }
+
+// func findFolder(filePath string) (string, error) {
+// 	maxCount := 5
+
+// 	dir, err := os.Getwd()
+// 	if err == nil {
+// 		maxCount = len(strings.Split(dir, string(os.PathSeparator)))
+// 	}
+
+// 	return findPolicyCowLibrary(filePath, maxCount)
+
+// }
+
+// func findPolicyCowLibrary(filePath string, maxCount int) (string, error) {
+
+// 	if maxCount == 0 {
+// 		return "", fmt.Errorf("max depth reached:%d", maxCount)
+// 	}
+
+// 	if fileInfo, err := os.Stat(filePath); err == nil && fileInfo.IsDir() {
+// 		return filePath, nil
+// 	}
+
+// 	maxCount = maxCount - 1
+
+// 	return findPolicyCowLibrary(filepath.Join("..", filePath), maxCount)
+
+// }
+
 func GetYAMLFileNameWithVersion(namePointer *vo.CowNamePointersVO) string {
 	return namePointer.Name + "_v_" + strings.ReplaceAll(namePointer.Version, ".", "_") + ".yaml"
 }
@@ -1380,24 +1416,16 @@ func GetTasksV2(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 	matches, _ := filepath.Glob(pathPrefixs)
 	for _, path := range matches {
 		if info, err := os.Stat(path); err == nil && info.IsDir() {
-			inputYAMLFile := filepath.Join(path, constants.TaskInputYAMLFile)
-			if IsFileExist(inputYAMLFile) {
-				taskInputVO := &vo.TaskInputV2{}
-				bytes, _ := os.ReadFile(inputYAMLFile)
-				err := yaml.Unmarshal(bytes, taskInputVO)
-				if err == nil {
-					if taskInputVO.UserObject != nil && taskInputVO.UserObject.App.ApplicationName == additionalInfo.ApplicationInfo.App.Meta.Name {
-						taskName := filepath.Base(path)
-						taskVO := &vo.PolicyCowTaskVO{
-							Name:        taskName,
-							CatalogType: catalogType,
-						}
-						availableTasks = append(availableTasks, taskVO)
-					}
-				}
+			taskName := filepath.Base(path)
+
+			taskVO := &vo.PolicyCowTaskVO{
+				Name:        taskName,
+				CatalogType: catalogType,
 			}
+			availableTasks = append(availableTasks, taskVO)
 		}
 	}
+
 	return availableTasks
 }
 
@@ -1797,17 +1825,64 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 			ErrorDetails: GetValidationError(err)}
 	}
 
-	applicationInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+	primaryAppInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
 	if err != nil {
 		return nil, &vo.ErrorVO{
 			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
 			ErrorDetails: GetValidationError(err)}
 	}
-	additionalInfo.ApplicationInfo = applicationInfo
+	additionalInfo.PrimaryApplicationInfo = primaryAppInfo
 
 	unAvailableTasks := make([]string, 0)
+	additionalInfo.ApplicationInfo = make([]*vo.ApplicationInfoVO, len(ruleYAML.Spec.Tasks))
 
-	for _, task := range ruleYAML.Spec.Tasks {
+	hasAppTags := false
+	for i, task := range ruleYAML.Spec.Tasks {
+
+		if task.AppTags != nil {
+			hasAppTags = true
+			var appClassPath string
+			appName := task.AppTags["appType"]
+
+			appDir := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath
+			files, err := ioutil.ReadDir(appDir)
+			if err != nil {
+				return nil, &vo.ErrorVO{Message: "Application Directory Read Error", Description: fmt.Sprintf("Unable to access the directory at '%s'.", appDir),
+					ErrorDetails: GetValidationError(err),
+				}
+			}
+			var appData *vo.UserDefinedApplicationVO
+			for _, file := range files {
+				if !file.IsDir() && filepath.Ext(file.Name()) == ".yaml" {
+					path := filepath.Join(appDir, file.Name())
+					if applicationYamlContent, err := ioutil.ReadFile(path); err == nil {
+						if err := yaml.Unmarshal(applicationYamlContent, &appData); err == nil {
+							if appType, exists := appData.Meta.Labels["appType"]; exists && len(appType) > 0 {
+								if appType[0] == appName[0] {
+									appClassPath = path
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if IsFileNotExist(appClassPath) {
+				return nil, &vo.ErrorVO{
+					Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", appName[0]),
+					ErrorDetails: GetValidationError(err)}
+			}
+
+			applicationInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			if err != nil {
+				return nil, &vo.ErrorVO{
+					Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", appName[0]),
+					ErrorDetails: GetValidationError(err)}
+			}
+			applicationInfo.App.AppTags = task.AppTags
+			additionalInfo.ApplicationInfo[i] = applicationInfo
+		}
 
 		// INFO : Flexing the utility method to verify the task is present or not
 		taskPath := GetTaskPathFromCatalogForInit(additionalInfo, task.Name, true)
@@ -1824,7 +1899,15 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 			languageFromPath := GetTaskLanguage(taskPath)
 			languageFromCmd := languageFromPath.String()
 
-			taskInfos = append(taskInfos, &vo.TaskInputVO{TaskName: task.Name, Language: languageFromCmd})
+			taskInfos = append(taskInfos, &vo.TaskInputVO{TaskName: task.Name, Language: languageFromCmd, Alias: task.Alias, Description: task.Description})
+		}
+	}
+	if !hasAppTags {
+		return nil, &vo.ErrorVO{
+			Message: "Missing appTags", Description: "None of the tasks contain AppTags, at least one task must have AppTags",
+			ErrorDetails: []*vo.ErrorDetailVO{{Field: "AppTags", Value: "nil or empty in all tasks", Location: "task",
+				Issue: "AppTags are required for at least one task",
+			}},
 		}
 	}
 
@@ -1864,6 +1947,9 @@ func GetApplicationWithCredential(filePath string, directory string) (*vo.Applic
 		}
 	}
 	applicationInfoVO.Credential = credentials
+	appTags := make(map[string][]string)
+	appTags["appType"] = []string{appData.Meta.Name}
+	applicationInfoVO.App.AppTags = appTags
 
 	linkedApplications := make([]*vo.ApplicationInfoVO, 0)
 	for _, linkedapp := range appData.Spec.LinkableApplicationClasses {
@@ -2091,7 +2177,7 @@ func ConvertMap(inputMap map[interface{}]interface{}) map[string]interface{} {
 	return resultMap
 }
 
-func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.AdditionalInfo) (string, error) {
+func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.AdditionalInfo) (map[string]string, error) {
 	rulePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "rules")
 	if IsFileExist(filepath.Join(rulePath, ruleName)) {
 		rulePath = filepath.Join(rulePath, ruleName)
@@ -2108,14 +2194,14 @@ func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.Addition
 
 	ruleFile, err := os.ReadFile(ruleyamlpath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read rule YAML file: %w", err)
+		return nil, fmt.Errorf("failed to read rule YAML file: %w", err)
 	}
 
 	err = yaml.Unmarshal(ruleFile, &ruleYaml)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
 	}
-	var language string
+	languages := make(map[string]string)
 	for _, task := range ruleYaml.Spec.Tasks {
 		var taskPath string
 		if IsFileExist(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, task.Name)) {
@@ -2125,13 +2211,13 @@ func GetApplicationLanguageFromRule(ruleName string, additionalInfo *vo.Addition
 		}
 
 		if IsFileExist(taskPath) {
-			language = GetTaskLanguage(taskPath).String()
+			language := GetTaskLanguage(taskPath).String()
 			if IsNotEmpty(language) {
-				break
+				languages[task.Name] = language
 			}
 		}
 	}
-	return language, nil
+	return languages, nil
 }
 
 var dateFormats = []string{

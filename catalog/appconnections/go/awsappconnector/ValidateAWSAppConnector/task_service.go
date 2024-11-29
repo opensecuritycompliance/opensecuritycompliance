@@ -6,6 +6,11 @@ package main
 func (inst *TaskInstance) ValidateAWSAppConnector(inputs *UserInputs, outputs *Outputs) (err error) {
 
 	outputs.IsValidated, err = inputs.Validate()
+	if err != nil {
+		outputs.ValidationMessage = err.Error()
+	} else {
+		outputs.ValidationMessage = "Credentials validated successfully"
+	}
 
-	return err
+	return nil
 }

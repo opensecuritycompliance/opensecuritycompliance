@@ -15,10 +15,35 @@ meta:
     annotateType:
     - azureappconnector
 spec:
+  inputs:
+    RetentionInDays:
+    AzureLogAnalyticsWorkSpaceData: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: RetentionInDays
+    dataType: INT
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: AzureLogAnalyticsWorkSpaceData
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: AzureLogAnalyticsWkSpaceRetentionPeriodReport
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Azure Log Analytics WorkSpace Retention Period Report
     description: Azure Log Analytics WorkSpace Retention Period Report
   ioMap:

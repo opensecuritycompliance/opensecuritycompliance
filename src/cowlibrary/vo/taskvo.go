@@ -20,6 +20,7 @@ type PolicyCowTaskVO struct {
 	Inputs                   []*PolicyCowTaskInputVO  `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs                  []*PolicyCowTaskOutputVO `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 	CatalogType              string                   `json:"catalogType,omitempty" yaml:"catalogType,omitempty"`
+	AppTags                  map[string][]string      `json:"appTags,omitempty"  yaml:"appTags,omitempty"`
 }
 
 type PolicyCowTaskInputVO struct {
@@ -32,6 +33,8 @@ type PolicyCowTaskInputVO struct {
 	DefaultValue    string        `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty"`
 	ShowField       bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
 	Required        bool          `json:"required,omitempty" yaml:"required,omitempty"`
+	TemplateFile    string        `json:"templateFile,omitempty" yaml:"templateFile,omitempty"`
+	Format          string        `json:"format,omitempty" yaml:"format,omitempty"`
 	AllowUserValues bool          `json:"allowUserValues" yaml:"allowUserValues,omitempty"`
 }
 

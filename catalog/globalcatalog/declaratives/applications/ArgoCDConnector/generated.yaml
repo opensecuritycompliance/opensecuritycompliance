@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: ArgoCDConnector
+  displayName: ArgoCDConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - argocdconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - argocdconnector
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateArgoCDConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: BasicAuthentication
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: BasicAuthentication
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

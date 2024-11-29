@@ -41,7 +41,7 @@ type AppAbstract struct {
 	AppBase                `yaml:",inline"`
 	ID                     string                    `json:"id,omitempty" yaml:"id,omitempty"`
 	AppSequence            int                       `json:"appSequence,omitempty" yaml:"appsequence,omitempty"`
-	AppTags                map[string][]string       `json:"appTags,omitempty"  yaml:"tags,omitempty" binding:"required" validate:"required"`
+	AppTags                map[string][]string       `json:"appTags,omitempty"  yaml:"appTags,omitempty" binding:"required" validate:"required"`
 	ActionType             string                    `json:"actionType,omitempty"  yaml:"actiontype,omitempty"`
 	AppObjects             map[string]interface{}    `yaml:"appobjects,omitempty"`
 	Servers                []*ServerAbstract         `json:"servers,omitempty" yaml:"servers,omitempty"`

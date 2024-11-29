@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"cowlibrary/vo"
 	"errors"
-	"fmt"
 	"net"
-	"strings"
 	"time"
+
+	argocdconnector "appconnections/argocdconnector"
+
+	awsappconnector "appconnections/awsappconnector"
+
+	servicenowconnector "appconnections/servicenowconnector"
+	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/ssh"
@@ -22,12 +28,19 @@ type UserDefinedCredentials struct {
 	Jumphost Jumphost `json:"jumphost" yaml:"Jumphost"`
 }
 
+type LinkedApplications struct {
+	awsappconnector.AWSAppConnector         `yaml:",inline"`
+	servicenowconnector.ServiceNowConnector `yaml:",inline"`
+	argocdconnector.ArgoCDConnector         `yaml:",inline"`
+}
+
 type Kubernetes struct {
 	AppURL                 string                  `json:"appURL" yaml:"appURL"`
 	AppPort                int                     `json:"appPort" yaml:"appPort"`
 	Ipv4Address            string                  `json:"ipv4Address" yaml:"ipv4Address"`
 	Ipv6Address            string                  `json:"ipv6Address" yaml:"ipv6Address"`
 	UserDefinedCredentials *UserDefinedCredentials `json:"userDefinedCredentials" yaml:"userDefinedCredentials"`
+	LinkedApplications     *LinkedApplications     `json:"linkedApplications" yaml:"linkedApplications"`
 }
 
 func (thisObj *Kubernetes) Validate() (bool, error) {
@@ -142,6 +155,23 @@ func (thisObj *Kubernetes) GetJumphostCredential() (*JumphostCredentialVO, error
 	jumphostCredentialVO.Key = []byte(jumphost.SshPrivateKey)
 
 	return jumphostCredentialVO, nil
+}
+
+func (thisObj *Kubernetes) RunUnixCommandsWithRetry(clustercommand string, maxRetries int) (string, error) {
+	retryCount := 0
+	var cmdOutput string
+	var err error
+
+	for retryCount < maxRetries {
+		cmdOutput, err = thisObj.RunUnixCommands(clustercommand)
+		if err == nil || !strings.Contains(err.Error(), "ssh: handshake failed:") {
+			break
+		}
+		retryCount++
+		time.Sleep(3 * time.Second)
+	}
+
+	return cmdOutput, err
 }
 
 func (thisObj *Kubernetes) RunUnixCommands(cmd string) (string, error) {

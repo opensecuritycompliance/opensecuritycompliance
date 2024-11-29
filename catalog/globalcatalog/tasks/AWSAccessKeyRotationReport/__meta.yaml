@@ -1,11 +1,11 @@
 authors:
 - sangavi.l@continube.com
 domain: continube
-createdDate: 11/12/2023
+createdDate: 14/12/2023
 name: AWSAccessKeyRotationReport
 displayName: AWS Access Key Rotation Report
 version: '1.0'
-description: Generate a compliance report of AWS user access keys based on the provided AccessKeyAge.
+description: AWS Access Key Rotation Report
 shaToken: ''
 showInCatalog: true
 icon: fas fa-sort-amount-down-alt
@@ -18,31 +18,33 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: MaxAccessKeyAge
   description: Maximum Access Key Age
-  type: int
+  dataType: INT
+  repeated: false
   allowedValues: []
   defaultValue: '90'
   showField: true
-  isRequired: true
+  required: true
 - name: AWSCredentialReport
   description: AWS Credential Report
-  type: string 
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: AccessKeyRotationReport
   description: Access Key Rotation Report
-  type: string
+  dataType: FILE
 - name: LogFile
-  description: Log File
-  type: string
+  description: Access Key Rotation Log File
+  dataType: FILE
 - name: MetaFile
-  description: Meta File
-  type: string
+  description: Access Key Rotation Field Meta
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

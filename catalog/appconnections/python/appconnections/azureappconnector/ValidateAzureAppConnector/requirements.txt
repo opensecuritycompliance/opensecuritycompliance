@@ -1,1 +1,8 @@
+
 PyYAML
+SQLAlchemy
+jmespath
+minio
+pandas
+requests
+xmltodict

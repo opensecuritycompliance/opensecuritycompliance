@@ -58,6 +58,7 @@ class UserDefinedCredentials:
         result["SSH"] = self.ssh.to_dict()
         return result
 
+
 class SSHConnector:
     app_url: str
     app_port: int
@@ -145,15 +146,13 @@ class SSHConnector:
                 ssh_client = paramiko.SSHClient()
                 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                if not self.app_port:
-                    return "Port not specified"
                 # Connect to the server using the private key
                 ssh_client.connect(
                     hostname=self.app_url_netloc,
-                    port=self.app_port,
+                    port=self.app_port if self.app_port else 22,
                     username=self.user_defined_credentials.ssh.user_name,
                     pkey=ssh_key,
-                    timeout=60
+                    timeout=300
                 )
 
                 self.ssh_client = ssh_client
@@ -200,8 +199,10 @@ class SSHConnector:
                 return False, error
 
             sftp = self.ssh_client.open_sftp()
+            chunk_size = 1024 * 1024
             with sftp.open(remote_path, 'w') as file:
-                file.write(content)
+                for i in range(0, len(content), chunk_size):
+                    file.write(content[i:i + chunk_size])
             sftp.close()
             self.ssh_client.close()
             return True, None
@@ -227,5 +228,22 @@ class SSHConnector:
         except paramiko.SSHException as e:
             return False, f'SSH error: {e}'
         except IOError as e:
-            return False, f'IO error: {e}'
+            return False, f'IO error: {e}'     
+
+    def fetch_file(self, remote_path):
+        try:
+            sftp_client = self.ssh_client.open_sftp()
+            try:
+                with sftp_client.open(remote_path, 'r') as file:
+                    file_content = file.read()
+                return file_content
+            finally:
+                sftp_client.close()
+        except FileNotFoundError:
+            raise RuntimeError(f"File {remote_path} not found on the remote server.")
+        except paramiko.SFTPError as e:
+            raise RuntimeError(f"SFTP error occurred while fetching file {remote_path}: {str(e)}")
+        except Exception as e:
+            raise RuntimeError(f"Unexpected error occurred while fetching file {remote_path}: {str(e)}") 
+
 # INFO : You can implement methods (to access the application) which can be then invoked from your task code

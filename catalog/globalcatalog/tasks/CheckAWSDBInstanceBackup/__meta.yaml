@@ -18,28 +18,38 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: MinimumRequiredRetentionPeriod
   description: MinimumRequiredRetentionPeriod
-  type: int
+  dataType: INT
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: RDSDBInstancesList
   description: RDSDBInstancesList
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
-  defaultValue: ''
+  defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  isRequired: true  
+  required: true
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
 outputs:
 - name: DBInstanceBackupEnabled
   description: DB Instance Backup Enabled
-  type: string
+  dataType: FILE
 - name: LogFile
-  description: Log File
-  type: string
-- name: CompliancePCT_
-  description: Compliance Percentage
-  type: int
+  description: LogFile
+  dataType: FILE
 - name: ComplianceStatus_
-  description: Compliance Status
-  type: string
+  description: ComplianceStatus_
+  dataType: STRING
+- name: CompliancePCT_
+  description: CompliancePCT_
+  dataType: INT

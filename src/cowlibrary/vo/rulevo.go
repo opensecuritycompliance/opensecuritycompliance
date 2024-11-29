@@ -66,13 +66,14 @@ type Rule struct {
 }
 
 type TaskBase struct {
-	TaskGUID    string `json:"taskguid,omitempty"`
-	AliasRef    string `json:"aliasref,omitempty"`
-	Purpose     string `json:"purpose,omitempty"`
-	Description string `json:"description,omitempty"`
-	TaskState   int    `json:"-"`
-	Type        string `json:"type,omitempty"`
-	SeqNo       int    `json:"seqno,omitempty"`
+	TaskGUID    string              `json:"taskguid,omitempty"`
+	AliasRef    string              `json:"aliasref,omitempty"`
+	Purpose     string              `json:"purpose,omitempty"`
+	Description string              `json:"description,omitempty"`
+	TaskState   int                 `json:"-"`
+	Type        string              `json:"type,omitempty"`
+	SeqNo       int                 `json:"seqno,omitempty"`
+	AppTags     map[string][]string `json:"appTags,omitempty"`
 }
 
 type TaskInfo struct {
@@ -208,6 +209,8 @@ type Method struct {
 
 type TaskInputVO struct {
 	TaskName             string
+	Alias                string
+	Description          string
 	Language             string
 	RefMaps              []*RefStruct `json:"refmaps,omitempty"`
 	IsSQLRule            bool
@@ -252,13 +255,14 @@ type RuleVO struct {
 	Description string `json:"description,omitempty"`
 }
 type TaskVO struct {
-	Name        string `json:"name,omitempty" yaml:"name" binding:"required,taskname" validate:"required,taskname"`
-	Alias       string `json:"aliasref,omitempty" yaml:"alias" binding:"required" validate:"required"`
-	Type        string `json:"type,omitempty" yaml:"type"`
-	TaskGUID    string `json:"taskguid,omitempty" yaml:"taskguid,omitempty"`
-	Catalog     string `json:"catalog,omitempty" yaml:"catalog,omitempty"`
-	Purpose     string `json:"Purpose,omitempty" yaml:"purpose"`
-	Description string `json:"description,omitempty" yaml:"description"`
+	Name        string              `json:"name,omitempty" yaml:"name" binding:"required,taskname" validate:"required,taskname"`
+	Alias       string              `json:"aliasref,omitempty" yaml:"alias" binding:"required" validate:"required"`
+	Type        string              `json:"type,omitempty" yaml:"type"`
+	AppTags     map[string][]string `json:"appTags,omitempty" yaml:"appTags,omitempty"`
+	TaskGUID    string              `json:"taskguid,omitempty" yaml:"taskguid,omitempty"`
+	Catalog     string              `json:"catalog,omitempty" yaml:"catalog,omitempty"`
+	Purpose     string              `json:"Purpose,omitempty" yaml:"purpose"`
+	Description string              `json:"description,omitempty" yaml:"description"`
 }
 type RuleInputVO struct {
 	RuleName   string        `json:"ruleName,omitempty"`
@@ -305,14 +309,16 @@ type UserInputsVO struct {
 
 type UserObjectTemplate struct {
 	ObjectTemplate         `yaml:",inline"`
-	Name                   string      `yaml:"name,omitempty"`
-	AppURL                 string      `yaml:"appURL,omitempty"`
-	Port                   int         `yaml:"appPort,omitempty"`
-	UserDefinedCredentials interface{} `yaml:"userDefinedCredentials,omitempty"`
+	Name                   string              `yaml:"name,omitempty"`
+	AppURL                 string              `yaml:"appURL,omitempty"`
+	AppTags                map[string][]string `json:"appTags,omitempty" yaml:"appTags,omitempty"`
+	Port                   int                 `yaml:"appPort,omitempty"`
+	UserDefinedCredentials interface{}         `yaml:"userDefinedCredentials,omitempty"`
 }
 
 type ObjectTemplate struct {
 	App         *AppAbstract    `yaml:"app,omitempty"`
+	Apps        []*AppAbstract  `yaml:"apps,omitempty"`
 	Server      *ServerAbstract `yaml:"server,omitempty"`
 	Credentials []*Credential   `yaml:"credentials,omitempty"`
 }
@@ -390,8 +396,9 @@ type RuleExecutionVO struct {
 	RuleInputs         []*RuleUserInputVO       `json:"ruleInputs,omitempty" yaml:"ruleInputs,omitempty"`
 	CredentialValues   map[string]interface{}   `json:"credentialValues,omitempty" yaml:"credentialValues,omitempty"`
 	CredentialType     string                   `json:"credentialType,omitempty" yaml:"credentialType,omitempty"`
-	ApplicationURL     string                   `json:"appURL,omitempty" yaml:"appURL,omitempty" binding:"required"`
+	ApplicationURL     string                   `json:"appURL,omitempty" yaml:"appURL,omitempty"`
 	RuleInputMap       map[string]interface{}   `json:"ruleInputMap,omitempty" yaml:"ruleInputMap,omitempty"`
+	Applications       []*ApplicationCredVO     `json:"applications,omitempty" yaml:"applications,omitempty"`
 	LinkedApplications []*LinkedAppsCredentials `json:"linkedApps,omitempty" yaml:"linkedApps,omitempty"`
 	FromDate           string                   `json:"fromDate,omitempty" yaml:"fromDate,omitempty"`
 	ToDate             string                   `json:"toDate,omitempty" yaml:"toDate,omitempty"`

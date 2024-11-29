@@ -65,10 +65,11 @@ type AppAbstract struct {
 	AppObjects  map[string]interface{}
 	Servers     []*ServerAbstract `json:"servers,omitempty"`
 	UserDefinedCredentials interface{} `json:"userDefinedCredentials" yaml:"userDefinedCredentials"`
+	LinkedApplications  map[string][]*AppAbstract `json:"linkedApplications,omitempty"`
 }
 
 type AppBase struct {
-	ApplicationName string                 `json:"appName,omitempty" yaml:"name" validate:"required"`
+	ApplicationName string                 `json:"appName,omitempty" yaml:"name" binding:"required" validate:"required"`
 	ApplicationGUID string                 `json:"applicationguid,omitempty" yaml:"applicationguid,omitempty"`
 	AppGroupGUID    string                 `json:"appgroupguid,omitempty" yaml:"appgroupguid,omitempty"`
 	ApplicationURL  string                 `json:"AppURL,omitempty" yaml:"appURL,omitempty"`
@@ -115,10 +116,10 @@ type Credential struct {
 	ID            string                 `json:"id,omitempty" yaml:"id,omitempty"`
 	PasswordHash  []byte                 `json:"passwordhash,omitempty" yaml:"passwordhash,omitempty"`
 	Password      string                 `json:"passwordstring,omitempty" yaml:"password,omitempty"`
-	LoginURL      string                 `json:"loginurl,omitempty" yaml:"loginURL,omitempty" validate:"required,url"`
+	LoginURL      string                 `json:"loginurl,omitempty" yaml:"loginURL,omitempty" binding:"required,url" validate:"required,url"`
 	SSHPrivateKey []byte                 `json:"sshprivatekey,omitempty" yaml:"sshprivatekey,omitempty"`
 	CredTags      map[string][]string    `json:"credtags,omitempty" yaml:"tags,omitempty"`
-	OtherCredInfo map[string]interface{} `json:"othercredinfomap,omitempty" yaml:"otherCredentials" validate:"required"`
+	OtherCredInfo map[string]interface{} `json:"othercredinfomap,omitempty" yaml:"otherCredentials" binding:"required" validate:"required"`
 }
 
 

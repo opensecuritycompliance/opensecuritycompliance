@@ -1,0 +1,14 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: ruleRun #not validated
+metaData:
+  name: CWT
+  aliasRef: r1
+spec:
+  inputs:
+    BucketName: demo #inputs will go in rule run, specification in rule creation
+    SOWFileDetails: #
+    EmployeeFileDetails: #
+    AuditLogFileDetails: #
+    GracePeriod: 15
+  applicationScope: CWT_ONE
+  systemScope: SystemObject

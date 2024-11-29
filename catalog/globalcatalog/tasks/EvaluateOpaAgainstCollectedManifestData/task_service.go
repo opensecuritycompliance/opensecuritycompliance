@@ -227,6 +227,9 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 						mapsliceOutputObj = append(mapsliceOutputObj,
 							mapslice.MapItem{Key: "ResourceTags", Value: ""})
 
+						if namespace == "" {
+							namespace = input_.(map[string]interface{})["namespace"].(string)
+						}
 						mapsliceOutputObj = append(mapsliceOutputObj,
 							mapslice.MapItem{Key: "Namespace", Value: namespace})
 						mapsliceOutputObj = append(mapsliceOutputObj,
@@ -392,6 +395,9 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 						mapslice.MapItem{Key: "ComplianceStatusReason", Value: validationDetails["ComplianceStatusReason"]})
 
 					evaluationNotes = strings.TrimPrefix(evaluationNotes, "\n")
+					if evaluationNotes == "" {
+						evaluationNotes = validationDetails["Remediation"]
+					}
 					mapsliceOutputObj = append(mapsliceOutputObj,
 						mapslice.MapItem{Key: "RemediationNotes", Value: evaluationNotes})
 
@@ -399,6 +405,11 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 
 					mapsliceOutputObj = append(mapsliceOutputObj,
 						mapslice.MapItem{Key: "EvaluatedTime", Value: evaluatedTime})
+
+					mapsliceOutputObj = append(mapsliceOutputObj,
+						mapslice.MapItem{Key: "ActionStatus", Value: ""})
+					mapsliceOutputObj = append(mapsliceOutputObj,
+						mapslice.MapItem{Key: "ActionResponseURL", Value: ""})
 
 					if inputs.Source == "kubernetes" {
 						mapsliceOutputObj = append(mapsliceOutputObj,
@@ -415,11 +426,6 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 
 					mapsliceOutputObj = append(mapsliceOutputObj,
 						mapslice.MapItem{Key: "UserAction", Value: ""})
-
-					mapsliceOutputObj = append(mapsliceOutputObj,
-						mapslice.MapItem{Key: "ActionStatus", Value: ""})
-					mapsliceOutputObj = append(mapsliceOutputObj,
-						mapslice.MapItem{Key: "ActionResponseURL", Value: ""})
 
 					dataToUploadInOutputJsonFileTemp = append(dataToUploadInOutputJsonFileTemp, mapsliceOutputObj)
 				}
@@ -459,7 +465,7 @@ func (inst *TaskInstance) getValidationDetailsFormConfigFile(inputs *UserInputs,
 	tableData := tomlData.Get(tables[slices.Index(tables, evidenceName)])
 
 	validationStatusCode, validationStatusNotes, complianceStatus, complianceStatusReason := "", "", "", ""
-
+	remediation := ""
 	if isRecordCompliant {
 		validationStatusCode, _ = (tableData.(*toml.Tree)).Get("COMPLIANT.ValidationStatusCode").(string)
 		validationStatusNotes, _ = (tableData.(*toml.Tree)).Get("COMPLIANT.ValidationStatusNotes").(string)
@@ -470,6 +476,7 @@ func (inst *TaskInstance) getValidationDetailsFormConfigFile(inputs *UserInputs,
 		validationStatusNotes, _ = (tableData.(*toml.Tree)).Get("NON_COMPLIANT.ValidationStatusNotes").(string)
 		complianceStatus = "NON_COMPLIANT"
 		complianceStatusReason, _ = (tableData.(*toml.Tree)).Get("NON_COMPLIANT.ComplianceStatusReason").(string)
+		remediation, _ = (tableData.(*toml.Tree)).Get("NON_COMPLIANT.Remediation").(string)
 	}
 
 	validationDetails := map[string]string{
@@ -477,6 +484,7 @@ func (inst *TaskInstance) getValidationDetailsFormConfigFile(inputs *UserInputs,
 		"ValidationStatusCodeNotes": validationStatusNotes,
 		"ComplianceStatus":          complianceStatus,
 		"ComplianceStatusReason":    complianceStatusReason,
+		"Remediation":               remediation,
 	}
 
 	return validationDetails, nil
@@ -572,6 +580,9 @@ func (inst *TaskInstance) extractOpaTemplateInputs(inputs *UserInputs) (string, 
 	switch opaConfigurationVO.Spec.Rego.Type {
 	case "regostring":
 		regoRule = []byte(opaConfigurationVO.Spec.Rego.Regostring)
+
+	case "networkfile":
+		//TODO:
 
 	case "localfile":
 		if opaConfigurationVO.Spec.Rego.Localfile != "" &&
@@ -803,7 +814,7 @@ func (inst *TaskInstance) uploadOutputFile(outputData interface{},
 	reportFileNameWithUUID := fmt.Sprintf("%v-%v%v", outputFileNameTemp, uuid.New().String(), ".json")
 	outputFilePath, err := cowStorage.UploadJSONFile(reportFileNameWithUUID, outputData, inst.SystemInputs)
 	if err != nil {
-		return "", fmt.Errorf("cannot upload access key rotation data to minio: %w", err)
+		return "", fmt.Errorf("cannot upload opa report to minio: %w", err)
 	}
 	return outputFilePath, nil
 }

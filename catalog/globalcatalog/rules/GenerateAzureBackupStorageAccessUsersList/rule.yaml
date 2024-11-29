@@ -15,40 +15,99 @@ meta:
     annotateType:
     - azureappconnector
 spec:
+  inputs:
+    BackupStorageRegexPattern:
+  inputsMeta__:
+  - name: BackupStorageRegexPattern
+    dataType: STRING
+    repeated: false
+    defaultValue: backup
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: GetAzureStorageAccountsData
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: GetAzureStorageAccountsData
     description: GetAzureStorageAccountsData
   - name: FetchAzureRoleDefinitionsDetails
     alias: t2
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureRoleDefinitionsDetails
     description: FetchAzureRoleDefinitionsDetails
   - name: FetchAzureUsers
     alias: t3
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureUsers
     description: FetchAzureUsers
   - name: FetchAzureGroups
     alias: t4
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureGroups
     description: FetchAzureGroups
   - name: FetchAzureServicePrincipals
     alias: t5
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureServicePrincipals
     description: FetchAzureServicePrincipals
   - name: FetchAzureRoleAssignmentsData
     alias: t6
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureRoleAssignmentsData
     description: FetchAzureRoleAssignmentsData
   - name: FetchAzureBackupStorageAccessUsersList
     alias: t7
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: FetchAzureBackupStorageAccessUsersList
     description: FetchAzureBackupStorageAccessUsersList
   ioMap:

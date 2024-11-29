@@ -3,6 +3,13 @@ userObject:
     name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSIAM:
         AccessKey: "$AWS_ACCESS_KEY"
@@ -15,5 +22,5 @@ userInputs:
   SecurityHubFindingsFile: <<MINIO_FILE_PATH>>
   ControlName: # To identify the ControlName, please refer to the 'ControlName' field in the '/catalog/globalcatalog/rules/ProcessFindingsFromSecurityHub/ControlConfig.json' file.
   ControlConfigFile: <<MINIO_FILE_PATH>>
-fromDate: 2023-11-10
-toDate: 2023-11-10
+fromDate: "2023-11-10T06:07:54Z"
+toDate: "2023-11-10T06:07:54Z"
