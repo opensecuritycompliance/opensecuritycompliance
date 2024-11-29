@@ -12,7 +12,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate permissions are more permissive than 600 (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet service file permissions to 600 or more restrictive."
+            "ValidationStatusNotes": "Remediation required: Set kubelet service file permissions to 600 or more restrictive.",
+            "Remediation" : ""
         }
     },
     {
@@ -28,7 +29,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate ownership is not set to root:root (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet service file ownership to root:root."
+            "ValidationStatusNotes": "Remediation required: Set kubelet service file ownership to root:root.",
+            "Remediation" : ""
         }
     },
     {
@@ -44,7 +46,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Proxy kubeconfig file permissions are not set to 644 or more restrictive (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file permissions to 644 or more restrictive."
+            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file permissions to 644 or more restrictive.",
+            "Remediation" : ""
         }
     },
     {
@@ -60,7 +63,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Proxy kubeconfig file ownership is not set to root:root (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file ownership to root:root."
+            "ValidationStatusNotes": "Remediation required: Set proxy kubeconfig file ownership to root:root.",
+            "Remediation" : ""
         }
     },
     {
@@ -76,7 +80,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate permissions are more permissive than 600 (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file permissions to 600 or more restrictive."
+            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file permissions to 600 or more restrictive.",
+            "Remediation" : ""
         }
     },
     {
@@ -92,7 +97,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate ownership is not set to root:root (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file ownership to root:root."
+            "ValidationStatusNotes": "Remediation required: Set --kubeconfig kubelet.conf file ownership to root:root.",
+            "Remediation" : ""
         }
     },
     {
@@ -108,7 +114,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Certificate authorities file permissions are not set to 644 or more restrictive (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set certificate authorities file permissions to 644 or more restrictive."
+            "ValidationStatusNotes": "Remediation required: Set certificate authorities file permissions to 644 or more restrictive.",
+            "Remediation" : ""
         }
     },
     {
@@ -124,7 +131,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Client certificate authorities file ownership is not set to root:root (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set client certificate authorities file ownership to root:root."
+            "ValidationStatusNotes": "Remediation required: Set client certificate authorities file ownership to root:root.",
+            "Remediation" : ""
         }
     },
     {
@@ -140,7 +148,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file permissions are not set to 644 or more restrictive (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file permissions to 644 or more restrictive."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file permissions to 644 or more restrictive.",
+            "Remediation" : ""
         }
     },
     {
@@ -156,7 +165,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate kubelet --config configuration file ownership is not set to root:root (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file ownership to root:root."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --config configuration file ownership to root:root.",
+            "Remediation" : ""
         }
     },
     {
@@ -172,7 +182,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate --anonymous-auth argument is not set to false (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --anonymous-auth argument to false."
+            "ValidationStatusNotes": "Remediation required: Set --anonymous-auth argument to false.",
+            "Remediation" : ""
         }
     },
     {
@@ -188,7 +199,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate --authorization-mode argument is set to AlwaysAllow (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --authorization-mode argument to a value other than AlwaysAllow."
+            "ValidationStatusNotes": "Remediation required: Set --authorization-mode argument to a value other than AlwaysAllow.",
+            "Remediation" : ""
         }
     },
     {
@@ -204,7 +216,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate --client-ca-file argument is not set appropriately (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --client-ca-file argument to an appropriate value."
+            "ValidationStatusNotes": "Remediation required: Set --client-ca-file argument to an appropriate value.",
+            "Remediation" : ""
         }
     },
     {
@@ -220,7 +233,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kubelet --read-only-port argument is not set to 0 (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --read-only-port argument to 0."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --read-only-port argument to 0.",
+            "Remediation" : ""
         }
     },
     {
@@ -236,7 +250,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kubelet --streaming-connection-idle-timeout argument is set to 0 (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --streaming-connection-idle-timeout argument to a value other than 0."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --streaming-connection-idle-timeout argument to a value other than 0.",
+            "Remediation" : ""
         }
     },
     {
@@ -252,7 +267,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate --make-iptables-util-chains argument is not set to true (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --make-iptables-util-chains argument to true."
+            "ValidationStatusNotes": "Remediation required: Set --make-iptables-util-chains argument to true.",
+            "Remediation" : ""
         }
     },
     {
@@ -268,7 +284,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate kubelet --make-iptables-util-chains argument is not set to true (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --make-iptables-util-chains argument to true."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --make-iptables-util-chains argument to true.",
+            "Remediation" : ""
         }
     },
     {
@@ -284,7 +301,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kubelet --hostname-override argument is set (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Ensure kubelet --hostname-override argument is not set."
+            "ValidationStatusNotes": "Remediation required: Ensure kubelet --hostname-override argument is not set.",
+            "Remediation" : ""
         }
     },
     {
@@ -300,7 +318,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kubelet --event-qps argument is not set to 0 or a level which ensures appropriate event capture (verified manually)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --event-qps argument to 0 or a level which ensures appropriate event capture."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --event-qps argument to 0 or a level which ensures appropriate event capture.",
+            "Remediation" : ""
         }
     },
     {
@@ -316,7 +335,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate --rotate-certificates argument is set to false (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set --rotate-certificates argument to a value other than false."
+            "ValidationStatusNotes": "Remediation required: Set --rotate-certificates argument to a value other than false.",
+            "Remediation" : ""
         }
     },
     {
@@ -332,7 +352,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate kubelet --rotate-certificates argument is set to false (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set kubelet --rotate-certificates argument to a value other than false."
+            "ValidationStatusNotes": "Remediation required: Set kubelet --rotate-certificates argument to a value other than false.",
+            "Remediation" : ""
         }
     },
     {
@@ -348,7 +369,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate Kubelet is not using Strong Cryptographic Ciphers (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure Kubelet to use Strong Cryptographic Ciphers."
+            "ValidationStatusNotes": "Remediation required: Configure Kubelet to use Strong Cryptographic Ciphers.",
+            "Remediation" : ""
         }
     },
     {
@@ -364,7 +386,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate a limit is not set on pod PIDs (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure a limit on pod PIDs."
+            "ValidationStatusNotes": "Remediation required: Configure a limit on pod PIDs.",
+            "Remediation" : ""
         }
     },
     {
@@ -380,7 +403,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Automated checks indicate that the kube-proxy metrics service is not bound to localhost (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the kube-proxy metrics service to bind to localhost."
+            "ValidationStatusNotes": "Remediation required: Configure the kube-proxy metrics service to bind to localhost.",
+            "Remediation" : ""
         }
     },
     {
@@ -396,7 +420,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that the cluster-admin role is used inappropriately (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Restrict cluster-admin role usage as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Restrict cluster-admin role usage as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -412,7 +437,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to secrets is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize secret access as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize secret access as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -428,7 +454,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that wildcard use in Roles and ClusterRoles is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize wildcard usage in Roles and ClusterRoles as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize wildcard usage in Roles and ClusterRoles as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -444,7 +471,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to create pods is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to create pods as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to create pods as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -460,7 +488,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that default service accounts are actively used (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Disable default service account usage as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Disable default service account usage as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -476,7 +505,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that Service Account Tokens are mounted inappropriately (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Restrict Service Account Token mounting as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Restrict Service Account Token mounting as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -492,7 +522,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that the system:masters group is used (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Avoid system:masters group usage as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Avoid system:masters group usage as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -508,7 +539,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that Bind, Impersonate and Escalate permissions are not limited (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Limit Bind, Impersonate and Escalate permissions as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Limit Bind, Impersonate and Escalate permissions as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -524,7 +556,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to create persistent volumes is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to create persistent volumes as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to create persistent volumes as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -540,7 +573,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to the proxy sub-resource of nodes is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to the proxy sub-resource of nodes as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to the proxy sub-resource of nodes as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -556,7 +590,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to the approval sub-resource of certificatesigningrequests objects is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to the approval sub-resource of certificatesigningrequests objects as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to the approval sub-resource of certificatesigningrequests objects as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -572,7 +607,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to webhook configuration objects is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to webhook configuration objects as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to webhook configuration objects as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -588,7 +624,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that access to the service account token creation is not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize access to the service account token creation as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize access to the service account token creation as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -604,7 +641,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that no active policy control mechanism is in place (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Implement an active policy control mechanism as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Implement an active policy control mechanism as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -620,7 +658,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that privileged containers are not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize privileged container admission as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize privileged container admission as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -636,7 +675,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Audit logs indicate that containers wishing to share the host process ID namespace are not minimized (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Minimize container admission with host process ID namespace sharing as per CIS Benchmark."
+            "ValidationStatusNotes": "Remediation required: Minimize container admission with host process ID namespace sharing as per CIS Benchmark.",
+            "Remediation" : ""
         }
     },
     {
@@ -652,7 +692,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host IPC namespace."
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host IPC namespace.",
+            "Remediation" : ""
         }
     },
     {
@@ -668,7 +709,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host network namespace."
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers wishing to share the host network namespace.",
+            "Remediation" : ""
         }
     },
     {
@@ -684,7 +726,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with allowPrivilegeEscalation."
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with allowPrivilegeEscalation.",
+            "Remediation" : ""
         }
     },
     {
@@ -700,7 +743,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of root containers."
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of root containers.",
+            "Remediation" : ""
         }
     },
     {
@@ -716,7 +760,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the admission control policy is more permissive than required for this control (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with the NET_RAW capability."
+            "ValidationStatusNotes": "Remediation required: Configure the admission control policy to minimize the admission of containers with the NET_RAW capability.",
+            "Remediation" : ""
         }
     },
     {
@@ -732,7 +777,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Manual review indicates that containers with added capabilities are not minimized (details in review logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Review and minimize containers with added capabilities."
+            "ValidationStatusNotes": "Remediation required: Review and minimize containers with added capabilities.",
+            "Remediation" : ""
         }
     },
     {
@@ -748,7 +794,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Manual review indicates that containers with assigned capabilities are not minimized (details in review logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Review and minimize containers with assigned capabilities."
+            "ValidationStatusNotes": "Remediation required: Review and minimize containers with assigned capabilities.",
+            "Remediation" : ""
         }
     },
     {
@@ -764,7 +811,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Manual review indicates that the admission of Windows HostProcess containers is not minimized (details in review logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Review and minimize the admission of Windows HostProcess containers."
+            "ValidationStatusNotes": "Remediation required: Review and minimize the admission of Windows HostProcess containers.",
+            "Remediation" : ""
         }
     },
     {
@@ -780,7 +828,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Manual review indicates that the use of HostPath volumes is not minimized (details in review logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPath volumes."
+            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPath volumes.",
+            "Remediation" : ""
         }
     },
     {
@@ -796,7 +845,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Manual review indicates that the use of HostPorts in containers is not minimized (details in review logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPorts in containers."
+            "ValidationStatusNotes": "Remediation required: Review and minimize the use of HostPorts in containers.",
+            "Remediation" : ""
         }
     },
     {
@@ -812,7 +862,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that the CNI in use does not support Network Policies (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure the CNI in use to support Network Policies."
+            "ValidationStatusNotes": "Remediation required: Configure the CNI in use to support Network Policies.",
+            "Remediation" : ""
         }
     },
     {
@@ -828,7 +879,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that not all Namespaces have Network Policies defined (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Define Network Policies for all Namespaces."
+            "ValidationStatusNotes": "Remediation required: Define Network Policies for all Namespaces.",
+            "Remediation" : ""
         }
     },
     {
@@ -844,7 +896,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that secrets are preferably used as environment variables over secrets as files (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure secrets to be used as files instead of environment variables."
+            "ValidationStatusNotes": "Remediation required: Configure secrets to be used as files instead of environment variables.",
+            "Remediation" : ""
         }
     },
     {
@@ -860,7 +913,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate that external secret storage is not being used (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Consider using external secret storage."
+            "ValidationStatusNotes": "Remediation required: Consider using external secret storage.",
+            "Remediation" : ""
         }
     },
     {
@@ -876,7 +930,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate Image Provenance is not configured using ImagePolicyWebhook admission controller (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Configure Image Provenance using ImagePolicyWebhook admission controller."
+            "ValidationStatusNotes": "Remediation required: Configure Image Provenance using ImagePolicyWebhook admission controller.",
+            "Remediation" : ""
         }
     },
     {
@@ -892,7 +947,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate administrative boundaries are not created between resources using namespaces (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Create administrative boundaries between resources using namespaces."
+            "ValidationStatusNotes": "Remediation required: Create administrative boundaries between resources using namespaces.",
+            "Remediation" : ""
         }
     },
     {
@@ -908,7 +964,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate the seccomp profile is not set to docker/default in pod definitions (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Set the seccomp profile to docker/default in pod definitions."
+            "ValidationStatusNotes": "Remediation required: Set the seccomp profile to docker/default in pod definitions.",
+            "Remediation" : ""
         }
     },
     {
@@ -924,7 +981,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate security context is not applied to pods and containers (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Apply security context to pods and containers."
+            "ValidationStatusNotes": "Remediation required: Apply security context to pods and containers.",
+            "Remediation" : ""
         }
     },
     {
@@ -940,7 +998,8 @@
         "NON_COMPLIANT": {
             "ComplianceStatusReason": "Kube-bench logs indicate the default namespace is in use (details in logs)",
             "ValidationStatusCode": "FL",
-            "ValidationStatusNotes": "Remediation required: Do not use the default namespace."
+            "ValidationStatusNotes": "Remediation required: Do not use the default namespace.",
+            "Remediation" : ""
         }
     }
 ]

@@ -15,10 +15,43 @@ meta:
     annotateType:
     - aws
 spec:
+  inputs:
+    SecurityHubFindingsFile: <<MINIO_FILE_PATH>>
+    ControlName: 
+    ControlConfigFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: SecurityHubFindingsFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ControlName
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ControlConfigFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: ProcessSecurityHubFindings
     alias: t1
     type: task
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Process SecurityHub Findings
     description: Process SecurityHub Findings
   ioMap:  

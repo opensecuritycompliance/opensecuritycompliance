@@ -18,38 +18,41 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: SecurityHubFindingsFile
   description: Security Hub Findings File
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: []
-  defaultValue: 
+  defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: ControlName
   description: Control Name
-  dataType: string
+  dataType: STRING
   repeated: false
   allowedValues: []
-  defaultValue: 
+  defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: ControlConfigFile
   description: Control Config File
-  dataType: string
+  dataType: FILE
   repeated: false
   allowedValues: []
-  defaultValue: 
+  defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: SecurityHubReport
   description: Security Hub Report
-  dataType: string
+  dataType: FILE
 - name: SecurityHubAuditFile
   description: Security Hub Audit File
-  dataType: string
+  dataType: FILE
+- name: SecurityHubAuditFile
+  description: Security Hub Audit File
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  dataType: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  dataType: string
+  dataType: STRING

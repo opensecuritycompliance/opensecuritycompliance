@@ -20,13 +20,13 @@ inputs:
 outputs:
 - name: AWSCredentialReport
   description: AWS Credential Report
-  type: string
+  dataType: FILE
 - name: LogFile
-  description: AWS Log File
-  type: string
+  description: AWS Credential log File
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

@@ -1,9 +1,8 @@
-
 from typing import overload
 from urllib.parse import urlparse
 from compliancecowcards.structs import cards
 # As per the selected app, we're importing the app package
-from appconnections.nocredapp import nocredapp
+from appconnections.privacybisonconnector import privacybisonconnector
 from compliancecowcards.utils import cowdictutils
 from appconnections.sshconnector import sshconnector
 import json
@@ -11,7 +10,6 @@ import uuid
 import pandas as pd
 import re
 import jsbeautifier
-
 
 class Task(cards.AbstractTask):
 
@@ -32,19 +30,16 @@ class Task(cards.AbstractTask):
 
         try:
             string_data = har_file_bytes.decode('utf-8')
-
-            self.nocredapp_obj = nocredapp.NoCredApp()
-            domain_name, error = self.nocredapp_obj.get_company_name_from_har_file(
-                string_data)
-            if error:
-                return self.upload_log_file([{'Error': f'{error}'}])
-
+            self.privacybison_obj = privacybisonconnector.PrivacyBisonConnector()
             har_file_data = json.loads(string_data)
         except json.JSONDecodeError as e:
             return self.upload_log_file([{'Error': f'{e}'}])
+        
+        domain_name, error = self.privacybison_obj.get_company_name_from_har_file(har_file_data)
+        if error:
+            return self.upload_log_file([{'Error': f'{error}'}])
 
         js_data, ts_data = self.get_unique_url_from_har_data(har_file_data)
-
         if not js_data and not ts_data:
             return self.upload_log_file([{'Error': 'No JavaScript or TypeScript request URLs were found in the provided HAR file.'}])
     
@@ -129,7 +124,9 @@ class Task(cards.AbstractTask):
                     mime_type = response.get('mimeType', '')
                     url = request['url']
                     text = response['text']
-                    if mime_type in ('application/javascript','application/x-javascript','text/javascript') and url not in js_urls_seen:
+                    if url.endswith(".json"):
+                        continue
+                    elif mime_type in ('application/javascript','application/x-javascript','text/javascript') and url not in js_urls_seen:
                         js_data.append({'URL': url, 'Text': text})
                         js_urls_seen.append(url)
                     elif mime_type in ('application/typescript','application/x-typescript','text/typescript') and url not in ts_urls_seen:
@@ -226,7 +223,7 @@ class Task(cards.AbstractTask):
                     'ValidationStatusNotes'] = f'Vulnerabilities found in {resource_type} file scanned by Semgrep.'
                 selected_columns['ComplianceStatus'] = 'NON_COMPLIANT'
                 selected_columns['ComplianceStatusReason'] = f'The {resource_type} file scanned by Semgrep identifies vulnerabilities that pose potential security risks.'
-                selected_columns['EvaluatedTime'] = self.nocredapp_obj.get_current_datetime()
+                selected_columns['EvaluatedTime'] = self.privacybison_obj.get_current_datetime()
                 selected_columns['UserAction'] = ""
                 selected_columns['ActionStatus'] = ""
                 selected_columns['ActionResponseURL'] = ""
@@ -235,6 +232,17 @@ class Task(cards.AbstractTask):
                 selected_columns = selected_columns[desired_order]
                 vuln_result_list.extend(selected_columns.to_dict(orient='records'))
                 data_list.extend(data_df.to_dict(orient='records'))
+            elif cowdictutils.is_valid_array(data, 'errors'):
+                error_data_df = pd.json_normalize(data['errors'])
+                error_type = error_data_df['type'].iloc[0] if 'type' in error_data_df else 'Unknown error type'
+                timeout_errors = error_data_df['message'].str.contains('Timeout when running')
+                if timeout_errors.any():
+                    timeout_rules = error_data_df.loc[timeout_errors, 'message'].str.extract(r'running\s+(\S+)')[0].unique()[:3]
+                    timeout_message = f"Timeout when running {', '.join(timeout_rules)} occurred while scanning {resource_type} file."
+                else:
+                    timeout_message = "An unknown error occurred."
+
+                error_list.append({'Error': f"Resource '{value['URL']}' encountered a Semgrep error: {timeout_message} ({error_type})"})
             else:
                 data_dict = {
                     'System': domain_name,
@@ -258,7 +266,7 @@ class Task(cards.AbstractTask):
                     'ValidationStatusNotes': f'No vulnerabilities found in {resource_type} file scanned by Semgrep.',
                     'ComplianceStatus': 'COMPLIANT',
                     'ComplianceStatusReason': f'The {resource_type} file scanned by Semgrep adheres to coding standards and does not contain vulnerabilities, ensuring compliance with coding best practices.',
-                    'EvaluatedTime': self.nocredapp_obj.get_current_datetime(),
+                    'EvaluatedTime': self.privacybison_obj.get_current_datetime(),
                     'UserAction': "",
                     'ActionStatus': "",
                     'ActionResponseURL': ""

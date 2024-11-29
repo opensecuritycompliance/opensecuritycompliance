@@ -6,23 +6,40 @@ meta:
   description: Verify session token is not present in URL
   labels:
     appType:
-    - nocredapp
+    - privacybisonconnector
     environment:
     - logical
     execlevel:
     - app
   annotations:
     annotateType:
-    - nocredapp
+    - privacybisonconnector
 spec:
+  inputs:
+    HarFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: HarFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: VerifySessionTokenIsNotPresentInURL
     alias: t1
     type: task
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Verify session token is not present in URL
     description: Verify session token is not present in URL
   ioMap:
-  - 't1.Input.HARFile:=*.Input.HARFile'
+  - 't1.Input.HarFile:=*.Input.HarFile'
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
   - '*.Output.URIsWithTokenInQuery:=t1.Output.URIsWithTokenInQuery'

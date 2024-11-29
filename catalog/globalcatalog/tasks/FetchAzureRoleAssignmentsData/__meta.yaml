@@ -18,42 +18,46 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: AzureRoleDefinitionsData
   description: AzureRoleDefinitionsData
-  type: file
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: AzureUsersList
   description: AzureUsersList
-  type: file
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: AzureGroupsList
   description: AzureGroupsList
-  type: file
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: AzureServicePrincipalsData
   description: AzureServicePrincipalsData
-  type: file
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: AzureRoleAssignmentsData
   description: Azure Role Assignments Data
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

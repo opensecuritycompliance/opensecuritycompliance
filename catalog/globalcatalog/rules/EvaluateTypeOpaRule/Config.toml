@@ -77,7 +77,7 @@
 
 [K8sAllowedRepos]
   [K8sAllowedRepos.COMPLIANT]
-  ComplianceStatusReason = "Kubernetes images should be from allowed repositories."
+  ComplianceStatusReason = "Kubernetes images should be sourced from allowed repositories"
   ValidationStatusCode = "K_AR"
   ValidationStatusNotes = "Kubernetes image is from allowed repository."
 

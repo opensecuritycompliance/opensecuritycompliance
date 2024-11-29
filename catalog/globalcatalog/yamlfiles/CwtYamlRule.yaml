@@ -1,0 +1,88 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: rule #not validated, not splitted
+metaData:
+  name: CWT
+  purpose: CwtYaml Test
+  description: CwtYaml Test
+  alias: r1
+  # type: sequential -default
+  # app: aws_role
+spec:
+  # scope: domain #not validated
+  # domain: cc #not validated
+  tasks:
+    - alias: t1 #aliasref -> alias
+      name: FetchSOWData
+      purpose: FetchSOWData
+      description: FetchSOWData
+    - alias: t2
+      name: FetchEmployeeData
+      purpose: FetchEmployeeData
+      description: FetchEmployeeData
+    - alias: t3
+      name: ReconcileStatuses
+      purpose: ReconcileStatuses
+      description: ReconcileStatuses
+    - alias: t4
+      name: FetchAuditLogData
+      purpose: FetchAuditLogData
+      description: FetchAuditLogData
+    - alias: t5
+      name: ReconcileAccesses
+      purpose: ReconcileAccesses
+      description: ReconcileAccesses
+
+  inputs:
+    - name: BucketName
+      showFieldInUI: true
+      type: string
+      defaultValue: demo
+      choices:
+    - name: GracePeriod
+      showFieldInUI: true
+      type: number
+      defaultValue: 15
+      choices:
+    - name: SOWFileDetails
+      showFieldInUI: true
+      type: string | file
+      defaultValue: #
+      choices:
+    - name: EmployeeFileDetails
+      showFieldInUI: true
+      type: string
+      defaultValue: #
+      choices:
+    - name: AuditLogFileDetails
+      showFieldInUI: true
+      type: string
+      defaultValue: #
+      choices:
+
+  ioMap:
+    - "*.Input.BucketName:=t1.Input.BucketName"
+    - "*.Input.SOWFileDetails:=t1.Input.SOWFileDetails"
+    - "*.Input.OutputFormat:=t1.Input.OutputFormat"
+
+    - "*.Input.BucketName:=t2.Input.BucketName"
+    - "*.Input.EmployeeFileDetails:=t2.Input.EmployeeFileDetails"
+
+    - "*.Input.GracePeriod:=t2.Input.GracePeriod"
+    - "t1.Output.SOWData:=t3.Input.SOWData"
+    - "t2.Output.EmployeeData:=t3.Input.EmployeeData"
+
+    - "t3.Output.StatusReconciliationData:=*.Output.StatusReconciliationData"
+    - "t3.Output.StatusReconciliationDataHash:=*.Output.StatusReconciliationDataHash"
+
+    - "*.Input.BucketName:=t4.Input.BucketName"
+    - "*.Output.AuditLogFileDetails:=t4.Input.AuditLogFileDetails"
+
+    - "*.Input.BucketName:=t5.Input.BucketName"
+    - "*.Output.GracePeriod:=t5.Input.GracePeriod"
+    - "t3.Output.StatusReconciliationData:=t5.Input.StatusReconciliationData"
+    - "t4.Output.AuditLogData:=t5.Input.AuditLogData"
+
+    - "t5.Output.AccessReconciliationData:=*.Output.AccessReconciliationData"
+    - "t5.Output.AccessReconciliationDataHash:=*.Output.AccessReconciliationDataHash"
+    - "t5.Output.CompliancePCT_:=*.Output.CompliancePCT_"
+    - "t5.Output.ComplianceStatus_:=*.Output.ComplianceStatus_"

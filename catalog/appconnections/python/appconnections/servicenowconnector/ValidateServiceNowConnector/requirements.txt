@@ -1,0 +1,11 @@
+
+PyYAML
+SQLAlchemy
+azure-identity
+azure-mgmt-compute
+azure-mgmt-resource==21.2.1
+jmespath
+minio
+requests
+xmltodict
+urllib3

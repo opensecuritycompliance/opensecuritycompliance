@@ -15,10 +15,43 @@ meta:
     annotateType:
     - azureappconnector
 spec:
+  inputs:
+    ControlName: ""
+    ControlConfigFilePath: <<MINIO_FILE_PATH>>
+    AzurePolicyRunResultFilePath: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: ControlName
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ControlConfigFilePath
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: AzurePolicyRunResultFilePath
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: AzurePolicyFilterAndFormatRunResult
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Filter And Format AzurePolicyRunResult
     description: Filter And Format AzurePolicyRunResult
   ioMap:

@@ -77,5 +77,6 @@ for py_module in list(
                 if output and bool(output):
                     with open("task_output.json", "w") as f:
                         f.write(json.dumps({"Outputs": output}))
+                print("output :", output)
                 is_task_executed = True
                 break

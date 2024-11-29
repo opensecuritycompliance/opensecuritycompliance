@@ -1,7 +1,14 @@
 userObject:
-  app:
-    name: Kubernetes
+  apps:
+  - name: Kubernetes
     appPort: "0"
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     appURL: "$INSTANCE_LOGIN_URL"
     userDefinedCredentials:
       Jumphost:
@@ -14,6 +21,6 @@ userInputs:
   Query: ""
   OpaConfigurationFile: "<<MINIO_FILE_PATH>>"
   ConfigFile: "<<MINIO_FILE_PATH>>"
-  OutputFileName: "" 
-fromDate: 2023-11-24
-toDate: 2023-11-24
+  OutputFileName: ""
+fromDate: 2023-11-24T06:03:00Z
+toDate: 2023-11-24T06:03:00Z

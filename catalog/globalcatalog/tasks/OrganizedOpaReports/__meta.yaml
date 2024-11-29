@@ -11,19 +11,11 @@ showInCatalog: true
 icon: fa-solid fa-suitcase
 type: python
 tags:
-- application
+- generic
 applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
-- name: ControlNumber
-  description: ControlNumber
-  dataType: STRING
-  repeated: false
-  allowedValues: []
-  defaultValue: hash
-  showField: true
-  required: true
 - name: DataFile
   description: DataFile
   dataType: FILE
@@ -34,14 +26,6 @@ inputs:
   required: true
 - name: LogFile
   description: LogFile
-  dataType: FILE
-  repeated: false
-  allowedValues: []
-  defaultValue: <<MINIO_FILE_PATH>>
-  showField: true
-  required: true
-- name: InputsTomlFile
-  description: InputsTomlFile
   dataType: FILE
   repeated: false
   allowedValues: []

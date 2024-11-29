@@ -18,21 +18,22 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: AzureADUsersAuthDataPath
   description: AzureADUsersAuthDataPath
-  type: file
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: AzureADMFAEnabled
   description: AzureADMFAEnabled
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: ComplianceStatus_
   description: ComplianceStatus_
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: CompliancePCT_
-  type: int
+  dataType: INT

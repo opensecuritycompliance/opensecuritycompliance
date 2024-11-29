@@ -3,6 +3,13 @@ userObject:
     name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSRole:
         AccessKey: "$AWS_ROLE_ACCESS_KEY"
@@ -15,5 +22,5 @@ userInputs:
   MinimumRequiredRetentionPeriod: 
   RDSDBInstancesList: <<MINIO_FILE_PATH>>
   LogFile: <<MINIO_FILE_PATH>>
-fromDate: 2024-03-01
-toDate: 2024-03-01
+fromDate: "2024-03-01T06:07:54Z"
+toDate: "2024-03-01T06:07:54Z"

@@ -19,8 +19,15 @@ spec:
   - name: GetAzureLogAnalyticsWorkSpaceDetails
     alias: t1
     type: task
-    purpose: Azure Log Analytics Work Space Details
-    description: Azure Log Analytics Work Space Details
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: GetAzureLogAnalyticsWorkSpaceDetails
+    description: GetAzureLogAnalyticsWorkSpaceDetails
   ioMap:
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'

@@ -15,11 +15,28 @@ meta:
     annotateType:
     - azureappconnector
 spec:
+  inputs:
+    AzureADUsersAuthDataPath: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: AzureADUsersAuthDataPath
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
-  - name: AzureADMFAEnabled  
+  - name: AzureADMFAEnabled
     alias: t1
     type: task
-    purpose: AzureADMFAEnabled 
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: AzureADMFAEnabled
     description: AzureADMFAEnabled
   ioMap:
   - 't1.Input.AzureADUsersAuthDataPath:=*.Input.AzureADUsersAuthDataPath'

@@ -1,6 +1,7 @@
 userObject:
   name: SSHConnector
 userInputs:
+  BucketName: demo
   appPort: 0
   appURL: http://localhost.com
   userDefinedCredentials:

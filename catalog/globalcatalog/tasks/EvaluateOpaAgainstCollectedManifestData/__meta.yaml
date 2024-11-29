@@ -32,8 +32,8 @@ inputs:
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
   required: true
-- name: LogFile
-  description: LogFile
+- name: AuditFile
+  description: AuditFile
   dataType: FILE
   repeated: false
   allowedValues: []
@@ -60,7 +60,7 @@ outputs:
 - name: OpaPolicyReport
   description: Opa Policy Report
   dataType: FILE
-- name: LogFile
+- name: AuditFile
   description: Audit File
   dataType: FILE
 - name: ComplianceStatus_

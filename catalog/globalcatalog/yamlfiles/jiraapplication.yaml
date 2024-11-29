@@ -1,0 +1,38 @@
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: JIRACLIAuthApplication
+  displayName: JIRA CLI Auth Application Displayable
+  shortDescription: JIRA CLI Auth Application Short description
+  longDescription: JIRA CLI Auth Application Long description
+  labels: # required. The rule orchestrator selects the INSTANCE of the APPLICATION CLASS based on the labels described here
+    type: [jiracliauth]
+  annotations: # optional. These are user defined labels for reporting purposes
+    jiraannotation: [jiracliauth]  
+  version: 1.1.1
+spec:
+  url: https://
+  ipv4Address: 
+  ipv6Address: 
+  port: 
+  credentialTypes: # List of SUPPORTED credential types
+  - name: JIRACredential # You can either reference the CredentialType here or dynamically apply it through selectors
+    version: 1.1.1 
+  selectors:
+    anyOf: 
+      key1: [value1] # matches to ANY OF the key:value pairs in the credentialType object. Equivalent to an OR operation
+    allOf:
+      key1: [value1] # matches to ALL OF the key:value pair in the credentialType object. Equivalent to an AND operation
+    noneOf:
+      key1: [value1] # matches to NONE OF the key:value pair in the credentialType object. Equivalent to NOT of OR operation
+    celExpression: # will be implemented later. Just have a placeholder
+  defaultCredentialType: # optional. If not explicitly specified, the default credential type is the first one selected for the given application class
+  directAccess: true # optional. default = true. Specifies if the application class is directly accessible from ComplianceCow
+  # linkableApplicationClasses: # optional. List of SUPPORTED application classes that are linkable. Only classes successfully resolved here, shall be shown in the drop down in the Linked Applications for an instance of this application class
+  # - name: LinkableApplicationName # optional
+  management: false # optional. default = false. Specifies if the application class is a management class. For example, an image repository can be an application class that can enumerate every single container image in it. In such cases, the repository application class will have management = true
+  # allowableChildrenApplicationClasses:
+  # - name: ChildAllowedValues # optional
+  type: user  # optional. default = user. Specifies category of the application class such as user | system | action | remediation
+  # expectedSystemApplicationClasses:
+  # - name: ExpectedSystemApplicationClass

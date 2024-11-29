@@ -1,6 +1,7 @@
 userObject:
   name: AWSAppConnector
 userInputs:
+  BucketName: demo
   appPort: 0
   appURL: https://aws.amazon.com
   userDefinedCredentials:
@@ -8,6 +9,6 @@ userInputs:
       AccessKey: "$AWS_ACCESS_KEY" 
       SecretKey: "$AWS_SECRET_KEY"
     AWSRole:
-      AccessKey: "$AWS_ROLE_ACCESS_KEY"
-      SecretKey: "$AWS_ROLE_SECRET_KEY"
+      AccessKey: "$AWS_ACCESS_KEY"
       RoleARN: "$AWS_ROLE_ARN"
+      SecretKey: "$AWS_SECRET_KEY"

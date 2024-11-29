@@ -1,9 +1,7 @@
 package main
 
 type UserInputs struct {
-	HarFilePath         string `yaml:"HarFilePath"`
-	AnalyzedHarFileName string `yaml:"AnalyzedHarFileName"`
-	BucketName          string `yaml:"BucketName,omitempty"`
+	HarFile string `yaml:"HarFile"`
 }
 
 type Outputs struct {

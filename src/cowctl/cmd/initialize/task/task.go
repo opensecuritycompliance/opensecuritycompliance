@@ -150,18 +150,15 @@ func runE(cmd *cobra.Command) error {
 				return err
 			}
 
-			additionalInfo.ApplicationInfo = applicationInfo
+			additionalInfo.ApplicationInfo = append(additionalInfo.ApplicationInfo, applicationInfo)
 		}
 
 		taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
 		additionalInfo.IsTasksToBePrepare = true
 		taskWithSpecicficLanguage.InitTask(taskName, tasksPath, &vo.TaskInputVO{}, additionalInfo)
-
-		if addApplication {
-			_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
-			if err != nil {
-				return err
-			}
+		_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
+		if err != nil {
+			return err
 		}
 
 		emoji.Println(taskName, " Task has been created:smiling_face_with_sunglasses:! you can see your task at: ", filepath.Join(tasksPath, taskName))
@@ -195,7 +192,7 @@ func runE(cmd *cobra.Command) error {
 			if err != nil {
 				return err
 			}
-			additionalInfo.ApplicationInfo = applicationInfo
+			additionalInfo.ApplicationInfo = append(additionalInfo.ApplicationInfo, applicationInfo)
 		}
 
 		if cowlibutils.IsFolderExist(taskPath) {

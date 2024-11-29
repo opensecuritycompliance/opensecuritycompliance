@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
+	"github.com/google/uuid"
 
 	"cowlibrary/constants"
 )
@@ -32,11 +32,12 @@ func main() {
 	taskInput := &TaskInputs{}
 	taskOutput := &TaskOutputs{Outputs: &Outputs{}}
 	errorOutput := make(map[string]string)
-
+	
 	inputObj := &TaskInputs{}
 	if _, err := os.Stat("inputs.yaml"); err == nil {
 		byts, err := os.ReadFile("inputs.yaml")
 		if err == nil {
+			byts = []byte(os.ExpandEnv(string(byts)))
 			err = yaml.Unmarshal(byts, inputObj)
 			if err != nil {
 				taskInputObj := &TaskInputsV2{}
@@ -91,8 +92,7 @@ func main() {
 		metaDataTemplate.RuleTaskGUID = uuid.New().String()
 		taskInput.MetaData = metaDataTemplate
 	}
-
-	inst.SystemInputs = &(taskInput.SystemInputs)
+	inst.TaskInputs = taskInput
 	err = inst.ValidateAWSAppConnector(taskInput.UserInputs, taskOutput.Outputs)
 	if err != nil {
 		errorOutput["error"] = err.Error()
@@ -131,5 +131,6 @@ func writeToFile(fileName string, data interface{}) error {
 }
 
 type TaskInstance struct {
-	*SystemInputs
+	*TaskInputs
 }
+

@@ -19,13 +19,13 @@ inputs:
 outputs:
 - name: AzureLogAnalyticsWorkSpaceDetails
   description: Azure Log Analytics WorkSpace Details
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

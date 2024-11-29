@@ -8,7 +8,7 @@ version: '1.0'
 description: Fetch the AWS RDS DB instances
 shaToken: ''
 showInCatalog: true
-icon: fas fa-sort-amount-down-alt
+icon: fa-solid fa-database
 type: python
 tags:
 - application
@@ -18,21 +18,22 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: Region
   description: Region
-  type: string
+  dataType: STRING
+  repeated: true
   allowedValues: []
   defaultValue:
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: RDSDBInstancesList
   description: RDS DB Instances List
-  type: string
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: string
+  dataType: FILE
 - name: CompliancePCT_
-  description: Compliance Percentage
-  type: int
+  description: CompliancePCT_
+  dataType: INT
 - name: ComplianceStatus_
-  description: Compliance Status
-  type: string
+  description: ComplianceStatus_
+  dataType: STRING

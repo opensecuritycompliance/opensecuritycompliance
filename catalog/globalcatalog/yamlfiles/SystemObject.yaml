@@ -1,0 +1,23 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: applicationScope
+metaData:
+  type: systemObject
+  name: SystemObject
+spec:
+  - application: #use the app by default
+      name: minio
+      URL: cowstorage:9000
+      tags:
+        app:
+          - minio
+
+    credentials:
+      - loginURL: cowstorage:9000
+        tags:
+          servicename:
+            - minio
+          servicetype:
+            - storage
+        otherCredentials:
+          MINIO_ACCESS_KEY: #
+          MINIO_SECRET_KEY: #

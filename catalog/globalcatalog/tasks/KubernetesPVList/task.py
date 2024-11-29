@@ -22,7 +22,6 @@ class Task(cards.AbstractTask):
         # Get the required include and exclude resources 
         include_clus_list, exclude_clus_list, include_pv_list, exclude_pv_list, error_list = self.get_include_and_exclude()
         if error_list:
-            # Do not proceed if the include and exclude criteria fail basic validation
             return self.upload_log_file(self.add_key_in_list(error_list))
 
         kubernetes_connector = kubernetes.Kubernetes(
@@ -33,88 +32,105 @@ class Task(cards.AbstractTask):
         )
 
         # cluster map that contains cluster and context
-        cluster_map, include_error_list = kubernetes_connector.get_include_cluster(include_clus_list)
+        cluster_map, include_error_list, invalid_clusters = kubernetes_connector.get_include_cluster(include_clus_list)
         if include_error_list:
             error_list.extend(include_error_list)
-        
-        if not cluster_map:
+
+        err_msg = ''
+        # Handle error message for invalid clusters
+        for invalid_cluster in invalid_clusters:
+            if err_msg:
+                err_msg += f". \nCluster '{invalid_cluster}' does not exist"
+            else:
+                err_msg = f"Cluster '{invalid_cluster}' does not exist"
+        if not cluster_map and invalid_clusters:
+            error_list.append(err_msg)
+
+        if not cluster_map and include_error_list:
             return self.upload_log_file(self.add_key_in_list(error_list))
 
+        # Fetch K8s Persistent volume detials
+        pv_list, pv_error_list = kubernetes_connector.list_pvs(cluster_map)
+        if pv_error_list:
+            error_list.extend(pv_error_list)
+        
+        if not pv_list and pv_error_list:
+            return self.upload_log_file(self.add_key_in_list(error_list))
+        
+        include_pv_map = {}
+
+        if cluster_map and include_pv_list:
+            for key in cluster_map:
+                pv_map = {}
+                # Update the value to False track the non valid resources
+                for pv in include_pv_list:
+                    pv_map[pv] = False
+                # Assign pv map for each cluster
+                include_pv_map[key] = pv_map
+                
+        
         std_pv_list = []
-        invalid_pvs = []
 
-        for key, value in cluster_map.items():
-
-            map = {}
-            map[key] = value
-
-            # Fetch K8s Persistent volume detials for each cluster to track valid and invalid pvs
-            pv_list, pv_error_list = kubernetes_connector.list_pvs(map)
-            if pv_error_list:
-                error_list.extend(pv_error_list)
+        for pv in pv_list:
             
-            if not pv_list and pv_error_list:
-                continue
+            try:
+                metadata = pv.get('metadata', {})
+                spec = pv.get('spec', {})
+                resource_name = metadata.get('name', '')
+                cluster_name = pv.get('ClusterName', '')
 
-            include_pv_map = {}
-            # Update the value to False track the non valid resources
-            for pv in include_pv_list:
-                include_pv_map[pv] = False
+                if not resource_name:
+                    continue
+                if cluster_name in exclude_clus_list and '*' in exclude_pv_list:
+                    continue
+                if cluster_name in exclude_clus_list and resource_name in exclude_pv_list:
+                    continue
+                if "*" in exclude_clus_list and resource_name in exclude_pv_list:
+                    continue
+                if cluster_name in include_clus_list and not '*' in include_pv_list and not resource_name in include_pv_list:
+                    continue
+                if cluster_name in include_pv_map:
+                    if resource_name in include_pv_map[cluster_name]:
+                        include_pv_map[cluster_name][resource_name] = True
+                elif '*' not in include_pv_map:
+                    continue
 
-            for pv in pv_list:
-                
-                try:
-                    metadata = pv.get('metadata', {})
-                    spec = pv.get('spec', {})
-                    resource_name = metadata.get('name', '')
-                    cluster_name = pv.get('ClusterName', '')
+                if '*' in include_pv_list or resource_name in include_pv_list:
+                    data = {
+                        "System": "kubernetes",
+                        "Source": "compliancecow",
+                        "ResourceID": metadata.get('uid', ''),
+                        "ResourceName": resource_name,
+                        "ResourceType": "PersistentVolume",
+                        "Version": metadata.get('resourceVersion', ''),
+                        "CreatedDateTime": metadata.get('creationTimestamp', ''),
+                        "Storage": spec.get('capacity', {}).get('storage', ''),
+                        "ClaimName": spec.get('claimRef', {}).get('name', ''),
+                        "ClaimNameSpace": spec.get('claimRef', {}).get('namespace', ''),
+                        "ClaimID": spec.get('claimRef', {}).get('uid', ''),
+                        "AccessModes": spec.get('accessModes', []),
+                        "VolumeHandle": spec.get('csi', {}).get('volumeHandle', ''),
+                        "ClusterName": cluster_name,
+                    }
+                    std_pv_list.append(data)
 
-                    if not resource_name:
-                        continue
-                    if cluster_name in exclude_clus_list and '*' in exclude_pv_list:
-                        continue
-                    if cluster_name in exclude_clus_list and resource_name in exclude_pv_list:
-                        continue
-                    if "*" in exclude_clus_list and resource_name in exclude_pv_list:
-                        continue
-                    if cluster_name in include_clus_list and not '*' in include_pv_list and not resource_name in include_pv_list:
-                        continue
-                    if resource_name in include_pv_map:
-                        include_pv_map[resource_name] = True
-                    elif '*' not in include_pv_map:
-                        continue
+            except KeyError as e:
+                return self.upload_log_file([{'Error' : f'Failed to generate KubernetesPVList. KeyError exception occurred. Invalid key: {str(e)}'}])
 
-                    if '*' in include_pv_map or resource_name in include_pv_map:
-                        data = {
-                            "System": "kubernetes",
-                            "Source": "compliancecow",
-                            "ResourceID": metadata.get('uid', ''),
-                            "ResourceName": resource_name,
-                            "ResourceType": "PersistentVolume",
-                            "Version": metadata.get('resourceVersion', ''),
-                            "CreatedDateTime": metadata.get('creationTimestamp', ''),
-                            "Storage": spec.get('capacity', {}).get('storage', ''),
-                            "ClaimName": spec.get('claimRef', {}).get('name', ''),
-                            "ClaimNameSpace": spec.get('claimRef', {}).get('namespace', ''),
-                            "ClaimID": spec.get('claimRef', {}).get('uid', ''),
-                            "AccessModes": spec.get('accessModes', []),
-                            "VolumeHandle": spec.get('csi', {}).get('volumeHandle', ''),
-                            "ClusterName": cluster_name,
-                        }
-                        std_pv_list.append(data)
+         
+        if not "*" in include_pv_list:
+            for cluster in include_pv_map:
+                pv_map = include_pv_map[cluster]
+                for pv in pv_map:
+                    if not pv_map[pv]:
+                        if err_msg:
+                            err_msg += f". \nPV '{pv}' does not exist in cluster '{cluster}'"
+                        else:
+                            err_msg += f"PV '{pv}' does not exist in cluster '{cluster}'"
 
-                except KeyError as e:
-                    return self.upload_log_file([{'Error' : f'Failed to generate KubernetesPVList. KeyError exception occurred. Invalid key: {str(e)}'}])
-                
-            if '*' in include_pv_map:
-                include_pv_map['*'] = True
+        if err_msg:
+            error_list.append(err_msg)
 
-            invalid_include_pvs = [key for key, value in include_pv_map.items() if not value]
-
-            if invalid_include_pvs:
-                invalid_pvs.append(f"Failed to fetch the following included pv(s) for the cluster {cluster_name}: {', '.join(invalid_include_pvs)}")
-
-            
         response = {}
         
         if std_pv_list:
@@ -122,16 +138,13 @@ class Task(cards.AbstractTask):
              df=pd.json_normalize(std_pv_list),
              file_name=f"KubernetesPVList-{str(uuid.uuid4())}")
             if error:
-                return self.upload_log_file([{"Error" : f"An error occurred while uplaoding 'KubernetesPVList'. {error}"}])
+                error_list.append(f"An error occurred while uplaoding 'KubernetesPVList'. {error}")
             else:
                 response['KubernetesPVList'] = file_path
 
-    
-        if invalid_pvs:
-            error_list.append(", ".join(invalid_pvs))
-
+        
         if error_list:
-            result =  self.upload_log_file([{"Error": error_list}])
+            result =  self.upload_log_file(self.add_key_in_list(error_list))
             if cowdictutils.is_valid_key(result, 'Error'):
                 return result
             response['KubernetesPVListLogFile'] = result['KubernetesPVListLogFile']

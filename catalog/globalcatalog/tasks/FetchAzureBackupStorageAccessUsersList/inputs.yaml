@@ -1,8 +1,15 @@
 userObject:
   app:
     name: AzureAppConnector
-    appURL: http://localhost.com
+    appURL: https://portal.azure.com
     appPort: "0"
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Azure:
         clientID: "$AZURE_CLIENT_ID"
@@ -13,6 +20,6 @@ userInputs:
   AzureRoleAssignmentsData: <<MINIO_FILE_PATH>>
   AzureUsersList: <<MINIO_FILE_PATH>>
   AzureStorageAccountsData: <<MINIO_FILE_PATH>>
-  BackupStorageRegexPattern: backup
-fromDate: 2024-07-02
-toDate: 2024-07-02
+  BackupStorageRegexPattern: 
+fromDate: "2024-07-02T06:16:42Z"
+toDate: "2024-07-02T06:16:42Z"

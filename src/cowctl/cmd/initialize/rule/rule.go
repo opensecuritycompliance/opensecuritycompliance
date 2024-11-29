@@ -16,6 +16,7 @@ import (
 
 	"github.com/kyokomi/emoji"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
 	taskJson "cowctl/cmd/initialize/task"
 	"cowctl/utils"
@@ -126,16 +127,7 @@ func runE(cmd *cobra.Command) error {
 			}
 	
 		}
-		selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
-		if err != nil {
-			return err
-		}
 
-		applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
-		if err != nil {
-			return err
-		}
-		additionalInfo.ApplicationInfo = applicationInfo
 
 		taskNameMap := make(map[string]struct{}, 0)
 	
@@ -143,6 +135,8 @@ func runE(cmd *cobra.Command) error {
 		if err != nil || taskCount == -1 {
 			return err
 		}
+		additionalInfo.ApplicationInfo = make([]*vo.ApplicationInfoVO, taskCount)
+
 		taskNames := make([]*vo.TaskInputVO, 0)
 	
 		var taskPaths = make([]string, 0)
@@ -160,6 +154,8 @@ func runE(cmd *cobra.Command) error {
 			for i := 1; i <= taskCount; i++ {
 				var taskPath string
 				var existingTask bool
+				emoji.Println(fmt.Sprintf("\nLet’s get started on Task %d :smiling_face_with_sunglasses:", i))
+
 				if len(availableTaskNames) > 0 {
 					useExistingTask, err := utils.GetConfirmationFromCmdPrompt("Would you like to use existing tasks? (inputs.yaml will be change based on app selection)")
 					if err != nil {
@@ -174,11 +170,27 @@ func runE(cmd *cobra.Command) error {
 						}
 	
 						taskPath = cowlibutils.GetTaskPathFromCatalogForInit(additionalInfo, selectedTaskName, existingTask)
+						inputYAMLFileByts, err := os.ReadFile(filepath.Join(taskPath, constants.TaskInputYAMLFile))
+						if err != nil {
+							return err
+						}
+						var appInfo vo.TaskInputV2
+						err = yaml.Unmarshal(inputYAMLFileByts, &appInfo)
+						if err != nil {
+							return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
+						}
+						if appInfo.UserObject != nil && appInfo.UserObject.App != nil {
+							applicationName := appInfo.UserObject.App.ApplicationName
+							appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationName))
+							applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+							if err != nil {
+								return err
+							}
+							additionalInfo.ApplicationInfo[i-1] = applicationInfo
+						}
 						languageFromPath := cowlibutils.GetTaskLanguage(taskPath)
 						languageFromCmd := languageFromPath.String()
-	
 						taskNames = append(taskNames, &vo.TaskInputVO{TaskName: selectedTaskName, Language: languageFromCmd})
-	
 						emoji.Println("\n", selectedTaskName, " is selected :smiling_face_with_sunglasses: ")
 						if i < taskCount {
 							emoji.Println("\nChoose the next task or create a new task :person_surfing_tone1: ")
@@ -236,7 +248,22 @@ func runE(cmd *cobra.Command) error {
 					if err != nil || cowlibutils.IsEmpty(taskNameFromCmd) {
 						languageFromCmd = "go"
 					}
-	
+					addApplication, err := utils.GetConfirmationFromCmdPrompt("Would you like to add Application ? ")
+					if err != nil {
+						return err
+					}
+					if addApplication {
+						selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+						if err != nil {
+							return err
+						}
+						applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+						if err != nil {
+							return err
+						}
+						additionalInfo.ApplicationInfo[i-1] = applicationInfo
+					}
+
 					taskNameMap[compareTaskName] = struct{}{}
 	
 					taskNames = append(taskNames, &vo.TaskInputVO{TaskName: taskNameFromCmd, Language: languageFromCmd})
@@ -247,6 +274,92 @@ func runE(cmd *cobra.Command) error {
 				useExistingTasks = append(useExistingTasks, existingTask)
 			}
 		}
+
+		var primaryAppInfo *vo.ApplicationInfoVO
+		selectedAppPaths := make(map[string]struct{})
+
+		for _, appInfo := range additionalInfo.ApplicationInfo {
+			if appInfo != nil {
+				path := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", appInfo.App.Meta.Name))
+				selectedAppPaths[path] = struct{}{}
+			}
+		}
+
+		if len(selectedAppPaths) == 0 {
+			if len(taskNames) > 1 {
+				addAppToTask, err := utils.GetConfirmationFromCmdPrompt("None of the tasks have an application. At least one task must have an application. If you choose 'no', the process will terminate. Do you want to add an application now? (yes/no)")
+				if !addAppToTask || err != nil {
+					return err
+				}
+				taskNamesForApp := make([]string, 0, len(taskNames))
+				for _, task := range taskNames {
+					taskNamesForApp = append(taskNamesForApp, task.TaskName)
+				}
+
+				selectedTaskForApp, err := utils.GetTaskNameFromCmdPromptInCatalogs("Select the task to which you want to add an application:", true, taskNamesForApp, nil)
+				if err != nil {
+					return err
+				}
+				selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class to add to the task:", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+				if err != nil {
+					return err
+				}
+				applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+				if err != nil {
+					return err
+				}
+				for i, task := range taskNames {
+					if task.TaskName == selectedTaskForApp {
+						additionalInfo.ApplicationInfo[i] = applicationInfo
+						path := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationInfo.App.Meta.Name))
+						selectedAppPaths[path] = struct{}{}
+						break
+					}
+				}
+			} else {
+				addAppConfirmation, err := utils.GetConfirmationFromCmdPrompt("There is no application assigned to this task. If you choose 'no', the process will terminate. Would you like to add application? (yes/no)")
+				if !addAppConfirmation || err != nil {
+					return err
+				}
+				selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class to add to the task:", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+				if err != nil {
+					return err
+				}
+				applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+				if err != nil {
+					return err
+				}
+				additionalInfo.ApplicationInfo[0] = applicationInfo
+				path := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationInfo.App.Meta.Name))
+				selectedAppPaths[path] = struct{}{}
+			}
+		}
+
+		if len(selectedAppPaths) == 1 {
+			for path := range selectedAppPaths {
+				primaryAppInfo, err = utils.GetApplicationWithCredential(path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+				if err != nil {
+					return err
+				}
+			}
+		} else if len(selectedAppPaths) > 1 {
+			selectedAppList := make([]string, 0, len(selectedAppPaths))
+			for path := range selectedAppPaths {
+				selectedAppList = append(selectedAppList, path)
+			}
+
+			selectedAppItem, err := utils.GetPrimaryApplicationNamesFromSelectedApps("Select the primary application:", true, selectedAppList)
+			if err != nil {
+				return err
+			}
+
+			primaryAppInfo, err = utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			if err != nil {
+				return err
+			}
+		}
+
+		additionalInfo.PrimaryApplicationInfo = primaryAppInfo
 
 		directoryPath, err := rule.InitRule(ruleName, path, taskNames, additionalInfo)
 		if err != nil {
@@ -330,7 +443,7 @@ func runE(cmd *cobra.Command) error {
 				return err
 			}
 
-			additionalInfo.ApplicationInfo = applicationInfo
+			additionalInfo.ApplicationInfo = append(additionalInfo.ApplicationInfo, applicationInfo)
 
 			additionalInfo.IsTasksToBePrepare = true
 

@@ -3,7 +3,7 @@ kind: rule
 meta:
   name: AWSEFSEncryptionReport
   purpose: Generate AWS EFS encryption report attached to the K8s cluster volume
-  description: Generate AWS EFS encryption report attached to the K8s cluster volume
+  description: Description about the rule
   labels:
     appType:
     - kubernetes
@@ -15,20 +15,67 @@ meta:
     annotateType:
     - kubernetes
 spec:
+  inputs:
+    Region: []
+    IncludeCriteria: ""
+    ExcludeCriteria: ""
+  inputsMeta__:
+  - name: Region
+    dataType: STRING
+    repeated: true
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: IncludeCriteria
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ExcludeCriteria
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: KubernetesPVList
     alias: t1
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: List K8s Persistent volume List
     description: List K8s Persistent volume List
   - name: AWSEFSList
     alias: t2
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: List AWS EFS List
     description: List AWS EFS List
   - name: AWSEFSEncryptionReport
     alias: t3
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Generate AWS EFS encryption report attached to the K8s cluster volume
     description: Generate AWS EFS encryption report attached to the K8s cluster volume
   ioMap:

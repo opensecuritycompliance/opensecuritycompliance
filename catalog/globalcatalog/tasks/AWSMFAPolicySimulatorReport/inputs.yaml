@@ -3,6 +3,13 @@ userObject:
     name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSRole:
         AccessKey: "$AWS_ROLE_ACCESS_KEY"
@@ -20,5 +27,5 @@ userInputs:
     RoleStatus: # Specify the status as 'include' to include the roles or 'exclude' to exclude the roles. 
     MFARecommendationFile: <<MINIO_FILE_PATH>> # Refer to the MFARecommendationFile template from /catalog/globalcatalog/rules/AWSMFAPolicySimulatorReport/MFARecommendationFile-Template.json.
     AccountAuthorizationDetails: <<MINIO_FILE_PATH>>
-fromDate: 2024-02-13
-toDate: 2024-02-13
+fromDate: 2024-02-13T06:03:00Z
+toDate: 2024-02-13T06:03:00Z

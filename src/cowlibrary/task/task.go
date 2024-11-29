@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strconv"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/dmnlk/stringUtils"
 	"github.com/iancoleman/strcase"
-	cp "github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"gopkg.in/yaml.v2"
@@ -71,10 +71,52 @@ func (task *GoTask) InitTask(taskName, tasksPath string, taskInput *vo.TaskInput
 		}
 	}
 	// make sure file exists
+	ruleAppTags := make(map[string][]string)
 	if utils.IsFileExist(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile)) {
-		err := cp.Copy(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile), filepath.Join(taskPath, constants.TaskInputYAMLFile))
+		ruleInputYAMLBytes, err := os.ReadFile(filepath.Join(additionalInfo.Path, constants.TaskInputYAMLFile))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read rule inputs.yaml: %s", err)
+		}
+		var taskInput vo.TaskInputV2
+		err = yaml.Unmarshal(ruleInputYAMLBytes, &taskInput)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling taskInput.yaml: %s", err)
+		}
+		ruleYAMLBytes, err := os.ReadFile(filepath.Join(additionalInfo.Path, constants.RuleYamlFile))
+		if err != nil {
+			return fmt.Errorf("failed to read rule.yaml: %s", err)
+		}
+		var rule vo.RuleYAMLVO
+		err = yaml.Unmarshal(ruleYAMLBytes, &rule)
+		if err != nil {
+			return fmt.Errorf("error unmarshalling rule.yaml: %s", err)
+		}
+		for _, taskInfo := range rule.Spec.Tasks {
+			if taskInfo.Name == taskName {
+				if taskInfo.AppTags != nil {
+					var selectedApp *vo.AppAbstract
+					for _, app := range taskInput.UserObject.Apps {
+						if app != nil && reflect.DeepEqual(app.AppTags, taskInfo.AppTags) {
+							ruleAppTags = taskInfo.AppTags
+							selectedApp = app
+							break
+						}
+					}
+					taskInput.UserObject.App = selectedApp
+					taskInput.UserObject.Apps = nil
+				} else {
+					taskInput.UserObject = nil
+				}
+				break
+			}
+		}
+		updatedTaskInputYAML, err := yaml.Marshal(&taskInput)
+		if err != nil {
+			return fmt.Errorf("error marshalling updated taskInput.yaml: %w", err)
+		}
+		err = os.WriteFile(filepath.Join(taskPath, constants.TaskInputYAMLFile), updatedTaskInputYAML, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("error writing updated taskInput.yaml: %w", err)
 		}
 
 	}
@@ -93,34 +135,40 @@ func (task *GoTask) InitTask(taskName, tasksPath string, taskInput *vo.TaskInput
 	var validationMethod string
 	classAvailable := false
 
-	if additionalInfo.ApplicationInfo != nil && additionalInfo.ApplicationInfo.App != nil && additionalInfo.ApplicationInfo.App.Meta != nil {
-		appClassName = additionalInfo.ApplicationInfo.App.Meta.Name
-		validationMethod = fmt.Sprintf(`
+	if additionalInfo.ApplicationInfo != nil {
+		for _, appInfo := range additionalInfo.ApplicationInfo {
+			if appInfo != nil && appInfo.App != nil && appInfo.App.Meta != nil && ruleAppTags != nil {
+				if reflect.DeepEqual(appInfo.App.AppTags, ruleAppTags) {
+					appClassName = appInfo.App.Meta.Name
+
+					validationMethod = fmt.Sprintf(`
 	// You can use the ValidateAttributes() function to validate the attributes of %s Credentials
-	`, additionalInfo.ApplicationInfo.App.Meta.Name)
-		if utils.IsNotEmpty(appClassName) {
-			packageName := strings.ToLower(appClassName)
+	`, appInfo.App.Meta.Name)
+					if utils.IsNotEmpty(appClassName) {
+						packageName := strings.ToLower(appClassName)
 
-			if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
-				classAvailable = true
-				importPackage = strings.ToLower(appClassName) + ` "appconnections/` + packageName + `"`
-				serverStructFile = strings.ReplaceAll(serverStructFile, "{{import()}}", importPackage)
-				userDefinedCredential := strings.ToLower(appClassName) + `.UserDefinedCredentials`
-				serverStructFile = strings.ReplaceAll(serverStructFile, "{{UserDefinedCredentials}}", userDefinedCredential)
-			}
+						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+							classAvailable = true
+							importPackage = strings.ToLower(appClassName) + ` "appconnections/` + packageName + `"`
+							serverStructFile = strings.ReplaceAll(serverStructFile, "{{import()}}", importPackage)
+							userDefinedCredential := strings.ToLower(appClassName) + `.UserDefinedCredentials`
+							serverStructFile = strings.ReplaceAll(serverStructFile, "{{UserDefinedCredentials}}", userDefinedCredential)
+						}
 
-			for _, cred := range additionalInfo.ApplicationInfo.Credential {
-				credentialName := strcase.ToCamel(cred.Meta.Name)
-				validationCode := fmt.Sprintf(`
+						for _, cred := range appInfo.Credential {
+							credentialName := strcase.ToCamel(cred.Meta.Name)
+							validationCode := fmt.Sprintf(`
 		// Validate attributes for %s
 		// %s := inst.SystemInputs.UserObject.App.UserDefinedCredentials.%s
 		// validationResult := %s.ValidateAttributes()
 				`, cred.Meta.Name, credentialName, credentialName, credentialName)
 
-				validationMethod += validationCode
+							validationMethod += validationCode
+						}
+					}
+				}
 			}
 		}
-
 	}
 
 	if !classAvailable {
@@ -162,6 +210,8 @@ func (task *GoTask) InitTask(taskName, tasksPath string, taskInput *vo.TaskInput
 
 	return err
 }
+
+// rule's input.yaml builder
 func GenerateTaskYAML(taskPath string, taskName string, additionalInfo *vo.AdditionalInfo) (string, error) {
 	taskYaml := constants.TaskInputYAML
 	var taskInput vo.TaskInputV2
@@ -170,18 +220,47 @@ func GenerateTaskYAML(taskPath string, taskName string, additionalInfo *vo.Addit
 	if err != nil {
 		fmt.Printf("Error in unmarshalling task input yaml,error: %s", err)
 	}
+	hasAppInfo := false
+	if len(additionalInfo.ApplicationInfo) > 0 {
+		for _, appInfo := range additionalInfo.ApplicationInfo {
+			if appInfo != nil {
+				hasAppInfo = true
+				appAbstract := &vo.AppAbstract{}
+				appAbstract.ApplicationName = appInfo.App.Meta.Name
+				appAbstract.ApplicationURL = appInfo.App.Spec.URL
+				appAbstract.ApplicationPort = strconv.Itoa(appInfo.App.Spec.Port)
+				appAbstract.AppTags = appInfo.App.AppTags
 
-	appAbstract := &vo.AppAbstract{}
-	appAbstract.ApplicationName = additionalInfo.ApplicationInfo.App.Meta.Name
-	appAbstract.ApplicationURL = additionalInfo.ApplicationInfo.App.Spec.URL
-	appAbstract.ApplicationPort = strconv.Itoa(additionalInfo.ApplicationInfo.App.Spec.Port)
+				credentials := utils.GetCredentialYAMLObjectV2(appInfo.Credential)
+				appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
+				if additionalInfo.PrimaryApplicationInfo != nil {
+					taskInput.UserObject.Apps = append(taskInput.UserObject.Apps, appAbstract)
+				} else {
+					taskInput.UserObject.App = appAbstract
+				}
 
-	credentials := utils.GetCredentialYAMLObjectV2(additionalInfo.ApplicationInfo.Credential)
-	appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
-	taskInput.UserObject.App = appAbstract
+				if appInfo.LinkedApplications != nil && len(appInfo.LinkedApplications) > 0 {
+					AddLinkedApplicationsInAppAbstract(appInfo.LinkedApplications, appAbstract)
+				}
 
-	if additionalInfo.ApplicationInfo.LinkedApplications != nil && len(additionalInfo.ApplicationInfo.LinkedApplications) > 0 {
-		AddLinkedApplicationsInAppAbstract(additionalInfo.ApplicationInfo.LinkedApplications, appAbstract)
+			}
+		}
+	}
+
+	if !hasAppInfo && additionalInfo.PrimaryApplicationInfo != nil {
+		appAbstract := &vo.AppAbstract{}
+		appAbstract.ApplicationName = additionalInfo.PrimaryApplicationInfo.App.Meta.Name
+		appAbstract.ApplicationURL = additionalInfo.PrimaryApplicationInfo.App.Spec.URL
+		appAbstract.ApplicationPort = strconv.Itoa(additionalInfo.PrimaryApplicationInfo.App.Spec.Port)
+		appAbstract.AppTags = additionalInfo.PrimaryApplicationInfo.App.AppTags
+
+		credentials := utils.GetCredentialYAMLObjectV2(additionalInfo.PrimaryApplicationInfo.Credential)
+		appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
+		taskInput.UserObject.Apps = append(taskInput.UserObject.Apps, appAbstract)
+
+		if additionalInfo.PrimaryApplicationInfo.LinkedApplications != nil && len(additionalInfo.PrimaryApplicationInfo.LinkedApplications) > 0 {
+			AddLinkedApplicationsInAppAbstract(additionalInfo.PrimaryApplicationInfo.LinkedApplications, appAbstract)
+		}
 	}
 
 	if additionalInfo.RuleYAMLVO != nil && additionalInfo.RuleYAMLVO.Spec != nil {

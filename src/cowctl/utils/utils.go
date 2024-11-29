@@ -199,6 +199,45 @@ func GetApplicationNamesFromCmdPromptInCatalogs(labelName string, isMandatory bo
 	return nil, errors.New("application class not found")
 }
 
+func GetPrimaryApplicationNamesFromSelectedApps(labelName string, isMandatory bool, selectedAppPaths []string) (*dropdownutils.Item, error) {
+	directories := make([]dropdownutils.Item, 0)
+	for _, appPath := range selectedAppPaths {
+		if _, err := os.Stat(appPath); err == nil {
+			yamlContent, err := os.ReadFile(appPath)
+			if err != nil {
+				continue
+			}
+
+			var data *vo.UserDefinedApplicationVO
+			if err := yaml.Unmarshal(yamlContent, &data); err != nil {
+				continue
+			}
+
+			descr := fmt.Sprintf("Name :%s", data.Meta.DisplayName)
+			if cowlibutils.IsNotEmpty(data.Meta.Version) {
+				descr += " , Version :" + data.Meta.Version
+			}
+			directories = append(directories, dropdownutils.Item{Name: data.Meta.Name, Descr: descr, Path: appPath})
+		}
+	}
+
+	if len(directories) == 0 {
+		return nil, errors.New("no selected applications found")
+	}
+
+	appName, err := getSelectedValue(labelName, isMandatory, directories, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range directories {
+		if item.Name == appName {
+			return &item, nil
+		}
+	}
+	return nil, errors.New("application class not found")
+}
+
 func GetApplicationWithCredential(filePath string, directory string) (*vo.ApplicationInfoVO, error) {
 	applicationInfoVO := vo.ApplicationInfoVO{}
 	applicationYamlContent, err := os.ReadFile(filePath)
@@ -223,6 +262,9 @@ func GetApplicationWithCredential(filePath string, directory string) (*vo.Applic
 		}
 	}
 	applicationInfoVO.Credential = credentials
+
+	applicationInfoVO.App.AppTags = appData.Meta.Labels
+
 	linkedApplications := appData.Spec.LinkableApplicationClasses
 	if len(linkedApplications) > 0 {
 		linkedApplicationsInfo, err := GetLinkedApplicationsDetails(linkedApplications, filePath, directory)
@@ -629,10 +671,12 @@ func GetTaskNameFromCmdPromptInCatalogs(labelName string, isMandatory bool, avai
 	taskItems := make([]dropdownutils.Item, 0)
 	for i, taskName := range availableTasks {
 		var descr string
-		if catalogTypes[i] == "globalcatalog" {
-			descr = "The task is in Global Catalog"
-		} else {
-			descr = "The task is in Local Catalog"
+		if catalogTypes != nil {
+			if catalogTypes[i] == "globalcatalog" {
+				descr = "The task is in Global Catalog"
+			} else {
+				descr = "The task is in Local Catalog"
+			}
 		}
 
 		taskItems = append(taskItems, dropdownutils.Item{Name: taskName, Descr: descr})

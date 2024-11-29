@@ -88,7 +88,8 @@ type AdditionalInfo struct {
 	AppCreateFlow              bool                     `json:"appCreateFlow,omitempty"`
 	Language                   string                   `json:"language,omitempty"`
 	ApplictionScopeConfigVO    *ApplictionScopeConfigVO `json:"applictionScopeConfigVO,omitempty"`
-	ApplicationInfo            *ApplicationInfoVO       `json:"applicationInfo,omitempty"`
+	PrimaryApplicationInfo     *ApplicationInfoVO       `json:"primaryApplicationInfo,omitempty"`
+	ApplicationInfo            []*ApplicationInfoVO     `json:"applicationInfo,omitempty"`
 	CredentialInfo             []CredentialItem         `json:"credentialInfo,omitempty"`
 	PreserveRuleExecutionSetUp bool                     `json:"preserveRuleExecutionSetUp,omitempty"`
 	ErrorOccured               bool                     `json:"errorOccured,omitempty"`

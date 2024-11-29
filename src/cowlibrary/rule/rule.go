@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"sort"
 	"strconv"
@@ -77,21 +78,35 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 	if err != nil {
 		return fmt.Errorf("error in unmarshalling rule yaml,error:%S", err)
 	}
-
-	rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
-	rule.Meta.Labels = additionalInfo.ApplicationInfo.App.Meta.Labels
-	rule.Meta.Annotations = additionalInfo.ApplicationInfo.App.Meta.Annotations
+	if additionalInfo.PrimaryApplicationInfo != nil {
+		rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
+		rule.Meta.Labels = additionalInfo.PrimaryApplicationInfo.App.Meta.Labels
+		rule.Meta.Annotations = additionalInfo.PrimaryApplicationInfo.App.Meta.Annotations
+	}
 	// rule.Meta.Labels.App = GetAppLabels(additionalInfo.ApplicationInfo.App.Meta.Labels)
 	if len(taskInfos) > 0 {
 
 		var tasks []*vo.TaskVO
 		for i, taskInfo := range taskInfos {
+			var appTags map[string][]string
+
+			if i < len(additionalInfo.ApplicationInfo) && additionalInfo.ApplicationInfo[i] != nil {
+				appInfo := additionalInfo.ApplicationInfo[i]
+				appTags = appInfo.App.AppTags
+			}
+			if utils.IsEmpty(taskInfo.Alias) {
+				taskInfo.Alias = "t" + strconv.Itoa(i+1)
+			}
+			if utils.IsEmpty(taskInfo.Description) {
+				taskInfo.Description = "Detailed info about the task"
+			}
 			tasks = append(tasks, &vo.TaskVO{
 				Name:        strcase.ToCamel(taskInfo.TaskName),
 				Purpose:     "Purpose of the task",
-				Description: "Detailed info about the task",
+				Description: taskInfo.Description,
 				Type:        "task",
-				Alias:       "t" + strconv.Itoa(i+1),
+				AppTags:     appTags,
+				Alias:       taskInfo.Alias,
 			})
 		}
 
@@ -1060,18 +1075,39 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 						}
 					}
 				}
+				if taskInput.UserObject.App != nil {
+					if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.CredentialType) && len(additionalInfo.RuleExecutionVO.CredentialValues) > 0 {
+						taskInput.UserObject.App.UserDefinedCredentials = map[string]interface{}{
+							additionalInfo.RuleExecutionVO.CredentialType: additionalInfo.RuleExecutionVO.CredentialValues,
+						}
+					}
+					if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.ApplicationURL) {
+						taskInput.UserObject.App.ApplicationURL = additionalInfo.RuleExecutionVO.ApplicationURL
+					}
 
-				if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.CredentialType) && len(additionalInfo.RuleExecutionVO.CredentialValues) > 0 {
-					taskInput.UserObject.App.UserDefinedCredentials = map[string]interface{}{
-						additionalInfo.RuleExecutionVO.CredentialType: additionalInfo.RuleExecutionVO.CredentialValues,
+					if len(additionalInfo.RuleExecutionVO.LinkedApplications) > 0 {
+						updateLinkedApplicationCredentials(taskInput.UserObject.App.LinkedApplications, additionalInfo.RuleExecutionVO.LinkedApplications)
 					}
 				}
-				if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.ApplicationURL) {
-					taskInput.UserObject.App.ApplicationURL = additionalInfo.RuleExecutionVO.ApplicationURL
-				}
 
-				if len(additionalInfo.RuleExecutionVO.LinkedApplications) > 0 {
-					updateLinkedApplicationCredentials(taskInput.UserObject.App.LinkedApplications, additionalInfo.RuleExecutionVO.LinkedApplications)
+				for _, app := range taskInput.UserObject.Apps {
+					if app != nil {
+						for _, ruleApps := range additionalInfo.RuleExecutionVO.Applications {
+							if reflect.DeepEqual(app.AppTags, ruleApps.AppTags) {
+								if utils.IsNotEmpty(ruleApps.CredentialType) && len(ruleApps.CredentialValues) > 0 {
+									app.UserDefinedCredentials = map[string]interface{}{
+										ruleApps.CredentialType: ruleApps.CredentialValues,
+									}
+								}
+								if utils.IsNotEmpty(ruleApps.ApplicationURL) {
+									app.ApplicationURL = ruleApps.ApplicationURL
+								}
+								if len(ruleApps.LinkedApplications) > 0 {
+									updateLinkedApplicationCredentials(app.LinkedApplications, ruleApps.LinkedApplications)
+								}
+							}
+						}
+					}
 				}
 
 				if utils.IsNotEmpty(additionalInfo.RuleExecutionVO.FromDate) && utils.IsNotEmpty(additionalInfo.RuleExecutionVO.ToDate) {
@@ -1087,6 +1123,55 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 			if err := os.WriteFile(filepath.Join(tmpRuleDir, constants.TaskInputYAMLFile), taskInputBytes, 0644); err != nil {
 				return err
+			}
+		}
+
+		if !isExecuteCall {
+			var taskInput vo.TaskInput
+
+			inputYAMLFileByts, err := os.ReadFile(filepath.Join(tmpRuleDir, constants.TaskInputYAMLFile))
+			if err == nil {
+				err = yaml.Unmarshal(inputYAMLFileByts, &taskInput)
+				if err != nil {
+					return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
+				}
+
+				var appData *vo.UserDefinedApplicationVO
+				for _, app := range taskInput.SystemInputs.UserObject.Apps {
+					applicationYamlContent, err := os.ReadFile(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", (app.ApplicationName))))
+					if err := yaml.Unmarshal(applicationYamlContent, &appData); err != nil {
+						return err
+					}
+					if err == nil {
+						for i, taskInfo := range ruleSet.Rules[0].TasksInfo {
+							task, ok := taskInfo.(*vo.TaskInfo)
+							if !ok {
+								return fmt.Errorf("invalid task format in TasksInfo at index %d", i)
+							}
+							if task.AppTags["appType"][0] == appData.Meta.Labels["appType"][0] {
+								appTags := task.AppTags
+								for labelKey, labelValues := range appData.Meta.Labels {
+									if _, exists := appTags[labelKey]; !exists {
+										appTags[labelKey] = []string{}
+									}
+									for _, label := range labelValues {
+										found := false
+										for _, tag := range appTags[labelKey] {
+											if tag == label {
+												found = true
+												break
+											}
+										}
+										if !found {
+											appTags[labelKey] = labelValues
+										}
+									}
+								}
+							}
+							ruleSet.Rules[0].TasksInfo[i] = task
+						}
+					}
+				}
 			}
 		}
 
@@ -1330,7 +1415,11 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 			var ruleLog vo.RuleLogData
 			ruleLog.RuleName = ruleName
-			ruleLog.ApplicationName = taskInput.UserObject.App.ApplicationName
+			if taskInput.UserObject.App != nil {
+				ruleLog.ApplicationName = taskInput.UserObject.App.ApplicationName
+			} else {
+				ruleLog.ApplicationName = taskInput.UserObject.Apps[0].ApplicationName
+			}
 			logDataFileExist := false
 
 			for _, taskFolder := range taskFolders {
@@ -1675,6 +1764,7 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 				Purpose:     taskInfo.Purpose,
 				Description: taskInfo.Description,
 				AliasRef:    taskInfo.Alias,
+				AppTags:     taskInfo.AppTags,
 			},
 		})
 	}
@@ -2137,7 +2227,49 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 				}
 				// if inputs.yaml in rulepath- copy it to task folder
 				if utils.IsFileExist(filepath.Join(rulePath, constants.TaskInputYAMLFile)) {
-					cp.Copy(filepath.Join(rulePath, constants.TaskInputYAMLFile), filepath.Join(tasksNewFolder, constants.TaskInputYAMLFile), opt)
+					ruleInputYAMLBytes, err := os.ReadFile(filepath.Join(rulePath, constants.TaskInputYAMLFile))
+					if err != nil {
+						return fmt.Errorf("failed to read rule inputs.yaml: %s", err)
+					}
+					var taskInput vo.TaskInputV2
+					err = yaml.Unmarshal(ruleInputYAMLBytes, &taskInput)
+					if err != nil {
+						return fmt.Errorf("error unmarshalling taskInput.yaml: %s", err)
+					}
+
+					if taskInput.UserObject != nil && taskInput.UserObject.Apps != nil {
+						ruleYAMLBytes, err := os.ReadFile(filepath.Join(rulePath, constants.RuleYamlFile))
+						if err != nil {
+							return fmt.Errorf("failed to read rule.yaml: %s", err)
+						}
+						var rule vo.RuleYAMLVO
+						err = yaml.Unmarshal(ruleYAMLBytes, &rule)
+						if err != nil {
+							return fmt.Errorf("error unmarshalling rule.yaml: %s", err)
+						}
+
+						var selectedApp *vo.AppAbstract
+						for _, app := range taskInput.UserObject.Apps {
+							if app != nil && reflect.DeepEqual(app.AppTags, task.AppTags) {
+								selectedApp = app
+								break
+							}
+						}
+
+						taskInput.UserObject.App = selectedApp
+						taskInput.UserObject.Apps = nil
+						updatedTaskInputYAML, err := yaml.Marshal(&taskInput)
+						if err != nil {
+							return fmt.Errorf("error marshalling updated taskInput.yaml: %w", err)
+						}
+						err = os.WriteFile(filepath.Join(tasksNewFolder, constants.TaskInputYAMLFile), updatedTaskInputYAML, os.ModePerm)
+						if err != nil {
+							return fmt.Errorf("error writing updated taskInput.yaml: %w", err)
+						}
+
+					} else {
+						cp.Copy(filepath.Join(rulePath, constants.TaskInputYAMLFile), filepath.Join(tasksNewFolder, constants.TaskInputYAMLFile), opt)
+					}
 				}
 
 				for _, val := range ruleSet.Rules[0].RuleIOValues.Inputs {
@@ -3288,7 +3420,6 @@ func CreateRuleWithYAMLV2(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 	}
 
 	ruleAddInfo, errorVO := utils.GetTaskInfosFromRule(ruleYAML, additionalInfo)
-
 	if errorVO != nil {
 		return &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: errorVO}
 	}
@@ -3299,7 +3430,6 @@ func CreateRuleWithYAMLV2(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 	}
 
 	fmt.Println("rulesPath ::", rulesPath)
-
 	if len(ruleYAML.Spec.Tasks) > 0 {
 		availableTasks := utils.GetTasks(additionalInfo)
 		availableTaskNames := make(map[string]struct{}, len(availableTasks))
@@ -3463,10 +3593,38 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 		additionalInfo = addInfo
 	}
-	language, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
-	if err != nil || utils.IsEmpty(language) {
+	languages, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
+	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
 			Message: "Failed to get application language", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+	}
+
+	var language string
+	rulePath := utils.GetRulePathFromCatalog(additionalInfo, ruleName)
+	ruleYaml := &vo.RuleYAMLVO{}
+	ruleFile, err := os.ReadFile(filepath.Join(rulePath, constants.RuleYamlFile))
+	if err != nil {
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+			Message: "Failed to read rule.yaml file", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+	}
+	err = yaml.Unmarshal(ruleFile, &ruleYaml)
+	if err != nil {
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+			Message: "Failed to unmarshal rule.yaml file", Description: fmt.Sprintf("The language for the %s application could be retrieved from the rule details ", applicationValidatorVO.ApplicationType)}}
+	}
+
+	for _, task := range ruleYaml.Spec.Tasks {
+		if task.AppTags != nil {
+			if reflect.DeepEqual(task.AppTags, applicationValidatorVO.AppTags) {
+				if taskLanguage, exists := languages[task.Name]; exists {
+					language = taskLanguage
+					break
+				}
+			}
+		}
+		if utils.IsEmpty(language) {
+			language = languages[task.Name]
+		}
 	}
 
 	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
@@ -3483,7 +3641,6 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", applicationValidatorVO.ApplicationType),
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
-	additionalInfo.ApplicationInfo = applicationInfo
 
 	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, language)
 
@@ -3537,11 +3694,11 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	}
 
 	appAbstract := &vo.AppAbstract{}
-	appAbstract.ApplicationName = additionalInfo.ApplicationInfo.App.Meta.Name
-	appAbstract.ApplicationURL = additionalInfo.ApplicationInfo.App.Spec.URL
-	appAbstract.ApplicationPort = strconv.Itoa(additionalInfo.ApplicationInfo.App.Spec.Port)
+	appAbstract.ApplicationName = applicationInfo.App.Meta.Name
+	appAbstract.ApplicationURL = applicationInfo.App.Spec.URL
+	appAbstract.ApplicationPort = strconv.Itoa(applicationInfo.App.Spec.Port)
 
-	credentials := utils.GetCredentialYAMLObjectV2(additionalInfo.ApplicationInfo.Credential)
+	credentials := utils.GetCredentialYAMLObjectV2(applicationInfo.Credential)
 	foundCredential := false
 
 	for _, mapItem := range credentials.UserDefinedCredentials {
@@ -3612,10 +3769,9 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 		if err != nil {
 			fmt.Println("Error copying files to validateApplicationTask:", err)
 		}
-
-		if requirementsFilePath := filepath.Join(baseFolder, "requirements.txt"); utils.IsFileExist(requirementsFilePath) {
+		if requirementsFilePath := filepath.Join(filepath.Dir(baseFolder), "requirements.txt"); utils.IsFileExist(requirementsFilePath) {
 			cmd := exec.Command("python3", "-m", "pip", "install", "-r", "requirements.txt")
-			cmd.Dir = baseFolder
+			cmd.Dir = filepath.Dir(baseFolder)
 			_, err := cmd.Output()
 			if err != nil {
 				return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{

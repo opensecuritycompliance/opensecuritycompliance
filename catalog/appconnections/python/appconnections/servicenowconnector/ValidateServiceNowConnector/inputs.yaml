@@ -1,0 +1,10 @@
+userObject:
+  name: ServiceNowConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: https://<instance>.service-now.com
+  userDefinedCredentials:
+    SNOW:
+      UserName: "$SNOW_UserName"
+      Password: "$SNOW_Password"

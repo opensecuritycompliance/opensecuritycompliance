@@ -18,35 +18,38 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: RuleDisplayName
   description: RuleDisplayName
-  type: string
+  dataType: STRING
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: RuleConfig
   description: RuleConfig
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: AzureReportData
   description: AzureReportData
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING
 - name: AzureDefenderReport
   description: AzureDefenderReport
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE

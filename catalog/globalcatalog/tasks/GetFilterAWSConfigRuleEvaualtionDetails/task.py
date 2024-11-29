@@ -6,8 +6,6 @@ from compliancecowcards.utils import cowdictutils
 import json
 import pandas as pd
 from io import StringIO
-import requests
-import time
 import numpy as np
 import uuid
 
@@ -86,7 +84,7 @@ class Task(cards.AbstractTask):
 
             return { "AwsConfigRuleFile": standard_file } 
         
-        except (KeyError,IndexError):
+        except (KeyError,IndexError) as e:
             return self.upload_log_file([{'Error': "Failed to generate the AWS Config evaluation report. Please contact support for further details."}])
     
     def get_json_file_from_minio(self, file_path):

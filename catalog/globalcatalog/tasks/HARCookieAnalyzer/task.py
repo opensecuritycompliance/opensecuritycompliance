@@ -7,7 +7,7 @@ from typing import List
 import pandas as pd
 from compliancecowcards.structs import cards
 import urllib.parse
-from appconnections.nocredapp import nocredapp
+from appconnections.privacybisonconnector import privacybisonconnector
 import uuid
 
 
@@ -85,7 +85,7 @@ def update_status(row):
 class Task(cards.AbstractTask):
     def execute(self) -> dict:
 
-        nocred = nocredapp.NoCredApp(user_defined_credentials=nocredapp.UserDefinedCredentials.from_dict(
+        privacybison = privacybisonconnector.PrivacyBisonConnector(user_defined_credentials=privacybisonconnector.UserDefinedCredentials.from_dict(
             self.task_inputs.user_object.app.user_defined_credentials))
         har_file_url = self.task_inputs.user_inputs.get("HarFile")
         cookie_db_file_url = self.task_inputs.user_inputs.get("CookieDBFile")
@@ -102,9 +102,9 @@ class Task(cards.AbstractTask):
         else:
             try:
                if har_file_url:
-                    file_bytes, error = self.download_file_from_minio(file_url=har_file_url)
+                    har_file_bytes, error = self.download_file_from_minio(file_url=har_file_url)
                     if not error:
-                        src_file_names.append(file_bytes)
+                        src_file_names.append(har_file_bytes)
                     else:
                         raise Exception(error)
             except Exception as e:
@@ -117,9 +117,9 @@ class Task(cards.AbstractTask):
         rows = []
         try:
             if cookie_db_file_url:
-                file_bytes_cookie, error = self.download_file_from_minio(file_url=cookie_db_file_url)
+                cookiedb_file_bytes, error = self.download_file_from_minio(file_url=cookie_db_file_url)
                 if not error:
-                    rows = self.read_csv_file(file_bytes_cookie)
+                    rows = self.read_csv_file(cookiedb_file_bytes)
                 else:
                     raise Exception(error)
         except Exception as e:
@@ -131,14 +131,19 @@ class Task(cards.AbstractTask):
 
         cookie_report = []
         total = 0
+        string_data = har_file_bytes.decode('utf-8')
+        har_file_data = json.loads(string_data)
+        domain, error = privacybison.get_company_name_from_har_file(har_file_data)
+        if error:
+            return self.upload_log_file([{'Error': f'{error}'}])
 
         for src_file_bytes in src_file_names:
-            file_details = self.process_logs(src_file_bytes, rows)
+            file_details = self.process_logs(src_file_bytes, rows, domain)
             cookie_report += file_details["cookie_report"]
             total += file_details["total"]
 
         cookie_df = pd.DataFrame(cookie_report)
-        cookie_df = cookie_df.apply(nocred.replace_empty_dicts_with_none)
+        cookie_df = cookie_df.apply(privacybison.replace_empty_dicts_with_none)
         
         file_name = f'HARCookieReport-{str(uuid.uuid4())}.json'
         absolute_file_path, error = self.upload_file_to_minio(file_content=cookie_df.to_json(orient='records').encode('utf-8'), file_name=file_name, content_type="application/json")
@@ -153,7 +158,7 @@ class Task(cards.AbstractTask):
         }
         return response
 
-    def process_logs(self, src_file_bytes, rows):
+    def process_logs(self, src_file_bytes, rows, domain):  
         input_payload = src_file_bytes.decode('utf-8')
         if input_payload:
             try:
@@ -183,7 +188,6 @@ class Task(cards.AbstractTask):
                     break
 
             u = urllib.parse.urlparse(base_path)
-            domain = u.hostname
 
             cookies = []
             request = entry.get("request", {})
@@ -201,11 +205,11 @@ class Task(cards.AbstractTask):
                 parsed_url = urllib.parse.urlparse(org_url)
                 site_domain = parsed_url.hostname
                 temp_cookie = {
-                    "System": site_domain,
+                    "System": domain,
                     "Source": "compliancecow",
                     "ResourceID": org_url,
                     "ResourceName": "N/A",
-                    "ResourceType": "N/A",
+                    "ResourceType": "Cookie",
                     "CookieName": cookie.get("name", ""),
                     "Path": cookie.get("path", ""),
                     "Domain": cookie.get("domain", ""),

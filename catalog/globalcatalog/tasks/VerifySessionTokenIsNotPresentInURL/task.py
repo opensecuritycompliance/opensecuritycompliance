@@ -1,12 +1,12 @@
 from compliancecowcards.structs import cards
-from appconnections.nocredapp import nocredapp
-import json
+from appconnections.privacybisonconnector import privacybisonconnector
 import urllib.parse
 from typing import List, Tuple
 import uuid
 import base64
 import pandas as pd
 from datetime import datetime
+import json
 
 
 class Task(cards.AbstractTask):
@@ -17,16 +17,21 @@ class Task(cards.AbstractTask):
         if error:
             return self.upload_log_file_panic({'error': error})
         
-        app = nocredapp.NoCredApp(
+        app = privacybisonconnector.PrivacyBisonConnector(
             app_url=self.task_inputs.user_object.app.application_url,
             app_port=self.task_inputs.user_object.app.application_port,
-            user_defined_credentials=nocredapp.UserDefinedCredentials.from_dict(
+            user_defined_credentials=privacybisonconnector.UserDefinedCredentials.from_dict(
                 self.task_inputs.user_object.app.user_defined_credentials)
         )
 
-        har, error = self.download_json_file_from_minio_as_dict(self.task_inputs.user_inputs.get('HARFile'))
+        har, error = self.download_json_file_from_minio_as_dict(self.task_inputs.user_inputs.get('HarFile'))
         if error:
             return self.upload_log_file_panic({'error': error})
+        
+        if not app.is_valid_har(har):
+            return self.upload_log_file_panic({'error': 'HarFile is in an invalid format, please check'})
+        
+        company_name, _ = app.get_company_name_from_har_file(har)
 
         har_info = {}
 
@@ -85,13 +90,14 @@ class Task(cards.AbstractTask):
 
             uri_with_token_in_query = {
                 # Meta
-                "System": uri_info["Host"],
+                "System": company_name,
                 "Source": "compliancecow",
 
                 # Resource info
                 "ResourceID": uri_info["URI"],
                 "ResourceName": "N/A",
-                "ResourceType": "N/A",
+                "ResourceType": "Web Application",
+                "ResourceURL": 'N/A',
                 "ResourceLocation": "N/A",
                 "ResourceTags": "N/A",
 
@@ -167,8 +173,8 @@ class Task(cards.AbstractTask):
             return 'User defined credentials are missing"'
         if self.task_inputs.user_inputs is None:
             return 'User inputs are missing'
-        if self.task_inputs.user_inputs.get("HARFile") is None:
-            return 'MinIO file path is missing!'
+        if self.task_inputs.user_inputs.get("HarFile") is None:
+            return 'HarFile is missing!'
         return None
     
 

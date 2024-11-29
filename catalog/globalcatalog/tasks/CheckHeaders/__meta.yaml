@@ -1,5 +1,5 @@
 authors:
-- musa.p@continube.com
+- musadhiek.p@continube.com
 domain: continube
 createdDate: 04/02/2024
 name: CheckHeaders
@@ -16,9 +16,10 @@ applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
-- name: HarFilePath # A unique identifier of the task input
-  description: HarFilePath # A concise description of the task input
-  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+- name: HarFile # A unique identifier of the task input
+  description: HarFile # A concise description of the task input
+  dataType: FILE # data type of the input. Available Types STRING, INT, FLOAT, FILE
+  repeated: false
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
@@ -26,61 +27,61 @@ inputs:
 outputs:
 - name: StrictTransportSecurityLog
   description: StrictTransportSecurityLog
-  type: file
+  dataType: FILE 
 - name: StdStrictTransportSecurityLog
   description: StdStrictTransportSecurityLog
-  type: file
+  dataType: FILE 
 - name: PublicKeyPinsLog
   description: PublicKeyPinsLog
-  type: file
+  dataType: FILE 
 - name: StdPublicKeyPinsLog
   description: StdPublicKeyPinsLog
-  type: file
+  dataType: FILE 
 - name: ExpectCTLog
   description: ExpectCTLog
-  type: file
+  dataType: FILE 
 - name: StdExpectCTLog
   description: StdExpectCTLog
-  type: file
+  dataType: FILE 
 - name: XFrameOptionsLog
   description: XFrameOptionsLog
-  type: file
+  dataType: FILE 
 - name: StdXFrameOptionsLog
   description: StdXFrameOptionsLog
-  type: file
+  dataType: FILE 
 - name: AccessControlAllowOriginLog
   description: AccessControlAllowOriginLog
-  type: file
+  dataType: FILE 
 - name: StdAccessControlAllowOriginLog
   description: StdAccessControlAllowOriginLog
-  type: file
+  dataType: FILE 
 - name: XContentTypeOptionsLog
   description: XContentTypeOptionsLog
-  type: file
+  dataType: FILE 
 - name: StdXContentTypeOptionsLog
   description: StdXContentTypeOptionsLog
-  type: file
+  dataType: FILE 
 - name: RefererPolicyLog
   description: RefererPolicyLog
-  type: file
+  dataType: FILE 
 - name: StdRefererPolicyLog
   description: StdRefererPolicyLog
-  type: file
+  dataType: FILE 
 - name: ETagLog
   description: ETagLog
-  type: file
+  dataType: FILE 
 - name: StdETagLog
   description: StdETagLog
-  type: file
+  dataType: FILE 
 - name: ErrorDetails
   description: ErrorDetails
-  type: string
+  dataType: string
 - name: LogFile
   description: LogFile
-  type: file    
+  dataType: FILE     
 - name: ComplianceStatus_
   description: compliance status of the task
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: compliance percentage of the task
-  type: int
+  dataType: INT

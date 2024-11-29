@@ -1,0 +1,21 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: ruleGroup
+metaData:
+  name: AWS_RG
+spec:
+  # scope: domain | global
+  # domain: <compliancecow domain name>-client id secret is provided.
+  rules:
+    - name: CWT
+      alias: r1
+      dependsOn:
+    - name: CWT
+      alias: r2
+      dependsOn:
+        - CWT
+
+  ioMap:
+    # - "*.Input.var1:=r1.Input.var1"
+    # - "r1.Output.var2:=r2.Input.var2"
+    # - "r2.Output.var3:=r3.Input.var3"
+    # - "r3.output.var3:=*.Output.*"

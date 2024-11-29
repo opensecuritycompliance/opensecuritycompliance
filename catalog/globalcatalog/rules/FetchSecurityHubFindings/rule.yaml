@@ -15,10 +15,43 @@ meta:
     annotateType:
     - aws
 spec:
+  inputs:
+    Region: 
+    AWSProductName: 
+    FindingsRecordState: 
+  inputsMeta__:
+  - name: Region
+    dataType: STRING
+    repeated: true
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: AWSProductName
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: FindingsRecordState
+    dataType: STRING
+    repeated: false
+    defaultValue: ACTIVE
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: FetchSecurityHubFindings
     alias: t1
     type: task
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Fetch SecurityHub Findings
     description: Fetch SecurityHub Findings
   ioMap:
@@ -28,4 +61,4 @@ spec:
   - '*.Output.SecurityHubFindingsFile:=t1.Output.SecurityHubFindingsFile'
   - '*.Output.LogFile:=t1.Output.LogFile' 
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
-  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_' 

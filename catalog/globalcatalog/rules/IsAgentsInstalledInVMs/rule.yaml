@@ -15,10 +15,43 @@ meta:
     annotateType:
     - azureappconnector
 spec:
+  inputs:
+    VMsExtensionsDataFilePath: <<MINIO_FILE_PATH>>
+    ControlConfigFilePath: <<MINIO_FILE_PATH>>
+    ControlName:
+  inputsMeta__:
+  - name: VMsExtensionsDataFilePath
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ControlConfigFilePath
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ControlName
+    dataType: STRING
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: IsAgentInstalledInVMs  
     alias: t1
     type: task
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: IsAgentInstalledInVMs 
     description: IsAgentInstalledInVMs
   ioMap:

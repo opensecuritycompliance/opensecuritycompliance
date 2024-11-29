@@ -52,20 +52,29 @@ class Task(cards.AbstractTask):
 
         # Fetch EFS
         efs_list, error_list = aws_connector.list_efs_file_systems()
-        if error_list and not efs_list:
+        if error_list:
             result  = self.upload_log_file(self.add_key_in_list(error_list))
             if cowdictutils.is_valid_key(result, "AWSEFSListLogFile"):
                 response['AWSEFSListLogFile'] = result['AWSEFSListLogFile']
             return response
-        if error_list:
-            error_list = self.add_key_in_list(error_list)
-
+        
+        if not efs_list:
+            result  = self.upload_log_file([{'Error' : 'No Elastic File System was found for the provided AWS credentials or for the specified region'}])
+            if cowdictutils.is_valid_key(result, "AWSEFSListLogFile"):
+                response['AWSEFSListLogFile'] = result['AWSEFSListLogFile']
+            return response
         # Fetch KMS Key details to get encryption details
-        key_df, kms_error_list = aws_connector.describe_kms_key()    
-        if kms_error_list:
-            error_list.extend(kms_error_list)
-        if key_df.empty:
-            error_list.append({"Error" : "No AWS/Customer managed key was found for the provided AWS credentials."})
+        key_df, error_list = aws_connector.describe_kms_key()        
+        if key_df is None:
+            result  = self.upload_log_file([{'Error' : 'No AWS/Customer managed key was found for the provided AWS credentials.'}])
+            if cowdictutils.is_valid_key(result, "AWSEFSListLogFile"):
+                response['AWSEFSListLogFile'] = result['AWSEFSListLogFile']
+            return response
+        if key_df is None and error_list:
+            result  = self.upload_log_file(self.add_key_in_list(error_list))
+            if cowdictutils.is_valid_key(result, "AWSEFSListLogFile"):
+                response['AWSEFSListLogFile'] = result['AWSEFSListLogFile']
+            return response
 
         std_list = []
 
@@ -112,7 +121,7 @@ class Task(cards.AbstractTask):
 
                 if is_encrypted:
                     # If EFS is encrypted, fetching key rotation details
-                    if cowdictutils.is_valid_key(efs, 'KmsKeyId') and not key_df.empty:
+                    if cowdictutils.is_valid_key(efs, 'KmsKeyId'):
                         kms_key_id = efs['KmsKeyId'].rsplit('/', 1)[-1]
                         key_details  = key_df[key_df['KeyId'] == kms_key_id]
                         key_manager = key_details['KeyManager'].values[0]
@@ -143,7 +152,7 @@ class Task(cards.AbstractTask):
             log_file_path, error = self.upload_file_to_minio(file_content=json.dumps(error_list).encode('utf-8'), 
                                                          file_name=f'LogFile-{str(uuid.uuid4())}.json', content_type='application/json')
             if error:
-                return self.upload_log_file({"Error" : f"An error occurred while uplaoding 'LogFile'. {error}"})
+                return self.upload_log_file([{"Error" : f"An error occurred while uplaoding 'LogFile'. {error}"}])
             response['AWSEFSListLogFile'] = log_file_path
 
         return response
@@ -186,7 +195,7 @@ class Task(cards.AbstractTask):
         else:
             region = user_inputs.get('Region')
             if not isinstance(region, list):
-                invalid_inputs.append("'Region' type is not supported. Supported type is list")
+                invalid_inputs.append("'Region' type is not supported. Region type is list")
 
         if invalid_inputs:
             error_list.append("Invalid task inputs: " + ", ".join(invalid_inputs))
@@ -194,6 +203,7 @@ class Task(cards.AbstractTask):
             error_list.append("Empty task inputs: " + ", ".join(empty_inputs))
 
         return error_list
+    
 
     def add_key_in_list(self, error_list: list):
         unique_list = list(set(error_list))

@@ -6,19 +6,44 @@ meta:
   description: Get the cookies from the HAR file of a given URL and analyse and generate a report
   labels:
     appType:
-    - nocredapp
+    - privacybisonconnector
     environment:
     - logical
     execlevel:
     - app
   annotations:
     annotateType:
-    - nocredapp
+    - privacybisonconnector
 spec:
+  inputs:
+    HarFile: <<MINIO_FILE_PATH>>
+    CookieDBFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: HarFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CookieDBFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: HARCookieAnalyzer
     alias: t1
     type: task
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Analyze the har cookies
     description: Get the cookies from the HAR file of a given URL and analyse and generate a report
   ioMap:

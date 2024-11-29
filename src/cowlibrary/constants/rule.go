@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"regexp"
 
 	"github.com/dmnlk/stringUtils"
 	"github.com/fatih/color"
@@ -148,7 +149,19 @@ func main() {
 						writeProgressFile(ruleProgressVO)
 					}
 
+					isTPlusDigit := func(s string) bool {
+						return regexp.MustCompile(` + "`^t\\d+$`" + `).MatchString(s)
+					}
+
+					taskDisplayableName := task.AliasRef + "-" + taskName
+
 					taskProgressVO := TaskProgressVO{Name: task.AliasRef + "-" + taskName}
+
+					if !isTPlusDigit(task.AliasRef) {
+						// INFO : commenting in favour of displayable name
+						// taskProgressVO.Name = task.AliasRef
+						// taskDisplayableName = task.AliasRef
+					}
 
 					if len(inputYamlByts) > 0 {
 
@@ -156,9 +169,9 @@ func main() {
 
 						if _, err := os.Stat(taskInputPath); os.IsNotExist(err) {
 							os.WriteFile(taskInputPath, inputYamlByts, os.ModePerm)
-						}else {
-                            inputYamlByts, _ = os.ReadFile(taskInputPath)
-                        }
+						} else {
+							inputYamlByts, _ = os.ReadFile(taskInputPath)
+						}
 
 					}
 
@@ -238,6 +251,15 @@ func main() {
 						taskProgressVO.Errors = nil
 					}
 
+					if taskProgressVO.Status == "ERROR" {
+						if outputByts, err := os.ReadFile(filepath.Join(taskName, "logs.txt")); err == nil {
+							if len(taskProgressVO.Errors) == 0 {
+								taskProgressVO.Errors = map[string]interface{}{}
+							}
+							taskProgressVO.Errors["logText"] = outputByts
+						}
+					}
+
 					if ruleProgressVO.Errors == nil {
 						ruleProgressVO.Errors = make(map[string]interface{}, 0)
 					}
@@ -247,8 +269,14 @@ func main() {
 					if taskProgressVO.Status == "ERROR" {
 						ruleProgressVO.Status = "ERROR"
 						if len(taskProgressVO.Errors) > 0 {
-							ruleProgressVO.Errors["taskName"] = taskName
+							ruleProgressVO.Errors["taskName"] = taskDisplayableName
 							ruleProgressVO.Errors["error"] = taskProgressVO.Errors["error"]
+							if logTxt, ok := taskProgressVO.Errors["logText"]; ok {
+								ruleProgressVO.Errors["logText"] = logTxt
+							}else if outputByts, err := os.ReadFile("logs.txt"); err == nil {
+								ruleProgressVO.Errors["logText"] = outputByts
+							}
+
 						}
 						return
 					}
@@ -316,27 +344,20 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 					if otherTask.AliasRef == ref.SourceRef.AliasRef && stringUtils.IsNoneEmpty(ref.TargetRef.VarName) {
 						otherTaskName := strings.ReplaceAll(otherTask.TaskGUID, "{{", "")
 						otherTaskName = strings.ReplaceAll(otherTaskName, "}}", "")
+						otherTaskName = otherTask.AliasRef + "-" + otherTaskName
 
 						if _, ok := outputs[otherTaskName]; !ok {
-							byts, err := os.ReadFile(otherTaskName + string(os.PathSeparator) + "task_output.json")
-							if err != nil {
-								return err
-							}
-
-							data := make(map[string]interface{})
-							err = json.Unmarshal(byts, &data)
-							if err != nil {
-								return err
-							}
-
-							if val, ok := data["Outputs"]; ok {
-								data, ok := val.(map[string]interface{})
-								if !ok {
-									return errors.New("no o/p available")
+							taskLevelOutput := make(map[string]map[string]interface{})
+							if byts, err := os.ReadFile("task_level_output.json"); err == nil && len(byts) > 2 {
+								err = json.Unmarshal(byts, &taskLevelOutput)
+								if err != nil {
+									return err
 								}
-								outputs[otherTaskName] = data
 							}
-
+								
+							if taskOutput, exists := taskLevelOutput[otherTaskName]; exists {
+								outputs[otherTaskName] = taskOutput
+							}
 						}
 
 						if taskOutput, ok := outputs[otherTaskName]; ok {

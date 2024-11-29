@@ -1,0 +1,28 @@
+apiVersion: rules.compliancecow.live/v1alpha1
+kind: applicationScope
+metaData:
+  name: CWT_ONE
+spec:
+  application:
+    name: aws
+    URL: aws.console.com
+    tags:
+      app:
+        - aws
+  credentials:
+    - credType: awsiam
+      loginURL: aws.console.com
+      tags:
+        type:
+          - aws
+      otherCredentials:
+        AWSRegion: #
+        AccessKey: #
+        SecretKey: #
+    - credType: awsrole
+      loginURL: aws.console.com
+      tags:
+        type:
+          - aws_role
+      otherCredentials:
+        RoleARN: #
