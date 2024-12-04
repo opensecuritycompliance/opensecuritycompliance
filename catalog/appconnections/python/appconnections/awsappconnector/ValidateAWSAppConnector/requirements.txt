@@ -1,2 +1,3 @@
 PyYAML
-boto3
+boto3==1.34.134
+urllib3

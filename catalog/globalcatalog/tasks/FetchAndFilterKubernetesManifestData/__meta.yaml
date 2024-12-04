@@ -47,12 +47,9 @@ outputs:
 - name: ComplianceStatus_
   description: Compliance Status
   dataType: STRING
-- name: Source
-  description: Source
-  dataType: STRING
 - name: DataFile
   description: DataFile
   dataType: STRING
-- name: LogFile
-  description: LogFile
+- name: AuditFile
+  description: AuditFile
   dataType: STRING

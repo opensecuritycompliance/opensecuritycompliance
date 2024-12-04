@@ -120,6 +120,9 @@ func (inst *TaskInstance) ProcessOpToStandardCcStruct(output []*KubebenchResult,
 					kubebenchResult.ValidationStatusCode = ruleConfig.NonCompliant.ValidationStatusCode
 					kubebenchResult.ValidationStatusNotes = ruleConfig.NonCompliant.ValidationStatusNotes
 					kubebenchResult.ComplianceStatusReason = ruleConfig.NonCompliant.ComplianceStatusReason
+					if kubebenchResult.RemediationSteps == "" {
+						kubebenchResult.RemediationSteps = ruleConfig.NonCompliant.Remediation
+					}
 				}
 
 			}
@@ -176,7 +179,6 @@ func (inst *TaskInstance) runKubernetesCommandForJumpHost(jumphostObj jumphost.K
 
 		for _, data := range podsAndNamespace {
 			kubebenchcmd := fmt.Sprintf("kubectl logs %v -n %v --context %v", data["pod"], data["Namespace"], context)
-			print(kubebenchcmd)
 			kubebenchDetails, err := jumphostObj.RunUnixCommands(kubebenchcmd)
 			if err != nil {
 				if strings.HasPrefix(podsAndNamespaceDetails, "The connection to the server") &&
@@ -352,7 +354,7 @@ func (inst *TaskInstance) uploadOutputFile(outputData []*KubebenchResult, eviden
 		outputData, inst.SystemInputs,
 	)
 	if err != nil {
-		return "", fmt.Errorf("cannot upload access key rotation data to minio: %w", err)
+		return "", fmt.Errorf("cannot upload cis benchmark report to minio: %w", err)
 	}
 	return outputFilePath, nil
 }
@@ -399,6 +401,7 @@ type RuleConfigVO struct {
 		ComplianceStatusReason string `json:"ComplianceStatusReason"`
 		ValidationStatusCode   string `json:"ValidationStatusCode"`
 		ValidationStatusNotes  string `json:"ValidationStatusNotes"`
+		Remediation            string `json:"Remediation"`
 	} `json:"NON_COMPLIANT"`
 }
 

@@ -25,19 +25,20 @@ spec:
     taskName: ValidateAWSAppConnector
     taskVersion: ""
   credentialTypes:
-  - name: AWSIAM
-    version: 1.1.1
-    repeated: false
   - name: AWSRole
-    version: 1.1.1
+    version: 1.1.2
+    repeated: false
+  - name: AWSIAM
+    version: 1.1.2
     repeated: false
   selectors: null
   defaultCredentialType:
-    name: AWSIAM
-    version: 1.1.1
+    name: AWSRole
+    version: 1.1.2
   applicationType: ""
   directAccess: true
-  linkableApplicationClasses: []
+  linkableApplicationClasses:
+  - name: ComplianceCow
   management: false
   allowableChildrenApplicationClasses: []
   type: user

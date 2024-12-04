@@ -100,7 +100,7 @@ func (thisObj *SSHConnector) EstablishSSHConnection() (*ssh.Client, error) {
 	ip := u.Hostname()
 	port := thisObj.AppPort
 	if port == 0 {
-		return nil, errors.New("Port not specified")
+		port = 22
 	}
 	ipWithPort := fmt.Sprintf("%s:%d", ip, port)
 	client, err := ssh.Dial("tcp", ipWithPort, sshConfig)

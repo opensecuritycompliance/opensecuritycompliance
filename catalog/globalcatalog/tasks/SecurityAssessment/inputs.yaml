@@ -3,12 +3,19 @@ userObject:
     name: AzureAppConnector
     appURL: https://portal.azure.com
     appPort: "0"
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Azure:
-        clientID: $AZURE_CLIENT_ID
-        clientSecret: $AZURE_CLIENT_SECRET
-        tenantID: $AZURE_TENANT_ID
-        subscriptionID:  $AZURE_SUBSCRIPTION_ID
+        clientID: "$AZURE_CLIENT_ID"
+        clientSecret: "$AZURE_CLIENT_SECRET"
+        tenantID: "$AZURE_TENANT_ID"
+        subscriptionID: "$AZURE_SUBSCRIPTION_ID"
 userInputs:
-fromDate: 2023-11-03
-toDate: 2023-11-03
+fromDate: "2023-11-03T06:16:42Z"
+toDate: "2023-11-03T06:16:42Z"

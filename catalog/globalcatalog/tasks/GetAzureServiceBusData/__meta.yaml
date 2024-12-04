@@ -16,19 +16,20 @@ applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
+- {}
 outputs:
 - name: AzureServiceBusNameSpaces
   description: AzureServiceBusNameSpaces
-  type: file
+  dataType: FILE
 - name: ServiceBusNameSpacesDiagnosticSettings
   description: ServiceBusNameSpacesDiagnosticSettings
-  type: file
+  dataType: FILE
 - name: LogFile
-  description: AzureStorageAccountsData
-  type: file
+  description: LogFile
+  dataType: FILE
 - name: ComplianceStatus_
   description: ComplianceStatus_
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: CompliancePCT_
-  type: int
+  dataType: INT

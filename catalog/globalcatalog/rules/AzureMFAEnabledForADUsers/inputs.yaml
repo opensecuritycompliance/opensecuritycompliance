@@ -1,8 +1,15 @@
 userObject:
-  app:
-    name: AzureAppConnector
+  apps:
+  - name: AzureAppConnector
     appURL: http://localhost.com
     appPort: "0"
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Azure:
         clientID: "$AZURE_CLIENT_ID"
@@ -11,5 +18,5 @@ userObject:
         subscriptionID: "$AZURE_SUBSCRIPTION_ID"
 userInputs:
   AzureADUsersAuthDataPath: <<MINIO_FILE_PATH>>
-fromDate: 2023-11-29
-toDate: 2023-11-29
+fromDate: 2023-11-29T06:03:00Z
+toDate: 2023-11-29T06:03:00Z

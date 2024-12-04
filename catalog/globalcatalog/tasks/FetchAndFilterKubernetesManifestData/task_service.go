@@ -188,6 +188,10 @@ func (inst *TaskInstance) runKubernetesCommandForJumpHost(jumphostObj jumphost.K
 						if err != nil {
 							if err.Error() == "continue" {
 								continue
+							} else if err.Error() == "the server doesn't have a resource type" {
+								errTemp := fmt.Sprintf("The server doesn't have a resource type '%v' in '%v' namespace.", resource, namespace)
+								errorMessage = append(errorMessage, errTemp)
+								continue
 							} else {
 								return nil, err
 							}
@@ -207,6 +211,10 @@ func (inst *TaskInstance) runKubernetesCommandForJumpHost(jumphostObj jumphost.K
 					clusterMap[context], namespace, "", include, exclude, command)
 				if err != nil {
 					if err.Error() == "continue" {
+						continue
+					} else if err.Error() == "the server doesn't have a resource type" {
+						errTemp := fmt.Sprintf("The server doesn't have a namespace '%v' .", namespace)
+						errorMessage = append(errorMessage, errTemp)
 						continue
 					} else {
 						return nil, err
@@ -269,7 +277,7 @@ func filterInvalidIncludedResources(jumphostObj jumphost.Kubernetes, cmd string,
 
 	var invalidResource []string
 	newCmd := strings.ReplaceAll(cmd, "json", "custom-columns=:metadata.name")
-	cmdOutput, err := jumphostObj.RunUnixCommands(newCmd)
+	cmdOutput, err := jumphostObj.RunUnixCommandsWithRetry(newCmd, 2)
 	if err != nil {
 		return invalidResource, err
 	}
@@ -317,17 +325,21 @@ func (inst *TaskInstance) runKubernetesCommand(jumphostObj jumphost.Kubernetes, 
 
 	}
 
-	cmdOutput, err := jumphostObj.RunUnixCommands(cmd)
+	cmdOutput, err := jumphostObj.RunUnixCommandsWithRetry(cmd, 2)
 	if strings.Contains(cmdOutput, "Unable to connect to the server") {
 		return newCmdOutput, invalidResource, errors.New("continue")
 	}
 
 	if err != nil {
 		if strings.Contains(cmdOutput, "the server doesn't have a resource type") {
-			return newCmdOutput, invalidResource, errors.New("continue")
-		} else {
-			return newCmdOutput, invalidResource, fmt.Errorf(cmdOutput)
+			return newCmdOutput, invalidResource, errors.New("the server doesn't have a resource type")
 		}
+		if cmdOutput == "" {
+			return newCmdOutput, invalidResource, err
+		}
+
+		return newCmdOutput, invalidResource, fmt.Errorf(cmdOutput)
+
 	}
 	if !strings.Contains(cmdOutput, "items: []") {
 
@@ -365,6 +377,7 @@ func (inst *TaskInstance) runKubernetesCommand(jumphostObj jumphost.Kubernetes, 
 		}
 
 		newCmdOutput.ClusterName = cluster
+		newCmdOutput.Namespace = namespace
 	}
 
 	if len(invalidResource) > 1 {
@@ -412,7 +425,7 @@ func (inst *TaskInstance) applyFiltersToCluster(jumphostObj jumphost.Kubernetes,
 	}
 
 	var cmdOutput string
-	cmdOutput, err := jumphostObj.RunUnixCommands(clustercommand)
+	cmdOutput, err := jumphostObj.RunUnixCommandsWithRetry(clustercommand, 2)
 	if err != nil {
 		if clusters, ok := include["cluster"]; ok && (len(clusters) == 1 && clusters[0] == "*") {
 			return nil, nil, errors.New("Error while listing clusters")
@@ -438,7 +451,7 @@ func applyFiltersToNamespace(jumphostObj jumphost.Kubernetes, context string,
 	var availableNamespaces []string
 	command := "kubectl get namespaces --context=" + context
 
-	cmdOutput, err := jumphostObj.RunUnixCommands(command)
+	cmdOutput, err := jumphostObj.RunUnixCommandsWithRetry(command, 2)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -519,7 +532,7 @@ func applyFiltersToResources(jsonData_ interface{}, include map[string][]string,
 
 		includeResource := false
 		for includeKey, includeValues := range include {
-			if includeKey == kind {
+			if normalizeString(includeKey) == kind {
 				if len(includeValues) == 1 && includeValues[0] == "*" {
 					includeResource = true
 					break
@@ -673,7 +686,7 @@ func (inst *TaskInstance) uploadOutputFile(outputData []NewCmdOutput) (string, e
 	reportFileNameWithUUID := fmt.Sprintf("%v-%v%v", "Resource", uuid.New().String(), ".json")
 	outputFilePath, err := cowStorage.UploadJSONFile(reportFileNameWithUUID, outputData, inst.SystemInputs)
 	if err != nil {
-		return "", fmt.Errorf("cannot upload access key rotation data to minio: %w", err)
+		return "", fmt.Errorf("cannot upload k8s manifest data to minio: %w", err)
 	}
 	return outputFilePath, nil
 }
@@ -712,8 +725,9 @@ type NewCmdOutput struct {
 	SubscriptionName  string      `json:"subscriptionName"`
 	ResourceGroupName string      `json:"resourceGroupName"`
 	ClusterName       string      `json:"clusterName"`
+	Namespace         string      `json:"namespace"`
+	Source            string      `json:"source"`
 }
-
 type ErrorVO struct {
 	Error string `json:"Error"`
 }

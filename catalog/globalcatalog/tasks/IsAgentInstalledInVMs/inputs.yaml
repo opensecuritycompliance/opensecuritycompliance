@@ -1,8 +1,15 @@
 userObject:
   app:
     name: AzureAppConnector
-    appURL: http://localhost.com
+    appURL: https://portal.azure.com
     appPort: "0"
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Azure:
         clientID: "$AZURE_CLIENT_ID"
@@ -12,6 +19,6 @@ userObject:
 userInputs:
   VMsExtensionsDataFilePath: <<MINIO_FILE_PATH>>
   ControlConfigFilePath: <<MINIO_FILE_PATH>>
-  ControlName: # To identify the RuleName, please refer to the 'ControlName' field in the '/catalog/globalcatalog/rules/IsAgentsInstalledInVMs/ControlConfig.json' file.
-fromDate: 2023-11-29
-toDate: 2023-11-07
+  ControlName: 
+fromDate: "2023-11-07T06:16:42Z"
+toDate: "2023-11-07T06:16:42Z"

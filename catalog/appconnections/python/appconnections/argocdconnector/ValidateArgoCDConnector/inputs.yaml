@@ -1,0 +1,9 @@
+userObject:
+  name: ArgoCDConnector
+userInputs:
+  appPort: 0
+  appURL: "$ARGOCD_URL"
+  userDefinedCredentials:
+    BasicAuthentication:
+      Password: "$ARGOCD_PASSWORD"
+      UserName: "$ARGOCD_USERNAME"

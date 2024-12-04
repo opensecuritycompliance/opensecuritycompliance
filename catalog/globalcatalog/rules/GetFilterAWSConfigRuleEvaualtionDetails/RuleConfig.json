@@ -1,189 +1,1432 @@
 [
-	{
-		"RuleName": "access-keys-rotated",
-		"EvidenceName" : "AccessKeysRotated",
+    {
+        "RuleName": "access-keys-rotated",
+        "EvidenceName": "AccessKeysRotated",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The access key has been rotated within the specified MaxAccessKeyAge.",
+                "ValidationStatusCode": "ACCESS_KEY_ROT",
+                "ValidationStatusNotes": "This active access key is compliant with the rotation policy."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The access key has not been rotated for more than the MaxAccessKeyAge.",
+                "ValidationStatusCode": "ACCESS_KEY_N_ROT",
+                "ValidationStatusNotes": "This active access key exceeds the maximum allowed rotation period."
+            }
+        ]
+    },
+    {
+		"RuleName": "account-part-of-organizations",
+		"EvidenceName": "AccountPartOfOrganizations",
 		"COMPLIANT": [
 			{
-				"ComplianceStatusReason": "Aurora MySQL cluster has backtracking enabled",
-				"ValidationStatusCode": "BK_ENABLED",
-				"ValidationStatusNotes": "Aurora MySQL cluster has backtracking enabled"
+				"ComplianceStatusReason": "Account is part of an AWS organization.",
+				"ValidationStatusCode": "ACCT_ORG",
+				"ValidationStatusNotes": "The account is successfully integrated into the organization."
 			}
 		],
 		"NON_COMPLIANT": [
 			{
-				"ComplianceStatusReason": "Aurora MySQL cluster has backtracking disabled",
-				"ValidationStatusCode": "BK_DISABLED",
-				"ValidationStatusNotes": "Aurora MySQL cluster has backtracking disabled"
-			}
-		]
-	},
-	{
-		"RuleName": "securityhub-s3-bucket-logging-enabled-4e7a6d0d",
-		"EvidenceName" : "s3BucketLoggingEnabled",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Logging is enabled for the S3 bucket",
-				"ValidationStatusCode": "SAL_ENABLED",
-				"ValidationStatusNotes": "Server access logging is enabled"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Logging is disabled for the S3 bucket",
-				"ValidationStatusCode": "SAL_DISABLED",
-				"ValidationStatusNotes": "Server access logging is disabled"
-			}
-		]
-	},
-	{
-		"RuleName": "cloud-trail-cloud-watch-logs-enabled",
-		"EvidenceName" : "CloudTrailLogsSentToCloudWatch",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "This CloudTrail log is sent to CloudWatch",
-				"ValidationStatusCode": "CT_CW_INTEG",
-				"ValidationStatusNotes": "CloudWatch Logs is configured for this trail"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "This CloudTrail log is not sent to CloudWatch",
-				"ValidationStatusCode": "CT_CW_NOT_INTEG",
-				"ValidationStatusNotes": "CloudWatch Logs is not configured for this trail"
-			}
-		]
-	},
-	{
-		"RuleName": "cloudtrail-s3-dataevents-enabled",
-		"EvidenceName" : "CloudTrailS3DataEventsLoggingEnabled",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Dataevents logging for all S3 buckets is enabled",
-				"ValidationStatusCode": "CT_CONF_LOG_S3DATAEV",
-				"ValidationStatusNotes": "One or more CloudTrail Trail(s) configured to log data events for Amazon S3 for the account"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Dataevents logging for all S3 buckets is NOT enabled",
-				"ValidationStatusCode": "NO_CT_CONF_LOG_S3DATAEV",
-				"ValidationStatusNotes": "No CloudTrail Trail is configured to log data events for Amazon S3 for the account"
-			}
-		],
-		"NOT_DETERMINED": [
-			{
-				"ComplianceStatusReason": "Dataevents logging for all S3 buckets status could not be assessed",
-				"ValidationStatusCode": "NT_DTR",
-				"ValidationStatusNotes": "one of the required/optional parameters is not valid, or not of the correct type, or is formatted incorrectly/No S3 buckets"
-			}
-		]
-	},
-	{
-		"RuleName": "cw-loggroup-retention-period-check",
-		"EvidenceName" : "CloudWatchLogGrpRetentionPeriodCheck",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "retentionInDays is equal to more than MinRetentionTime 365 days",
-				"ValidationStatusCode": "RP_GT_MINRP",
-				"ValidationStatusNotes": "Retention Period in days is equal to more than Minumum retention period(default being 365 days)"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "retentionInDays is less than MinRetentionTime 365 days",
-				"ValidationStatusCode": "RP_LT_MINRP",
-				"ValidationStatusNotes": "Retention Period in days is less than Minumum retention period(default being 365 days)"
-			}
-		]
-	},
-	{
-		"RuleName": "multi-region-cloudtrail-enabled",
-		"EvidenceName" : "MultiRegionCloudtrailEnabled",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Atleast one multi region CloudTrail trail is present for the account",
-				"ValidationStatusCode": "MUL_REG_CT_EXISTS",
-				"ValidationStatusNotes": "Multi region CloudTrail trail that includes management events logging is present"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "There are no multi region CloudTrail trails for the account",
-				"ValidationStatusCode": "MUL_REG_CT_NOT_EXISTS",
-				"ValidationStatusNotes": "Multi region CloudTrail trail that includes management events logging is absent"
-			}
-		]
-	},
-	{
-		"RuleName": "iam-user-group-membership-check",
-		"EvidenceName" : "IamUserIsInAtleastOneGroup",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "User is Part of One or more Groups",
-				"ValidationStatusCode": "USER_IS_PART_OF_ONE_OR_MORE_GROUPS",
-				"ValidationStatusNotes": "User is Part of One or more Groups"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "NOT Attached with Any Groups",
-				"ValidationStatusCode": "USER_IS_NOT_PART_OF_ANY_GROUPS",
-				"ValidationStatusNotes": "User is not Part of One or more Group"
-			}
-		]
-	},
-	{
-		"RuleName": "backup-recovery-point-encrypted",
-		"EvidenceName" : "BackupRecoveryPointEncrypted",
-		"COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Record compliant as backup recovery point is encrypted",
-				"ValidationStatusCode": "BACKUP_RECOVERY_POINT_ENCRYPTED",
-				"ValidationStatusNotes": "Backup recovery point is encrypted"
-			}
-		],
-		"NON_COMPLIANT": [
-			{
-				"ComplianceStatusReason": "Record not compliant as backup recovery point is not encrypted",
-				"ValidationStatusCode": "BACKUP_RECOVERY_POINT_NOT_ENCRYPTED",
-				"ValidationStatusNotes": "Backup recovery point is not encrypted"
+				"ComplianceStatusReason": "Account is not part of an AWS organization.",
+				"ValidationStatusCode": "ACCT_NO_ORG",
+				"ValidationStatusNotes": "The account is not associated with any organization."
 			}
 		]
 	},
     {
-		"RuleName": "iam-no-inline-policy-check",
-		"EvidenceName" : "IamNoInlinePolicyCheck",
+		"RuleName": "autoscaling-multiple-az",
+		"EvidenceName": "AutoscalingMultipleAz",
 		"COMPLIANT": [
 			{
-				"ComplianceStatusReason": "No inline policy is not attached with Iam user,IAM role or IAM group",
-				"ValidationStatusCode":   "IAM_NO_INLINE_POLICY_CHECK",
-				"ValidationStatusNotes": "No policy is directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role"
+				"ComplianceStatusReason": "Auto Scaling group is configured across multiple availability zones.",
+				"ValidationStatusCode": "AS_MULTI_AZ",
+				"ValidationStatusNotes": "The Auto Scaling group spans multiple availability zones for high availability."
 			}
 		],
 		"NON_COMPLIANT": [
 			{
-				"ComplianceStatusReason": "Inline policy is not attached with Iam user,IAM role or IAM group",
-				"ValidationStatusCode": "IAM_INLINE_POLICY_CHECK",
-				"ValidationStatusNotes": "One or more policy is directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role"
+				"ComplianceStatusReason": "Auto Scaling group is not configured across multiple availability zones.",
+				"ValidationStatusCode": "AS_N_MULTI_AZ",
+				"ValidationStatusNotes": "The Auto Scaling group is only in a single availability zone, risking availability."
 			}
 		]
 	},
-	{
-		"RuleName": "ec2-instance-profile-attached",
-		"EvidenceName": "Ec2InstanceProfileAttached",
+    {
+		"RuleName": "backup-plan-min-frequency-and-min-retention-check",
+		"EvidenceName": "BackupPlanMinFrequencyAndMinRetentionCheck",
 		"COMPLIANT": [
 			{
-				"ValidationStatusCode": "EC2_INSTANCE_PROFILE_ATTACHED",
-				"ValidationStatusNotes": "An IAM profile is attached to the Amazon EC2 instance.",
-				"ComplianceStatusReason": "The Amazon EC2 instance has an IAM profile attached. This allows for secure and controlled access to AWS resources by granting specific permissions"
+				"ComplianceStatusReason": "Backup plan meets minimum frequency and retention requirements.",
+				"ValidationStatusCode": "BP_MIN_FREQ_RET",
+				"ValidationStatusNotes": "The backup plan frequency and retention comply with the defined standards."
 			}
 		],
 		"NON_COMPLIANT": [
 			{
-			  "ValidationStatusCode": "EC2_INSTANCE_PROFILE_NOT_ATTACHED",
-				"ValidationStatusNotes": "No IAM profile is attached to the Amazon EC2 instance.",
-				"ComplianceStatusReason": "The Amazon EC2 instance does not have an IAM profile attached. Without an IAM profile attached an EC2 instance lacks access to required AWS resources, potentially causing functionality issues or security gaps"
+				"ComplianceStatusReason": "Backup plan does not meet minimum frequency or retention requirements.",
+				"ValidationStatusCode": "BP_NO_MIN_FREQ_RET",
+				"ValidationStatusNotes": "The backup plan fails to comply with either the minimum frequency or retention standards."
 			}
 		]
-	}
+	},
+    {
+        "RuleName": "backup-recovery-point-encrypted",
+        "EvidenceName": "BackupRecoveryPointEncrypted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Record compliant as backup recovery point is encrypted",
+                "ValidationStatusCode": "BKP_RCY_PT_ENC",
+                "ValidationStatusNotes": "Backup recovery point is encrypted"
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Record not compliant as backup recovery point is not encrypted",
+                "ValidationStatusCode": "BKP_RCY_PT_N_ENC",
+                "ValidationStatusNotes": "Backup recovery point is not encrypted"
+            }
+        ]
+    },
+    {
+		"RuleName": "backup-recovery-point-manual-deletion-disabled",
+		"EvidenceName": "BackupRecoveryPointManualDeletionDisabled",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Manual deletion of backup recovery points is disabled.",
+				"ValidationStatusCode": "BP_MAN_DEL_N_ENBL",
+				"ValidationStatusNotes": "Manual deletion of recovery points is not allowed, ensuring data protection."
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "Manual deletion of backup recovery points is enabled.",
+				"ValidationStatusCode": "BP_MAN_DEL_ENBL",
+				"ValidationStatusNotes": "Manual deletion of recovery points is allowed, risking data loss."
+			}
+		]
+	},
+    {
+        "RuleName": "backup-recovery-point-minimum-retention-check",
+        "EvidenceName": "BackupRecoveryPointMinimumRetentionCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Backup recovery point meets the minimum retention requirement.",
+                "ValidationStatusCode": "BP_MIN_RET_MET",
+                "ValidationStatusNotes": "The recovery point is retained for the required minimum duration."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Backup recovery point does not meet the minimum retention requirement.",
+                "ValidationStatusCode": "BP_NO_MIN_RET",
+                "ValidationStatusNotes": "The recovery point is retained for less than the required minimum duration."
+            }
+        ]
+    },
+    {
+        "RuleName": "cloud-trail-cloud-watch-logs-enabled",
+        "EvidenceName": "CloudTrailLogsSentToCloudWatch",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudTrail log is sent to CloudWatch.",
+                "ValidationStatusCode": "CT_CW_INTG",
+                "ValidationStatusNotes": "CloudWatch Logs is configured for this trail."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudTrail log is not sent to CloudWatch.",
+                "ValidationStatusCode": "CT_CW_N_INTG",
+                "ValidationStatusNotes": "CloudWatch Logs is not configured for this trail."
+            }
+        ]
+    },
+    {
+        "RuleName": "cloud-trail-encryption-enabled",
+        "EvidenceName": "CloudTrailEncryptionEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "CloudTrail logging is encrypted.",
+                "ValidationStatusCode": "CT_ENC_ENBL",
+                "ValidationStatusNotes": "CloudTrail logs are encrypted to ensure data security."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "CloudTrail logging is not encrypted.",
+                "ValidationStatusCode": "CT_ENC_N_ENBL",
+                "ValidationStatusNotes": "CloudTrail logs lack encryption, posing a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "cloudtrail-s3-dataevents-enabled",
+        "EvidenceName": "CloudTrailS3DataEventsLoggingEnabled",
+        "Service": "AwsCloudTrailTrailList",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Dataevents logging for all S3 buckets is enabled",
+                "ValidationStatusCode": "CT_CONF_LOG_S3_DATA_EVNT",
+                "ValidationStatusNotes": "One or more CloudTrail Trail(s) configured to log data events for Amazon S3 for the account"
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Dataevents logging for all S3 buckets is NOT enabled",
+                "ValidationStatusCode": "NO_CT_CONF_LOG_S3_DATA_EVNT",
+                "ValidationStatusNotes": "No CloudTrail Trail is configured to log data events for Amazon S3 for the account"
+            }
+        ],
+        "NOT_DETERMINED": [
+            {
+                "ComplianceStatusReason": "Dataevents logging for all S3 buckets status could not be assessed",
+                "ValidationStatusCode": "NT_DTR",
+                "ValidationStatusNotes": "one of the required/optional parameters is not valid, or not of the correct type, or is formatted incorrectly/No S3 buckets"
+            }
+        ]
+    },
+    {
+        "RuleName": "cloudtrail-security-trail-enabled",
+        "EvidenceName": "CloudtrailSecurityTrailEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudTrail trail follows security best practices.",
+                "ValidationStatusCode": "CT_SEC_TRAIL",
+                "ValidationStatusNotes": "The CloudTrail trail is set up according to AWS security best practices."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudTrail trail does not follow security best practices.",
+                "ValidationStatusCode": "CT_NO_SEC_TRAIL",
+                "ValidationStatusNotes": "This CloudTrail trail is not aligned with AWS security best practices."
+            }
+        ]
+    },
+    {
+        "RuleName": "cloudwatch-alarm-action-enabled-check",
+        "EvidenceName": "CloudwatchAlarmActionEnabledCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudWatch alarm action is enabled.",
+                "ValidationStatusCode": "CW_ACTN_ENBL",
+                "ValidationStatusNotes": "This alarm's action is enabled, ensuring alerts function properly."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "This CloudWatch alarm action is not enabled.",
+                "ValidationStatusCode": "CW_ACTN_N_ENBL",
+                "ValidationStatusNotes": "This alarm's action is disabled, which may prevent alerts from triggering."
+            }
+        ]
+    },
+    {
+		"RuleName": "cloudwatch-alarm-resource-check",
+		"EvidenceName": "CloudwatchAlarmResourceCheck",
+		"COMPLIANT": [
+			{
+				"ComplianceStatusReason": "A CloudWatch alarm is configured for the specified resource type and metric.",
+				"ValidationStatusCode": "CW_ALRM_CONF",
+				"ValidationStatusNotes": "The resource has a CloudWatch alarm set for the specified metric, ensuring monitoring."
+			}
+		],
+		"NON_COMPLIANT": [
+			{
+				"ComplianceStatusReason": "No CloudWatch alarm is configured for the specified resource type and metric.",
+				"ValidationStatusCode": "NO_CW_ALRM_CONF",
+				"ValidationStatusNotes": "The resource lacks a CloudWatch alarm for the specified metric, risking oversight."
+			}
+		]
+	},
+    {
+        "RuleName": "cloudwatch-log-group-encrypted",
+        "EvidenceName": "CloudwatchLogGroupEncrypted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "CloudWatch Log Group is encrypted with a valid AWS KMS key.",
+                "ValidationStatusCode": "CW_LOG_ENC",
+                "ValidationStatusNotes": "This CloudWatch Log Group is securely encrypted with the specified or any AWS KMS key."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "CloudWatch Log Group is not encrypted or uses an unauthorized KMS key.",
+                "ValidationStatusCode": "CW_LOG_NO_ENC",
+                "ValidationStatusNotes": "The CloudWatch Log Group is unencrypted or uses a KMS key that is not specified in the rule."
+            }
+        ]
+    },
+    {
+        "RuleName": "cmk-backing-key-rotation-enabled",
+        "EvidenceName": "CmkBackingKeyRotationEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Key rotation is enabled for the specified customer master key (CMK).",
+                "ValidationStatusCode": "CMK_ROT_ENBL",
+                "ValidationStatusNotes": "This customer master key has key rotation enabled, ensuring regular updates to enhance security."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Key rotation is not enabled for the specified customer master key (CMK).",
+                "ValidationStatusCode": "CMK_ROT_N_ENBL",
+                "ValidationStatusNotes": "Key rotation is disabled for this customer master key, potentially risking security."
+            }
+        ]
+    },
+    {
+        "RuleName": "codebuild-project-envvar-awscred-check",
+        "EvidenceName": "CodebuildProjectEnvvarAwscredCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No plaintext AWS credentials are found in the project environment variables.",
+                "ValidationStatusCode": "CB_NO_AWS_CREDS",
+                "ValidationStatusNotes": "The project environment variables do not contain AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY in plaintext."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The project contains plaintext AWS credentials in environment variables.",
+                "ValidationStatusCode": "CB_AWS_CREDS_FND",
+                "ValidationStatusNotes": "AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY are present in plaintext, which is a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "codebuild-project-s3-logs-encrypted",
+        "EvidenceName": "CodebuildProjectSLogsEncrypted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Encryption is enabled for the S3 logs of the CodeBuild project.",
+                "ValidationStatusCode": "CB_S3_LOG_ENC",
+                "ValidationStatusNotes": "The S3 logs for the CodeBuild project are securely encrypted, ensuring data protection."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Encryption is disabled for the S3 logs of the CodeBuild project.",
+                "ValidationStatusCode": "CB_S3_LOG_NO_ENC",
+                "ValidationStatusNotes": "The S3 logs are not encrypted (encryptionDisabled is set to true), risking unauthorized access."
+            }
+        ]
+    },
+    {
+        "RuleName": "cw-loggroup-retention-period-check",
+        "EvidenceName": "CloudWatchLogGrpRetentionPeriodCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Retention period is equal to or more than the minimum retention time of 365 days.",
+                "ValidationStatusCode": "RP_GT_MINRP",
+                "ValidationStatusNotes": "Retention period in days meets or exceeds the minimum retention period (default being 365 days)."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Retention period is less than the minimum retention time of 365 days.",
+                "ValidationStatusCode": "RP_LT_MINRP",
+                "ValidationStatusNotes": "Retention period in days is below the minimum retention period (default being 365 days)."
+            }
+        ]
+    },
+    {
+        "RuleName": "ebs-snapshot-public-restorable-check",
+        "EvidenceName": "EbsSnapshotPublicRestorableCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No Amazon EBS snapshots are publicly restorable.",
+                "ValidationStatusCode": "EBS_NO_PUBL_SNAP",
+                "ValidationStatusNotes": "All EBS snapshots are private and not set to be restorable by all users."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more Amazon EBS snapshots are publicly restorable.",
+                "ValidationStatusCode": "EBS_PUBL_SNAP",
+                "ValidationStatusNotes": "At least one snapshot has the RestorableByUserIds field set to all, making it publicly restorable."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-imdsv2-check",
+        "EvidenceName": "EC2Imdsv2Check",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is configured to use Instance Metadata Service Version 2 (IMDSv2).",
+                "ValidationStatusCode": "EC2_IMDS_V2",
+                "ValidationStatusNotes": "HttpTokens is set to required, ensuring enhanced security for instance metadata access."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is not configured to use Instance Metadata Service Version 2 (IMDSv2).",
+                "ValidationStatusCode": "EC2_IMDS_N_V2",
+                "ValidationStatusNotes": "HttpTokens is set to optional, which may expose the instance metadata to unauthorized access."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-instance-managed-by-systems-manager",
+        "EvidenceName": "EC2InstanceManagedBySystemsManager",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is managed by AWS Systems Manager.",
+                "ValidationStatusCode": "EC2_SYS_MNGD",
+                "ValidationStatusNotes": "The specified EC2 instance has the Systems Manager agent installed and is managed successfully."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is not managed by AWS Systems Manager.",
+                "ValidationStatusCode": "EC2_N_SYS_MNGD",
+                "ValidationStatusNotes": "The specified EC2 instance does not have the Systems Manager agent installed."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-instance-multiple-eni-check",
+        "EvidenceName": "EC2InstanceMultipleENICheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is configured to use multiple Elastic Network Interfaces (ENIs) or Elastic Fabric Adapters (EFAs).",
+                "ValidationStatusCode": "EC2_USE_ENI",
+                "ValidationStatusNotes": "The instance has multiple ENIs/EFAs attached, providing enhanced networking capabilities."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is not configured to use multiple Elastic Network Interfaces (ENIs) or Elastic Fabric Adapters (EFAs).",
+                "ValidationStatusCode": "EC2_N_USE_ENI",
+                "ValidationStatusNotes": "The instance is using only one network interface, which may limit network performance and redundancy."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-instance-no-public-ip",
+        "EvidenceName": "EC2InstanceNoPublicIp",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance does not have a public IP address associated with it.",
+                "ValidationStatusCode": "EC2_NO_PUB_IP",
+                "ValidationStatusNotes": "The instance is configured without a public IP, enhancing security by preventing direct access from the internet."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance has a public IP address associated with it.",
+                "ValidationStatusCode": "EC2_HAS_PUB_IP",
+                "ValidationStatusNotes": "The presence of a public IP address may expose the instance to internet threats."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-instance-profile-attached",
+        "EvidenceName": "EC2InstanceProfileAttached",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance has an IAM profile attached, ensuring it can interact with other AWS services securely.",
+                "ValidationStatusCode": "EC2_IAM_ATCD",
+                "ValidationStatusNotes": "IAM profile is properly configured and attached to the instance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance does not have an IAM profile attached.",
+                "ValidationStatusCode": "EC2_NO_IAM_ATCD",
+                "ValidationStatusNotes": "Without an IAM profile, the instance lacks permissions to interact with AWS services."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-instances-in-vpc",
+        "EvidenceName": "EC2InstancesInVpc",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is deployed within a Virtual Private Cloud (VPC), enhancing security and isolation.",
+                "ValidationStatusCode": "IN_VPC",
+                "ValidationStatusNotes": "The instance is confirmed to be in VPC."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The EC2 instance is not associated with a Virtual Private Cloud (VPC).",
+                "ValidationStatusCode": "NO_VPC",
+                "ValidationStatusNotes": "Without VPC, the instance may be exposed to the public internet and lack network isolation."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-managedinstance-applications-blacklisted",
+        "EvidenceName": "EC2ManagedinstanceApplicationsBlacklisted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The managed EC2 instance does not have any blacklisted applications installed.",
+                "ValidationStatusCode": "NO_BLCK_LST_APP_INSTD",
+                "ValidationStatusNotes": "The applications installed on the instance are compliant with the specified guidelines."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The managed EC2 instance has one or more blacklisted applications installed.",
+                "ValidationStatusCode": "BLCK_LST_APP_INSTD",
+                "ValidationStatusNotes": "The instance contains prohibited applications, violating security policy."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-managedinstance-applications-required",
+        "EvidenceName": "EC2ManagedinstanceApplicationsRequired",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The managed EC2 instance has all required applications installed.",
+                "ValidationStatusCode": "ALL_REQ_APP_INSTD_IN_EC2",
+                "ValidationStatusNotes": "All required applications are present with the minimum acceptable versions."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The managed EC2 instance is missing one or more required applications.",
+                "ValidationStatusCode": "ALL_REQ_APP_N_INSTD_IN_EC2",
+                "ValidationStatusNotes": "At least one required application is absent, violating compliance policy."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-managedinstance-association-compliance-status-check",
+        "EvidenceName": "EC2ManagedinstanceAssociationComplianceStatusCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The AWS Systems Manager association compliance status is COMPLIANT.",
+                "ValidationStatusCode": "AWS_SMA_COMP",
+                "ValidationStatusNotes": "All associations executed successfully with a COMPLIANT status."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The AWS Systems Manager association compliance status is NON_COMPLIANT.",
+                "ValidationStatusCode": "AWS_SMA_NON_COMP",
+                "ValidationStatusNotes": "At least one association has failed or is not compliant."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-managedinstance-inventory-blacklisted",
+        "EvidenceName": "EC2ManagedinstanceInventoryBlacklisted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All necessary inventory types are being collected.",
+                "ValidationStatusCode": "ALL_NEC_INV_CLTD",
+                "ValidationStatusNotes": "The instances managed by EC2 Systems Manager are compliant and collecting required inventory types."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Some blacklisted inventory types are being collected.",
+                "ValidationStatusCode": "SOME_BLCK_LST_INV_CLTD",
+                "ValidationStatusNotes": "The instances are configured to collect blacklisted inventory types."
+            }
+        ]
+    },
+    {
+        "RuleName": "ec2-managedinstance-patch-compliance-status-check",
+        "EvidenceName": "EC2ManagedinstancePatchComplianceStatusCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All patches are successfully applied.",
+                "ValidationStatusCode": "ALL_PCHS_APPLD",
+                "ValidationStatusNotes": "The AWS Systems Manager patch compliance status is compliant."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Some patches are not applied.",
+                "ValidationStatusCode": "SOME_PCHS_N_APPLD",
+                "ValidationStatusNotes": "The AWS Systems Manager patch compliance status is non-compliant."
+            }
+        ]
+    },
+    {
+        "RuleName": "ecr-private-image-scanning-enabled",
+        "EvidenceName": "EcrPrivateImageScanningEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Image scanning is enabled for the private ECR repository.",
+                "ValidationStatusCode": "IMG_SCN_ENB",
+                "ValidationStatusNotes": "The private ECR repository is compliant with image scanning enabled."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Image scanning is not enabled for the private ECR repository.",
+                "ValidationStatusCode": "IMG_SCN_N_ENB",
+                "ValidationStatusNotes": "The private ECR repository is non-compliant due to disabled image scanning."
+            }
+        ]
+    },
+    {
+        "RuleName": "ecr-private-lifecycle-policy-configured",
+        "EvidenceName": "EcrPrivateLifecyclePolicyConfigured",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "At least one lifecycle policy is configured for the private ECR repository.",
+                "ValidationStatusCode": "LCP_CONF",
+                "ValidationStatusNotes": "The private ECR repository is compliant with a lifecycle policy in place."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No lifecycle policy is configured for the private ECR repository.",
+                "ValidationStatusCode": "LCP_N_CONF",
+                "ValidationStatusNotes": "The private ECR repository is non-compliant due to lack of a lifecycle policy."
+            }
+        ]
+    },
+    {
+        "RuleName": "ecr-private-tag-immutability-enabled",
+        "EvidenceName": "EcrPrivateTagImmutabilityEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Tag immutability is enabled for the private ECR repository.",
+                "ValidationStatusCode": "TAG_IMMUT",
+                "ValidationStatusNotes": "The private ECR repository is compliant with tag immutability enabled."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Tag immutability is not enabled for the private ECR repository.",
+                "ValidationStatusCode": "TAG_N_IMMUT",
+                "ValidationStatusNotes": "The private ECR repository is non-compliant due to lack of tag immutability."
+            }
+        ]
+    },
+    {
+        "RuleName": "ecs-containers-readonly-access",
+        "EvidenceName": "EcsContainersReadonlyAccess",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All ECS containers have read-only access to their root filesystems.",
+                "ValidationStatusCode": "ALL_R_ONLY_ACCESS",
+                "ValidationStatusNotes": "The ECS containers are compliant with read-only access to their root filesystems."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Some ECS containers have write access to their root filesystems.",
+                "ValidationStatusCode": "SOME_WR_ACCESS",
+                "ValidationStatusNotes": "At least one ECS container is non-compliant as the readonlyRootFilesystem is set to 'false'."
+            }
+        ]
+    },
+    {
+        "RuleName": "elasticache-redis-cluster-automatic-backup-check",
+        "EvidenceName": "ElasticacheRedisClusterAutomaticBackupCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The SnapshotRetentionLimit is set correctly.",
+                "ValidationStatusCode": "BCKUP_RETN_CRT",
+                "ValidationStatusNotes": "The Redis cluster is compliant with automatic backup settings."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The SnapshotRetentionLimit is less than the required period.",
+                "ValidationStatusCode": "BCKUP_RETN_LOW",
+                "ValidationStatusNotes": "The Redis cluster's SnapshotRetentionLimit is below the acceptable range (0 to 15)."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-customer-policy-blocked-kms-actions",
+        "EvidenceName": "IamCustomerPolicyBlockedKmsActions",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No blocked actions are allowed on AWS KMS keys.",
+                "ValidationStatusCode": "NO_BKD_KMS_ACTN",
+                "ValidationStatusNotes": "The IAM policies do not allow any blocked actions on AWS KMS keys."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Blocked actions are allowed on AWS KMS keys.",
+                "ValidationStatusCode": "BKD_KMS_ACTN_ALWD",
+                "ValidationStatusNotes": "The IAM policy permits blocked actions on AWS KMS keys."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-no-inline-policy-check",
+        "EvidenceName": "IamNoInlinePolicyCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No inline policy is attached with IAM user, IAM role, or IAM group.",
+                "ValidationStatusCode": "IAM_NO_INLINE_POLICY_CHECK",
+                "ValidationStatusNotes": "No policy is directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Inline policy is attached to IAM user, IAM role, or IAM group.",
+                "ValidationStatusCode": "IAM_INLINE_POLICY_CHECK",
+                "ValidationStatusNotes": "One or more policies are directly attached to a specific IAM (Identity and Access Management) entity, such as a user, group, or role."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-password-policy",
+        "EvidenceName": "IamPasswordPolicy",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The IAM password policy meets the specified security requirements.",
+                "ValidationStatusCode": "PWD_PLCY_MEET_RQMT",
+                "ValidationStatusNotes": "All configured password settings, such as length, complexity, and expiration, meet the required standards."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The IAM password policy does not meet the specified security requirements.",
+                "ValidationStatusCode": "PWD_PLCY_N_MEET_RQMT",
+                "ValidationStatusNotes": "Some required password settings are missing or improperly configured, such as insufficient password length or missing rotation policies."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-policy-no-statements-with-admin-access",
+        "EvidenceName": "IamPolicyNoStatementsWithAdminAccess",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No policy statements with admin access are present. Granting admin access to policy statements in AWS contradicts the principle of least privilege, risking security, compliance, and accountability.",
+                "ValidationStatusCode": "NO_ADMIN_ACCESS",
+                "ValidationStatusNotes": "No customer-managed IAM policy statement includes 'Effect: Allow' with 'Action: *' over 'Resource: *'."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Policy statements with admin access are present. Granting admin access to policy statements in AWS contradicts the principle of least privilege, risking security, compliance, and accountability.",
+                "ValidationStatusCode": "NO_ADMIN_EXISTS",
+                "ValidationStatusNotes": "Customer-managed IAM policy statement includes 'Effect: Allow' with 'Action: *' over 'Resource: *'."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-policy-no-statements-with-full-access",
+        "EvidenceName": "IamPolicyNoStatementsWithFullAccess",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No IAM policy grants full access to any AWS service.",
+                "ValidationStatusCode": "NO_FULL_ACCESS_GRNT",
+                "ValidationStatusNotes": "All IAM policies are configured with least privilege principles, ensuring no policy allows unrestricted access to any service or resource."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more IAM policies grant full access to at least one AWS service.",
+                "ValidationStatusCode": "FULL_ACCESS_GRNT",
+                "ValidationStatusNotes": "Some IAM policies allow unrestricted access to certain AWS services, violating the least privilege principle."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-root-access-key-check",
+        "EvidenceName": "IamRootAccessKeyCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No access key exists for the root user.",
+                "ValidationStatusCode": "NO_ROOT_ACCESS_KEY",
+                "ValidationStatusNotes": "The AWS account root user is properly secured without any access keys, following best security practices."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "An access key exists for the root user.",
+                "ValidationStatusCode": "ROOT_ACCESS_KEY_PRE",
+                "ValidationStatusNotes": "The root user has access keys, which is a potential security risk and should be removed to align with security best practices."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-user-mfa-enabled",
+        "EvidenceName": "IamUserMfaEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All IAM users have multi-factor authentication (MFA) enabled.",
+                "ValidationStatusCode": "MFA_ENBL",
+                "ValidationStatusNotes": "Each IAM user has MFA enabled, ensuring enhanced security."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more IAM users do not have multi-factor authentication (MFA) enabled.",
+                "ValidationStatusCode": "MFA_N_ENBL",
+                "ValidationStatusNotes": "Some IAM users are missing MFA, which may increase the risk of unauthorized access."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-user-no-policies-check",
+        "EvidenceName": "IamUserNoPoliciesCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No IAM user has a policy directly attached.",
+                "ValidationStatusCode": "NO_USR_PLCY_ATCD",
+                "ValidationStatusNotes": "All IAM users inherit permissions from groups or roles without direct policy attachment."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more IAM users have policies directly attached.",
+                "ValidationStatusCode": "USR_PLCY_ATCD",
+                "ValidationStatusNotes": "Some IAM users have policies directly attached, bypassing group or role inheritance."
+            }
+        ]
+    },
+    {
+        "RuleName": "mfa-enabled-for-iam-console-access",
+        "EvidenceName": "MFAEnabledForIamConsoleAccess",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "MFA is enabled for all IAM users with console access.",
+                "ValidationStatusCode": "MFA_ENBL",
+                "ValidationStatusNotes": "All IAM users accessing the console have MFA enabled, ensuring enhanced security."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "MFA is not enabled for one or more IAM users with console access.",
+                "ValidationStatusCode": "MFA_N_ENBL",
+                "ValidationStatusNotes": "Some IAM users with console access do not have MFA enabled, which may pose a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "multi-region-cloudtrail-enabled",
+        "EvidenceName": "MultiRegionCloudtrailEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "At least one multi-region CloudTrail trail is present for the account.",
+                "ValidationStatusCode": "MUL_REG_CT_EXISTS",
+                "ValidationStatusNotes": "Multi-region CloudTrail trail that includes management events logging is present."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "There are no multi-region CloudTrail trails for the account.",
+                "ValidationStatusCode": "MUL_REG_CT_N_EXISTS",
+                "ValidationStatusNotes": "Multi-region CloudTrail trail that includes management events logging is absent."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-automatic-minor-version-upgrade-enabled",
+        "EvidenceName": "RdsAutomaticMinorVersionUpgradeEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Automatic minor version upgrades are enabled for all RDS instances.",
+                "ValidationStatusCode": "AUT_MINR_UPG_ENBL",
+                "ValidationStatusNotes": "All Amazon RDS instances are configured to apply automatic minor version upgrades."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more RDS instances do not have automatic minor version upgrades enabled.",
+                "ValidationStatusCode": "AUT_MINR_UPG_N_ENBL",
+                "ValidationStatusNotes": "Some RDS instances are not configured for automatic minor version upgrades, which could lead to missed security patches or improvements."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-cluster-iam-authentication-enabled",
+        "EvidenceName": "RdsClusterIamAuthenticationEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "IAM authentication is enabled for all RDS clusters.",
+                "ValidationStatusCode": "IAM_AUTH_ENBL",
+                "ValidationStatusNotes": "All Amazon RDS clusters are configured to use AWS IAM authentication."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "IAM authentication is not enabled for one or more RDS clusters.",
+                "ValidationStatusCode": "IAM_AUTH_N_ENBL",
+                "ValidationStatusNotes": "Some Amazon RDS clusters are not configured with IAM authentication, potentially reducing security."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-cluster-multi-az-enabled",
+        "EvidenceName": "RdsClusterMultiAzEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Multi-AZ replication is enabled for all RDS clusters.",
+                "ValidationStatusCode": "MUL_AZ_ENBL",
+                "ValidationStatusNotes": "All Amazon RDS clusters are configured with Multi-AZ replication for high availability."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Multi-AZ replication is not enabled for one or more RDS clusters.",
+                "ValidationStatusCode": "MUL_AZ_N_ENBL",
+                "ValidationStatusNotes": "Some Amazon RDS clusters are not configured with Multi-AZ replication, which may affect availability."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-db-security-group-not-allowed",
+        "EvidenceName": "RdsDbSecurityGroupNotAllowed",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Only the default DB security group is used.",
+                "ValidationStatusCode": "DFLT_SG_USD",
+                "ValidationStatusNotes": "All RDS instances are associated only with the default DB security group, ensuring compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Non-default DB security groups are in use.",
+                "ValidationStatusCode": "NON_DFLT_SG_USD",
+                "ValidationStatusNotes": "One or more RDS instances are using non-default DB security groups, which is non-compliant."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-in-backup-plan",
+        "EvidenceName": "RdsInBackupPlan",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All RDS instances are included in AWS Backup plans.",
+                "ValidationStatusCode": "ALL_RDS_IN_BCKUP_PLN",
+                "ValidationStatusNotes": "All Amazon RDS databases are configured with backup plans, ensuring compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Some RDS instances are not included in AWS Backup plans.",
+                "ValidationStatusCode": "RDS_MSNG_BCKUP_PLN",
+                "ValidationStatusNotes": "One or more Amazon RDS databases are not part of any AWS Backup plan, which is non-compliant."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-instance-iam-authentication-enabled",
+        "EvidenceName": "RdsInstanceIamAuthenticationEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "IAM authentication is enabled for the RDS instance.",
+                "ValidationStatusCode": "IAM_AUTH_ENBL",
+                "ValidationStatusNotes": "The Amazon RDS instance is configured to use AWS IAM authentication, ensuring compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "IAM authentication is not enabled for the RDS instance.",
+                "ValidationStatusCode": "IAM_AUTH_N_ENBL",
+                "ValidationStatusNotes": "The Amazon RDS instance is not configured with AWS IAM authentication, resulting in non-compliance."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-instance-public-access-check",
+        "EvidenceName": "RdsInstancePublicAccessCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The RDS instance is not publicly accessible.",
+                "ValidationStatusCode": "RDS_N_PUBL_ACBL",
+                "ValidationStatusNotes": "The Amazon RDS instance is configured to block public access, ensuring compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The RDS instance is publicly accessible.",
+                "ValidationStatusCode": "RDS_PUBL_ACBL",
+                "ValidationStatusNotes": "The Amazon RDS instance is configured to allow public access, resulting in non-compliance."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-snapshot-encrypted",
+        "EvidenceName": "RdsSnapshotEncrypted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The RDS DB snapshot is encrypted.",
+                "ValidationStatusCode": "SPST_ENC",
+                "ValidationStatusNotes": "All RDS DB snapshots are encrypted as per security requirements."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The RDS DB snapshot is not encrypted.",
+                "ValidationStatusCode": "SPST_N_ENC",
+                "ValidationStatusNotes": "One or more RDS DB snapshots are unencrypted, violating encryption compliance policies."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-snapshots-public-prohibited",
+        "EvidenceName": "RdsSnapshotsPublicProhibited",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No RDS DB snapshots are publicly accessible.",
+                "ValidationStatusCode": "SPST_PRIV",
+                "ValidationStatusNotes": "All RDS DB snapshots are restricted from public access, ensuring data privacy and security."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more RDS DB snapshots are publicly accessible.",
+                "ValidationStatusCode": "SPST_PUBL",
+                "ValidationStatusNotes": "Detected RDS DB snapshots with public access, violating security policies."
+            }
+        ]
+    },
+    {
+        "RuleName": "rds-storage-encrypted",
+        "EvidenceName": "RdsStorageEncrypted",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All RDS DB instances have storage encryption enabled.",
+                "ValidationStatusCode": "RDS_STRG_ENC_ENBL",
+                "ValidationStatusNotes": "The storage for all Amazon RDS DB instances is encrypted, ensuring data protection."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more RDS DB instances do not have storage encryption enabled.",
+                "ValidationStatusCode": "RDS_STRG_ENC_N_ENBL",
+                "ValidationStatusNotes": "Detected RDS DB instances without storage encryption, posing a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "required-tags",
+        "EvidenceName": "RequiredTags",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All required tags are present on the resources.",
+                "ValidationStatusCode": "REQ_TAGS_PRE",
+                "ValidationStatusNotes": "All specified tags have been applied to the relevant resources, ensuring compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more required tags are missing from the resources.",
+                "ValidationStatusCode": "REQ_TAGS_N_PRE",
+                "ValidationStatusNotes": "Detected resources with missing mandatory tags, which may affect tracking and management."
+            }
+        ]
+    },
+    {
+        "RuleName": "root-account-hardware-mfa-enabled",
+        "EvidenceName": "RootAccountHardwareMFAEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The AWS root account has a hardware MFA device configured.",
+                "ValidationStatusCode": "HDWE_MFA_CONF",
+                "ValidationStatusNotes": "The root account is protected with a hardware-based multi-factor authentication (MFA) device."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The AWS root account does not have a hardware MFA device configured.",
+                "ValidationStatusCode": "HDWE_MFA_N_CONF",
+                "ValidationStatusNotes": "No hardware-based multi-factor authentication (MFA) device is enabled for the root account, increasing the security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-account-level-public-access-blocks",
+        "EvidenceName": "S3AccountLevelPublicAccessBlocks",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public access block settings are configured at the account level.",
+                "ValidationStatusCode": "ACCT_PUBL_ACCESS_BLK_CONF",
+                "ValidationStatusNotes": "All necessary public access block settings are enabled, ensuring that S3 buckets do not allow public access."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public access block settings are not configured at the account level.",
+                "ValidationStatusCode": "ACCT_PUBL_ACCESS_BLK_N_CONF",
+                "ValidationStatusNotes": "One or more public access block settings are not enabled, potentially allowing unintended public access to S3 buckets."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-default-lock-enabled",
+        "EvidenceName": "S3BucketDefaultLockEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket has default lock enabled.",
+                "ValidationStatusCode": "S3_DEF_LOCK_ENBL",
+                "ValidationStatusNotes": "Default lock is enabled on the S3 bucket, ensuring that objects are protected from deletion."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket does not have default lock enabled.",
+                "ValidationStatusCode": "S3_DEF_LOCK_N_ENBL",
+                "ValidationStatusNotes": "Default lock is not enabled on the S3 bucket, which may lead to accidental deletion of objects."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-logging-enabled",
+        "EvidenceName": "S3BucketLoggingEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "S3 bucket logging is enabled.",
+                "ValidationStatusCode": "S3_LOG_ENBL",
+                "ValidationStatusNotes": "Logging is enabled for the S3 bucket, ensuring that all access requests are recorded."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "S3 bucket logging is not enabled.",
+                "ValidationStatusCode": "S3_LOG_N_ENBL",
+                "ValidationStatusNotes": "Logging is not enabled for the S3 bucket, which may lead to a lack of visibility into access requests."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-public-read-prohibited",
+        "EvidenceName": "S3BucketPublicReadProhibited",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public read access is not allowed for the S3 bucket.",
+                "ValidationStatusCode": "S3_PUBL_READ_N_ALWD",
+                "ValidationStatusNotes": "The S3 bucket is correctly configured to prevent public read access through Block Public Access settings, bucket policy, and ACL."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public read access is allowed for the S3 bucket.",
+                "ValidationStatusCode": "S3_PUBL_READ_ALWD",
+                "ValidationStatusNotes": "The S3 bucket allows public read access via Block Public Access settings, bucket policy, or ACL."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-public-write-prohibited",
+        "EvidenceName": "S3BucketPublicWriteProhibited",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public write access is not allowed for the S3 bucket.",
+                "ValidationStatusCode": "S3_PUBL_WRT_N_ALWD",
+                "ValidationStatusNotes": "The S3 bucket is correctly configured to prevent public write access through Block Public Access settings, bucket policy, and ACL."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Public write access is allowed for the S3 bucket.",
+                "ValidationStatusCode": "S3_PUBL_WRT_ALWD",
+                "ValidationStatusNotes": "The S3 bucket allows public write access via Block Public Access settings, bucket policy, or ACL."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-replication-enabled",
+        "EvidenceName": "S3BucketReplicationEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Replication rules are enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_REPL_ENBL",
+                "ValidationStatusNotes": "The S3 bucket is configured with active replication rules."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No replication rule is enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_REPL_N_ENBL",
+                "ValidationStatusNotes": "The S3 bucket lacks replication rules or has disabled replication."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-server-side-encryption-enabled",
+        "EvidenceName": "S3BucketServerSideEncryptionEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Server-side encryption is enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_SERV_ENC_ENBL",
+                "ValidationStatusNotes": "The S3 bucket has default encryption enabled or a bucket policy that denies put-object requests without server-side encryption."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Server-side encryption is not enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_SERV_ENC_N_ENBL",
+                "ValidationStatusNotes": "The S3 bucket does not have default encryption or a policy to enforce server-side encryption."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-bucket-versioning-enabled",
+        "EvidenceName": "S3BucketVersioningEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Versioning is enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_VERS_ENBL",
+                "ValidationStatusNotes": "The S3 bucket has versioning enabled to keep multiple variants of an object."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Versioning is not enabled for the S3 bucket.",
+                "ValidationStatusCode": "S3_VERS_N_ENBL",
+                "ValidationStatusNotes": "The S3 bucket does not have versioning enabled, which may lead to loss of previous object versions."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-last-backup-recovery-point-created",
+        "EvidenceName": "S3LastBackupRecoveryPointCreated",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "A recovery point was created for the S3 bucket within the specified time period.",
+                "ValidationStatusCode": "S3_LST_BKP_RCVR_PT_CRE",
+                "ValidationStatusNotes": "The S3 bucket has an up-to-date recovery point created, ensuring data backup."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "No recovery point was created for the S3 bucket within the specified time period.",
+                "ValidationStatusCode": "S3_NO_BKP_RCVR_PT_CRE",
+                "ValidationStatusNotes": "The S3 bucket lacks a corresponding recovery point, which could risk data loss."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-resources-protected-by-backup-plan",
+        "EvidenceName": "S3ResourcesProtectedByBackupPlan",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket is covered by an active backup plan.",
+                "ValidationStatusCode": "S3_BKP_PLN_COV",
+                "ValidationStatusNotes": "The S3 bucket has backup protection in place, ensuring data safety."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket is not covered by any backup plan.",
+                "ValidationStatusCode": "S3_BKP_PLN_N_COV",
+                "ValidationStatusNotes": "The lack of a backup plan for the S3 bucket exposes it to potential data loss."
+            }
+        ]
+    },
+    {
+        "RuleName": "s3-version-lifecycle-policy-check",
+        "EvidenceName": "S3VersionLifecyclePolicyCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket has a lifecycle policy configured.",
+                "ValidationStatusCode": "S3_LFCL_PLCY_ENBL",
+                "ValidationStatusNotes": "Lifecycle policy is set up for managing versioned objects in the bucket."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The S3 bucket does not have a lifecycle policy configured.",
+                "ValidationStatusCode": "S3_LFCL_PLCY_N_ENBL",
+                "ValidationStatusNotes": "Without a lifecycle policy, versioned objects may not be managed efficiently."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-cloud-trail-log-file-validation-enabled-2af9191b",
+        "EvidenceName": "SecurityhubCloudTrailLogFileValidationEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "AWS CloudTrail is configured to create signed digest files with logs.",
+                "ValidationStatusCode": "SEC_HUB_CLD_TRL_LOG_FL_VAL_ENBL",
+                "ValidationStatusNotes": "Log file validation is enabled, ensuring the integrity of the log files."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "AWS CloudTrail is not creating signed digest files with logs.",
+                "ValidationStatusCode": "SEC_HUB_CLD_TRL_LOG_FL_VAL_N_ENBL",
+                "ValidationStatusNotes": "Log file validation is not enabled, which may compromise log integrity."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-enabled",
+        "EvidenceName": "SecurityhubEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "AWS Security Hub is enabled for the account.",
+                "ValidationStatusCode": "SEC_HUB_ENBL",
+                "ValidationStatusNotes": "All security findings and compliance checks are being monitored."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "AWS Security Hub is not enabled for the account.",
+                "ValidationStatusCode": "SEC_HUB_N_ENBL",
+                "ValidationStatusNotes": "AWS Security Hub needs to be enabled to monitor security findings."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-iam-support-policy-in-use-0872a224",
+        "EvidenceName": "SecurityhubIamSupportPolicyInUse",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The 'AWSSupportAccess' managed policy is attached to an IAM user, group, or role.",
+                "ValidationStatusCode": "SEC_HUB_SUP_PLCY_ATCD",
+                "ValidationStatusNotes": "The necessary support policy is in place, indicating compliance."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The 'AWSSupportAccess' managed policy is not attached to any IAM user, group, or role.",
+                "ValidationStatusCode": "SEC_HUB_SUP_PLCY_N_ATCD",
+                "ValidationStatusNotes": "No attachment of the required support policy has been detected, indicating non-compliance."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-iam-user-unused-credentials-check-c3d9b977",
+        "EvidenceName": "SecurityhubIamUserUnusedCredentialsCheck",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "All IAM users have either used their passwords or access keys within the last 90 days.",
+                "ValidationStatusCode": "SEC_HUB_USR_CRED_USD",
+                "ValidationStatusNotes": "No unused passwords or access keys found for IAM users."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "One or more IAM users have unused passwords or access keys.",
+                "ValidationStatusCode": "SEC_HUB_USR_UN_USD_CRED",
+                "ValidationStatusNotes": "IAM users have passwords or access keys that have not been used in the last 90 days."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-restricted-rdp-eb3883e8",
+        "EvidenceName": "SecurityhubRestrictedRdp",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Incoming RDP traffic is restricted to specific IP ranges.",
+                "ValidationStatusCode": "SEC_HUB_RDP_RSTD",
+                "ValidationStatusNotes": "RDP access is not open to all IP addresses."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Incoming RDP traffic is allowed from 0.0.0.0/0.",
+                "ValidationStatusCode": "SEC_HUB_RDP_N_RSTD",
+                "ValidationStatusNotes": "RDP access is open to all IP addresses, posing a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-restricted-ssh-ffc32bc1",
+        "EvidenceName": "SecurityhubRestrictedSSH",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Incoming SSH traffic is restricted to specific IP ranges.",
+                "ValidationStatusCode": "SEC_HUB_SSH_RSTD",
+                "ValidationStatusNotes": "SSH access is not open to all IP addresses."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "Incoming SSH traffic is allowed from 0.0.0.0/0.",
+                "ValidationStatusCode": "SEC_HUB_SSH_N_RSTD",
+                "ValidationStatusNotes": "SSH access is open to all IP addresses, posing a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-root-account-mfa-enabled-e7cc3667",
+        "EvidenceName": "SecurityhubRootAccountMFAEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "MFA is enabled for the root account.",
+                "ValidationStatusCode": "SEC_HUB_MFA_ENBL",
+                "ValidationStatusNotes": "Root account requires MFA for sign-in."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "MFA is not enabled for the root account.",
+                "ValidationStatusCode": "SEC_HUB_MFA_N_ENBL",
+                "ValidationStatusNotes": "Root account can be accessed without MFA, posing a security risk."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-vpc-default-security-group-closed-4217c89a",
+        "EvidenceName": "SecurityhubVpcDefaultSecurityGroupClosed",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The default security group for the VPC is closed and does not allow any inbound or outbound traffic.",
+                "ValidationStatusCode": "SEC_HUB_VPC_DEF_SG_CLSD",
+                "ValidationStatusNotes": "All rules for the default security group are set to deny traffic."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The default security group for the VPC is not closed and allows inbound or outbound traffic.",
+                "ValidationStatusCode": "SEC_HUB_VPC_DEF_SG_N_CLSD",
+                "ValidationStatusNotes": "The default security group has rules that permit traffic, which can lead to security vulnerabilities."
+            }
+        ]
+    },
+    {
+        "RuleName": "securityhub-vpc-flow-logs-enabled-32173550",
+        "EvidenceName": "SecurityhubVpcFlowLogsEnabled",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "VPC flow logs are enabled and capturing network traffic.",
+                "ValidationStatusCode": "SEC_HUB_VPC_FLW_LOGS_ENBL",
+                "ValidationStatusNotes": "All necessary flow logs for the VPC are active."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "VPC flow logs are not enabled for the Amazon VPC.",
+                "ValidationStatusCode": "SEC_HUB_VPC_FLW_LOGS_N_ENBL",
+                "ValidationStatusNotes": "No flow logs are available for monitoring network traffic."
+            }
+        ]
+    },
+    {
+        "RuleName": "sns-encrypted-kms",
+        "EvidenceName": "SnsEncryptedKms",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The Amazon SNS topic is encrypted with AWS KMS.",
+                "ValidationStatusCode": "SNS_ENC",
+                "ValidationStatusNotes": "All SNS topics are secured with KMS encryption."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "The Amazon SNS topic is not encrypted with AWS KMS.",
+                "ValidationStatusCode": "SNS_N_ENC",
+                "ValidationStatusNotes": "SNS topic lacks necessary encryption, exposing it to potential security risks."
+            }
+        ]
+    },
+    {
+        "RuleName": "iam-user-group-membership-check",
+        "EvidenceName": "IamUserIsInAtleastOneGroup",
+        "COMPLIANT": [
+            {
+                "ComplianceStatusReason": "User is part of one or more groups.",
+                "ValidationStatusCode": "SEC_HUB_IAM_USR_PART_OF_GRP",
+                "ValidationStatusNotes": "User is part of one or more groups."
+            }
+        ],
+        "NON_COMPLIANT": [
+            {
+                "ComplianceStatusReason": "User is not attached to any groups.",
+                "ValidationStatusCode": "SEC_HUB_IAM_USR_N_PART_OF_GRP",
+                "ValidationStatusNotes": "User is not part of any groups."
+            }
+        ]
+    }
 ]

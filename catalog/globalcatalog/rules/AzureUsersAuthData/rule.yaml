@@ -16,10 +16,17 @@ meta:
     - azureappconnector
 spec:
   tasks:
-  - name: GetAzureADUsersAuthData  
+  - name: GetAzureADUsersAuthData
     alias: t1
     type: task
-    purpose: GetAzureADUsersAuthData 
+    appTags:
+      appType:
+      - azureappconnector
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: GetAzureADUsersAuthData
     description: GetAzureADUsersAuthData
   ioMap:
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'

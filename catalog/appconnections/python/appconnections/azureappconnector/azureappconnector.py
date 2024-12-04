@@ -1,8 +1,8 @@
 # from sys import exception
+import base64
 import time
 import re
 import json
-from tkinter import NO
 import requests
 from urllib.parse import urlencode
 import json
@@ -15,6 +15,7 @@ from datetime import datetime
 from compliancecowcards.utils import cowdictutils
 import logging
 from requests.exceptions import RequestException
+import base64
 
 SUPPORT_MSG = "Please contact support and review logs for further details"
 USER_REG_ERR_MSG = "Failed to fetch user registration details"
@@ -297,6 +298,72 @@ class AzureAppConnector:
                 time.sleep(backoff)
                 backoff *= 2
         return registries_data, None
+        
+    def get_repository_list_using_registry(self, registry_name):
+        try:
+            repo_list_url = f"https://{registry_name}.azurecr.io/acr/v1/_catalog"
+
+            client_id = self.user_defined_credentials.azure.client_id
+            client_secret = self.user_defined_credentials.azure.client_secret
+
+            basic_auth_value = f"{client_id}:{client_secret}"
+            encoded_basic_auth = base64.b64encode(basic_auth_value.encode('utf-8')).decode('utf-8')
+            headers = {
+                'Authorization': f'Basic {encoded_basic_auth}'
+            }
+            
+            repo_response = requests.get(repo_list_url, headers=headers)
+            repo_response.raise_for_status()
+            
+            repositories = repo_response.json().get('repositories')
+            if repositories is not None:
+                return repositories, None
+            else:
+                return None, f"Failed to retrieve repositories from registry '{registry_name}'. The field 'repositories' was not found in the response."
+
+        except requests.exceptions.HTTPError as http_err:
+            return None, f"HTTP error occurred while fetching repositories from registry '{registry_name}': {http_err}"
+        except requests.exceptions.ConnectionError as conn_err:
+            return None, f"Connection error occurred while fetching repositories from registry '{registry_name}': {conn_err}"
+        except requests.exceptions.Timeout as timeout_err:
+            return None, f"Request timed out while fetching repositories from registry '{registry_name}': {timeout_err}"
+        except requests.exceptions.RequestException as req_err:
+            return None, f"An error occurred while fetching repositories from registry '{registry_name}': {req_err}"
+        except KeyError:
+            return None, "Unexpected response format: The 'repositories' field is missing."
+        
+    def get_tags_data_using_registry_and_repository(self, registry_name, repository_name):
+        try:
+            tag_list_url = f"https://{registry_name}.azurecr.io/acr/v1/{repository_name}/_tags"
+
+            client_id = self.user_defined_credentials.azure.client_id
+            client_secret = self.user_defined_credentials.azure.client_secret
+
+            basic_auth_value = f"{client_id}:{client_secret}"
+            encoded_basic_auth = base64.b64encode(basic_auth_value.encode('utf-8')).decode('utf-8')
+            headers = {
+                'Authorization': f'Basic {encoded_basic_auth}'
+            }
+            
+            response = requests.get(tag_list_url, headers=headers)
+            response.raise_for_status()
+            tags = response.json()
+
+            if tags is not None:
+                return tags, None
+            else:
+                return None, f"Failed to retrieve tags from registry '{registry_name}' in repository '{repository_name}'. The field 'tags' was not found in the response."
+            
+        except requests.exceptions.HTTPError as http_err:
+            return None, f"HTTP error occurred while fetching tags from registry '{registry_name}' in repository '{repository_name}': {http_err}"
+        except requests.exceptions.ConnectionError as conn_err:
+            return None, f"Connection error occurred while fetching tags from registry '{registry_name}' in repository '{repository_name}': {conn_err}"
+        except requests.exceptions.Timeout as timeout_err:
+            return None, f"Request timed out while fetching tags from registry '{registry_name}' in repository '{repository_name}': {timeout_err}"
+        except requests.exceptions.RequestException as req_err:
+            return None, f"An error occurred while fetching tags from registry '{registry_name}' in repository '{repository_name}': {req_err}"
+        except KeyError:
+            return None, "Unexpected response format: The 'tags' field is missing."
 
     def get_diagnostic_settings_data(self, kub_df=pd.DataFrame()):
         token, err = self.get_access_token()
@@ -571,6 +638,54 @@ class AzureAppConnector:
                     return None, "value is missing in azure signin response"
                 users_data_json.extend(value)
                 user_url = users_json.get("@data.nextLink")
+                if not user_url:
+                    break
+            except requests.exceptions.RequestException as e:
+                retries -= 1
+                if retries == 0:
+                    return None, f"Failed get user data even after multiple tries.{format(e)}"
+                time.sleep(backoff)
+                backoff *= 2
+        return users_data_json, None
+    def get_azure_ad_users_with_specific_fields(self,fields:list[str]):
+        query_params = ','.join(fields) 
+        token_url = f"https://login.microsoftonline.com/{self.user_defined_credentials.azure.tenant_id}/oauth2/token"
+        token_data = {
+            'grant_type': 'client_credentials',
+            'client_id': self.user_defined_credentials.azure.client_id,
+            'client_secret': self.user_defined_credentials.azure.client_secret,
+            'resource': 'https://graph.microsoft.com'
+        }
+        token_r = requests.post(token_url, data=token_data)
+        if token_r.status_code != 200:
+            return None, f"Failed to get access token.status code: {token_r.status_code}"
+        token = token_r.json().get('access_token')
+        headers = {
+            "Authorization": f"Bearer {token}",
+            'Content-Type': 'application/json'
+
+        }
+        user_url = f'https://graph.microsoft.com/beta/users?$select={query_params}'
+        users_data_json = []
+
+        retries = 3
+        backoff = 1
+        while retries > 0:
+            try:
+                users_r = requests.get(user_url, headers=headers)
+                if users_r.status_code != 200:
+                    return None, f"Failed to get azure ad user signin data.status code: {users_r.status_code}"
+
+                users_json = users_r.json()
+                value=None
+                if cowdictutils.is_valid_key(users_json,'value'):
+                    value = users_json.get("value")
+                if value is None:
+                    return None, "value is missing in azure signin response"
+                users_data_json.extend(value)
+                user_url=None
+                if cowdictutils.is_valid_key(users_json,'@data.nextLink'):
+                     user_url = users_json.get("@data.nextLink")
                 if not user_url:
                     break
             except requests.exceptions.RequestException as e:
@@ -923,6 +1038,16 @@ class AzureAppConnector:
     def list_azure_users(self):
 
         url = "https://graph.microsoft.com/v1.0/users"
+
+        resource_details, error = self.get_azure_api_response(
+            url, self.graph_api_scope)
+        if error:
+            return None, error
+
+        return resource_details, None
+    def list_azure_deleted_users(self):
+
+        url = "https://graph.microsoft.com/beta/directory/deletedItems/microsoft.graph.user"
 
         resource_details, error = self.get_azure_api_response(
             url, self.graph_api_scope)
@@ -1507,7 +1632,7 @@ class AzureAppConnector:
             }
             response = requests.put(
                 f"https://graph.microsoft.com/v1.0/drives/{file_upload_details_vo['driveID']}/items/{file_upload_details_vo['parentID']}:/{file_upload_details_vo['fileName']}:/content", headers=headers, data=file_upload_details_vo['fileContent'])
-            if response.status_code != HTTPStatus.CREATED:
+            if response.status_code not in (HTTPStatus.CREATED, HTTPStatus.OK):
                 return None, f"failed to fetch upload file in sharepoint. Status code :: {response.status_code}"
             return response.json(), None
         except Exception as e:
@@ -1765,6 +1890,59 @@ class AzureAppConnector:
             logging.exception("A keyError exception occurred while fetching user details for user - %s: %s", str(user_id), str(e))
             return user_details, error_details
         
+    def get_audit_logs_for_user(self, user_id, from_date, to_date):
+        retries = 3
+        backoff = 10
+        while retries > 0:
+            try:
+                token, err = self.get_access_token(scope='https://graph.microsoft.com/.default')
+                if err:
+                    return None, f"Error while fetching access token. {err}"
+                
+                headers = {'Authorization': f'Bearer {token}'}
+                
+                from_date_str = from_date.isoformat().replace("+00:00", "Z")
+                to_date_str = to_date.isoformat().replace("+00:00", "Z")
+               
+                response = requests.request(
+                    "GET", 
+                    f"https://graph.microsoft.com/v1.0/auditLogs/directoryAudits?$filter=initiatedBy/user/id eq '{user_id}' and activityDateTime ge {from_date_str} and activityDateTime le {to_date_str}",
+                    headers=headers
+                )
+                if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+                    time.sleep(backoff)
+                    backoff *= 2
+                    retries -= 1
+                    continue
+
+                if response.status_code != HTTPStatus.OK:
+                    return None, f"Error fetching audit logs. User id: {user_id}. Status code: {response.status_code}. Reason: {response.reason}."
+                                      
+                response_dict = response.json()
+                
+                if 'value' not in response_dict:
+                    return None, f"Invalid audit logs response. User id: {user_id}."
+                
+                if len(response_dict['value']) == 0:
+                    return [{"Message": "No audit logs found"}], None
+                
+                audit_logs = response_dict['value']
+                return audit_logs, None
+            
+            except requests.exceptions.HTTPError as e:
+                logging.exception("An HTTP exception occurred while fetching audit logs for user id: %s: %s", str(user_id), str(e))
+                return None, f"HTTP exception occurred while fetching audit logs. {SUPPORT_MSG}."
+            
+            except requests.exceptions.RequestException as e:
+                logging.exception("A request exception occurred while fetching audit logs for user id: %s: %s", str(user_id), str(e))
+                return None, f"Request exception occurred while fetching audit logs. {SUPPORT_MSG}."
+            
+            except KeyError as e:
+                logging.exception("A KeyError occurred while processing audit logs for user id: %s: %s", str(user_id), str(e))
+                return None, f"Key error while processing audit logs. {SUPPORT_MSG}."
+
+        return None, f"Failed to fetch audit logs for user id: {user_id} after multiple attempts due to rate limiting."
+
 
     def get_policy_named_locations(self):
 
@@ -1899,3 +2077,57 @@ class AzureAppConnector:
         except KeyError as e:
             logging.exception("A keyError exception occurred while fetching role details for userid is - %s: %s", str(user_id), str(e))
             return None, f"{ROLE_ASSIG_ERR_MSG}. KeyError exception occured. {SUPPORT_MSG}."
+    def download_file_from_url(self,url):
+        token, err = self.get_access_token(scope='https://graph.microsoft.com/.default')
+        if err:
+            return "", f'Error while fetching access token :: {err}'
+            
+        headers = {
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json'
+            }
+        item_id=self.extract_item_id_from_url(url=url)
+        response = requests.get(
+                url=f"https://graph.microsoft.com/v1.0/shares/{self.encode_share_url(url)}/driveItem",
+                headers=headers
+            )
+        if not response.ok:
+            return None,f"{response.text}"
+        fileMetaData = response.json()
+        drive_id = ""
+        item_id = ""
+        if cowdictutils.is_valid_key(fileMetaData,'parentReference') and cowdictutils.is_valid_key(fileMetaData['parentReference'],'driveId'):
+            drive_id = fileMetaData['parentReference']['driveId'] 
+        if cowdictutils.is_valid_key(fileMetaData,'id'):
+            item_id = fileMetaData['id']
+            
+        file_name = ""
+        mime_type =""
+        if cowdictutils.is_valid_key(fileMetaData,'name'):
+            file_name = fileMetaData['name']
+        if cowdictutils.is_valid_key(fileMetaData,'file') and cowdictutils.is_valid_key(fileMetaData["file"],'mimeType'):
+             mime_type = fileMetaData['file']['mimeType']
+        download_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/content"
+        fileResponse = requests.get(download_url, headers=headers)
+        if not fileResponse.ok:
+            return None,f"{fileResponse.text}"
+        fileDataObj = {
+            "FileName":file_name,
+            "FileType":mime_type,
+            "FileContent":fileResponse.content
+        }
+        
+        return fileDataObj,None
+        
+    def extract_item_id_from_url(self,url):
+        pattern = r'\/p\/[^\/]+\/([^\/\?]+)'
+        match = re.search(pattern, url)
+
+        if match:
+            return match.group(1)
+        return None
+    def encode_share_url(self,share_url):
+        encoded_url = base64.b64encode(share_url.encode()).decode('utf-8')
+        encoded_url = encoded_url.rstrip('=')
+        encoded_url = encoded_url.replace('/', '_').replace('+', '-')
+        return f'u!{encoded_url}'

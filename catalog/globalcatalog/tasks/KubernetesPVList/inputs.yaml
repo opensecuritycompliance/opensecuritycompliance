@@ -3,6 +3,13 @@ userObject:
     name: Kubernetes 
     appURL: "$INSTANCE_LOGIN_URL"
     appPort: "0"
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Jumphost:
         SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
@@ -23,5 +30,5 @@ userObject:
 userInputs:
   IncludeCriteria: 
   ExcludeCriteria: 
-fromDate: 2024-06-26
-toDate: 2024-06-26
+fromDate: 2024-06-26T06:03:00Z
+toDate: 2024-06-26T06:03:00Z

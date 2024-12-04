@@ -63,7 +63,11 @@ func (inst *TaskInstance) AWSAccessKeyRotationReport(inputs *UserInputs, outputs
 			errorVO = &ErrorVO{ErrorMessage: err.Error()}
 			return nil
 		}
-
+		outputs.MetaFile, err = inst.uploadMetaFile(standardizedCredentialReport, awsConnector)
+		if err != nil {
+			errorVO = &ErrorVO{ErrorMessage: err.Error()}
+			return nil
+		}
 	} else {
 		errorVO = &ErrorVO{ErrorMessage: "No records found in credential report"}
 		return nil
@@ -272,6 +276,19 @@ func (inst *TaskInstance) uploadLogFile(errorList interface{}) (string, error) {
 		return "", fmt.Errorf("Cannot upload log file to minio: %w", err)
 	}
 	return outputFilePath, nil
+}
+
+func (inst *TaskInstance) uploadMetaFile(outputData []AccessKeyRotationVO, awsConnector awsconnector.AWSAppConnector) (string, error) {
+	if len(outputData) > 0 {
+		fieldMetaData := awsConnector.CreateMetaFileData(outputData[0])
+		metaFileNameWithUUID := fmt.Sprintf("%v-%v%v", "MetaFile", uuid.New().String(), ".json")
+		outputFilePath, err := storage.UploadJSONFile(metaFileNameWithUUID, fieldMetaData, inst.SystemInputs)
+		if err != nil {
+			return "", fmt.Errorf("Cannot upload meta file to minio: %w", err)
+		}
+		return outputFilePath, nil
+	}
+	return "", nil
 }
 
 type ValidationResult struct {

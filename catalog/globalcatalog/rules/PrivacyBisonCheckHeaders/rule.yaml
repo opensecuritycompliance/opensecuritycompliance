@@ -6,23 +6,40 @@ meta:
   description: Check for vulnarability in Headers
   labels:
     appType:
-    - nocredapp
+    - privacybisonconnector
     environment:
     - logical
     execlevel:
     - app
   annotations:
     annotateType:
-    - nocredapp
+    - privacybisonconnector
 spec:
+  inputs:
+    HarFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: HarFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: CheckHeaders
     alias: t1
     type: task
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Check for vulnarability in Headers
     description: Check for vulnarability in Headers
   ioMap:
-  - 't1.Input.HarFilePath:=*.Input.HarFilePath'
+  - 't1.Input.HarFile:=*.Input.HarFile'
   - '*.Output.StrictTransportSecurityLog:=t1.Output.StrictTransportSecurityLog'
   - '*.Output.StdStrictTransportSecurityLog:=t1.Output.StdStrictTransportSecurityLog'
   - '*.Output.PublicKeyPinsLog:=t1.Output.PublicKeyPinsLog'

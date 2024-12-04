@@ -1,5 +1,5 @@
 authors:
-- mani.m@continube.com
+- sangavi.l@continube.com
 domain: continube
 createdDate: 11/12/2023
 name: AWSRootAccountAccessKeyReport
@@ -18,21 +18,25 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: AWSCredentialReport
   description: AWS Credential Report
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: NoAccessKeyWithRootAccount
-  description: No AccessKey With Root Account
-  type: string
+  description: No Access Key With Root Account
+  dataType: FILE
 - name: LogFile
   description: Log File
-  type: string
+  dataType: FILE
+- name: RootAccountAccessKeyFieldMeta
+  description: Root Account Access Key Field Meta
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

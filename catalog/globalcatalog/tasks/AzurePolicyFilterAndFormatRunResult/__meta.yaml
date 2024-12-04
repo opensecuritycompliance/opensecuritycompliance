@@ -18,35 +18,38 @@ systemObjectJSONInBase64: ''
 inputs:
 - name: ControlConfigFilePath
   description: ControlConfigFilePath
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: AzurePolicyRunResultFilePath
   description: AzurePolicyRunResultFilePath
-  type: string
+  dataType: FILE
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 - name: ControlName
   description: ControlName
-  type: string
+  dataType: STRING
+  repeated: false
   allowedValues: []
   defaultValue: ''
   showField: true
-  isRequired: true
+  required: true
 outputs:
 - name: FilteredAndFormattedControlEvidence
   description: FilteredAndFormattedControlEvidence
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: ComplianceStatus_
   description: ComplianceStatus_
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: CompliancePCT_
-  type: int
+  dataType: INT

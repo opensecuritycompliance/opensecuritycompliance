@@ -66,7 +66,8 @@ class Task(cards.AbstractTask):
             resource_type = ""
             if "resourceType" in report_data_dict.columns:
                 resource_type = report_data_dict["resourceType"]
-            resource_data_df["ResourceType"] = resource_type
+            if resource_type is not None and len(resource_type) > 0:
+                resource_data_df["ResourceType"] = resource_type[0]
             known_columns = ["AccountID","Region","ResourceType","ResourceID","ResourceName"] 
 
 
@@ -100,7 +101,7 @@ class Task(cards.AbstractTask):
         
         absolute_file_path, error = self.upload_file_to_minio(
             file_content=(output).to_json(orient='records').encode('utf-8'),
-             file_name=f'{file_name}-{str(uuid.uuid4())}.json',
+             file_name=file_name,
             content_type="application/json"
         )
         if error:

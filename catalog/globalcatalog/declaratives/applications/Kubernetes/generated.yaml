@@ -36,6 +36,8 @@ spec:
   directAccess: true
   linkableApplicationClasses:
   - name: AWSAppConnector
+  - name: ServiceNowConnector
+  - name: ArgoCDConnector
   management: false
   allowableChildrenApplicationClasses: []
   type: user

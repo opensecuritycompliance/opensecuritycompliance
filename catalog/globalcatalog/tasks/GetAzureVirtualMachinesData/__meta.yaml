@@ -20,16 +20,16 @@ inputs:
 outputs:
 - name: AzureVirtualMachinesData
   description: AzureVirtualMachinesData
-  type: file
+  dataType: FILE
 - name: AzureVirtualMachinesExtensionsData
   description: AzureVirtualMachinesExtensionsData
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: ComplianceStatus_
   description: ComplianceStatus_
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: CompliancePCT_
-  type: int
+  dataType: INT

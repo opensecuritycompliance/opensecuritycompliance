@@ -2,13 +2,12 @@ package main
 
 import (
 	cowStorage "appconnections/minio"
-	noCred "appconnections/nocredapp"
+	"appconnections/privacybisonconnector"
 	"cowlibrary/vo"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 )
@@ -41,12 +40,11 @@ func (inst *TaskInstance) CheckHeaders(inputs *UserInputs, outputs *Outputs) (er
 			return nil
 		}()
 	}()
-
-	analyzedHARInfo := &AnalyzedHARInfo{}
+	var harFileBytes []byte
 	har := &HAR{}
-	if inputs.HarFilePath != "" {
+	if inputs.HarFile != "" {
 
-		harFileBytes, err := cowStorage.DownloadFile(inputs.HarFilePath, inst.SystemInputs)
+		harFileBytes, err = cowStorage.DownloadFile(inputs.HarFile, inst.SystemInputs)
 		if err != nil {
 			outputs.ErrorDetails = err
 			return nil
@@ -58,31 +56,23 @@ func (inst *TaskInstance) CheckHeaders(inputs *UserInputs, outputs *Outputs) (er
 			return nil
 		}
 
-	} else if inputs.AnalyzedHarFileName != "" {
-		analyzedHARBytes, err := cowStorage.DownloadFile(inputs.AnalyzedHarFileName, inst.SystemInputs)
-		if err != nil {
-			outputs.ErrorDetails = err
-			return nil
-		}
-		defer os.Remove(inputs.HarFilePath)
-
-		err = json.Unmarshal(analyzedHARBytes, &analyzedHARInfo)
-		if err != nil {
-			outputs.ErrorDetails = err
-			return nil
-		}
 	} else {
-		return errors.New("not a valid har file")
-
+		outputs.ErrorDetails = errors.New("No valid HAR file present.")
+		return nil
 	}
 
 	totalCount, passed := 0, 0
-	nocred := noCred.NoCredApp{}
+	privacybison := privacybisonconnector.PrivacyBisonConnector{}
+	domain, err := privacybison.GetCompanyNameFromHARFile(harFileBytes)
+	if err != nil {
+		outputs.ErrorDetails = err
+		return nil
+	}
 
 	check := func(uriInfo *URIInfo, header *Header, hs *HeaderStatus, headerName string, requrl string) {
 		totalCount++
 		log := &Log{Header: header, URL: uriInfo.URI, Host: uriInfo.Host, Attributes: make([]interface{}, 0)}
-		stdLog := &StdLog{System: uriInfo.URI, Source: uriInfo.Host, ResourceID: uriInfo.URI, ResourceName: uriInfo.Host, ResourceType: "Header", ResourceURL: requrl, Header: header, EvaluatedTime: nocred.GetCurrentTime()}
+		stdLog := &StdLog{System: domain, Source: "compliancecow", ResourceID: uriInfo.URI, ResourceName: uriInfo.Host, ResourceType: "Header", ResourceURL: requrl, Header: header, EvaluatedTime: privacybison.GetCurrentTime()}
 		hs.logs = append(hs.logs, log)
 		hs.stdLogs = append(hs.stdLogs, stdLog)
 		hs.do(uriInfo, header, log, stdLog)
@@ -94,17 +84,6 @@ func (inst *TaskInstance) CheckHeaders(inputs *UserInputs, outputs *Outputs) (er
 		}
 	}
 	headerStatuses := map[string]*HeaderStatus{}
-
-	for _, uriInfo := range analyzedHARInfo.URIs {
-		headers := map[string]*Header{}
-		for _, header := range uriInfo.Response.Headers {
-			headers[strings.ToLower(header.Name)] = header
-		}
-
-		for k, v := range headerStatuses {
-			check(uriInfo, headers[k], v, k, "")
-		}
-	}
 
 	headerList := map[string]func(*URIInfo, *Header, *Log, *StdLog){
 		"strict-transport-security":   inst.checkStrictTransportSecurity,
@@ -523,11 +502,6 @@ func (inst *TaskInstance) checkETag(uriInfo *URIInfo, header *Header, log *Log, 
 		stdLog.ValidationStatusNotes = "Etag header present and is weak"
 		return
 	}
-}
-
-// AnalyzedHARInfo :
-type AnalyzedHARInfo struct {
-	URIs []*URIInfo
 }
 
 // URIInfo :

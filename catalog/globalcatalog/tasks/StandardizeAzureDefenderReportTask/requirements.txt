@@ -1,5 +1,1 @@
 PyYAML
-azure-mgmt-resource==21.2.1
-azure-identity
-msrestazure
-

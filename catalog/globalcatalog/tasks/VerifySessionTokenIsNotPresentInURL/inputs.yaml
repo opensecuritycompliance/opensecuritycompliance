@@ -1,12 +1,19 @@
 userObject:
   app:
-    name: NoCredApp
-    appURL: http://localhost.com
+    name: PrivacyBisonConnector
+    appURL: http://privacybison.com
     appPort: "0"
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       NoCred:
         Dummy: ""
 userInputs:
-  HARFile: <<MINIO_FILE_PATH>>
-fromDate: 2024-03-01
-toDate: 2024-03-01
+  HarFile: <<MINIO_FILE_PATH>>
+fromDate: "2024-03-01T07:33:25Z"
+toDate: "2024-03-01T07:33:25Z"

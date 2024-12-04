@@ -19,16 +19,37 @@ spec:
   - name: FetchAndFilterKubernetesManifestData
     alias: t1
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Fetch the Kubernetes manifest data and filter it based on include and exclude criteria.
     description: Fetch the Kubernetes manifest data and filter it based on include and exclude criteria.
   - name: EvaluateOpaAgainstCollectedManifestData
     alias: t2
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Evaluate the rego policies against the collected manifest data.
     description: Evaluate the rego policies against the collected manifest data.
   - name: OrganizedOpaReports
     alias: t3
     type: task
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Structure the filtered data in a way that is easy to read.
     description: Structure the filtered data in a way that is easy to read.
   ioMap:

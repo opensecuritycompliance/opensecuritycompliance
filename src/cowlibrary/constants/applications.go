@@ -296,6 +296,7 @@ meta:
   version: {{APPLICATION_VERSION}} # semver
 spec:
   url: http://localhost.com # string
+  hasSupportForCURLValidation: false # If you want to enable the curl support in CC UI, mark this as 'true'
   port: # port
   credentialTypes:
 {{CREDENTIAL_TYPES}}

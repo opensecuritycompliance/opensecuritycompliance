@@ -1,6 +1,6 @@
 module EvaluateOpaAgainstCollectedManifestData
 
-go 1.21.3
+go 1.21.4
 
 require (
     appconnections v0.0.0-00010101000000-000000000000

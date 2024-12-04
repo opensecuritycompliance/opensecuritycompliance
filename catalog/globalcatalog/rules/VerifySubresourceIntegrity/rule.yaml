@@ -6,23 +6,40 @@ meta:
   description: Verify the integrity of third-party resources such as CDNs and ensure they have not been manipulated or changed.
   labels:
     appType:
-    - nocredapp
+    - privacybisonconnector
     environment:
     - logical
     execlevel:
     - app
   annotations:
     annotateType:
-    - nocredapp
+    - privacybisonconnector
 spec:
+  inputs:
+    HarFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: HarFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: VerifySubresourceIntegrity
     alias: t1
     type: task
+    appTags:
+      appType:
+      - privacybisonconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Verify Subresource Integrity
     description: Verify the integrity of third-party resources such as CDNs and ensure they have not been manipulated or changed.
   ioMap:
-  - 't1.Input.HARFile:=*.Input.HARFile'
+  - 't1.Input.HarFile:=*.Input.HarFile'
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
   - '*.Output.URIsWithSRIDetails:=t1.Output.URIsWithSRIDetails'

@@ -10,5 +10,6 @@ type UserInputs struct {
 }
 
 type Outputs struct {
-	IsValidated bool
+	IsValidated       bool
+	ValidationMessage string
 }

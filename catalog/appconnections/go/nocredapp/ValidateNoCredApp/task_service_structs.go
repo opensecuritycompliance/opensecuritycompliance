@@ -13,3 +13,4 @@ type Outputs struct {
 	IsValidated       bool
 	ValidationMessage string
 }
+

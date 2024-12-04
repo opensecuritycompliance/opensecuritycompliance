@@ -54,7 +54,12 @@ func (inst *TaskInstance) AWSMFAReport(inputs *UserInputs, outputs *Outputs) (de
 		}
 		outputs.AWSMFAReport, err = inst.uploadOutputFile(standardizeMFAData)
 		if err != nil {
-			errorVO = &ErrorVO{ErrorMessage: fmt.Sprintf("Error while uploading aws MFA deials: %v", err.Error())}
+			errorVO = &ErrorVO{ErrorMessage: fmt.Sprintf("Error while uploading AWS MFA deials: %v", err.Error())}
+			return nil
+		}
+		outputs.MetaFile, err = inst.uploadMetaFile(standardizeMFAData, awsConnector)
+		if err != nil {
+			errorVO = &ErrorVO{ErrorMessage: fmt.Sprintf("Error while uploading meta data report: %v", err.Error())}
 			return nil
 		}
 	} else {
@@ -144,6 +149,19 @@ func (inst *TaskInstance) uploadLogFile(errorList interface{}) (string, error) {
 		return "", fmt.Errorf("Cannot upload log file to minio: %w", err)
 	}
 	return outputFilePath, nil
+}
+
+func (inst *TaskInstance) uploadMetaFile(outputData []AWSMFAVO, awsConnector awsconnector.AWSAppConnector) (string, error) {
+	if len(outputData) > 0 {
+		fieldMetaData := awsConnector.CreateMetaFileData(outputData[0])
+		metaFileNameWithUUID := fmt.Sprintf("%v-%v%v", "MetaFile", uuid.New().String(), ".json")
+		outputFilePath, err := storage.UploadJSONFile(metaFileNameWithUUID, fieldMetaData, inst.SystemInputs)
+		if err != nil {
+			return "", fmt.Errorf("Cannot upload meta file to minio: %w", err)
+		}
+		return outputFilePath, nil
+	}
+	return "", nil
 }
 
 type AWSCredentialReportVO struct {

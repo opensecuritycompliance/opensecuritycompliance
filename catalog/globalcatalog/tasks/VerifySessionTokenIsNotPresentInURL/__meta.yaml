@@ -16,16 +16,16 @@ applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
-- name: HARFile # A unique identifier of the task input
-  description: HARFile # A concise description of the task input
-  type: file # data type of the input. Available Types STRING, INT, FLOAT, FILE
+- name: HarFile # A unique identifier of the task input
+  description: HarFile # A concise description of the task input
+  type: FILE # data type of the input. Available Types STRING, INT, FLOAT, FILE
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
   defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
   showField: true  # boolean: true | false
   isRequired: true # boolean: true | false
 outputs:
-- name: URIsWithSRIDetails
-  description: URIs With SRI Details
+- name: URIsWithTokenInQuery
+  description: URIs With Token In Query
   type: file
 - name: LogFile
   description: Log File

@@ -3,6 +3,13 @@ userObject:
     name: Kubernetes
     appURL: http://localhost.com
     appPort: "0"
+    appTags:
+      appType:
+      - kubernetes
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       Jumphost:
         UserID: "$INSTANCE_USER_NAME"
@@ -11,5 +18,5 @@ userObject:
 userInputs:
   DataFile: "<<MINIO_FILE_PATH>>"
   LogFile : "<<MINIO_FILE_PATH>>"
-fromDate: 2023-11-24
-toDate: 2023-11-24
+fromDate: 2024-11-28T04:46:09Z
+toDate: 2024-11-28T04:46:09Z

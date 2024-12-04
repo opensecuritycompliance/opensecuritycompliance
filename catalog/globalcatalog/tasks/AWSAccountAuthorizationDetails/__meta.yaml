@@ -20,13 +20,13 @@ inputs:
 outputs:
 - name: AccountAuthorizationDetails
   description: Account Authorization Details
-  type: string
+  dataType: FILE
 - name: LogFile
   description: Log File
-  type: string
+  dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage
-  type: int
+  dataType: INT
 - name: ComplianceStatus_
   description: Compliance Status
-  type: string
+  dataType: STRING

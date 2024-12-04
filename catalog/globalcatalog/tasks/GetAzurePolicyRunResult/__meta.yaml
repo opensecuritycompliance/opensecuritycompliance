@@ -20,13 +20,13 @@ inputs:
 outputs:
 - name: AzurePolicyRunResult
   description: AzurePolicyRunResult
-  type: file
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  type: file
+  dataType: FILE
 - name: ComplianceStatus_
   description: ComplianceStatus_
-  type: string
+  dataType: STRING
 - name: CompliancePCT_
   description: CompliancePCT_
-  type: int
+  dataType: INT

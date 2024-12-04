@@ -15,15 +15,47 @@ meta:
     annotateType:
     - aws
 spec:
+  inputs:
+    MinimumRequiredRetentionPeriod: 
+    Region: 
+  inputsMeta__:
+  - name: Region
+    dataType: STRING
+    repeated: true
+    defaultValue: [us-west-2]
+    allowedValues: []
+    showField: true
+    required: true
+  - name: MinimumRequiredRetentionPeriod
+    dataType: INT
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
   tasks:
   - name: AWSRDSDBInstancesList
     alias: t1
     type: task
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Fetch the AWS RDS DB instances
     description: Fetch the AWS RDS DB instances
   - name: CheckAWSDBInstanceBackup
     alias: t2
     type: task
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     purpose: Checks if RDS DB instances have backups enabled
     description: Checks if RDS DB instances have backups enabled
   ioMap:

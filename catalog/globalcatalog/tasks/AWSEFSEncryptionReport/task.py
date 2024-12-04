@@ -34,7 +34,7 @@ class Task(cards.AbstractTask):
         
         error_list = self.validate()
         if error_list:
-            return self.upload_log_file(self.add_key_in_list(error_list)) 
+            return self.upload_log_file(self.add_key_in_list(error_list))
 
         # download and validate AWSEFSList
         aws_efs_df, error = self.download_parquet_file_from_minio_as_df(
@@ -48,7 +48,6 @@ class Task(cards.AbstractTask):
               'KeyManager', 'KeyLastRotationDate', 'ResourceURL'}
         if not aws_efs_columns.issubset(aws_efs_df.columns):
             columns_not_present = set(aws_efs_columns) - set(aws_efs_df.columns)
-            msg = ''
             if columns_not_present:
                    msg = "Missing column: " + ', '.join(columns_not_present)
             return self.upload_log_file([{'Error': f"Invalid 'AWSEFSList' file. {msg}"}])
@@ -73,10 +72,10 @@ class Task(cards.AbstractTask):
         response = {}
 
         if not std_list:
-            error_list.append({"Error": "No Elastic File System was found for the provided AWS credentials or for the specified region"})
+            error_list.append('No Elastic File System was found for the provided AWS credentials or for the specified region')
 
         if error_list:
-            result =  self.upload_log_file(error_list)
+            result =  self.upload_log_file(self.add_key_in_list(error_list)) 
             if cowdictutils.is_valid_key(result, 'Error'):
                 return result
             response['AWSEFSEncryptionReportLogFile'] = result['AWSEFSEncryptionReportLogFile']
@@ -268,6 +267,7 @@ class Task(cards.AbstractTask):
             return False
         return True
     
+
     def add_key_in_list(self, error_list: list):
         unique_list = list(set(error_list))
         updated_list = []

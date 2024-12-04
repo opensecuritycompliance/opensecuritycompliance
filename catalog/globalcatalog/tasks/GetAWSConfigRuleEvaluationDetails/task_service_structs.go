@@ -11,4 +11,5 @@ type Outputs struct {
 	AWSConfigRulesJSON                string `description:"AWS Config Rules Report JSON"`
 	AWSConfigRuleEvaluationStatusJSON string `description:"AWS Config Rule Evaluation Status"`
 	LogFile                           string `description:"Log file"`
+	MetaDataFile                      string `description:"Meta file"`
 }

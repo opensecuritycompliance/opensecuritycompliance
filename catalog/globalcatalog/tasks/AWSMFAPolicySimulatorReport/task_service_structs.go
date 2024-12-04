@@ -15,4 +15,5 @@ type UserInputs struct {
 type Outputs struct {
 	MFAPolicySimulatorReport string
 	LogFile                  string
+	MetaFile                 string
 }
