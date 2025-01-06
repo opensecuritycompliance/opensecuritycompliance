@@ -6,7 +6,6 @@ import (
 	"cowlibrary/constants"
 	"cowlibrary/utils"
 	"cowlibrary/vo"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +21,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func UploadFileToMinio(minioFileVO *vo.MinioFileVO) (*vo.MinioFileInfoVO, error) {
+func UploadFileToMinio(minioFileVO *vo.MinioFileVO, additionalInfoVO *vo.AdditionalInfo) (*vo.MinioFileInfoVO, *vo.ErrorResponseVO) {
 	minoEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
 	// Supress log
 	log.SetOutput(io.Discard)
@@ -30,11 +29,15 @@ func UploadFileToMinio(minioFileVO *vo.MinioFileVO) (*vo.MinioFileInfoVO, error)
 	minioClient, err := cowStorage.RegisterMinio(minoEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), minioFileVO.BucketName)
 
 	if err != nil {
-		return nil, err
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "MINIO_CLIENT_REGISTRTION_FAILED", Description: "Unable to register the MinIO client with the MinIO server.",
+			ErrorDetails: utils.GetValidationError(fmt.Errorf("Unable to register the MinIO client with the MinIO server: %w", err))}}
 	}
 
 	if minioClient == nil {
-		return nil, errors.New("cannot create minio client")
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "MINIO_CLIENT_CONNECTION_FAILED", Description: "Unable to initialize the MinIO client.",
+			ErrorDetails: utils.GetValidationError(fmt.Errorf("Unable to initialize the MinIO client.: %w", err))}}
 	}
 
 	folderPath := path.Join(minioFileVO.Path, minioFileVO.FileName)
@@ -51,18 +54,32 @@ func UploadFileToMinio(minioFileVO *vo.MinioFileVO) (*vo.MinioFileInfoVO, error)
 
 	_, err = minioClient.PutObject(context.Background(), bucketName, folderPath, bytes.NewBuffer(minioFileVO.FileContent), int64(len(minioFileVO.FileContent)), minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		return nil, err
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "FILE_UPLOAD_FAILED", Description: "Unable to upload the file to storage.",
+			ErrorDetails: utils.GetValidationError(fmt.Errorf("Unable to upload the file to storage.: %w", err))}}
 	}
 	var urlValues url.Values
 
-	url, err := minioClient.PresignedGetObject(context.Background(), bucketName, folderPath, 7*time.Hour*24, urlValues)
+	defaultDuration := 7 * time.Hour * 24
 
-	url.RawQuery = ""
+	presignedURL, err := minioClient.PresignedGetObject(context.Background(), bucketName, folderPath, defaultDuration, urlValues)
+
+	presignedURL.RawQuery = ""
 
 	if err != nil {
-		return nil, err
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "PRESIGNED_URL_GENERATION_FAILED", Description: "Getting an error while generating the presigned URL for objects",
+			ErrorDetails: utils.GetValidationError(fmt.Errorf("Getting an error while generating the presigned URL for objects.: %w", err))}}
 	}
-	return &vo.MinioFileInfoVO{FileURL: url.String()}, nil
+	url, err := url.QueryUnescape(presignedURL.String())
+	if err != nil {
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "URL_DECODING_FAILED", Description: "Error decoding the presigned URL",
+			ErrorDetails: utils.GetValidationError(fmt.Errorf("Error decoding the presigned URL: %w", err)),
+		},
+		}
+	}
+	return &vo.MinioFileInfoVO{FileURL: url}, nil
 
 }
 
@@ -71,8 +88,7 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 	fileURL, err := url.Parse(minioFileInfoVO.FileURL)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Cannot parse the file rule", Description: "Cannot parse the file rule",
-			ErrorDetails: utils.GetValidationError(fmt.Errorf("invalid file URL: %w", err))}}
+			Message: "CANNOT_PARSE_FILE", Description: "failed to parse the file"}}
 	}
 	// Default bucketName
 	bucketName := "demo"
@@ -97,8 +113,7 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 		parts := strings.Split(fileURL.Path, "/")
 		if len(parts) < 4 {
 			return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-				Message: "invalid URL structure", Description: "invalid URL structure, cannot extract bucket and object",
-				ErrorDetails: utils.GetValidationError(fmt.Errorf("invalid URL structure, cannot extract bucket and object: %w", err))}}
+				Message: "INVALID_RULE_STRUCTURE", Description: "invalid URL structure, cannot extract bucket and object"}}
 		}
 		bucketName = parts[3]
 		objectPath = strings.Join(parts[4:], "/")
@@ -112,27 +127,23 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Cannot connect to the minio system", Description: "Cannot connect to the minio system",
-			ErrorDetails: utils.GetValidationError(fmt.Errorf("cannot connect to the minio system: %w", err))}}
+			Message: "CANNOT_CONNECT_TO_MINIO", Description: "Cannot connect to the minio system"}}
 	}
 
 	if minioClient == nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "cannot create minio client", Description: "cannot create minio client",
-			ErrorDetails: utils.GetValidationError(errors.New("cannot create minio client"))}}
+			Message: "CANNOT_CREATE_MINIO_CLIENT", Description: "cannot create minio client"}}
 	}
 
 	fileObject, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "cannot find the file", Description: "cannot find the file",
-			ErrorDetails: utils.GetValidationError(fmt.Errorf("cannot find the file: %w", err))}}
+			Message: "CANNOT_FIND_FILE", Description: fmt.Sprintf("file not found in bucket %s", bucketName)}}
 	}
 	fileContent, err := io.ReadAll(fileObject)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "cannot read the file", Description: "cannot read the file",
-			ErrorDetails: utils.GetValidationError(fmt.Errorf("cannot read the file: %w", err))}}
+			Message: "CANNOT_READ_FILE", Description: "cannot read the file"}}
 	}
 
 	fmt.Println("fileContent :", string(fileContent))

@@ -40,6 +40,11 @@ var (
 	COWWebserverHostName = os.Getenv("COW_WEBSERVER_HOST_NAME")
 	COWWebserverPortNo   = os.Getenv("COW_WEBSERVER_PORT_NUMBER")
 	COWWebserverURL      = fmt.Sprintf("%s://%s:%s", COWWebserverProtocol, COWWebserverHostName, COWWebserverPortNo)
+
+	CoWConfigurationServiceProtocol = os.Getenv("COW_CONFIG_SERVICE_PROTOCOL")
+	CoWConfigurationServiceHostName = os.Getenv("COW_CONFIG_SERVICE_HOST_NAME")
+	CoWConfigurationServicePortNo   = os.Getenv("COW_CONFIG_SERVICE_PORT_NUMBER")
+	CoWConfigurationServiceURL      = fmt.Sprintf("%s://%s:%s", CoWConfigurationServiceProtocol, CoWConfigurationServiceHostName, CoWConfigurationServicePortNo)
 )
 
 var USERHOMEDIR string
@@ -85,6 +90,7 @@ var (
 	LocalFolder           = getEnv("LOCAL_FOLDER", "userdata")
 	InputMetaFileType     = "FILE"
 	MinioFilePath         = "<<MINIO_FILE_PATH>>"
+	ReadmeFile            = "readme.md"
 )
 var (
 	PolicyCowConfig *vo.PolicyCowConfig = &vo.PolicyCowConfig{PathConfiguration: &vo.CowPathConfiguration{TasksPath: CowDataTaskPath, RulesPath: CowDataRulesPath, ExecutionPath: CowDataExecutionsPath, RuleGroupPath: CowDataRuleGroupPath}}

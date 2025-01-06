@@ -1402,27 +1402,39 @@ func GetTasksV2(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 	availableTasks := make([]*vo.PolicyCowTaskVO, 0)
 	localcatalogPath := additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath
 
-	var pathPrefixs string
+	pathPrefixs := []string{
+		filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, "*"),
+	}
 	if !additionalInfo.GlobalCatalog {
-		pathPrefixs = filepath.Join(localcatalogPath, "tasks", "*")
-	} else {
-		pathPrefixs = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.TasksPath, "*")
+		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "tasks", "*"))
 	}
-
-	catalogType := "globalcatalog"
-	if strings.Contains(pathPrefixs, "localcatalog") {
-		catalogType = "localcatalog"
-	}
-	matches, _ := filepath.Glob(pathPrefixs)
-	for _, path := range matches {
-		if info, err := os.Stat(path); err == nil && info.IsDir() {
-			taskName := filepath.Base(path)
-
-			taskVO := &vo.PolicyCowTaskVO{
-				Name:        taskName,
-				CatalogType: catalogType,
+	for _, pattern := range pathPrefixs {
+		catalogType := "globalcatalog"
+		if strings.Contains(pattern, "localcatalog") {
+			catalogType = "localcatalog"
+		}
+		matches, _ := filepath.Glob(pattern)
+		for _, path := range matches {
+			if info, err := os.Stat(path); err == nil && info.IsDir() {
+				taskName := filepath.Base(path)
+				taskVO := &vo.PolicyCowTaskVO{
+					Name:        taskName,
+					CatalogType: catalogType,
+				}
+				found := false
+				for i, existingTask := range availableTasks {
+					if existingTask.Name == taskName {
+						found = true
+						if catalogType == "localcatalog" {
+							availableTasks[i] = taskVO
+						}
+						break
+					}
+				}
+				if !found {
+					availableTasks = append(availableTasks, taskVO)
+				}
 			}
-			availableTasks = append(availableTasks, taskVO)
 		}
 	}
 

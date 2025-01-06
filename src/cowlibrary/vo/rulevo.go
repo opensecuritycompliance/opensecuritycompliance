@@ -463,3 +463,8 @@ type RuleLogData struct {
 	ApplicationName string    `json:"applicationName"`
 	Tasks           []TaskLog `json:"tasks"`
 }
+
+type DeleteRuleVO struct {
+	RuleNames   []string `json:"ruleNames"`
+	IgnoreError bool     `json:"ignoreError"`
+}

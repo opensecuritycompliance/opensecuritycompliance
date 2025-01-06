@@ -48,7 +48,6 @@ func runE(cmd *cobra.Command) error {
 		return err
 	}
 	isDefaultConfigPath := cowlibutils.IsDefaultConfigPath(constants.CowDataDefaultConfigFilePath)
-	isLinkedApplication := true
 	applicationName := utils.GetFlagValueAndResetFlag(cmd, "name", "")
 	applicationVersion := utils.GetFlagValueAndResetFlag(cmd, "version", "")
 
@@ -56,15 +55,6 @@ func runE(cmd *cobra.Command) error {
 		if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
 			currentFlag.Value.Set("false")
 			additionalInfo.CanOverride, _ = strconv.ParseBool(flagValue)
-		}
-	}
-
-	if linkAppFlag := cmd.Flags().Lookup("linked-application"); linkAppFlag != nil && linkAppFlag.Changed {
-		if flagValue := linkAppFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
-			if flagValue == "true" {
-				return errors.New("set the linked application as false. As of now, it is not supported in command.")
-			}
-			isLinkedApplication, _ = strconv.ParseBool(flagValue)
 		}
 	}
 
@@ -145,10 +135,6 @@ func runE(cmd *cobra.Command) error {
 	additionalInfo.CredentialInfo = selectedCredentials
 
 	userInput := "no"
-
-	if isDefaultConfigPath && isLinkedApplication {
-		userInput, _ = terminalutils.GetOptionFromCmdPrompt("Would you like to link an application?  yes/no (default:no):", "no", []string{"yes", "no"})
-	}
 
 	if userInput == "yes" {
 		selectedAppItems, err := terminalutils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})

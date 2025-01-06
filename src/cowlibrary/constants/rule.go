@@ -134,6 +134,7 @@ func main() {
 				for _, task := range taskInfos {
 					taskName := strings.ReplaceAll(task.TaskGUID, "{{", "")
 					taskName = strings.ReplaceAll(taskName, "}}", "")
+					taskFolderName := taskName + "-" + task.AliasRef
 					// fmt.Println("taskName :::", taskName)
 
 					err := inputHandler(task, taskInfos, rule.RefMaps, rule.RuleIOValues, ruleSet)
@@ -165,7 +166,7 @@ func main() {
 
 					if len(inputYamlByts) > 0 {
 
-						taskInputPath := filepath.Join(taskName, "inputs.yaml")
+						taskInputPath := filepath.Join(taskFolderName, "inputs.yaml")
 
 						if _, err := os.Stat(taskInputPath); os.IsNotExist(err) {
 							os.WriteFile(taskInputPath, inputYamlByts, os.ModePerm)
@@ -200,16 +201,16 @@ func main() {
 						}
 					}
 
-					installPythonDependenciesWithRequirementsTxtFile(taskName)
-					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskName, "appconnections"))
+					installPythonDependenciesWithRequirementsTxtFile(taskFolderName)
+					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "appconnections"))
 
-					taskFolderNames = append(taskFolderNames, taskName)
+					taskFolderNames = append(taskFolderNames, taskFolderName)
 
 					taskProgressVO.StartDateTime = time.Now()
 					taskProgressVO.Status = "INPROGRESS"
 					appendTaskProgress(taskProgressVO, ruleProgressVO)
 
-					err = taskExecutor(taskName)
+					err = taskExecutor(taskFolderName)
 
 					taskProgressVO.EndDateTime = time.Now()
 					taskProgressVO.Duration = taskProgressVO.EndDateTime.Sub(taskProgressVO.StartDateTime)
@@ -226,7 +227,7 @@ func main() {
 							"error": err,
 						}
 					}
-					if outputByts, err := os.ReadFile(filepath.Join(taskName, "task_output.json")); err == nil {
+					if outputByts, err := os.ReadFile(filepath.Join(taskFolderName, "task_output.json")); err == nil {
 						outputMap := make(map[string]interface{}, 0)
 						if err = json.Unmarshal(outputByts, &outputMap); err == nil {
 							if errorMsg, ok := outputMap["error"]; ok {
@@ -252,7 +253,7 @@ func main() {
 					}
 
 					if taskProgressVO.Status == "ERROR" {
-						if outputByts, err := os.ReadFile(filepath.Join(taskName, "logs.txt")); err == nil {
+						if outputByts, err := os.ReadFile(filepath.Join(taskFolderName, "logs.txt")); err == nil {
 							if len(taskProgressVO.Errors) == 0 {
 								taskProgressVO.Errors = map[string]interface{}{}
 							}
@@ -327,8 +328,10 @@ func installPythonDependenciesWithRequirementsTxtFile(srcDir string) {
 func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct, ruleIOValues *IOValues, ruleSet *RuleSet) error {
 	taskName := strings.ReplaceAll(task.TaskGUID, "{{", "")
 	taskName = strings.ReplaceAll(taskName, "}}", "")
-
+	taskName = taskName+"-"+task.AliasRef
 	inputMap := make(map[string]interface{})
+
+	requiredInputVaraibles := make([]string, 0)
 
 	for _, ref := range refstruct {
 		if ref.TargetRef.AliasRef == task.AliasRef {
@@ -338,6 +341,7 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 						inputMap[ref.TargetRef.VarName] = val
 					}
 				}
+				requiredInputVaraibles = append(requiredInputVaraibles, ref.TargetRef.VarName)
 			} else {
 				outputs := make(map[string]map[string]interface{})
 				for _, otherTask := range taskInfos {
@@ -363,7 +367,10 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 						if taskOutput, ok := outputs[otherTaskName]; ok {
 							if val, newOk := taskOutput[ref.SourceRef.VarName]; newOk {
 								inputMap[ref.TargetRef.VarName] = val
+							} else {
+								inputMap[ref.TargetRef.VarName] = nil
 							}
+							requiredInputVaraibles = append(requiredInputVaraibles, ref.TargetRef.VarName)
 						}
 
 					}
@@ -427,6 +434,22 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 			return err
 		}
 
+		if len(requiredInputVaraibles) == 0 {
+			oldInputs = map[string]interface{}{}
+		} else {
+			keySet := make(map[string]struct{})
+			for _, key := range requiredInputVaraibles {
+				keySet[key] = struct{}{}
+			}
+
+			for key := range oldInputs {
+				if _, found := keySet[key]; !found {
+					delete(oldInputs, key)
+				}
+			}
+
+		}
+
 		byts, err = json.Marshal(oldInputs)
 		if err != nil {
 			return err
@@ -448,6 +471,22 @@ func inputHandler(task *TaskInfo, taskInfos []*TaskInfo, refstruct []*RefStruct,
 
 		json.Unmarshal(byts, &(taskInput.UserInputs))
 
+	} else {
+		taskInputYamlPath := filepath.Join(taskName, "inputs.yaml")
+		yamlInputByts, err := os.ReadFile(taskInputYamlPath)
+		yamlTaskInputMap := make(map[string]interface{})
+		if err == nil {
+			yaml.Unmarshal(yamlInputByts, &yamlTaskInputMap)
+			if len(yamlTaskInputMap) > 0 {
+				yamlTaskInputMap["userInputs"] = map[string]interface{}{}
+				taskInputByts, err := yaml.Marshal(yamlTaskInputMap)
+				if err == nil {
+					os.WriteFile(taskInputYamlPath, taskInputByts, os.ModePerm)
+					yamlFlow = true
+				}
+			}
+
+		}
 	}
 
 	// if _, err := os.Stat(filepath.Join(taskName, "inputs.yaml")); err == nil {
@@ -563,8 +602,8 @@ func readFileHelper(fileName string, target interface{}, nestedLevelLimit int, c
 func outputHandler(taskInfos *TaskInfo, refstruct []*RefStruct, taskName string) error {
 
 	taskOutputs := make(map[string]map[string]interface{})
-
-	if byts, err := os.ReadFile(filepath.Join(taskName, "task_output.json")); err == nil && len(byts) > 2 {
+	taskFolderName := taskName + "-" + taskInfos.AliasRef
+	if byts, err := os.ReadFile(filepath.Join(taskFolderName, "task_output.json")); err == nil && len(byts) > 2 {
 
 		data := make(map[string]interface{})
 		err = json.Unmarshal(byts, &data)

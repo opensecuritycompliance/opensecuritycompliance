@@ -16,10 +16,11 @@ const (
 )
 
 const (
-	DeclarativesDataTypeSTRING = "STRING"
-	DeclarativesDataTypeINT    = "INT"
-	DeclarativesDataTypeFLOAT  = "FLOAT"
-	DeclarativesDataTypeFILE   = "FILE"
+	DeclarativesDataTypeSTRING      = "STRING"
+	DeclarativesDataTypeINT         = "INT"
+	DeclarativesDataTypeFLOAT       = "FLOAT"
+	DeclarativesDataTypeFILE        = "FILE"
+	DeclarativesDataTypeHTTP_CONFIG = "HTTP_CONFIG"
 )
 
 const (
@@ -140,8 +141,8 @@ const PyStructHelper = `class {{CLASS_NAME}}:
 
 	@staticmethod
 	def from_dict(obj) -> '{{CLASS_NAME}}':
-		{{PARAM_DECLARATION}} = {{PARAM_VALUE_DECLARATION}}
-		if isinstance(obj, dict):
+		{{PARAM_ASSIGNMENT}}
+		{{FROM_DICT_CONDITIONAL_CHECK}}
 {{FROM_DICT_HANDLE}}
 
 		return {{CLASS_NAME}}({{PARAM_DECLARATION}})
