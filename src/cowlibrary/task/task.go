@@ -264,9 +264,7 @@ func GenerateTaskYAML(taskPath string, taskName string, additionalInfo *vo.Addit
 	}
 
 	if additionalInfo.RuleYAMLVO != nil && additionalInfo.RuleYAMLVO.Spec != nil {
-		if len(additionalInfo.RuleYAMLVO.Spec.Input) > 0 {
-			taskInput.UserInputs = additionalInfo.RuleYAMLVO.Spec.Input
-		}
+		taskInput.UserInputs = additionalInfo.RuleYAMLVO.Spec.Input
 	}
 
 	taskInput.FromDate_ = "{{FROM_DATE}}"

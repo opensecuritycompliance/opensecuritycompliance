@@ -141,12 +141,16 @@ func (applicationHandler *PythonApplicationHandler) GenerateApplicationStruct(ap
         		`, strcase.ToSnake(attr.Name), attr.Name)
 			}
 		}
+		if len(credential.Credential.Spec.Attributes) == 0 {
+			validateMethod = ""
+		}
 		validateMethod += emptyAttrs
 	}
-
-	validateMethod += `
+	if utils.IsNotEmpty(validateMethod) {
+		validateMethod += `
 		return "Invalid Credentials: " + ", ".join(emptyAttrs) + " is empty" if emptyAttrs else ""
 `
+	}
 	applicationStructName := strcase.ToCamel(applicationVO.Meta.Name)
 
 	LinkedApp := strings.NewReplacer("{{CLASS_NAME}}", "LinkedApplications",
@@ -325,10 +329,23 @@ func (applicationHandler *PythonApplicationHandler) GenerateCredentialStruct(str
 		// selfAttributes = append(selfAttributes, ""+paramStruct)
 
 	}
+	if len(initHelperMethods) == 0 {
+		initHelperMethods = append(initHelperMethods, "\t\tpass")
+	}
+
+	var paramAssignment string
+	if len(paramNames) > 0 && len(defaultValues) > 0 {
+		paramAssignment = fmt.Sprintf("%s = %s", strings.Join(paramNames, ","), strings.Join(defaultValues, ","))
+	}
+	var fromDictConditionalCheck string
+	if len(fromDict) > 0 {
+		fromDictConditionalCheck = "if isinstance(obj, dict):"
+	}
 
 	return strings.NewReplacer("{{CLASS_NAME}}", structName,
 		"{{PARAM_DECLARATION}}", strings.Join(paramNames, ","),
-		"{{PARAM_VALUE_DECLARATION}}", strings.Join(defaultValues, ","),
+		"{{PARAM_ASSIGNMENT}}", paramAssignment,
+		"{{FROM_DICT_CONDITIONAL_CHECK}}", fromDictConditionalCheck,
 		"{{FROM_DICT_HANDLE}}", strings.Join(fromDict, "\n"),
 		"{{TO_DICT_HANDLE}}", strings.Join(toDict, "\n"),
 		"{{SELF_PARAM_DECLARATION}}", strings.Join(selfAttributes, "\n"),

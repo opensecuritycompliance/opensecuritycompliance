@@ -21,6 +21,7 @@ type PolicyCowTaskVO struct {
 	Outputs                  []*PolicyCowTaskOutputVO `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 	CatalogType              string                   `json:"catalogType,omitempty" yaml:"catalogType,omitempty"`
 	AppTags                  map[string][]string      `json:"appTags,omitempty"  yaml:"appTags,omitempty"`
+	ReadmeData               string                   `json:"readmeData,omitempty" yaml:"readmeData,omitempty"`
 }
 
 type PolicyCowTaskInputVO struct {

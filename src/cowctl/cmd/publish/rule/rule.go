@@ -234,10 +234,13 @@ func runE(cmd *cobra.Command) error {
 		}
 
 		if appInfo.UserObject != nil && len(appInfo.UserObject.Apps) > 0 {
+			processedApps := make(map[string]bool)
 			for _, app := range appInfo.UserObject.Apps {
 				if app != nil {
 					applicationName := app.ApplicationName
-
+					if processedApps[applicationName] {
+						continue
+					}
 					namePointer := &vo.CowNamePointersVO{}
 					namePointer.Name = applicationName
 					languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
@@ -260,6 +263,7 @@ func runE(cmd *cobra.Command) error {
 								if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
 									return fmt.Errorf("error during publishing application '%s': %s", applicationName, err)
 								}
+								processedApps[applicationName] = true
 								break
 							}
 						}

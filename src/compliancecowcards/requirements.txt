@@ -1,4 +1,4 @@
-Django
+Django==5.1.1
 jmespath
 minio
 pandas
@@ -6,3 +6,4 @@ protobuf
 requests
 SQLAlchemy
 pyarrow
+toml
