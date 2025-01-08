@@ -14,8 +14,8 @@ meta:
   version:  # semver
 spec:
   url: http://localhost.com # string
+  hasSupportForCURLValidation: true # If you want to enable the curl support in CC UI, mark this as 'true'
   port: # port
-  hasSupportForCURLValidation: true
   credentialTypes:
   - name: AWSSignature
     version: 1.1.1
@@ -26,6 +26,12 @@ spec:
   - name: OAuth
     version: 1.1.2
   - name: CustomType
+    version: 1.1.1
+  - name: APIKey
+    version: 1.1.1
+  - name: NoAuth
+    version: 1.1.1
+  - name: JWTBearer
     version: 1.1.1
 
   defaultCredentialType: # optional. If not explicitly specified, the default credential type is the first one selected for the given application class

@@ -1,0 +1,64 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: HttpRequest
+  displayName: HttpRequest
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - httprequest
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateHttpRequest
+    taskVersion: ""
+  credentialTypes:
+  - name: AWSSignature
+    version: 1.1.1
+    repeated: false
+  - name: BearerToken
+    version: 1.1.1
+    repeated: false
+  - name: BasicAuthentication
+    version: 1.1.2
+    repeated: false
+  - name: OAuth
+    version: 1.1.2
+    repeated: false
+  - name: CustomType
+    version: 1.1.1
+    repeated: false
+  - name: APIKey
+    version: 1.1.1
+    repeated: false
+  - name: NoAuth
+    version: 1.1.1
+    repeated: false
+  - name: JWTBearer
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: AWSSignature
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+  hasSupportForCURLValidation: true
+isVersionToBeOverride: true

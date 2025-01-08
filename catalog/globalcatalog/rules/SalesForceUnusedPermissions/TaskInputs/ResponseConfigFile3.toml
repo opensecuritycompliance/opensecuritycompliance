@@ -1,0 +1,17 @@
+[Response]
+
+[Response.RuleSet]
+
+    [Response.RuleSet.AppendColumnCondition]
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+    IncludeAllInputFields = true
+    
+    [Response.RuleSet.AppendColumn.Fields]
+    URL = "<<request.URL>>"      
+
+    [Response.RuleSet.PaginationCondition]
+    ConditionField = ""
+    ConditionValue = ""

@@ -1,0 +1,6 @@
+
+[UpdateColumn]
+"PermissionSetAssignment" = "<<records>>"
+
+[DeleteColumn]
+"ColumnList" = "attributes,Title,LastModifiedDate,totalSize,done"

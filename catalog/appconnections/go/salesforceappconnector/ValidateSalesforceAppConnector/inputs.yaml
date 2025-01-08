@@ -1,0 +1,12 @@
+userObject:
+  name: SalesforceAppConnector
+userInputs:
+  BucketName: demo
+  appPort: 
+  appURL: https://compliancecow-dev-ed.develop.my.salesforce.com
+  userDefinedCredentials:
+    CustomType:
+      CredentialJson: ewogICAgImdyYW50X3R5cGUiIDoicGFzc3dvcmQiLAogICAgImNsaWVudF9pZCI6IjNNVkc5R0NNUW9RNnJwelFSd0NIcVF0Z2dYM1FreERtQk9FWExJQW9vc2VSMXBJTVp2cTMuWm01V21oX0xMYkJ4RHJ4YlVObEtBeHhPNm5xTjNEQ0wiLAogICAgImNsaWVudF9zZWNyZXQiOiI1MDEzRkQ5QjUxODFBRTE2NDVBQTc2QkYzM0ZEQjM2MTA1RjVCQ0FBOEEyQjcyOUFDNEFFNDlFMTk1OUE1QTNGIiwKICAgICJ1c2VybmFtZSI6ImRpdmEuc0Bjb250aW51YmUuY29tIiwKICAgICJwYXNzd29yZCI6ImNvbnRpbnViZUAxMjMiCn0=
+      ValidationCURL: "curl --location 'https://login.salesforce.com/services/oauth2/token' \\ --header 'Content-Type: application/x-www-form-urlencoded' \\ --header 'Cookie: BrowserId=Zs-r_snuEe-_ONV7nIOQ8g; CookieConsentPolicy=0:0; LSKey-c$CookieConsentPolicy=0:0' \\ --data-urlencode 'grant_type=<<CustomType.grant_type>>' \\ --data-urlencode 'client_id=<<CustomType.client_id>>' \\ --data-urlencode 'client_secret=<<CustomType.client_secret>>' \\ --data-urlencode 'username=<<CustomType.username>>' \\ --data-urlencode 'password=<<CustomType.password>>'"
+
+      
