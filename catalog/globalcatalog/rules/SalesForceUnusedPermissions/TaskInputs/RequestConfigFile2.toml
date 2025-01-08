@@ -1,0 +1,13 @@
+[Request]
+URL = "<<application.AppURL>>/services/data/v41.0/query?q=SELECT+PermissionSetId+FROM+PermissionSetAssignment+WHERE+AssigneeId='<<inputfile.Id>>'"
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "CustomType"
+TimeOut = 30  
+Retries = 3  
+RetryOnStatus = [503, 504, 429]
+Verify=true
+
+[Request.Headers]
+Authorization = "<<response.token_type>> <<response.access_token>>"

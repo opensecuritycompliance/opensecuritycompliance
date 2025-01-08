@@ -1,0 +1,13 @@
+[Request]
+URL = "<<application.AppURL>>/services/data/v62.0/query?q=SELECT+Id+,+EventType+,+LogFile+,+LogDate+,+LogFileLength+FROM+EventLogFile+WHERE+LogDate+>=+LAST_N_DAYS:45"
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "CustomType"
+TimeOut = 30  
+Retries = 3  
+RetryOnStatus = [503, 504, 429]
+Verify=true
+
+[Request.Headers]
+Authorization = "<<response.token_type>> <<response.access_token>>"
