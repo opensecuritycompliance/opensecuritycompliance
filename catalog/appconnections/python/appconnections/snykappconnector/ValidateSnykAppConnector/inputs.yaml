@@ -1,0 +1,9 @@
+userObject:
+  name: SnykAppConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: "$SNYK_LOGIN_URL"
+  userDefinedCredentials:
+    SnykCredential:
+      ApiKey: "$SNYK_API_KEY"
