@@ -1,0 +1,39 @@
+authors:
+- sangavi.l@continube.com
+domain: continube
+createdDate: 01/11/2024
+name: FetchGithubOrgMembers
+displayName: FetchGithubOrgMembers
+version: '1.0'
+description: FetchGithubOrgMembers
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: OrganizationName 
+  description: OrganizationName 
+  dataType: STRING 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true
+outputs:
+- name: GitHubOrganizationMembers
+  description: GitHubOrganizationMembers
+  dataType: STRING
+- name: LogFile
+  description: LogFile
+  dataType: STRING  
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

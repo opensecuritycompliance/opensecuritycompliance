@@ -1,0 +1,9 @@
+userObject:
+  name: SemgrepConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: http://semgrep.dev
+  userDefinedCredentials:
+    AccessToken:
+      AccessToken: "$SEMGREP_ACCESS_TOKEN"
