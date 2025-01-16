@@ -32,8 +32,9 @@ class Task(cards.AbstractTask):
                 self.task_inputs.user_object.app.user_defined_credentials)
         )
 
-        organization_names = self.task_inputs.user_inputs.get(
-            'OrganizationName').split(',')
+        organization_names = list(
+            map(str.strip, self.task_inputs.user_inputs.get('OrganizationName').split(','))
+        )
 
         github_user_list, error_list = self.list_organization_members(
             organization_names=organization_names)
@@ -80,7 +81,7 @@ class Task(cards.AbstractTask):
                     'ResourceName': member.login,
                     'ResourceType': 'User',
                     'ResourceLocation': 'N/A',
-                    'ResourceTags': 'N/A',
+                    'ResourceTags': [],
                     'ResourceURL': f'https://github.com/orgs/{organization_name}/people/{member.login}',
                     'OrganizationName': organization_name,
                     'UserEmail': member.email if member.email else 'N/A',
