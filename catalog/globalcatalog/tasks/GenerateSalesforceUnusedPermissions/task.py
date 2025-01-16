@@ -150,16 +150,17 @@ class Task(cards.AbstractTask):
             if user.get("Country", False):
                 country = user.get("Country")
                 
-            resource_name = f"{user.get('FirstName') or ''} {user.get('LastName') or ''}".strip()
+            name = f"{user.get('FirstName') or ''} {user.get('LastName') or ''}".strip()
             user_response = {
                     "System": 'salesforce',
                     "Source": 'compliancecow',
                     "ResourceID": user.get("Id"),
-                    "ResourceName": resource_name,
+                    "ResourceName": user.get("Email"),
                     "ResourceType": "User",
                     "ResourceLocation": country,
-                    "ResourceTags": 'N/A',
+                    "ResourceTags": [],
                     "ResourceURL": f"{app_url}{profile_url}",
+                    "Name": name,
                     "UnusedPermissions": users_permissions,
                     "InactivePermissionsWindow"  : inactive_permissions_window,
                     "Manager": manager,

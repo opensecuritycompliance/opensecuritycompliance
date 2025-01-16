@@ -136,14 +136,13 @@ userObject:
         ValidationCURL: ""
         CredentialJson: null
 userInputs:
-  BucketName: demo
   ExtractPath: 0.records
-  PermissionsMapFile: <<MINIO_FILE_PATH>>
-  RequestConfigFile: <<MINIO_FILE_PATH>>
-  RequestConfigFile2: <<MINIO_FILE_PATH>>
-  RequestConfigFile3: <<MINIO_FILE_PATH>>
-  ResponseConfigFile2: <<MINIO_FILE_PATH>>
-  ResponseConfigFile3: <<MINIO_FILE_PATH>>
-  TransformConfigFile: <<MINIO_FILE_PATH>>
+  PermissionsMapFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/PermissionsMapFile.toml
+  RequestConfigFile: <<MINIO_FILE_PATH>>    #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile.toml   
+  RequestConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile2.toml
+  RequestConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile3.toml
+  ResponseConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile2.toml
+  ResponseConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile3.toml
+  TransformConfigFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/TransformConfigFile.toml
 fromDate: 2024-12-11T11:09:18Z
 toDate: 2024-12-11T11:09:18Z
