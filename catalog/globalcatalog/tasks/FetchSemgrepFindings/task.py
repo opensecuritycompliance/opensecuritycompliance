@@ -271,8 +271,8 @@ class Task(cards.AbstractTask):
             "ResourceName": x['repository.name'],
             "ResourceType": "Repository",
             "ResourceLocation": "N/A",
-            "ResourceTags": "N/A",
-            "ResourceURL": x.get('line_of_code_url', 'N/A'),
+            "ResourceTags": [],
+            "ResourceURL": x.get('line_of_code_url', 'N/A') or 'N/A',
             "VulnerabilityID": x.get('id', ''),
             "SemgrepRuleName": x.get('rule_name', ''),
             "Description": x.get('rule.message', ''),
@@ -326,7 +326,7 @@ class Task(cards.AbstractTask):
                     "ResourceName": project,
                     "ResourceType": "Repository",
                     "ResourceLocation": "N/A",
-                    "ResourceTags": "N/A",
+                    "ResourceTags": [],
                     "ResourceURL": project_url_map.get(project, "N/A"),
                     "TotalCodeVulnerabilityCount": 0,
                     "CodeVulnerabilityLowSeverityCount": 0,
@@ -360,24 +360,24 @@ class Task(cards.AbstractTask):
 
             if details["TotalCodeVulnerabilityCount"] == 0:
                 compliance_status = "COMPLIANT"
-                compliance_reason = "Record is compliant since no code vulnerabilities were found."
+                compliance_reason = "The record is compliant because no code vulnerabilities were found."
                 validation_status_code = "NO_CODE_VULN_FND"
                 validation_status_notes = f"This project {project} contains no code vulnerability findings."
             elif (details["TotalCodeVulnerabilityCount"] > 0 and 
                 (details["CodeVulnerabilityHighSeverityCount"] > 0 or 
                 details["CodeVulnerabilityCriticalSeverityCount"] > 0)):
                 compliance_status = "NON_COMPLIANT"
-                compliance_reason = "High or Critical severity code vulnerabilities found."
+                compliance_reason = "The record is non-compliant because high or critical severity code vulnerabilities were found."
             else:
                 compliance_status = "COMPLIANT"
-                compliance_reason = "Only Low or Medium severity code vulnerabilities found."
+                compliance_reason = "The record is compliant because only low or medium severity code vulnerabilities were found."
 
             code_severity = f"{details['CodeVulnerabilityCriticalSeverityCount'] or 'NO'}_CRT"
             code_severity += f"_{details['CodeVulnerabilityHighSeverityCount'] or 'NO'}_HIGH_CODE_SEV_PRE"
             validation_status_code = code_severity
             validation_status_notes = (
-                f"Contains {details['CodeVulnerabilityCriticalSeverityCount']} Critical "
-                f"and {details['CodeVulnerabilityHighSeverityCount']} High severity code vulnerabilities."
+                f"Contains {details['CodeVulnerabilityCriticalSeverityCount']} critical "
+                f"and {details['CodeVulnerabilityHighSeverityCount']} high severity code vulnerabilities."
             )
 
             code_summary_list.append({
@@ -387,7 +387,7 @@ class Task(cards.AbstractTask):
                 "ResourceName": project,
                 "ResourceType": "Repository",
                 "ResourceLocation": "N/A",
-                "ResourceTags": "N/A",
+                "ResourceTags": [],
                 "ResourceURL": project_url_map.get(project, "N/A"),
                 "TotalCodeVulnerabilityCount": details["TotalCodeVulnerabilityCount"],
                 "CodeVulnerabilityLowSeverityCount": details["CodeVulnerabilityLowSeverityCount"],
@@ -432,7 +432,7 @@ class Task(cards.AbstractTask):
                     "ResourceName": project,
                     "ResourceType": "Repository",
                     "ResourceLocation": "N/A",
-                    "ResourceTags": "N/A",
+                    "ResourceTags": [],
                     "ResourceURL": project_url_map.get(project, "N/A"),
                     "TotalSupplyChainVulnerabilityCount": 0,
                     "SupplyChainVulnerabilityLowSeverityCount": 0,
@@ -465,25 +465,25 @@ class Task(cards.AbstractTask):
             })
             if details["TotalSupplyChainVulnerabilityCount"] == 0:
                 compliance_status = "COMPLIANT"
-                compliance_reason = "Record is compliant since no supply chain vulnerabilities were found."
+                compliance_reason = "The record is compliant because no supply chain vulnerabilities were found."
                 validation_status_code = "NO_SC_VULN_FND"
                 validation_status_notes = f"This project {project} contains no supply chain vulnerability findings."
             elif (details["TotalSupplyChainVulnerabilityCount"] > 0 and 
                 details["SupplyChainVulnerabilityHighSeverityCount"] > 0 or 
                 details["SupplyChainVulnerabilityCriticalSeverityCount"] > 0):
                 compliance_status = "NON_COMPLIANT"
-                compliance_reason = "High or Critical severity supply chain vulnerabilities found."
+                compliance_reason = "The record is non-compliant because high or critical severity supply chain vulnerabilities were found."
             else:
                 compliance_status = "COMPLIANT"
-                compliance_reason = "Only Low or Medium severity supply chain vulnerabilities found."
+                compliance_reason = "The record is compliant because only low or medium severity supply chain vulnerabilities were found."
 
             supplychain_severity = f"{details['SupplyChainVulnerabilityCriticalSeverityCount'] or 'NO'}_CRT"
             supplychain_severity += f"_{details['SupplyChainVulnerabilityHighSeverityCount'] or 'NO'}_HIGH_SC_SEV_PRE"
 
             validation_status_code = supplychain_severity
             validation_status_notes = (
-                f"Contains {details['SupplyChainVulnerabilityCriticalSeverityCount']} Critical "
-                f"and {details['SupplyChainVulnerabilityHighSeverityCount']} High severity supply chain vulnerabilities."
+                f"Contains {details['SupplyChainVulnerabilityCriticalSeverityCount']} critical "
+                f"and {details['SupplyChainVulnerabilityHighSeverityCount']} high severity supply chain vulnerabilities."
             )
 
             supply_chain_summary_list.append({
@@ -493,7 +493,7 @@ class Task(cards.AbstractTask):
                 "ResourceName": project,
                 "ResourceType": "Repository",
                 "ResourceLocation": "N/A",
-                "ResourceTags": "N/A",
+                "ResourceTags": [],
                 "ResourceURL": project_url_map.get(project, "N/A"),
                 "TotalSupplyChainVulnerabilityCount": details["TotalSupplyChainVulnerabilityCount"],
                 "SupplyChainVulnerabilityLowSeverityCount": details["SupplyChainVulnerabilityLowSeverityCount"],
