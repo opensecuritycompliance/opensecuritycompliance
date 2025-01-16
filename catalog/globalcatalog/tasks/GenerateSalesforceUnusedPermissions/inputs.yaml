@@ -8,7 +8,6 @@ userObject:
         ValidationCURL: "$VALIDATION_CURL"
         CredentialJson: "$CREDENTIAL_JSON"
 userInputs:
-  BucketName: demo
   UserDataFile: <<MINIO_FILE_PATH>>
   PermissionsMapFile: <<MINIO_FILE_PATH>>
   EventLogFile: <<MINIO_FILE_PATH>>

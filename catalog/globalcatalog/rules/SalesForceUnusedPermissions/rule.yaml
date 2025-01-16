@@ -13,7 +13,6 @@ meta:
     - app
 spec:
   inputs:
-    BucketName: demo
     ExtractPath: 0.records
     PermissionsMapFile: <<MINIO_FILE_PATH>>
     RequestConfigFile: <<MINIO_FILE_PATH>>
@@ -75,13 +74,6 @@ spec:
     repeated: false
     format: toml
     defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: BucketName
-    dataType: STRING
-    repeated: false
-    defaultValue: demo
     allowedValues: []
     showField: true
     required: true
@@ -176,7 +168,6 @@ spec:
   - Get Organization's EventLog.Input.RequestConfigFile:=*.Input.RequestConfigFile3
   - Get Organization's EventLog.Input.ResponseConfigFile:=*.Input.ResponseConfigFile3
   - Get Organization's EventLog.Input.LogFile:=t4.Output.LogFile
-  - t7.Input.BucketName:=*.Input.BucketName
   - t7.Input.UserDataFile:=t4.Output.OutputFile
   - t7.Input.PermissionsMapFile:=*.Input.PermissionsMapFile
   - t7.Input.EventLogFile:=Get Organization's EventLog.Output.OutputFile
