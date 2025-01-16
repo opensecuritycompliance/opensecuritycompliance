@@ -48,7 +48,9 @@ environment.
 
 # Setting up cowctl CLI
 
-**Note:** If you've already set up the CLI, you can skip this section and proceed by executing `sh run.sh` (in Mac or Ubuntu). Then enter `cowctl` to access the command line interface.
+**Note:** If you've already set up the CLI, you can skip this section and proceed by executing `sh run.sh` (in Mac or Ubuntu) or `./windows_setup/run.ps1` (in Windows). Then enter `cowctl` to access the command line interface.
+
+**Note:** While the CLI functionality on Windows has been partially tested, it may not yet offer full stability or support.
 
 ## Prerequisites
 
@@ -83,6 +85,10 @@ Please make sure to have the following installed in your machine.
 <details>
 <summary>Mac or Ubuntu</summary>
     sh build_and_run.sh
+</details>
+<details>
+<summary>Windows (PowerShell)</summary>
+    ./windows_setup/build_and_run.ps1
 </details>
 
 6.  Once it is built, type `cowctl` and you will get in to the prompt (as shown below).
@@ -199,10 +205,13 @@ Once the `create application` is completed, a new package and a set of classes w
 
 Now that we have created the application type and its credentials, it's time to initialize a rule with its associated tasks. Use the `init rule` command which will prompt you to provide:
 
-- a name for the rule
-- application type to bind with the rule (This is required to import the application class package in the rule and to auto fill the code related to the application package in rule and tasks).
-- the number of tasks you want to include.
-- name and programming language (Go/Python) for each task.
+- Enter a name for the rule.
+- Specify the number of tasks you want to include in the rule.
+- Provide the name and programming language (Go/Python) for each task.
+- Select the application type to bind with each task (This is required to import the application class package into the task and auto-fill the code related to the application package.)
+- Choose the primary application type to bind with the rule (This is necessary when different tasks use different application types)
+
+<img src="misc/img/init_rule_flow.png" alt="init_rule_flow" width="800"/>
 
 <img src="misc/img/init_rule_1.png" alt="init_rule_1" width="800"/>
 
@@ -278,18 +287,25 @@ Then, use this env key in the `inputs.yaml`.
 
 ```yaml
 userObject:
-  app:
-    name: GitHubApp
-    appURL: https://api.github.com
-    appPort: "0"
-    userDefinedCredentials:
-      GithubTokenCred:
-        personalAccessToken: "$GITHUB_PERSONAL_ACCESS_TOKEN"
+    apps:
+    - name: GitHubApp
+        appURL: https://api.github.com
+        appPort: "0"
+        appTags:
+            appType:
+            - githubapp
+            environment:
+            - logical
+            execlevel:
+            - app
+        userDefinedCredentials:
+            GithubTokenCred:
+                personalAccessToken: "$GITHUB_PERSONAL_ACCESS_TOKEN"
 userInputs:
-  BucketName: demo
-  GitHubRepoName: "PyGithub/PyGithub"
-```
+    BucketName: demo
+    GitHubRepoName: "PyGithub/PyGithub"
 
+```
 </details><br/>
 Below is a class diagram that explains the relationship among the Task, the App and the inputs.
 
@@ -297,7 +313,7 @@ Below is a class diagram that explains the relationship among the Task, the App 
 
 ### 1.4 Implementing the business logic
 
-Both your task and application code will need to utilize the various auto-generated OpenSecurityCompliance classes. To facilitate seamless integration in your IDE, please execute the command `sh install_cow_packages.sh` (in Mac or Ubuntu). You can find this file in the main folder of OpenSecurityCompliance.
+Both your task and application code will need to utilize the various auto-generated OpenSecurityCompliance classes. To facilitate seamless integration in your IDE, please execute the command `sh install_cow_packages.sh` (in Mac or Ubuntu) or `./windows_setup/install_cow_packages.ps1` (in Windows). You can find this file in the main folder of OpenSecurityCompliance.
 
 In your task, the typical approach is to access your application to retrieve data and subsequently process it. To maintain a clear separation of concerns, it is advisable to refrain from writing code in your task that directly pertains to application access. Therefore, let's begin by implementing the application-specific methods within the application class.
 
@@ -554,14 +570,6 @@ repo_info_file_url = self.task_inputs.user_inputs.get("RepoInfoFileURL")
 file_content, error = self.download_file_from_minio(file_url=repo_info_file_url)
 # file_content shall be in bytes
 ```
-
-## Adding a task to an existing rule
-
-To initialize a task, simply execute the `init task` command in the Command Line Interface (CLI). Upon running this command, the CLI will prompt you for two essential details: the task's name and the desired programming language for implementation, which can be either Go or Python.
-
-<img src="misc/img/init_task_1.png" alt="init_task_1" width="600"/>
-<br/>
-<img src="misc/img/init_task_2.png" alt="init_task_2" width="700"/>
 
 ## Debugging a task locally
 
