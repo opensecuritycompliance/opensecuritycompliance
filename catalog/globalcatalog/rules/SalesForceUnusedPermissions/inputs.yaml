@@ -47,7 +47,7 @@ userObject:
       NoCred:
         Dummy: ""
   - name: HttpRequest
-    appURL: http://localhost.com
+    appURL: "$SALESFORCE_INSTANCE_URL"
     appPort: "0"
     appTags:
       appType:
@@ -93,7 +93,7 @@ userObject:
       NoCred:
         Dummy: ""
   - name: HttpRequest
-    appURL: http://localhost.com
+    appURL: "$SALESFORCE_INSTANCE_URL"
     appPort: "0"
     appTags:
       appType:
@@ -119,22 +119,22 @@ userObject:
         ClientID: ""
         ClientSecret: ""
       CustomType:
-        ValidationCURL: ""
-        CredentialJson: null
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
       APIKey:
         ValidationCURL: ""
         APIKey: ""
       NoAuth: {}
   - name: SalesforceAppConnector
-    appURL: http://localhost.com
+    appURL: "$SALESFORCE_INSTANCE_URL"
     appPort: "0"
     appTags:
       appType:
       - salesforceappconnector
     userDefinedCredentials:
       CustomType:
-        ValidationCURL: ""
-        CredentialJson: null
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
 userInputs:
   ExtractPath: 0.records
   PermissionsMapFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/PermissionsMapFile.toml
