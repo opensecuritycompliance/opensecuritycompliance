@@ -1,0 +1,8 @@
+PyYAML
+xmltodict
+toml
+pandas
+requests
+jq
+PyJWT
+boto3==1.34.134

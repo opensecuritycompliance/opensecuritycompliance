@@ -1,0 +1,148 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: "$SALESFORCE_INSTANCE_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: "$SALESFORCE_INSTANCE_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: "$SALESFORCE_INSTANCE_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+  - name: SalesforceAppConnector
+    appURL: "$SALESFORCE_INSTANCE_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - salesforceappconnector
+    userDefinedCredentials:
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+userInputs:
+  ExtractPath: 0.records
+  PermissionsMapFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/PermissionsMapFile.toml
+  RequestConfigFile: <<MINIO_FILE_PATH>>    #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile.toml   
+  RequestConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile2.toml
+  RequestConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile3.toml
+  ResponseConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile2.toml
+  ResponseConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile3.toml
+  TransformConfigFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/TransformConfigFile.toml
+fromDate: 2024-12-11T11:09:18Z
+toDate: 2024-12-11T11:09:18Z

@@ -1,0 +1,39 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: SalesforceAppConnector
+  displayName: SalesforceAppConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - salesforceappconnector
+  annotations:
+    annotateType:
+    - salesforceappconnector
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateSalesforceAppConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: CustomType
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: CustomType
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+  hasSupportForCURLValidation: true
+isVersionToBeOverride: true

@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"maps"
+
 	"github.com/briandowns/spinner"
 	"github.com/dmnlk/stringUtils"
 	topo "github.com/fako1024/topo"
@@ -37,7 +39,6 @@ import (
 	"github.com/otiai10/copy"
 	cp "github.com/otiai10/copy"
 	progressbar "github.com/schollz/progressbar/v3"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v2"
 
 	cowStorage "appconnections/minio"
@@ -139,50 +140,32 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			rule.Spec.IoMap = additionalInfo.RuleYAMLVO.Spec.IoMap
 		}
 
-		if len(additionalInfo.RuleYAMLVO.Spec.Input) > 0 {
-			rule.Spec.Input = additionalInfo.RuleYAMLVO.Spec.Input
+		rule.Spec.Input = additionalInfo.RuleYAMLVO.Spec.Input
+
+		for _, input := range additionalInfo.RuleYAMLVO.Spec.InputsMeta__ {
+			input.ShowField = true
+			input.Required = true
 		}
+		rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.InputsMeta__
+		// commenting rule input not mapped filter for nocode auto save
+		// ruleIoMapInfo, _ := utils.GetRuleIOMapInfo(rule.Spec.IoMap)
+		// inputs := make(map[string]bool)
+		// for _, val := range ruleIoMapInfo.InputVaribales {
+		// 	inputs[val] = true
+		// }
 
-		if len(additionalInfo.RuleYAMLVO.Spec.InputsMeta__) > 0 {
-			for _, input := range additionalInfo.RuleYAMLVO.Spec.InputsMeta__ {
-				input.ShowField = true
-				input.Required = true
-			}
-			rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.InputsMeta__
-		} else if len(additionalInfo.RuleYAMLVO.Spec.UserInputs) > 0 {
-			// ruleInputs := make([]*vo.RuleUserInputVO, 0)
-			// for _, userInput := range additionalInfo.RuleYAMLVO.Spec.UserInputs {
-			// 	userInputClone := *userInput
-			// 	// userInputClone.Value = nil
-			// 	ruleInputs = append(ruleInputs, &userInputClone)
-			// }
+		// var usedInputsMeta []*vo.RuleUserInputVO
+		// usedInputs := make(map[string]interface{})
 
-			for _, input := range additionalInfo.RuleYAMLVO.Spec.UserInputs {
-				input.ShowField = true
-				input.Required = true
-			}
-			rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.UserInputs
+		// for _, inputMeta := range rule.Spec.InputsMeta__ {
+		// 	if _, exists := inputs[inputMeta.Name]; exists {
+		// 		usedInputsMeta = append(usedInputsMeta, inputMeta)
+		// 		usedInputs[inputMeta.Name] = rule.Spec.Input[inputMeta.Name]
+		// 	}
+		// }
 
-		}
-
-		ruleIoMapInfo, _ := utils.GetRuleIOMapInfo(rule.Spec.IoMap)
-		inputs := make(map[string]bool)
-		for _, val := range ruleIoMapInfo.InputVaribales {
-			inputs[val] = true
-		}
-
-		var usedInputsMeta []*vo.RuleUserInputVO
-		usedInputs := make(map[string]interface{})
-
-		for _, inputMeta := range rule.Spec.InputsMeta__ {
-			if _, exists := inputs[inputMeta.Name]; exists {
-				usedInputsMeta = append(usedInputsMeta, inputMeta)
-				usedInputs[inputMeta.Name] = rule.Spec.Input[inputMeta.Name]
-			}
-		}
-
-		rule.Spec.InputsMeta__ = usedInputsMeta
-		rule.Spec.Input = usedInputs
+		// rule.Spec.InputsMeta__ = usedInputsMeta
+		// rule.Spec.Input = usedInputs
 
 	}
 
@@ -1094,16 +1077,50 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 					if app != nil {
 						for _, ruleApps := range additionalInfo.RuleExecutionVO.Applications {
 							if reflect.DeepEqual(app.AppTags, ruleApps.AppTags) {
-								if utils.IsNotEmpty(ruleApps.CredentialType) && len(ruleApps.CredentialValues) > 0 {
-									app.UserDefinedCredentials = map[string]interface{}{
-										ruleApps.CredentialType: ruleApps.CredentialValues,
+								if utils.IsNotEmpty(ruleApps.ApplicationID) {
+									fetchedCredentials, err := FetchAppCredentials(ruleApps.ApplicationID, additionalInfo)
+									if err != nil {
+										return fmt.Errorf("error fetching credentials for app %s: %v", ruleApps.ApplicationID, err)
 									}
-								}
-								if utils.IsNotEmpty(ruleApps.ApplicationURL) {
-									app.ApplicationURL = ruleApps.ApplicationURL
-								}
-								if len(ruleApps.LinkedApplications) > 0 {
-									updateLinkedApplicationCredentials(app.LinkedApplications, ruleApps.LinkedApplications)
+									if credentialType, ok := fetchedCredentials["credentialType"].(string); ok {
+										if appCredential, ok := app.UserDefinedCredentials.(map[interface{}]interface{}); ok {
+											appCred := utils.ConvertMap(appCredential)
+											if _, exists := appCred[credentialType]; exists {
+												if userDefinedData, ok := fetchedCredentials["userDefinedData"].([]interface{}); ok {
+													credentialValues := make(map[string]interface{})
+													for _, data := range userDefinedData {
+														if dataMap, ok := data.(map[string]interface{}); ok {
+															if name, ok := dataMap["name"].(string); ok {
+																if value, ok := dataMap["value"].(string); ok {
+																	credentialValues[name] = value
+																}
+															}
+														}
+													}
+													app.UserDefinedCredentials = map[string]interface{}{
+														credentialType: credentialValues,
+													}
+												}
+											} else {
+												return fmt.Errorf("credentialType %s not matched with fetching credentials from ApplicationID - %s", credentialType, ruleApps.ApplicationID)
+											}
+										}
+										if appURL, ok := fetchedCredentials["appURL"].(string); ok {
+											app.ApplicationURL = appURL
+										}
+									}
+								} else {
+									if utils.IsNotEmpty(ruleApps.CredentialType) && len(ruleApps.CredentialValues) > 0 {
+										app.UserDefinedCredentials = map[string]interface{}{
+											ruleApps.CredentialType: ruleApps.CredentialValues,
+										}
+									}
+									if utils.IsNotEmpty(ruleApps.ApplicationURL) {
+										app.ApplicationURL = ruleApps.ApplicationURL
+									}
+									if len(ruleApps.LinkedApplications) > 0 {
+										updateLinkedApplicationCredentials(app.LinkedApplications, ruleApps.LinkedApplications)
+									}
 								}
 							}
 						}
@@ -1264,7 +1281,7 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 		}
 	}
 
-	handleRuleInputs(tmpRuleDir, tempRuleNameWithAlias, tempRuleNameWithGroupAndAlias, ruleOutputs, ruleDependency, ruleNameAndAliasInfo, additionalInfo, isBinaryToBeCreated, ruleInfo, ruleName)
+	handleRuleInputs(tmpRuleDir, tempRuleNameWithAlias, tempRuleNameWithGroupAndAlias, ruleOutputs, ruleDependency, ruleNameAndAliasInfo, additionalInfo, isBinaryToBeCreated, ruleInfo, ruleName, isExecuteCall)
 
 	if len(additionalInfo.ValidationErrors) > 0 {
 		return errors.New(strings.Join(additionalInfo.ValidationErrors, ", "))
@@ -1301,6 +1318,8 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 			if utils.IsNotEmpty(ruleProgressVO.Status) {
 				if len(additionalInfo.RuleOutputs) > 0 && ruleProgressVO.Status != "ERROR" {
 					maps.Copy(ruleProgressVO.Outputs, additionalInfo.RuleOutputs)
+					ruleProgressVO.Status = "COMPLETED"
+				} else if ruleProgressVO.Status == "COMPLETED" && len(ruleProgressVO.Outputs) == 0 {
 					ruleProgressVO.Status = "COMPLETED"
 				} else if ruleProgressVO.Status != "ERROR" {
 					ruleProgressVO.Status = "INPROGRESS"
@@ -1930,7 +1949,7 @@ func getTaskLevelOutputs(rulePath string) (map[string]map[string]interface{}, er
 }
 
 func handleRuleInputs(rulePath, ruleName, ruleNameWithGroup string, ruleOutputs map[string]*vo.RuleOutputs, ruleDependency *vo.RuleDependency,
-	ruleNameAndAliasInfo map[string]string, additionalInfo *vo.AdditionalInfo, isBinaryToBeCreated bool, ruleInfo *vo.RuleInfo, srcRuleName string) {
+	ruleNameAndAliasInfo map[string]string, additionalInfo *vo.AdditionalInfo, isBinaryToBeCreated bool, ruleInfo *vo.RuleInfo, srcRuleName string, isExecuteCall bool) {
 
 	if ruleDependency != nil {
 
@@ -2002,7 +2021,7 @@ func handleRuleInputs(rulePath, ruleName, ruleNameWithGroup string, ruleOutputs 
 					additionalInfo.RuleOutputVariableMap[srcRuleName] = outputVariables
 				}
 
-				err := copyTaskFoldersInToRulePath(rulePath, ruleSet, additionalInfo, isBinaryToBeCreated)
+				err := copyTaskFoldersInToRulePath(rulePath, ruleSet, additionalInfo, isBinaryToBeCreated, isExecuteCall)
 				if err != nil {
 				}
 
@@ -2170,7 +2189,7 @@ func removeLastSubFolder(path string) string {
 	return filepath.Clean(dir)
 }
 
-func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additionalInfo *vo.AdditionalInfo, isBinaryToBeCreated bool) error {
+func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additionalInfo *vo.AdditionalInfo, isBinaryToBeCreated bool, isExecuteCall bool) error {
 
 	if ruleSet != nil && len(ruleSet.Rules) > 0 {
 
@@ -2202,6 +2221,9 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 			for _, task := range taskInfos {
 				taskName := strings.NewReplacer("{{", "", "}}", "").Replace(task.TaskGUID)
 				tasksNewFolder := filepath.Join(rulePath, taskName)
+				if isExecuteCall {
+					tasksNewFolder = filepath.Join(rulePath, taskName+"-"+task.AliasRef)
+				}
 
 				opt := cp.Options{
 					Skip: func(srcInfo fs.FileInfo, src string, dest string) (bool, error) {
@@ -3712,9 +3734,16 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
 			Message: "Invalid Credential", Description: fmt.Sprintf("The application doesn't support credention '%s'", applicationValidatorVO.CredentialType)}}
 	}
-	appAbstract.UserDefinedCredentials = map[string]interface{}{
-		applicationValidatorVO.CredentialType: applicationValidatorVO.CredentialValues,
+
+	userDefinedCredentials := map[string]interface{}{}
+
+	// INFO : If credential value is empty, then we don't consider the credentialType (i.e) it goes with empty userDefinedCredentials
+
+	if len(applicationValidatorVO.CredentialValues) > 0 {
+		userDefinedCredentials[applicationValidatorVO.CredentialType] = applicationValidatorVO.CredentialValues
 	}
+
+	appAbstract.UserDefinedCredentials = userDefinedCredentials
 
 	_, err = url.ParseRequestURI(applicationValidatorVO.ApplicationURL)
 	if err != nil {
@@ -3745,7 +3774,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	err = os.WriteFile(inputYAMLPath, []byte(dateValue), os.ModePerm)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Validation failed", Description: "Error while installing appconnection packages",
+			Message: "VALIDATION_FAILED", Description: "Error while handling the input data",
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
 
@@ -3775,7 +3804,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 			_, err := cmd.Output()
 			if err != nil {
 				return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-					Message: "Validation failed", Description: "Error while installing appconnection packages",
+					Message: "VALIDATION_FAILED", Description: "Error while installing appconnection packages",
 					ErrorDetails: utils.GetValidationError(err)}}
 			}
 		}
@@ -3786,7 +3815,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 			_, err := cmd.Output()
 			if err != nil {
 				return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-					Message: "Validation failed", Description: "Error while installing validatio task packages",
+					Message: "VALIDATION_FAILED", Description: "Error while installing validation task packages",
 					ErrorDetails: utils.GetValidationError(err)}}
 			}
 		}
@@ -3803,7 +3832,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Validation failed", Description: "Cannot validate the application",
+			Message: "VALIDATION_FAILED", Description: "Task validation failed. Please contact the developer",
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
 
@@ -3811,7 +3840,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Validation failed", Description: "Cannot capture the validation status from validation task. output file is missing from the task."}}
+			Message: "VALIDATION_FAILED", Description: "Cannot capture the validation status from validation task. output file is missing from the task."}}
 	}
 
 	respVO := &vo.ApplicationValidatorRespVO{Valid: false}
@@ -3838,13 +3867,13 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	if errStr, ok := outputMap["errors"]; ok {
 		errorStr, _ := errStr.(string)
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Validation failed", Description: errorStr}}
+			Message: "VALIDATION_FAILED", Description: errorStr}}
 	}
 
 	if errStr, ok := outputMap["error"]; ok {
 		errorStr, _ := errStr.(string)
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Validation failed", Description: errorStr}}
+			Message: "VALIDATION_FAILED", Description: errorStr}}
 	}
 
 	fmt.Println("outputBytes :", string(outputBytes))
@@ -3933,29 +3962,34 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 
 	for _, userInput := range ruleInputs {
 
-		if userInput.DataType == constants.DeclarativesDataTypeFILE {
-			folderPath := fmt.Sprintf("%s/%s", ruleName, userInput.Name)
+		if userInput.DataType == constants.DeclarativesDataTypeFILE || userInput.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
+			if strValue, ok := userInput.DefaultValue.(string); ok && utils.IsNotEmpty(strValue) {
+				if strings.HasPrefix(strValue, "http://") || strings.HasPrefix(strValue, "https://") {
+					userInputs[userInput.Name] = strValue
+				} else {
+					folderPath := fmt.Sprintf("%s/%s", ruleName, userInput.Name)
 
-			fileName := userInput.Name
-			if utils.IsNotEmpty(userInput.Format) {
-				fileName += "." + userInput.Format
+					fileName := userInput.Name
+					if utils.IsNotEmpty(userInput.Format) {
+						fileName += "." + userInput.Format
+					}
+
+					fileBytes, err := getFileBytesFromInterface(userInput.DefaultValue)
+					if err != nil {
+						return nil, &vo.ErrorVO{
+							Message: "not a valid file data", Description: fmt.Sprintf("File content is invalid for '%s'", userInput.Name)}
+					}
+
+					minioFileVO := &vo.MinioFileVO{FileName: fileName, Path: folderPath, BucketName: constants.BucketNameRuleInputs, FileContent: fileBytes}
+					minioUploadResp, errResp := storage.UploadFileToMinio(minioFileVO, nil)
+					if errResp != nil {
+						return nil, errResp.Error
+					}
+
+					userInputs[userInput.Name] = minioUploadResp.FileURL
+				}
 			}
 
-			fileBytes, err := getFileBytesFromInterface(userInput.DefaultValue)
-			if err != nil {
-				return nil, &vo.ErrorVO{
-					Message: "not a valid file data", Description: fmt.Sprintf("File content is invalid for '%s'", userInput.Name)}
-			}
-
-			minioFileVO := &vo.MinioFileVO{FileName: fileName, Path: folderPath, BucketName: constants.BucketNameRuleInputs, FileContent: fileBytes}
-			minioUploadResp, err := storage.UploadFileToMinio(minioFileVO)
-			if err != nil {
-				return nil, &vo.ErrorVO{
-					Message: "minio upload failed", Description: fmt.Sprintf("Cannot upload file into minio for varaible '%s'", userInput.Name),
-					ErrorDetails: utils.GetValidationError(err)}
-			}
-
-			userInputs[userInput.Name] = minioUploadResp.FileURL
 		} else {
 			userInputs[userInput.Name] = userInput.DefaultValue
 		}
@@ -4048,4 +4082,29 @@ func updateLinkedApplicationCredentials(appList map[string][]*vo.AppAbstract, li
 			}
 		}
 	}
+}
+
+func FetchAppCredentials(applicationID string, additionalInfo *vo.AdditionalInfo) (map[string]interface{}, error) {
+	headerMap, err := utils.GetAuthHeader(additionalInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting auth header: %v", err)
+	}
+
+	client := resty.New()
+	url := fmt.Sprintf("%s/v1/configuration/fetch-application", constants.CoWConfigurationServiceURL)
+	body := map[string]interface{}{
+		"applicationId":     applicationID,
+		"includeCredential": true,
+	}
+
+	response, err := client.R().SetHeaders(headerMap).SetBody(body).Post(url)
+	if err != nil {
+		return nil, fmt.Errorf("error while making the request to the url %s: %v", url, err)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(response.Body(), &result); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
+	}
+	return result, nil
 }

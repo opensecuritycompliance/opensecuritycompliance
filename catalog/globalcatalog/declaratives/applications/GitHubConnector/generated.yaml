@@ -1,0 +1,43 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: GitHubConnector
+  displayName: GitHubConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - githubconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - githubconnector
+  version: ""
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateGitHubConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: AccessToken
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: AccessToken
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

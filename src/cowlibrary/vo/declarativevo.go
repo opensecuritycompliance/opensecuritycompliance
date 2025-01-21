@@ -112,7 +112,7 @@ type RuleGroupYAMLVO struct {
 
 type RuleUserInputVO struct {
 	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
-	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON'"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG'"`
 	Repeated      bool          `json:"repeated" yaml:"repeated"`
 	Format        string        `json:"format,omitempty" yaml:"format,omitempty" binding:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego'" validate:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego'"`
 	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty" binding:"required" validate:"required"`

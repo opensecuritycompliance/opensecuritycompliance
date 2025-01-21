@@ -1,0 +1,15 @@
+userObject:
+  app:
+    name: SalesforceAppConnector
+    appURL: "$SALESFORCE_INSTANCE_URL"
+    appPort: "0"
+    userDefinedCredentials:
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+userInputs:
+  UserDataFile: <<MINIO_FILE_PATH>>
+  PermissionsMapFile: <<MINIO_FILE_PATH>>
+  EventLogFile: <<MINIO_FILE_PATH>>
+fromDate: 2024-10-29T06:44:00Z
+toDate: 2024-10-29T06:44:00Z

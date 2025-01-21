@@ -27,7 +27,7 @@ const (
 
 type CredentialSpecVO struct {
 	Extends    []*CredentialsPointerVO   `json:"extends,omitempty" yaml:"extends,omitempty" binding:"omitempty" validate:"omitempty"` //dive,nameandversion
-	Attributes []*CredentialAttributesVO `json:"attributes" binding:"required,dive" validate:"required,dive"`
+	Attributes []*CredentialAttributesVO `json:"attributes"`
 }
 
 type CredentialAttributesVO struct {
@@ -287,6 +287,7 @@ type LinkedAppsCredentials struct {
 }
 
 type ApplicationCredVO struct {
+	ApplicationID      string                   `json:"applicationId,omitempty" yaml:"applicationId,omitempty"`
 	ApplicationName    string                   `json:"appName,omitempty" yaml:"name" binding:"required" validate:"required"`
 	CredentialValues   map[string]interface{}   `json:"credentialValues,omitempty" yaml:"credentialValues,omitempty"`
 	AppTags            map[string][]string      `json:"appTags,omitempty" yaml:"appTags,omitempty"`
