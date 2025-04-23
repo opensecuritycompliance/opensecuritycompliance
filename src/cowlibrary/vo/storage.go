@@ -11,3 +11,15 @@ type MinioFileVO struct {
 type MinioFileInfoVO struct {
 	FileURL string `json:"fileURL,omitempty" yaml:"fileURL,omitempty" binding:"required,http_url"`
 }
+
+type MinioFileInfoVOV2 struct {
+	FileURL  string `json:"fileURL,omitempty" yaml:"fileURL,omitempty" binding:"required,http_url"`
+	FileHash string `json:"fileHash,omitempty" yaml:"fileHash,omitempty"`
+}
+
+type AppliactionDetailsVO struct {
+	Name   string
+	Descr  string
+	Path   string
+	Global bool
+}

@@ -1,0 +1,5 @@
+Employee ID,Name,Email,Department,Manager ID,Manager Email
+1001,Alex Carter,alex.carter@example.com,Engineering,2001,jordan.mitchell@example.com
+2001,Jordan Mitchell,jordan.mitchell@example.com,Engineering,3001,taylor.morgan@example.com
+3001,Taylor Morgan,taylor.morgan@example.com,Marketing,4001,casey.harper@example.com
+4001,Casey Harper,casey.harper@example.com,Engineering,NULL,NULL

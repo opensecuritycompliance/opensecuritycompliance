@@ -6,4 +6,5 @@ protobuf
 requests
 SQLAlchemy
 pyarrow
-toml
+tomli
+tomli-w

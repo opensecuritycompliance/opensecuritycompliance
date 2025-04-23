@@ -1,0 +1,55 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 19/05/2024
+name: IntunePrivilegedUsersReAuthReport
+displayName: IntunePrivilegedUsersReAuthReport
+version: '1.0'
+description: IntunePrivilegedUsersReAuthReport
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AllowedSignInRiskLevels # A unique identifier of the task input
+  description: AllowedSignInRiskLevels # A concise description of the task input
+  dataType: STRING
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true
+- name: IntuneConditionalAccessPolicies # A unique identifier of the task input
+  description: IntuneConditionalAccessPolicies # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true
+- name: IntuneUserRegistrationDetails # A unique identifier of the task input
+  description: IntuneUserRegistrationDetails # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue:  # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: IntunePrivilegedReAuthReport
+  description: IntunePreviligedReAuthReport
+  dataType: FILE

@@ -79,8 +79,9 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 	if err != nil {
 		return fmt.Errorf("error in unmarshalling rule yaml,error:%S", err)
 	}
+	rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
+
 	if additionalInfo.PrimaryApplicationInfo != nil {
-		rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
 		rule.Meta.Labels = additionalInfo.PrimaryApplicationInfo.App.Meta.Labels
 		rule.Meta.Annotations = additionalInfo.PrimaryApplicationInfo.App.Meta.Annotations
 	}
@@ -102,12 +103,13 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 				taskInfo.Description = "Detailed info about the task"
 			}
 			tasks = append(tasks, &vo.TaskVO{
-				Name:        strcase.ToCamel(taskInfo.TaskName),
-				Purpose:     "Purpose of the task",
-				Description: taskInfo.Description,
-				Type:        "task",
-				AppTags:     appTags,
-				Alias:       taskInfo.Alias,
+				Name:           strcase.ToCamel(taskInfo.TaskName),
+				Purpose:        "Purpose of the task",
+				Description:    taskInfo.Description,
+				Type:           "task",
+				AppTags:        appTags,
+				Alias:          taskInfo.Alias,
+				ValidationCURL: taskInfo.ValidationCURL,
 			})
 		}
 
@@ -130,6 +132,9 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			// 	}
 			// }
 			if len(additionalInfo.RuleYAMLVO.Meta.Labels) > 0 {
+				if len(rule.Meta.Labels) == 0 {
+					rule.Meta.Labels = make(map[string][]string, 0)
+				}
 				for annotation, tags := range additionalInfo.RuleYAMLVO.Meta.Labels {
 					rule.Meta.Labels[annotation] = tags
 				}
@@ -1737,6 +1742,9 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 	ruleYaml, err := GetRuleYAML(path)
 	if err != nil {
 		return nil, err
+	}
+	if len(ruleYaml.Meta.Labels) == 0 {
+		return nil, fmt.Errorf("invalid rule yaml. Primary Application is not present in the rule")
 	}
 
 	ruleTags := map[string][]string{
@@ -3440,8 +3448,10 @@ func CreateRuleWithYAMLV2(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 
 		additionalInfo = addInfo
 	}
+	fmt.Println("additionalInfo::", additionalInfo)
 
 	ruleAddInfo, errorVO := utils.GetTaskInfosFromRule(ruleYAML, additionalInfo)
+	fmt.Println("ruleAddInfo: ", ruleAddInfo)
 	if errorVO != nil {
 		return &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: errorVO}
 	}
@@ -4033,9 +4043,12 @@ func updateRuleInputFilePath(tempDir string, additionalInfo *vo.AdditionalInfo) 
 	}
 
 	for _, inputMeta := range ruleSet.Rules[0].RuleIOValues.InputsMeta__ {
-		if inputMeta.DataType == constants.InputMetaFileType {
+		if inputMeta.DataType == constants.InputMetaFileType || inputMeta.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
 			inputMeta.DefaultValue = constants.MinioFilePath
 			ruleSet.Rules[0].RuleIOValues.Inputs[inputMeta.Name] = constants.MinioFilePath
+		}
+		if inputMeta.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
+			inputMeta.DataType = constants.DeclarativesDataTypeFILE
 		}
 	}
 

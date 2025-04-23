@@ -962,8 +962,6 @@ meta:
   name: RuleName
   purpose: Purpose of the Rule 
   description: Description about the rule
-  labels:
-    app:
 spec:
   inputs:
     BucketName: demo

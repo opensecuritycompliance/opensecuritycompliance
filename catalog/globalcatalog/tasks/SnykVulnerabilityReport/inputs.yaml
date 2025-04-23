@@ -1,0 +1,12 @@
+userObject:
+  app:
+    name: SnykAppConnector
+    appURL: "$SNYK_LOGIN_URL"
+    appPort: "0"
+    userDefinedCredentials:
+      SnykCredential:
+        ApiKey: "$SNYK_API_KEY"
+userInputs:
+  ConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2024-06-13
+toDate: 2024-06-13

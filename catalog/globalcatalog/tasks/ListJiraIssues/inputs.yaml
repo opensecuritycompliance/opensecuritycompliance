@@ -1,0 +1,12 @@
+userObject:
+  app:
+    name: JiraCloud
+    appURL: https://www.atlassian.com/software # replace with actual jira instance url
+    appPort: "0"
+    userDefinedCredentials:
+      BasicAuthentication:
+        UserName: "$JIRA_USER_NAME"
+        Password: "$JIRA_PASSWORD"
+userInputs:
+fromDate: 2023-06-13
+toDate: 2024-06-13

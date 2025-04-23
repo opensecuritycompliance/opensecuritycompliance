@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -1725,60 +1726,97 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 	}
 	localcatalogPath := additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath
 	pathPrefixs := []string{
-		filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.RulesPath, "*", "rule.json"),
 		filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.RulesPath, "*", "rule.yaml")}
 	if !additionalInfo.GlobalCatalog {
-		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "rules", "*", "rule.json"))
 		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "rules", "*", "rule.yaml"))
-		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "*", "rules", "*", "rule.json"))
 		pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "*", "rules", "*", "rule.yaml"))
 	}
 	policyCowDataSet := make([]*vo.RuleYAMLVO, 0)
+	var matches []string
 	for _, pattern := range pathPrefixs {
+		pathMatches, _ := filepath.Glob(pattern)
+		matches = append(matches, pathMatches...)
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		fileInfoI, _ := os.Stat(matches[i])
+		fileInfoJ, _ := os.Stat(matches[j])
+		return fileInfoI.ModTime().After(fileInfoJ.ModTime())
+	})
+
+	for _, path := range matches {
 		description := "The Resource is present in "
-		if strings.Contains(pattern, "localcatalog") {
+		if strings.Contains(path, "localcatalog") {
 			description += "localcatalog"
 		} else {
 			description += "globalcatalog"
 
 		}
-		matches, _ := filepath.Glob(pattern)
-		for _, path := range matches {
 
-			folder := "globalcatalog"
-			if strings.Contains(path, "localcatalog") {
-				folder = "localcatalog"
-				domain := filepath.Base(filepath.Dir(filepath.Dir(filepath.Dir(path))))
-				if filepath.Base(domain) != "localcatalog" {
-					folder = filepath.Base(domain)
-					description += " in " + folder + " domain"
-				}
+		folder := "globalcatalog"
+		if strings.Contains(path, "localcatalog") {
+			folder = "localcatalog"
+			domain := filepath.Base(filepath.Dir(filepath.Dir(filepath.Dir(path))))
+			if filepath.Base(domain) != "localcatalog" {
+				folder = filepath.Base(domain)
+				description += " in " + folder + " domain"
 			}
-			bytes, err := os.ReadFile(path)
+		}
+		bytes, err := os.ReadFile(path)
+		if err == nil {
+			extension := filepath.Ext(path)
+			rulevo := &vo.RuleYAMLVO{}
+			if extension == ".yaml" || extension == ".yml" {
+				err = yaml.Unmarshal(bytes, rulevo)
+			}
 			if err == nil {
-				extension := filepath.Ext(path)
-				rulevo := &vo.RuleYAMLVO{}
-				if extension == ".json" {
-					err = json.Unmarshal(bytes, rulevo)
-				} else if extension == ".yaml" || extension == ".yml" {
-					err = yaml.Unmarshal(bytes, rulevo)
+				rulevo.Catalog = folder
+				if len(rulevo.Meta.Labels) == 0 {
+					rulevo.RuleStatus = "unfinished"
 				}
-				if err == nil {
-					rulevo.Catalog = folder
-					if rulevo.Spec != nil {
-						for key, value := range rulevo.Spec.Input {
-							if inputsMap, ok := value.(map[interface{}]interface{}); ok {
-								rulevo.Spec.Input[key] = ConvertMap(inputsMap)
+				inputYAMLFile := filepath.Join(filepath.Dir(path), constants.TaskInputYAMLFile)
+				if IsFileExist(inputYAMLFile) {
+					taskInputVO := &vo.TaskInputV2{}
+					bytes, _ := os.ReadFile(inputYAMLFile)
+					err = yaml.Unmarshal(bytes, taskInputVO)
+					if err == nil {
+						if IsNoneEmpty(cowRulesCriteriaVO.Apps) {
+							appMatched := false
+							if taskInputVO.UserObject != nil && taskInputVO.UserObject.App != nil {
+								for _, userApp := range cowRulesCriteriaVO.Apps {
+									if taskInputVO.UserObject.App.ApplicationName == userApp {
+										appMatched = true
+										break
+									}
+								}
 							}
-						}
-						for key, input := range rulevo.Spec.InputsMeta__ {
-							if inputsMetaMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
-								rulevo.Spec.InputsMeta__[key].DefaultValue = ConvertMap(inputsMetaMap)
+							if taskInputVO.UserObject != nil && len(taskInputVO.UserObject.Apps) > 0 {
+								for _, userApp := range taskInputVO.UserObject.Apps {
+									if SliceContains(cowRulesCriteriaVO.Apps, userApp.ApplicationName) {
+										appMatched = true
+										break
+									}
+								}
+							}
+							if !appMatched {
+								continue
 							}
 						}
 					}
-					policyCowDataSet = append(policyCowDataSet, rulevo)
 				}
+
+				if rulevo.Spec != nil {
+					for key, value := range rulevo.Spec.Input {
+						if inputsMap, ok := value.(map[interface{}]interface{}); ok {
+							rulevo.Spec.Input[key] = ConvertMap(inputsMap)
+						}
+					}
+					for key, input := range rulevo.Spec.InputsMeta__ {
+						if inputsMetaMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
+							rulevo.Spec.InputsMeta__[key].DefaultValue = ConvertMap(inputsMetaMap)
+						}
+					}
+				}
+				policyCowDataSet = append(policyCowDataSet, rulevo)
 			}
 		}
 	}
@@ -1820,30 +1858,25 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 	}
 
 	ruleAddInfo := &vo.RuleAdditionalInfo{RuleIOMapInfo: ruleIOInfo}
+	if IsNotEmpty(ruleYAML.Meta.App) {
+		appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", ruleYAML.Meta.App))
 
-	if IsEmpty(ruleYAML.Meta.App) {
-		return nil, &vo.ErrorVO{
-			Message: "Invalid App", Description: "'App' cannot be empty",
-			ErrorDetails: GetValidationError(err)}
+		fmt.Println("appClassPath :", appClassPath)
+
+		if IsFileNotExist(appClassPath) {
+			return nil, &vo.ErrorVO{
+				Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
+				ErrorDetails: GetValidationError(err)}
+		}
+
+		primaryAppInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+		if err != nil {
+			return nil, &vo.ErrorVO{
+				Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
+				ErrorDetails: GetValidationError(err)}
+		}
+		additionalInfo.PrimaryApplicationInfo = primaryAppInfo
 	}
-
-	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", ruleYAML.Meta.App))
-
-	fmt.Println("appClassPath :", appClassPath)
-
-	if IsFileNotExist(appClassPath) {
-		return nil, &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
-			ErrorDetails: GetValidationError(err)}
-	}
-
-	primaryAppInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
-	if err != nil {
-		return nil, &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
-			ErrorDetails: GetValidationError(err)}
-	}
-	additionalInfo.PrimaryApplicationInfo = primaryAppInfo
 
 	unAvailableTasks := make([]string, 0)
 	additionalInfo.ApplicationInfo = make([]*vo.ApplicationInfoVO, len(ruleYAML.Spec.Tasks))
@@ -2182,6 +2215,13 @@ func ConvertMap(inputMap map[interface{}]interface{}) map[string]interface{} {
 		switch v := value.(type) {
 		case map[interface{}]interface{}:
 			resultMap[stringKey] = ConvertMap(v)
+		case []interface{}:
+			for i, item := range v {
+				if inputMap, ok := item.(map[interface{}]interface{}); ok {
+					v[i] = ConvertMap(inputMap)
+				}
+			}
+			resultMap[stringKey] = v
 		default:
 			resultMap[stringKey] = v
 		}
@@ -2251,4 +2291,37 @@ func ParseDateString(dateStr string) (time.Time, error) {
 
 func IsDefaultConfigPath(path string) bool {
 	return strings.HasPrefix(path, "/policycow")
+}
+
+func GetAvailableApplications(pathPrefixs []string) []vo.AppliactionDetailsVO {
+	directories := make([]vo.AppliactionDetailsVO, 0)
+	for _, pattern := range pathPrefixs {
+		matches, _ := filepath.Glob(pattern)
+		for _, path := range matches {
+			files, err := os.ReadDir(path)
+			if err != nil {
+				continue
+			}
+			for _, file := range files {
+				if filepath.Ext(file.Name()) == ".yaml" {
+					filePath := filepath.Join(path, file.Name())
+					yamlContent, err := os.ReadFile(filePath)
+					if err != nil {
+						continue
+					}
+					var data *vo.UserDefinedApplicationVO
+					if err := yaml.Unmarshal(yamlContent, &data); err != nil {
+						continue
+					}
+					fullPath := filepath.Join(path, file.Name())
+					descr := fmt.Sprintf("Name :%s", data.Meta.DisplayName)
+					if IsNotEmpty(data.Meta.Version) {
+						descr += " , Version :" + data.Meta.Version
+					}
+					directories = append(directories, vo.AppliactionDetailsVO{Name: data.Meta.Name, Descr: descr, Path: fullPath})
+				}
+			}
+		}
+	}
+	return directories
 }

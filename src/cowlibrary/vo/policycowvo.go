@@ -108,6 +108,7 @@ type AdditionalInfo struct {
 	UserDomain                 string                   `json:"userDomain,omitempty"`
 	RuleProgressWorker         *RuleProgressWorkerVO
 	TerminateFlow              bool
+	TaskVO                     *TaskVO
 	ClientCredentials
 }
 

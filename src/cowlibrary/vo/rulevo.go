@@ -215,6 +215,9 @@ type TaskInputVO struct {
 	RefMaps              []*RefStruct `json:"refmaps,omitempty"`
 	IsSQLRule            bool
 	SupportFilesToCreate []*SupportedFilesVO
+	ValidationCURL       string
+	TaskToBeCreated      bool
+	Comments             TaskCommentsVO
 }
 
 type UserData struct {
@@ -255,15 +258,29 @@ type RuleVO struct {
 	Description string `json:"description,omitempty"`
 }
 type TaskVO struct {
-	Name        string              `json:"name,omitempty" yaml:"name" binding:"required,taskname" validate:"required,taskname"`
-	Alias       string              `json:"aliasref,omitempty" yaml:"alias" binding:"required" validate:"required"`
-	Type        string              `json:"type,omitempty" yaml:"type"`
-	AppTags     map[string][]string `json:"appTags,omitempty" yaml:"appTags,omitempty"`
-	TaskGUID    string              `json:"taskguid,omitempty" yaml:"taskguid,omitempty"`
-	Catalog     string              `json:"catalog,omitempty" yaml:"catalog,omitempty"`
-	Purpose     string              `json:"Purpose,omitempty" yaml:"purpose"`
-	Description string              `json:"description,omitempty" yaml:"description"`
+	Name           string              `json:"name,omitempty" yaml:"name" binding:"required,taskname" validate:"required,taskname"`
+	Alias          string              `json:"aliasref,omitempty" yaml:"alias" binding:"required" validate:"required"`
+	Type           string              `json:"type,omitempty" yaml:"type"`
+	AppTags        map[string][]string `json:"appTags,omitempty" yaml:"appTags,omitempty"`
+	ValidationCURL string              `json:"validationCURL,omitempty" yaml:"validationCURL,omitempty"`
+	TaskGUID       string              `json:"taskguid,omitempty" yaml:"taskguid,omitempty"`
+	Catalog        string              `json:"catalog,omitempty" yaml:"catalog,omitempty"`
+	Purpose        string              `json:"Purpose,omitempty" yaml:"purpose"`
+	Description    string              `json:"description,omitempty" yaml:"description"`
+	TaskToBeCreate bool                `json:"taskToBeCreate,omitempty" yaml:"taskToBeCreate,omitempty"`
+	TemplateFile   string              `json:"templateFile,omitempty" yaml:"templateFile,omitempty"`
+	Evidences      []*CowEvidenceVO    `json:"evidences,omitempty" yaml:"evidences,omitempty"`
+	Language       string              `json:"language,omitempty" yaml:"language,omitempty" binding:"omitempty,oneof=python go" validate:"omitempty,oneof=python go"`
+	AlreadyExists  bool                `json:"alreadyExists,omitempty" yaml:"already_exist,omitempty"`
+	Application    *CowApplicationVO   `json:"application,omitempty" yaml:"application,omitempty"`
+	Comments       TaskCommentsVO      `json:"comments,omitempty" yaml:"comments,omitempty"`
 }
+
+type TaskCommentsVO struct {
+	Code string `json:"code,omitempty" yaml:"code,omitempty"`
+	Task string `json:"task,omitempty" yaml:"task,omitempty"`
+}
+
 type RuleInputVO struct {
 	RuleName   string        `json:"ruleName,omitempty"`
 	RuleMap    string        `json:"ruleMap,omitempty"`

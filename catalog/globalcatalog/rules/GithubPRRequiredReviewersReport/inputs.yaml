@@ -1,0 +1,14 @@
+userObject:
+  app:
+    name: GitHubConnector
+    appURL: https://github.com/
+    appPort: "0"
+    userDefinedCredentials:
+      AccessToken:
+        AccessToken: $GITHUB_ACCESS_TOKEN
+userInputs:
+  CriteriaConfig : <<MINIO_FILE_PATH>> # file can be found in catalog/globalcatalog/rules/GithubPRRequiredReviewersReport/CriteriaConfig.toml
+  HRISHierarchyReport: <<MINIO_FILE_PATH>> # file can be found in catalog/globalcatalog/rules/GithubPRRequiredReviewersReport/HRISHierarchyReport.csv
+  MinimumRequiredReviewersCount: 3
+fromDate: 2024-01-01
+toDate: 2024-08-30
