@@ -1,0 +1,15 @@
+userObject:
+  app:
+    name: OktaConnector
+    appURL: https://<your-domain>.okta.com
+    appPort: "0"
+    userDefinedCredentials:
+      APIKey:
+        APIKey: "$OKTA_API_KEY"
+userInputs:
+  IncludeGroups:  
+  ExcludeGroups: 
+  IncludeApps: 
+  ExcludeApps:  
+fromDate: 2024-05-05
+toDate: 2024-09-05

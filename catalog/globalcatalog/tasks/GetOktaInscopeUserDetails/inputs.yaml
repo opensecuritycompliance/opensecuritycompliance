@@ -1,0 +1,16 @@
+userObject:
+  app:
+    name: OktaConnector
+    appURL: https://<your-domain>.okta.com
+    appPort: "0"
+    userDefinedCredentials:
+      APIKey:
+        APIKey: "$OKTA_API_KEY"
+userInputs:
+  OktaUsers: <<MINIO_FILE_PATH>>
+  IncludeGroups: 
+  ExcludeGroups: 
+  IncludeApps: 
+  ExcludeApps: 
+fromDate: 2024-04-02
+toDate: 2024-09-09

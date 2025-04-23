@@ -1,14 +1,15 @@
 from datetime import datetime
 from typing import Tuple, List
 from abc import abstractmethod
-from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils
+from compliancecowcards.utils import cowfilestoreutils, cowdfutils
 from compliancecowcards.structs import cowvo
 import pandas as pd
 import uuid
 import os
 import minio
 import json
-import toml
+import tomli
+import tomli_w
 import re
 import pathlib
 from posixpath import join as urljoin
@@ -87,8 +88,7 @@ class AbstractTask(object):
 
         try:
             file_content, error = convertion_func(df)
-            if error:
-                return None, error
+            if error: return None, error
         except (ValueError, TypeError) as e:
             return None, {"error": str(e)}
 
@@ -168,7 +168,12 @@ class AbstractTask(object):
             content_type="application/ndjson",
         )
 
-    def upload_iterable_as_json_file_to_minio(self, data: List[dict] | dict = None, file_name: str = None) -> Tuple[str, dict]:
+    def upload_iterable_as_json_file_to_minio(
+            self, 
+            data: List[dict] | dict = None,
+            file_name: str = None
+        ) -> Tuple[str, dict]:
+
         """
         Uploads a Dict or a List[dict] as a JSON file to MinIO.
         Parameters:
@@ -181,20 +186,28 @@ class AbstractTask(object):
 
         if not file_name:
             return None, {"error": "File name cannot be empty. Please provide a valid file name for uploading."}
-
+        
         if not isinstance(data, (list, dict)):
-            return None, {"error": f"Data must be a dictionary or list of dictionaries, got '{type(data).__name__}' instead"}
-
+            return None, {'error': f"Data must be a dictionary or list of dictionaries, got '{type(data).__name__}' instead"}
+        
         file_name, _ = os.path.splitext(file_name)
-
+        
         try:
             file_content = json.dumps(data)
         except TypeError as e:
-            return None, {"error": f"Please check the data, and ensure that all fields are serializable :: {str(e)}"}
+            return None, {'error': f'Please check the data, and ensure that all fields are serializable :: {str(e)}'}
 
-        return self.upload_file_to_minio(file_name=f"{file_name}-{str(uuid.uuid4())}.json", file_content=file_content, content_type="application/json")
+        return self.upload_file_to_minio(
+            file_name=f'{file_name}-{str(uuid.uuid4())}.json',
+            file_content=file_content,
+            content_type="application/json")
+    
+    def upload_dict_as_toml_file_to_minio(
+            self, 
+            data: dict = None,
+            file_name: str = None
+        ) -> Tuple[str, dict]:
 
-    def upload_dict_as_toml_file_to_minio(self, data: dict = None, file_name: str = None) -> Tuple[str, dict]:
         """
         Uploads a dict as a TOML file to MinIO.
         Parameters:
@@ -207,19 +220,22 @@ class AbstractTask(object):
 
         if not file_name:
             return None, {"error": "File name cannot be empty. Please provide a valid file name for uploading."}
-
+        
         if not isinstance(data, dict):
-            return None, {"error": f"Data must be a dictionary, got '{type(data).__name__}' instead"}
-
+            return None, {'error': f"Data must be a dictionary, got '{type(data).__name__}' instead"}
+        
         file_name, _ = os.path.splitext(file_name)
-
+        
         try:
-            file_content = toml.dumps(data)
+            file_content = tomli_w.dumps(data)
         except TypeError as e:
-            return None, {"error": f"Please check the data, and ensure that all fields are serializable :: {str(e)}"}
+            return None, {'error': f'Please check the data, and ensure that all fields are serializable :: {str(e)}'}
 
-        return self.upload_file_to_minio(file_name=f"{file_name}-{str(uuid.uuid4())}.toml", file_content=file_content, content_type="application/toml")
-
+        return self.upload_file_to_minio(
+            file_name=f'{file_name}-{str(uuid.uuid4())}.toml',
+            file_content=file_content,
+            content_type="application/toml")
+        
     def download_parquet_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
         """
         Downloads a Parquet file from MinIO as a DataFrame.
@@ -260,10 +276,10 @@ class AbstractTask(object):
             json_string = json_bytes.decode("utf-8")
             json_data = json.loads(json_string)
         except json.JSONDecodeError:
-            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
-
+            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
+        
         return json_data, None
-
+    
     def download_json_file_from_minio_as_iterable(self, file_url=None) -> Tuple[List[dict] | dict, dict]:
         """
         Downloads a JSON file from MinIO as a Python Iterable.
@@ -275,8 +291,9 @@ class AbstractTask(object):
         """
 
         return self.download_json_file_from_minio_as_dict(file_url)
-
+    
     def download_toml_file_from_minio_as_dict(self, file_url=None) -> Tuple[dict, dict]:
+        
         """
         Downloads a TOML file from MinIO as a Python Dictionary.
         Parameters:
@@ -286,18 +303,19 @@ class AbstractTask(object):
         - dict: Dictionary containing error information if any, otherwise None.
         """
 
-        toml_bytes, error = self.download_file_from_minio(file_url=file_url)
+        toml_bytes, error = self.download_file_from_minio(
+            file_url=file_url)
         if error:
             return None, error
-
+        
         try:
             toml_string = toml_bytes.decode("utf-8")
-            toml_data = toml.loads(toml_string)
-        except (UnicodeDecodeError, toml.TomlDecodeError):
-            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
-
+            toml_data = tomli.loads(toml_string)
+        except (UnicodeDecodeError, tomli.TOMLDecodeError):
+            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
+        
         return toml_data, None
-
+    
     def download_json_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
         """
         Downloads a JSON file from MinIO as a DataFrame.

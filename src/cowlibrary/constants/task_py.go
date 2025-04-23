@@ -1,6 +1,7 @@
 package constants
 
 const TaskPy = `
+{{task_level_comments}}
 from typing import overload
 from compliancecowcards.structs import cards
 {{replace_with_imports}}
@@ -41,6 +42,8 @@ class Task(cards.AbstractTask):
         # TODO : write your logics here
 
         # PLACEHOLDER CODE #
+
+        {{code_level_comments}}
 
         response = {
             "ComplianceStatus_": "NON_COMPLIANT", # The possible values for the 'Status' field should be one of the following: 'COMPLIANT' 'NON_COMPLIANT,' or 'NOT_DETERMINED.'

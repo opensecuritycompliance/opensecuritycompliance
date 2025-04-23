@@ -45,6 +45,11 @@ var (
 	CoWConfigurationServiceHostName = os.Getenv("COW_CONFIG_SERVICE_HOST_NAME")
 	CoWConfigurationServicePortNo   = os.Getenv("COW_CONFIG_SERVICE_PORT_NUMBER")
 	CoWConfigurationServiceURL      = fmt.Sprintf("%s://%s:%s", CoWConfigurationServiceProtocol, CoWConfigurationServiceHostName, CoWConfigurationServicePortNo)
+
+	COWStorageServiceProtocol = os.Getenv("COW_STORAGE_SERVICE_PROTOCOL")
+	COWStorageServiceHostName = os.Getenv("COW_STORAGE_SERVICE_HOST_NAME")
+	COWStorageServicePortNo   = os.Getenv("COW_STORAGE_SERVICE_PORT_NUMBER")
+	COWStorageServiceURL      = fmt.Sprintf("%s://%s:%s", COWStorageServiceProtocol, COWStorageServiceHostName, COWStorageServicePortNo)
 )
 
 var USERHOMEDIR string

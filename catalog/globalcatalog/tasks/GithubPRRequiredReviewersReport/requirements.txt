@@ -1,0 +1,4 @@
+PyYAML
+PyGithub
+toml
+pandas

@@ -1,0 +1,57 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GithubPRRequiredReviewersReport
+  purpose: Github PR Required Reviewers Report
+  description: Description about the rule
+  labels:
+    appType:
+    - githubconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - githubconnector
+spec:
+  inputs:
+    CriteriaConfig: <<MINIO_FILE_PATH>>
+    HRISHierarchyReport: <<MINIO_FILE_PATH>>
+    MinimumRequiredReviewersCount: 
+  inputsMeta__:
+  - name: CriteriaConfig
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: HRISHierarchyReport
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: MinimumRequiredReviewersCount
+    dataType: INTEGER
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: GithubPRRequiredReviewersReport
+    alias: t1
+    type: task
+    purpose: Purpose of the task
+    description: Detailed info about the task
+  ioMap:
+  - t1.Input.CriteriaConfig:=*.Input.CriteriaConfig
+  - t1.Input.HRISHierarchyReport:=*.Input.HRISHierarchyReport
+  - t1.Input.MinimumRequiredReviewersCount:=*.Input.MinimumRequiredReviewersCount
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.GithubPRRequiredReviewersReport:=t1.Output.GithubPRRequiredReviewersReport'

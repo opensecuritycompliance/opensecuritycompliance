@@ -1,0 +1,14 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  AdminUsersData: <<MINIO_FILE_PATH>>
+  PoliciesData: <<MINIO_FILE_PATH>>
+  AllowedSessionLifetimeMinutes: 
+fromDate: 2024-05-14
+toDate: 2024-05-14

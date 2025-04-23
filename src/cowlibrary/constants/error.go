@@ -28,4 +28,6 @@ const (
 	ErrorCredAlreadyPresent             = "credential config already present for this name and version"
 	ErrorMoreThanOneAppPresent          = "more than one app is present"
 	ErrorCircularDependency             = "circular dependency found"
+	ErrorInternalServerError            = "INTERNAL_SERVER_ERROR"
+	ErrorInternalServerErrorDescription = "Internal server error"
 )

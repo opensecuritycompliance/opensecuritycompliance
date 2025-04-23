@@ -1,0 +1,71 @@
+authors:
+- praveen.kj@continube.com
+domain: continube
+createdDate: 02/09/2024
+name: GetOktaInscopeUserDetails
+displayName: GetOktaInscopeUserDetails
+version: '1.0'
+description: GetOktaInscopeUserDetails
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: OktaUsers 
+  description: OktaUsers 
+  dataType: FILE 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true 
+- name: IncludeGroups 
+  description: IncludeGroups 
+  dataType: STRING 
+  repeated: false 
+  allowedValues:  
+  defaultValue:  
+  showField: true 
+  required: false
+- name: ExcludeGroups
+  description: ExcludeGroups 
+  dataType: STRING 
+  repeated: false
+  allowedValues: 
+  defaultValue:  
+  showField: true 
+  required: false
+- name: IncludeApps 
+  description: IncludeApps 
+  dataType: STRING 
+  repeated: false
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: false
+- name: ExcludeApps 
+  description: ExcludeApps 
+  dataType: STRING 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: false 
+outputs:
+- name: OktaInscopeUserDetails
+  description: List of Users access to in-scope apps and groups
+  datType: FILE
+- name: LogFile
+  description: list of errors
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

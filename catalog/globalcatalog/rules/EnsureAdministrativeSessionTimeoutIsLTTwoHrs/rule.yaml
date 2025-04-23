@@ -1,0 +1,57 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+  purpose: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+  description: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+  labels:
+    appType:
+    - nocredapp
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    AdminUsersData: <<MINIO_FILE_PATH>>
+    AllowedSessionLifetimeMinutes:
+    ConditionalAccessPoliciesData: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: PoliciesData
+    dataType: STRING
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: AdminUsersData
+    dataType: STRING
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: AllowedSessionLifetimeMinutes
+    dataType: INT
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+    alias: t1
+    type: task
+    purpose: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+    description: EnsureAdministrativeSessionTimeoutIsLTTwoHrs
+  ioMap:
+  - t1.Input.PoliciesData:=*.Input.PoliciesData
+  - t1.Input.AdminUsersData:=*.Input.AdminUsersData
+  - t1.Input.AllowedSessionLifetimeMinutes:=*.Input.AllowedSessionLifetimeMinutes
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.AdministrativeSessionTimeoutReport:=t1.Output.AdministrativeSessionTimeoutReport'
+  - '*.Output.Policies:=t1.Output.Policies'
+  - '*.Output.CompliantPolicies:=t1.Output.CompliantPolicies'
+  - '*.Output.AdminUsers:=t1.Output.AdminUsers'
+  - '*.Output.LogFile:=t1.Output.LogFile'
