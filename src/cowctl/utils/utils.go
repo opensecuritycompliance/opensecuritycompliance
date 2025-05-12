@@ -443,7 +443,7 @@ func GetDefaultConfigInfo() *vo.PolicyCowConfig {
 			YamlFilesPath:        constants.CowDataYamlFilesPath,
 			ApplicationScopePath: constants.CowDataApplicationScopePath,
 			DeclarativePath:      constants.CowDataDeclarativesFilesPath,
-			AppConnectionPath:    constants.CowDataAppConnectionPath,
+			ApplicationTypesPath: constants.CowDataAppConnectionPath,
 			ApplicationClassPath: constants.CowApplicationClassPath,
 			CredentialsPath:      constants.CowCredentialsPath,
 		},
@@ -565,8 +565,8 @@ func GetCommonFlagsAndBuildConfig(cmd *cobra.Command) (*vo.PolicyCowConfig, erro
 		policyCowConfig.PathConfiguration.DeclarativePath = declarativesPath
 	}
 
-	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.AppConnectionPath) {
-		policyCowConfig.PathConfiguration.AppConnectionPath = appConnectionPath
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationTypesPath) {
+		policyCowConfig.PathConfiguration.ApplicationTypesPath = appConnectionPath
 	}
 
 	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationClassPath) {

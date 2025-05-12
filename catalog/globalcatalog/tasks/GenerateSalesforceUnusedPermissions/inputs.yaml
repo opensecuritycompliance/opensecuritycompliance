@@ -1,12 +1,43 @@
 userObject:
   app:
-    name: SalesforceAppConnector
+    name: HttpRequest
     appURL: "$SALESFORCE_INSTANCE_URL"
     appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
+      APIKey:
+        APIKey: 
+        ValidationCURL:
+      AWSSignature:
+        AccessKey: 
+        SecretKey: 
+        ValidationCURL: 
+      BasicAuthentication:
+        UserName: 
+        Password: 
+        ValidationCURL: 
+      BearerToken:
+        Token: 
+        ValidationCURL: 
       CustomType:
         ValidationCURL: "$VALIDATION_CURL"
         CredentialJson: "$CREDENTIAL_JSON"
+      NoAuth:
+      OAuth:
+        ClientID: 
+        ClientSecret: 
+        ValidationCURL: 
+      JWTBearer:
+          Algorithm: 
+          Payload: 
+          PrivateKey: 
+          ValidationCURL:  
 userInputs:
   UserDataFile: <<MINIO_FILE_PATH>>
   PermissionsMapFile: <<MINIO_FILE_PATH>>

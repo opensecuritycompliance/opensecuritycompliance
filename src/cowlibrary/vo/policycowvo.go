@@ -55,9 +55,9 @@ type CowPathConfiguration struct {
 	DashboardsPath       string `json:"dashboardsPath" yaml:"dashboardsPath"`
 	LocalCatalogPath     string `json:"localCatalogPath" yaml:"localCatalogPath"`
 	DeclarativePath      string `json:"declarativePath" yaml:"declarativePath"`
-	AppConnectionPath    string `json:"appConnectionPath" yaml:"appConnectionPath"`
+	ApplicationTypesPath string `json:"applicationTypesPath" yaml:"applicationTypesPath"`
 	ApplicationClassPath string `json:"applicationClassPath" yaml:"applicationClassPath"`
-	CredentialsPath      string `json:"credentialsPath" yaml:"credentialsPath"`
+	CredentialsPath      string `json:"credentialTypesPath" yaml:"credentialTypesPath"`
 }
 
 type AdditionalInfo struct {

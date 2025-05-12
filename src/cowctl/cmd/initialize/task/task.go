@@ -134,7 +134,7 @@ func runE(cmd *cobra.Command) error {
 			return err
 		}
 
-		addApplication, err := utils.GetConfirmationFromCmdPrompt("Would you like to add Application ? ")
+		addApplication, err := utils.GetConfirmationFromCmdPrompt("Would you like to add ApplicationType ? ")
 		if err != nil {
 			return err
 		}
@@ -207,14 +207,12 @@ func runE(cmd *cobra.Command) error {
 		taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
 		taskWithSpecicficLanguage.InitTask(taskName, tasksPath, &vo.TaskInputVO{}, additionalInfo)
 
-		if additionalInfo.ApplicationInfo != nil {
-			_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
-			if err != nil {
-				return err
-			}
+		_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
+		if err != nil {
+			return err
 		}
-	}
 
+	}
 	return nil
 
 }

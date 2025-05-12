@@ -23,7 +23,7 @@ inputs:
   allowedValues: []
   defaultValue: ''
   showField: true
-  required: true
+  required: false
 - name: ExcludeCriteria
   description: ExcludeCriteria
   dataType: STRING
@@ -31,15 +31,15 @@ inputs:
   allowedValues: []
   defaultValue: ''
   showField: true
-  required: true
+  required: false
 - name: OpaConfigurationFile
   description: OpaConfigurationFile
-  dataType: STRING
+  dataType: FILE
   repeated: false
   allowedValues: []
-  defaultValue: ''
+  defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
+  required: false
 outputs:
 - name: CompliancePCT_
   description: Compliance Percentage
@@ -49,7 +49,7 @@ outputs:
   dataType: STRING
 - name: DataFile
   description: DataFile
-  dataType: STRING
-- name: AuditFile
-  description: AuditFile
-  dataType: STRING
+  dataType: FILE
+- name: LogFile
+  description: LogFile
+  dataType: FILE

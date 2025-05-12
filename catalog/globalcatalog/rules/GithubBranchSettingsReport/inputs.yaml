@@ -7,8 +7,7 @@ userObject:
       AccessToken:
         AccessToken: $GITHUB_ACCESS_TOKEN
 userInputs:
-  #  Refer to the 'CriteriaConfig' file located at 'catalog/globalcatalog/rules/GithubPRRequiredReviewersReport/CriteriaConfig.toml'
-  CriteriaConfig : <<MINIO_FILE_PATH>>  
+  CriteriaConfig : <<MINIO_FILE_PATH>>  # file can be found in catalog/globalcatalog/rules/GithubBranchSettingsReport/CriteriaConfig.toml
   MinimumRequiredReviewersCount: 3
 fromDate: 2024-08-23
 toDate: 2024-08-23

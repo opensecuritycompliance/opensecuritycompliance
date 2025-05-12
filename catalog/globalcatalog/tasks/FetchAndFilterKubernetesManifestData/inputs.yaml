@@ -17,6 +17,6 @@ userObject:
 userInputs:
   IncludeCriteria: ""
   ExcludeCriteria:  ""
-  OpaConfigurationFile: "<<MINIO_FILE_PATH>>"
+  OpaConfigurationFile: <<MINIO_FILE_PATH>>
 fromDate: 2023-11-24T06:03:00Z
 toDate: 2023-11-24T06:03:00Z

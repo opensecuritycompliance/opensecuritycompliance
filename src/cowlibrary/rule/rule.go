@@ -41,7 +41,7 @@ import (
 	progressbar "github.com/schollz/progressbar/v3"
 	"gopkg.in/yaml.v2"
 
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 	constants "cowlibrary/constants"
 	"cowlibrary/executions"
 	"cowlibrary/storage"
@@ -1776,6 +1776,7 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 	rule.RuleIOValues.Inputs = DefaultInputs
 
 	rule.RuleIOValues.InputsMeta__ = ruleYaml.Spec.InputsMeta__
+	rule.RuleIOValues.OutputsMeta__ = ruleYaml.Spec.OutputsMeta__
 
 	for _, input := range rule.RuleIOValues.InputsMeta__ {
 		if inputMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
@@ -2157,28 +2158,27 @@ func replaceLibraryPathsInGoMod(goModFilePath string, additionalInfo *vo.Additio
 	for i, line := range lines {
 
 		// TODO: Check the replace clause
-		if strings.Contains(line, "appconnections") && !strings.Contains(line, "appconnections v") {
+		if strings.Contains(line, "applicationtypes") && !strings.Contains(line, "applicationtypes v") {
 			lines[i] = ""
 		}
 		if strings.Contains(line, "cowlibrary") && !strings.Contains(line, "cowlibrary v") {
 			lines[i] = ""
 		}
 	}
-	appConnectionsPath := "/policycow/catalog/appconnections/go"
+	applicationTypesPath := "/policycow/catalog/applicationtypes/go"
 	cowlibraryPath := "/policycow/src/cowlibrary"
 	if utils.IsFolderExist(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath) {
 		repoPath := removeLastSubFolder(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath)
 		if utils.IsFolderExist(repoPath) {
-			if appPath := filepath.Join(repoPath, "catalog/appconnections/go"); utils.IsFolderExist(appPath) {
-				appConnectionsPath = filepath.Join(repoPath, "catalog/appconnections/go")
+			if appPath := filepath.Join(repoPath, "catalog/applicationtypes/go"); utils.IsFolderExist(appPath) {
+				applicationTypesPath = filepath.Join(repoPath, "catalog/applicationtypes/go")
 			}
 			if libPath := filepath.Join(repoPath, "src/cowlibrary"); utils.IsFolderExist(libPath) {
 				cowlibraryPath = filepath.Join(repoPath, "src/cowlibrary")
 			}
 		}
 	}
-
-	lines = append(lines, fmt.Sprintf("replace appconnections => %s", appConnectionsPath))
+	lines = append(lines, fmt.Sprintf("replace applicationtypes => %s", applicationTypesPath))
 	lines = append(lines, fmt.Sprintf("replace cowlibrary => %s", cowlibraryPath))
 
 	fileContent := []byte(strings.Join(lines, "\n"))
@@ -2335,7 +2335,7 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 				replaceLibraryPathsInGoMod(tasksNewFolder, additionalInfo)
 
 				if !utils.IsGoTask(tasksNewFolder) {
-					appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+					appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 					err := cp.Copy(filepath.Join(appConnPath, "python", filepath.Base(appConnPath)), filepath.Join(tasksNewFolder, filepath.Base(appConnPath)))
 					if err != nil {
 						return err
@@ -3674,10 +3674,10 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
 
-	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, language)
+	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, language)
 
 	if constants.SupportedLanguagePython.String() == language {
-		baseFolder = filepath.Join(baseFolder, constants.AppConnections)
+		baseFolder = filepath.Join(baseFolder, constants.ApplicationTypes)
 	}
 
 	appName := strings.ToLower(applicationValidatorVO.ApplicationType)
@@ -3798,10 +3798,10 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	if constants.SupportedLanguagePython.String() == language {
 
 		tmpDir := os.TempDir()
-		tmpAppConnectionDir := filepath.Join(tmpDir, constants.AppConnections)
+		tmpAppConnectionDir := filepath.Join(tmpDir, constants.ApplicationTypes)
 		err := cp.Copy(baseFolder, tmpAppConnectionDir)
 		if err != nil {
-			fmt.Println("Error copying appconnections to temporary directory:", err)
+			fmt.Println("Error copying applicationtypes to temporary directory:", err)
 		}
 
 		err = cp.Copy(tmpAppConnectionDir, filepath.Join(validateApplicationTask, filepath.Base(baseFolder)))
@@ -4021,11 +4021,11 @@ func GetAvailableLanguages(applicationVO *vo.ApplicationVO, additionalInfo *vo.A
 	if utils.IsFolderNotExist(appDeclarativesPath) {
 		return nil, fmt.Errorf("application not available")
 	}
-	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	if utils.IsFolderExist(filepath.Join(appPath, "go", packageName)) {
 		availableLanguages = append(availableLanguages, "go")
 	}
-	if utils.IsFolderExist(filepath.Join(appPath, "python", "appconnections", packageName)) {
+	if utils.IsFolderExist(filepath.Join(appPath, "python", "applicationtypes", packageName)) {
 		availableLanguages = append(availableLanguages, "python")
 	}
 	return availableLanguages, nil

@@ -1,8 +1,8 @@
 package main
 
 import (
-	googleworkspaceappconnector "appconnections/googleworkspaceappconnector"
-	storage "appconnections/minio"
+	googleworkspaceappconnector "applicationtypes/googleworkspaceappconnector"
+	storage "applicationtypes/minio"
 	"encoding/json"
 	"fmt"
 
@@ -12,7 +12,7 @@ import (
 // GoogleWorkSpaceManagedDevicesReport :
 func (inst *TaskInstance) GoogleWorkSpaceManagedDevicesReport(inputs *UserInputs, outputs *Outputs) (defErr error) {
 
-	var errorVO *ErrorVO
+	var errorVO []*ErrorVO
 	defer func() {
 		if errorVO != nil {
 			outputs.CompliancePCT_ = 0
@@ -30,24 +30,24 @@ func (inst *TaskInstance) GoogleWorkSpaceManagedDevicesReport(inputs *UserInputs
 	googleWorkSpaceMobileDeviceList := make([]googleworkspaceappconnector.MobileDevice, 0)
 	googleWorkSpaceMobileDeviceBytes, err := storage.DownloadFile(inputs.MobileDevicesReport, inst.SystemInputs)
 	if err != nil {
-		errorVO = &ErrorVO{ErrorMessage: "Cannot download GoogleWorkSpaceMobileDevice file from minio"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "Cannot download GoogleWorkSpaceMobileDevice file from minio"})
 		return nil
 	}
 	err = json.Unmarshal(googleWorkSpaceMobileDeviceBytes, &googleWorkSpaceMobileDeviceList)
 	if err != nil {
-		errorVO = &ErrorVO{ErrorMessage: "Error while unmarshalling GoogleWorkSpaceMobileDeviceList"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "Error while unmarshalling GoogleWorkSpaceMobileDeviceList"})
 		return nil
 	}
 
 	if len(googleWorkSpaceMobileDeviceList) > 0 {
 		standardizedData, err := inst.standardizeData(googleWorkSpaceMobileDeviceList)
 		if err != nil {
-			errorVO = &ErrorVO{ErrorMessage: "Error while standardizing googleWorkSpaceMobileDeviceList"}
+			errorVO = append(errorVO, &ErrorVO{ErrorMessage: "Error while standardizing googleWorkSpaceMobileDeviceList"})
 			return nil
 		}
 		outputs.GoogleWorkSpaceManagedDeviceReport, defErr = storage.UploadJSONFile(fmt.Sprintf("%v-%v%v", "GoogleWorkSpaceManagedDeviceReport", uuid.New().String(), ".json"), standardizedData, inst.SystemInputs)
 	} else {
-		errorVO = &ErrorVO{ErrorMessage: "GoogleWorkSpaceMobileDeviceList is empty"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "GoogleWorkSpaceMobileDeviceList is empty"})
 		return nil
 	}
 
@@ -86,18 +86,22 @@ func (inst *TaskInstance) standardizeData(mobileDeviceList []googleworkspaceappc
 }
 
 type ErrorVO struct {
-	ErrorMessage string `json:"ErrorMessage"`
+	ErrorMessage string `json:"Error"`
 }
 
-func (inst *TaskInstance) validateApp() *ErrorVO {
+func (inst *TaskInstance) validateApp() []*ErrorVO {
+	var errorVO []*ErrorVO
 	if inst.UserObject == nil {
-		return &ErrorVO{ErrorMessage: "User object is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "user object is missing."})
+		return errorVO
 	}
 	if inst.UserObject.App == nil {
-		return &ErrorVO{ErrorMessage: "Application detail is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "application detail is missing."})
+		return errorVO
 	}
 	if inst.UserObject.App.UserDefinedCredentials == (googleworkspaceappconnector.UserDefinedCredentials{}) {
-		return &ErrorVO{ErrorMessage: "User defined credentials is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "user defined credentials is missing."})
+		return errorVO
 	}
 	return nil
 }

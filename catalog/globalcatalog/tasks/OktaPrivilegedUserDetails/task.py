@@ -1,6 +1,6 @@
 from typing import overload
 from compliancecowcards.structs import cards
-from appconnections.oktaconnector import oktaconnector
+from applicationtypes.oktaconnector import oktaconnector
 from compliancecowcards.utils import cowdictutils
 import json
 import uuid
@@ -65,7 +65,7 @@ class Task(cards.AbstractTask):
                 # fetch mfa policy details
                 policies, error = app_connector.get_policiesv1(type='MFA_ENROLL')  
                 if error:
-                    error_list.append(f"An error occurred while getting policies for MFA ENROLL: {error}")  
+                    error_list.append({"Error" : f"An error occurred while getting policies for MFA ENROLL: {error}"})  
                     return data_list, error_list
                 if len(policies) == 0:
                     policies = ["The 'MFA_ENROLL' policy must be enabled to enhance security measures by mandating the use of phishing-resistant authenticators"]
@@ -88,7 +88,7 @@ class Task(cards.AbstractTask):
                     # fetch user role details
                     user_roles, error = app_connector.get_user_roles(user.id)
                     if error:
-                            error_list.append(f"Failed to fetch role details for the user - {user_name}: {error}")
+                            error_list.append({"Error" : f"Failed to fetch role details for the user - {user_name}: {error}"})
                     if len(user_roles) == 0:
                         # Users without roles are not considered admins, so they are ignored.
                         continue        
@@ -100,7 +100,7 @@ class Task(cards.AbstractTask):
                         roles.append(role)
                         permissions_details, error = app_connector.get_role_permission(role)
                         if error:
-                            error_list.append(f"Failed to fetch permission details for the role - {role}. User included in role: {user_name}")
+                            error_list.append({"Error": f"Failed to fetch permission details for the role - {role}. User included in role: {user_name}"})
                         permission_list = []
                         if permissions_details:
                             if 'permissions' in permissions_details:
@@ -120,7 +120,7 @@ class Task(cards.AbstractTask):
                     group_ids = []
                     groups, error = app_connector.get_user_groups(user.id)
                     if error:
-                        error_list.append(f"Failed to fetch group details for the user - {user_name}: {error}")
+                        error_list.append({"Error" : f"Failed to fetch group details for the user - {user_name}: {error}"})
                         # get group details of user, but ignore BUILT_IN groups
                     if len(groups) == 0:
                         group_details = ["No groups attached"]  
@@ -174,12 +174,12 @@ class Task(cards.AbstractTask):
         except AttributeError as e:
             logging.exception("AttributeError occured: %s", str(e))
             print("AttributeError occured: %s", str(e))
-            error_list.append(f"AttributeError exception occured. Failed to generate a okta privileged user details")
+            error_list.append({"Error" : "AttributeError exception occured. Failed to generate a okta privileged user details"})
             return data_list, error_list
  
         except IndexError as e:
             logging.exception("IndexError occured: %s", str(e))
-            error_list.append(f"IndexError exception occured. Failed to generate a okta privileged user details")
+            error_list.append({"Error" : "IndexError exception occured. Failed to generate a okta privileged user details"})
             return data_list, error_list
             
         
@@ -203,7 +203,7 @@ class Task(cards.AbstractTask):
         log_file_path, error = self.upload_file_to_minio(file_content=json.dumps(errors_list).encode('utf-8'), 
                                                          file_name=f'LogFile-{str(uuid.uuid4())}.json', content_type='application/json')
         if error:
-            return {'Error': error}
+            return {"Error": error}
         return {
             'LogFile': log_file_path,
             "ComplianceStatus_": "NOT_DETERMINED", 

@@ -1,0 +1,9 @@
+userObject:
+  name: GitHub
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: http://localhost.com
+  userDefinedCredentials:
+    AccessToken:
+      AccessToken: "$GITHUB_ACCESSTOKEN"

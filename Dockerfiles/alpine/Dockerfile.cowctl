@@ -1,6 +1,6 @@
 FROM cowlibrary:1.1
 LABEL author=raj.krishnamurthy@continube.com
-COPY ./catalog/appconnections /policycow/catalog/appconnections
+COPY ./catalog/applicationtypes /policycow/catalog/applicationtypes
 COPY ./src/cowctl /policycow/src/cowctl
 WORKDIR /policycow/src/cowctl
 RUN go mod tidy

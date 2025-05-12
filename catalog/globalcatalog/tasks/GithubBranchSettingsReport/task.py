@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple, Optional, Union
 from compliancecowcards.structs import cards
-from appconnections.githubconnector import githubconnector
+from applicationtypes.githubconnector import githubconnector
 from compliancecowcards.utils import cowdictutils
 import json
 import uuid

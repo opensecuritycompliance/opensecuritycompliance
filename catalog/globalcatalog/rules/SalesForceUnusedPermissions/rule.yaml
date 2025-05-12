@@ -13,17 +13,17 @@ meta:
     - app
 spec:
   inputs:
-    ExtractPath: 0.records
-    PermissionsMapFile: <<MINIO_FILE_PATH>>
-    RequestConfigFile: <<MINIO_FILE_PATH>>
-    RequestConfigFile2: <<MINIO_FILE_PATH>>
-    RequestConfigFile3: <<MINIO_FILE_PATH>>
-    ResponseConfigFile2: <<MINIO_FILE_PATH>>
-    ResponseConfigFile3: <<MINIO_FILE_PATH>>
-    TransformConfigFile: <<MINIO_FILE_PATH>>
+    ExtractPath: .[0].records
+    SalesforceOrganizationEventLogRequestConfigFile: <<MINIO_FILE_PATH>>
+    SalesforceOrganizationEventLogResponseConfigFile: <<MINIO_FILE_PATH>>
+    SalesforcePermissionsMapFile: <<MINIO_FILE_PATH>>
+    SalesforceUserPermissionSetTransformConfigFile: <<MINIO_FILE_PATH>>
+    SalesforceUsersListRequestConfigFile: <<MINIO_FILE_PATH>>
+    SalesforceUsersPermissionSetRequestConfigFile: <<MINIO_FILE_PATH>>
+    SalesforceUsersPermissionSetResponseConfigFile: <<MINIO_FILE_PATH>>
   inputsMeta__:
-  - name: RequestConfigFile
-    dataType: FILE
+  - name: SalesforceUsersListRequestConfigFile
+    dataType: HTTP_CONFIG
     repeated: false
     format: toml
     defaultValue: <<MINIO_FILE_PATH>>
@@ -33,11 +33,43 @@ spec:
   - name: ExtractPath
     dataType: STRING
     repeated: false
-    defaultValue: 0.records
+    defaultValue: .[0].records
     allowedValues: []
     showField: true
     required: true
-  - name: RequestConfigFile2
+  - name: SalesforceUsersPermissionSetRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: SalesforceUsersPermissionSetResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: SalesforceOrganizationEventLogRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: SalesforceOrganizationEventLogResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: SalesforceUserPermissionSetTransformConfigFile
     dataType: FILE
     repeated: false
     format: toml
@@ -45,39 +77,7 @@ spec:
     allowedValues: []
     showField: true
     required: true
-  - name: ResponseConfigFile2
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: RequestConfigFile3
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: ResponseConfigFile3
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: TransformConfigFile
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: PermissionsMapFile
+  - name: SalesforcePermissionsMapFile
     dataType: FILE
     repeated: false
     format: toml
@@ -98,7 +98,7 @@ spec:
       - app
     purpose: To get the list of users in the organization 
     description: To get the list of users in the organization 
-  - name: ExtractData
+  - name: ExtractDataUsingJQ
     alias: t2
     type: task
     appTags:
@@ -109,7 +109,7 @@ spec:
       execlevel:
       - app
     purpose: To extract the data 
-    description: ExtractData
+    description: ExtractDataUsingJQ
   - name: ExecuteHttpRequest
     alias: Get User's permission sets
     type: task
@@ -150,26 +150,31 @@ spec:
     alias: t7
     type: task
     appTags:
-      appType:
-      - salesforceappconnector
-    purpose: Purpose of the task
+        appType:
+        - httprequest
+        environment:
+        - logical
+        execlevel:
+        - app
+    purpose: GenerateSalesforceUnusedPermissions
     description: GenerateSalesforceUnusedPermissions
   ioMap:
-  - Get Users List.Input.RequestConfigFile:=*.Input.RequestConfigFile
-  - t2.Input.DataFile:=Get Users List.Output.OutputFile
-  - t2.Input.ExtractPath:=*.Input.ExtractPath
-  - Get User's permission sets.Input.RequestConfigFile:=*.Input.RequestConfigFile2
-  - Get User's permission sets.Input.ResponseConfigFile:=*.Input.ResponseConfigFile2
-  - Get User's permission sets.Input.InputFile:=t2.Output.DataFile
-  - Get User's permission sets.Input.LogFile:=t2.Output.undefined
+  - Get Users List.Input.RequestConfigFile:=*.Input.SalesforceUsersListRequestConfigFile
+  - t2.Input.InputFile:=Get Users List.Output.OutputFile
+  - t2.Input.JQExpression:=*.Input.ExtractPath
+  - t2.Input.LogFile:=Get Users List.Output.LogFile
+  - Get User's permission sets.Input.RequestConfigFile:=*.Input.SalesforceUsersPermissionSetRequestConfigFile
+  - Get User's permission sets.Input.ResponseConfigFile:=*.Input.SalesforceUsersPermissionSetResponseConfigFile
+  - Get User's permission sets.Input.InputFile:=t2.Output.OutputFile
+  - Get User's permission sets.Input.LogFile:=t2.Output.LogFile
   - t4.Input.InputFile1:=Get User's permission sets.Output.OutputFile
-  - t4.Input.TransformConfigFile:=*.Input.TransformConfigFile
+  - t4.Input.TransformConfigFile:=*.Input.SalesforceUserPermissionSetTransformConfigFile
   - t4.Input.LogFile:=Get User's permission sets.Output.LogFile
-  - Get Organization's EventLog.Input.RequestConfigFile:=*.Input.RequestConfigFile3
-  - Get Organization's EventLog.Input.ResponseConfigFile:=*.Input.ResponseConfigFile3
+  - Get Organization's EventLog.Input.RequestConfigFile:=*.Input.SalesforceOrganizationEventLogRequestConfigFile
+  - Get Organization's EventLog.Input.ResponseConfigFile:=*.Input.SalesforceOrganizationEventLogResponseConfigFile
   - Get Organization's EventLog.Input.LogFile:=t4.Output.LogFile
   - t7.Input.UserDataFile:=t4.Output.OutputFile
-  - t7.Input.PermissionsMapFile:=*.Input.PermissionsMapFile
+  - t7.Input.PermissionsMapFile:=*.Input.SalesforcePermissionsMapFile
   - t7.Input.EventLogFile:=Get Organization's EventLog.Output.OutputFile
   - '*.Output.CompliancePCT_:=Get Organization''s EventLog.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=Get Organization''s EventLog.Output.ComplianceStatus_'

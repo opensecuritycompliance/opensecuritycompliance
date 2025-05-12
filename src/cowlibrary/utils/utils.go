@@ -1238,14 +1238,14 @@ func getDefaultValueForType(dataType string) interface{} {
 	}
 }
 
-func GetAppConnectionsPathWithLanguage(additionalInfo *vo.AdditionalInfo, language string) string {
+func GetApplicationTypesPathWithLanguage(additionalInfo *vo.AdditionalInfo, language string) string {
 
 	if pyLang := constants.SupportedLanguagePython.String(); language == pyLang {
-		appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+		appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 		return filepath.Join(appConnPath, pyLang, filepath.Base(appConnPath))
 	}
 
-	return filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, constants.SupportedLanguageGo.String())
+	return filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, constants.SupportedLanguageGo.String())
 }
 
 func InitializeGoModFile(folderPath, Name string) error {
@@ -1290,7 +1290,7 @@ func InitializeGoModFile(folderPath, Name string) error {
 // }
 
 // func GetAppConnectionsPath() (string, error) {
-// 	return findFolder("catalog/appconnections")
+// 	return findFolder("catalog/applicationtypes")
 // }
 
 // func findFolder(filePath string) (string, error) {

@@ -57,13 +57,24 @@ TimeOut = 30
 # verify=False: Disables SSL certificate validation. Not recommended for production due to security risks.
 Verify = true
 
-# Retries:
-# - Specify the number of retry attempts in case of request failure.
-Retries = 3
 
-# Retry on Status:
-# - Define the HTTP status codes that will trigger a retry.
-RetryOnStatus = [503, 504, 429]
+    [Request.Retries.RetryOnCondition]
+    # Configure the retry logic based on specific conditions.
+
+    ConditionField = "<<response.status_code>>"
+    # The response attribute used to determine whether a retry should be attempted.
+    # This can be any response property, such as status_code, headers, body, cookies, or url.
+
+    ConditionValue = "503|504|429"
+    # Specifies the values that trigger a retry, separated by a pipe (|).
+    # Supports multiple values (e.g., "503|504|429") or a single value (e.g., "200").
+
+    TimeInterval = 2
+    # The wait time (in seconds) between consecutive retry attempts.
+
+    MaxRetries = 3 
+    # The maximum number of retry attempts before stopping further retries.
+
 
 # Headers Section:
 # Request Headers Section: You can add custom headers here as needed.

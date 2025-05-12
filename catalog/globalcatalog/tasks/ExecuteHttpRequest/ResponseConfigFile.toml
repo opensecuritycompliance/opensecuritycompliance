@@ -48,7 +48,13 @@
     #     "body": "response body in JSON format",
     #     "status_code": "response status code",
     #     "headers": "response headers",
-    #     "cookies": "response cookies" 
+    #     "cookies": "response cookies",
+    #     "links": [ // Content from the Link header in the response, if it exists
+    #         "link_name": {
+    #             "rel": "link_name",
+    #             "url": "link url"
+    #         }
+    #     ]
     # }
     # Example
     # StatusCode = "<<response.status_code>>"  
@@ -74,9 +80,11 @@
         # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING <<response.body.key>> ,  <<response.headers.key>>, 
         # <<response.headers.key>>,  <<response.cookies.key>>
         # ------------------------------------------------------------------------------
-        # You can only access the response body data in the parameters below. 
-        # Values without "<<>>" are not considered.
+        # In the below parameters, you can access all the field mentioned in 'Response.RuleSet.AppendColumn.Fields'.
+        # In addition to that, you can also access <<fromdate>> and <<todate>>.
         # All 'Pagination' fields should be  specifed as key-value pair in the format: key = value.
+        URL = ""  # Specify the API endpoint.
+        
         [Response.RuleSet.Pagination.Header]
         # Example:
         # pageToken = "<<response.body.nextPageToken>>"

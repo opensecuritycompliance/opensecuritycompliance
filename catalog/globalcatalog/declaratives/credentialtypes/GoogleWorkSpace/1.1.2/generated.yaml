@@ -1,0 +1,40 @@
+id: ""
+apiVersion: v1alpha1
+kind: credentialType
+meta:
+  name: GoogleWorkSpace
+  displayName: GoogleWorkSpace
+  shortDescription: ""
+  longDescription: ""
+  labels: {}
+  annotations: {}
+  version: 1.1.2
+spec:
+  attributes:
+  - name: Scope
+    displayName: Scope
+    secret: false
+    required: true
+    multiSelect: true
+    dataType: STRING
+    allowedValues:
+    - bigquery
+    defaultValue: ""
+  - name: UserEmail
+    displayName: User Email
+    secret: false
+    required: false
+    multiSelect: false
+    dataType: STRING
+    allowedValues: []
+    defaultValue: ""
+  - name: ServiceAccountKeyFile
+    displayName: Service Account Key File
+    secret: false
+    required: false
+    multiSelect: false
+    dataType: FILE
+    allowedValues: []
+    defaultValue: ""
+status: null
+isVersionToBeOverride: true

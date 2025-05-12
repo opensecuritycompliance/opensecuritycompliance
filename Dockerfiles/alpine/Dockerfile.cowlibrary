@@ -12,7 +12,7 @@ ENV GOPATH="/usr/local"
 ENV COW_DATA_PERSISTENCE_TYPE="minio"
 
 COPY ./src/cowlibrary /policycow/src/cowlibrary
-COPY ./catalog/appconnections/go /policycow/catalog/appconnections/go
+COPY ./catalog/applicationtypes/go /policycow/catalog/applicationtypes/go
 WORKDIR /policycow/src/cowlibrary
 RUN go mod tidy  
 RUN rm -rf /policycow/catalog/

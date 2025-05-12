@@ -99,9 +99,9 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 					appClassName := appInfo.App.Meta.Name
 					if utils.IsNotEmpty(appClassName) {
 						packageName := strings.ToLower(appClassName)
-						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+						if utils.IsFolderExist(filepath.Join(utils.GetApplicationTypesPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
 							classAvailable = true
-							importPackage := "#As per the selected app, we're importing the app package \nfrom appconnections." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
+							importPackage := "#As per the selected app, we're importing the app package \nfrom applicationtypes." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_with_imports}}", importPackage)
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_STRUCT_NAME}}", strcase.ToCamel(appClassName))
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_PACKAGE_NAME}}", strings.ToLower(appClassName))

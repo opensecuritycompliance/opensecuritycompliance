@@ -1,0 +1,10 @@
+userObject:
+  name: GoogleWorkSpaceAppConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: https://admin.google.com
+  userDefinedCredentials:
+    GoogleWorkSpace:
+      UserEmail: "$GOOGLE_WORKSPACE_USER_MAIL"
+        ServiceAccountKeyFile: "$GOOGLE_WORKSPACE_SERVICE_ACCOUNT_KEY_FILE"

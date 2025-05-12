@@ -1,7 +1,7 @@
 from typing import overload
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.oktaconnector import oktaconnector
+from applicationtypes.oktaconnector import oktaconnector
 import uuid
 import pandas as pd
 import pytz
@@ -115,16 +115,14 @@ class Task(cards.AbstractTask):
             user_data, error = okta_connector.get_application_users(app.id, retries=3)
             if error:
                 errors_list.append({
-                    "AppId": app.id,
-                    "Error": f"Error occurred while getting user :: {error}"
+                    "Error": f"Error occurred while getting user for AppId - {app.id} :: {error}"
                 })
                 continue
 
             group_data , error = okta_connector.get_application_groups(app.id, retries=3)
             if error:
                 errors_list.append({
-                    "AppId": app.id,
-                    "Error": f"Error occurred while getting groups :: {error}"
+                    "Error": f"Error occurred while getting groups for AppId - {app.id} :: {error}"
                 })
                 continue
 

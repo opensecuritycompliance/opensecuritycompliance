@@ -3,7 +3,7 @@ module FetchAWSCredentialReport
 go 1.19
 
 require (
-	appconnections v0.0.0-00010101000000-000000000000
+	applicationtypes v0.0.0-00010101000000-000000000000
 	cowlibrary v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-sdk-go v1.51.20
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
@@ -71,4 +71,4 @@ require (
 
 replace cowlibrary => ../../../../src/cowlibrary
 
-replace appconnections => ../../../appconnections/go
+replace applicationtypes => ../../../applicationtypes/go

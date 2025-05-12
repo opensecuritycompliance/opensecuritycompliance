@@ -1,11 +1,11 @@
 package main
 
 import (
-	"appconnections/googleworkspaceappconnector"
+	"applicationtypes/googleworkspaceappconnector"
 	"encoding/json"
 	"fmt"
 
-	storage "appconnections/minio"
+	storage "applicationtypes/minio"
 
 	"github.com/google/uuid"
 )
@@ -13,7 +13,7 @@ import (
 // GenerateGoogleWorkSpaceTwoSVReport :
 func (inst *TaskInstance) GenerateGoogleWorkSpaceTwoSVReport(inputs *UserInputs, outputs *Outputs) (defErr error) {
 
-	var errorVO *ErrorVO
+	var errorVO []*ErrorVO
 	defer func() {
 		if errorVO != nil {
 			outputs.LogFile, defErr = storage.UploadJSONFile(fmt.Sprintf("%v-%v%v", "LogFile", uuid.New().String(), ".json"), errorVO, inst.SystemInputs)
@@ -29,24 +29,25 @@ func (inst *TaskInstance) GenerateGoogleWorkSpaceTwoSVReport(inputs *UserInputs,
 	googleWorkSpaceUserList := make([]User, 0)
 	googleWorkSpaceUserListBytes, err := storage.DownloadFile(inputs.GoogleWorkSpaceUsersListFile, inst.SystemInputs)
 	if err != nil {
-		errorVO = &ErrorVO{ErrorMessage: "cannot download GoogleWorkSpaceUsersList file from minio"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "cannot download GoogleWorkSpaceUsersList file from minio"})
 		return nil
 	}
 	err = json.Unmarshal(googleWorkSpaceUserListBytes, &googleWorkSpaceUserList)
 	if err != nil {
-		errorVO = &ErrorVO{ErrorMessage: "error while unmarshalling GoogleWorkSpaceUsersList"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "error while unmarshalling GoogleWorkSpaceUsersList"})
 		return nil
 	}
 
 	if len(googleWorkSpaceUserList) > 0 {
 		standardizedData, err := inst.standardizeUserList(googleWorkSpaceUserList)
 		if err != nil {
-			errorVO = &ErrorVO{ErrorMessage: "error while standardizing GoogleWorkSpaceUsersList"}
+			errorVO = append(errorVO, &ErrorVO{ErrorMessage: "error while standardizing GoogleWorkSpaceUsersList"})
+
 			return nil
 		}
 		outputs.EnforcePhishingResistantMFA, defErr = storage.UploadJSONFile(fmt.Sprintf("%v-%v%v", "EnforcePhishingResistantMFA", uuid.New().String(), ".json"), standardizedData, inst.SystemInputs)
 	} else {
-		errorVO = &ErrorVO{ErrorMessage: "GoogleWorkSpaceUsersListFile is empty"}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "GoogleWorkSpaceUsersListFile is empty"})
 		return nil
 	}
 
@@ -124,21 +125,25 @@ func (inst *TaskInstance) standardizeUserList(users []User) ([]MFAReport, error)
 
 }
 
-func (inst *TaskInstance) validateApp() *ErrorVO {
+func (inst *TaskInstance) validateApp() []*ErrorVO {
+	var errorVO []*ErrorVO
 	if inst.UserObject == nil {
-		return &ErrorVO{ErrorMessage: "user object is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "user object is missing."})
+		return errorVO
 	}
 	if inst.UserObject.App == nil {
-		return &ErrorVO{ErrorMessage: "application detail is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "application detail is missing."})
+		return errorVO
 	}
 	if inst.UserObject.App.UserDefinedCredentials == (googleworkspaceappconnector.UserDefinedCredentials{}) {
-		return &ErrorVO{ErrorMessage: "user defined credentials is missing."}
+		errorVO = append(errorVO, &ErrorVO{ErrorMessage: "user defined credentials is missing."})
+		return errorVO
 	}
 	return nil
 }
 
 type ErrorVO struct {
-	ErrorMessage string `json:"ErrorMessage"`
+	ErrorMessage string `json:"Error"`
 }
 
 type User struct {

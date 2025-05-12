@@ -22,9 +22,9 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.NoArgs,
 
-		Use:   "credential",
-		Short: "Initialize a credential",
-		Long:  "Initialize credential and reports",
+		Use:   "credential-type",
+		Short: "Initialize a credential-type",
+		Long:  "Initialize credential-type and reports",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},

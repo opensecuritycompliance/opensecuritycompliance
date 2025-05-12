@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/minio/minio-go/v7"

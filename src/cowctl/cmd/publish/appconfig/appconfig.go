@@ -21,9 +21,9 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.NoArgs,
 
-		Use:   "application",
-		Short: "publish application",
-		Long:  "publish application",
+		Use:   "application-type",
+		Short: "publish application-type",
+		Long:  "publish application-type",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -142,9 +142,9 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 		}
 	}
 
-	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	packageName := strings.ToLower(namePointer.Name)
-	if cowlibutils.IsFolderExist(filepath.Join(appPath, "go", packageName)) && cowlibutils.IsFolderExist(filepath.Join(appPath, "python", "appconnections", packageName)) {
+	if cowlibutils.IsFolderExist(filepath.Join(appPath, "go", packageName)) && cowlibutils.IsFolderExist(filepath.Join(appPath, "python", "applicationtypes", packageName)) {
 		if cowlibutils.IsEmpty(additionalInfo.Language) {
 			languageFromCmd, err := utils.GetConfirmationFromCmdPromptWithOptions(fmt.Sprintf("Two implementations have been found for the '%s' application class. Which language do you intend to publish it in? Python/Go (default: Go):", namePointer.Name), "go", []string{"go", "python"})
 			if err != nil {
@@ -161,7 +161,7 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 			if !defaultConfigPath || binaryEnabled && !additionalInfo.CanOverride {
 				return errors.New("The application type is already present in the system. To override with a new implementation, set the 'can-override' flag as true")
 			}
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The application type is already present in the system, and it will be overridden with a new implementation. Do you want to go ahead?")
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The applicationType is already present in the system, and it will be overridden with a new implementation. Do you want to go ahead?")
 			if err != nil {
 				return err
 			}

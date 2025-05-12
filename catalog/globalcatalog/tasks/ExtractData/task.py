@@ -2,7 +2,7 @@
 from typing import List
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.nocredapp import nocredapp
+from applicationtypes.nocredapp import nocredapp
 import uuid
 import json
 import os

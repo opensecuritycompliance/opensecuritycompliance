@@ -1,0 +1,31 @@
+id: ""
+apiVersion: v1alpha1
+kind: credentialType
+meta:
+  name: DataDogCred
+  displayName: DataDogCred
+  shortDescription: ""
+  longDescription: ""
+  labels: {}
+  annotations: {}
+  version: 1.1.1
+spec:
+  attributes:
+  - name: APIKey
+    displayName: API Key
+    secret: true
+    required: true
+    multiSelect: false
+    dataType: STRING
+    allowedValues: []
+    defaultValue: ""
+  - name: ApplicationKey
+    displayName: Application Key
+    secret: true
+    required: true
+    multiSelect: false
+    dataType: STRING
+    allowedValues: []
+    defaultValue: ""
+status: null
+isVersionToBeOverride: false

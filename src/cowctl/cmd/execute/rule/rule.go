@@ -46,6 +46,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().String("config-path", "", "path for the configuration file.")
 	cmd.Flags().String("rule-group-path", "", "path for the assesments file.")
 	cmd.Flags().String("exec-path", "", "maintain the history about the executions")
+	cmd.Flags().String("user-inputs", "", "inputs for rule to execute")
 	cmd.Flags().Bool("preserve-execution-setup", false, "set up the rule/rule group execution under cowexecutions")
 
 	return cmd
@@ -79,7 +80,7 @@ func NewRuleGroupCommand() *cobra.Command {
 }
 
 func runE(cmd *cobra.Command, isRuleGroup bool) error {
-	rulesPath, verbose := ``, false
+	rulesPath, verbose, userInputsJson := ``, false, ""
 
 	additionalInfo, err := utils.GetAdditionalInfoFromCmd(cmd)
 	if err != nil {
@@ -89,8 +90,10 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 
 	if cmd.Flags().HasFlags() {
 		additionalInfo.RuleName = utils.GetFlagValueAndResetFlag(cmd, "rule-name", "")
+		rulesPath = utils.GetFlagValueAndResetFlag(cmd, "rules-path", "")
 		additionalInfo.RuleGroupName = utils.GetFlagValueAndResetFlag(cmd, "rule-group-name", "")
 		verboseName := utils.GetFlagValueAndResetFlag(cmd, "verbose", "")
+		userInputsJson = utils.GetFlagValueAndResetFlag(cmd, "user-inputs", "")
 		if cowlibutils.IsNotEmpty(verboseName) {
 			verboseAsBool, err := strconv.ParseBool(verboseName)
 			if err != nil {
@@ -349,6 +352,66 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 					}
 					additionalInfo.TempDirPath = tempDir
 				}
+			}
+		} else {
+			if cowlibutils.IsNotEmpty(userInputsJson) {
+				var userInputs map[string]interface{}
+				if err := json.Unmarshal([]byte(userInputsJson), &userInputs); err != nil {
+					return fmt.Errorf("failed to parse user inputs JSON: %w", err)
+				}
+
+				tempDir := os.TempDir()
+				if tempDir == "/tmp" {
+					uuid := uuid.New().String()
+					tempDir = filepath.Join(tempDir, uuid)
+				}
+				srcRuleDir := rulesPath
+				if cowlibutils.IsNotValidRulePath(rulesPath) {
+					srcRuleDir = cowlibutils.GetRuleNameFromAdditionalInfoWithRuleName(additionalInfo.RuleName, additionalInfo)
+				}
+				tmpRuleDir := filepath.Join(tempDir, additionalInfo.RuleName)
+				err = cp.Copy(srcRuleDir, tmpRuleDir)
+				if err != nil {
+					return err
+				}
+				var taskInput vo.TaskInput
+
+				inputYAMLFileByts, err := os.ReadFile(filepath.Join(tmpRuleDir, constants.TaskInputYAMLFile))
+				if err != nil {
+					return fmt.Errorf("failed to read inputs.yaml: %w", err)
+				}
+				if err := yaml.Unmarshal(inputYAMLFileByts, &taskInput); err != nil {
+					return fmt.Errorf("failed to parse inputs.yaml: %w", err)
+				}
+				for key, value := range userInputs {
+					if _, exists := taskInput.UserInputs[key]; exists {
+						taskInput.UserInputs[key] = value
+					}
+				}
+
+				if fromDate, exists := userInputs["fromDate"]; exists {
+					parsedFromDate, err := cowlibutils.ParseDateString(fromDate.(string))
+					if err != nil {
+						return fmt.Errorf("Invalid fromDate format: %v\n", err)
+					}
+					taskInput.FromDate_ = parsedFromDate
+				}
+				if toDate, exists := userInputs["toDate"]; exists {
+					parsedToDate, err := cowlibutils.ParseDateString(toDate.(string))
+					if err != nil {
+						return fmt.Errorf("Invalid fromDate format: %v\n", err)
+					}
+					taskInput.ToDate_ = parsedToDate
+				}
+				additionalInfo.UpdateUserInputs = true
+				updatedYAML, err := yaml.Marshal(taskInput)
+				if err != nil {
+					return fmt.Errorf("failed to marshal updated inputs.yaml: %w", err)
+				}
+				if err := os.WriteFile(filepath.Join(tmpRuleDir, constants.TaskInputYAMLFile), updatedYAML, os.ModePerm); err != nil {
+					return fmt.Errorf("failed to write updated inputs.yaml: %w", err)
+				}
+				additionalInfo.TempDirPath = tempDir
 			}
 		}
 	}

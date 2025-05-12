@@ -11,7 +11,7 @@
         RequestConfigFile :  <<MINIO_FILE_PATH>>
         ResponseConfigFile:  <<MINIO_FILE_PATH>>
         InputFile:  <<MINIO_FILE_PATH>>
-    - Ouptes :
+    - Outputs :
         OutputFile : <<MINIO_FILE_PATH>>
         LogFile :  <<MINIO_FILE_PATH>>
 
@@ -19,7 +19,7 @@
 - **InputsSection**:
     1. LogFile (Optional)
         - This field is required only when this task is not acting as task1 in the rule.
-        - Generally when the previous task has 'LogFile' it will pass that logfile to this task and If the 'LogFile' is empty, it will process 'ExecuteHttpRequest' task else will check other required inputs exist if they do not will simply pass this previous task 'LogFile' to 'ExecuteHttpRequest' task 'LogFile'.
+        - Generally when the previous task has 'LogFile' it will pass that log file to this task and If the 'LogFile' is empty, it will process 'ExecuteHttpRequest' task else will check other required inputs exist if they do not will simply pass this previous task 'LogFile' to 'ExecuteHttpRequest' task 'LogFile'.
 
     2. RequestConfigFile (Mandatory)
 
@@ -76,9 +76,18 @@
         # -> BasicAuthentication: Required 'ValidationCurl'
         # -> BearerToken: Required 'ValidationCurl'
         # -> OAuth: Required 'ValidationCurl'
+        # -> JWTBearer: Required 'ValidationCurl'
         # -> NoAuth: Doesn't require 'ValidationCurl'. This type is used when no authentication mechanism is needed. Requests will not include any authentication headers or tokens by default.
         # -> CustomType: Required 'ValidationCurl'. Using this type you can have userdefined 'key' as well as 'value' . for example azure api requires 'ClientID' , 'ClientSecret' ,TenantID' , 'SubscriptionID' . under 'Application.CustomType' you can mention all the required creddentials. And access them in 'ValidationCurl' (refer '[Request.Headers]' for more information)
         CredentialType = "<<CredentialType>>"
+
+        # For JWTBearer Credential:
+        # -> For the Payload field, you can specify the following placeholders in the following syntax: <<FUNCTION_NAME>>
+        # -> SUPPORTED FUNCTIONS:
+        # -> - CURRENT_TIME - Replaces with the current time in Unix format. 
+        #                   - You can also add/subtract integer values from the resulting value, by mentioning without the square brackets: <<CURRENT_TIME [ + or - ] [seconds-to-add]>>
+        # -> - CURRENT_DATE - Replaces with the current date in ISO format
+        # -> EXAMPLE: {"iss": "test@some-project.iam.gserviceaccount.com", "sub": "test@some-project.iam.gserviceaccount.com", "aud": "https://oauth2.googleapis.com/token", "scope": "https://www.googleapis.com/auth/logging.read", "iat": <<CURRENT_TIME>>, "exp": <<CURRENT_TIME + 3600>>}
 
         # TimeOut --> OPTIONAL
         # - Specify the timeout for the request in seconds.
@@ -91,13 +100,23 @@
         # verify=False: Disables SSL certificate validation. Not recommended for production due to security risks.
         Verify = true
 
-        # Retries --> OPTIONAL
-        # - Specify the number of retry attempts in case of request failure.
-        Retries = 3  
+            [Request.Retries.RetryOnCondition]
+            # Configure the retry logic based on specific conditions.
 
-        # RetryOnStatus --> OPTIONAL
-        # - Define the HTTP status codes that will trigger a retry.
-        RetryOnStatus = [503, 504 ,429]
+            ConditionField = "<<response.status_code>>"
+            # The response attribute used to determine whether a retry should be attempted.
+            # This can be any response property, such as status_code, headers, body, cookies, or url.
+
+            ConditionValue = "503|504|429"
+            # Specifies the values that trigger a retry, separated by a pipe (|).
+            # Supports multiple values (e.g., "503|504|429") or a single value (e.g., "200").
+
+            TimeInterval = 2
+            # The wait time (in seconds) between consecutive retry attempts.
+
+            MaxRetries = 3 
+            # The maximum number of retry attempts before stopping further retries.
+
 
         # Request Headers Section: You can add custom headers here as needed.
         # The 'Authorization' field is not required for [AWSSignature, BasicAuthentication, BearerToken] as it will be generated internally based on 'CredentialType'.
@@ -177,7 +196,18 @@
             - Example: <<application.SubscriptionID>> can be used to include a subscription ID in the request.
 
     3. ResponseConfigFile (Optional)
-        # 'Response' is a configuration object used to specify how to process HTTP responses based on defined conditions. 'Response' is optional. You can skip passing it as input to the task, or leave it as an empty file if necessary. ResponseConfigFile is required only when you want to manipulate the response output currectly we are supporting below fuunctionalities
+
+        'Response' is a configuration object used to specify how to process HTTP responses based on defined conditions. 'Response' is optional, meaning you can skip passing it as input to the task or leave it as an empty file if necessary.The ResponseConfigFile is required only if you need to manipulate the response output.
+
+        Currently, we support the following functionalities:
+
+        - Appending Column Fields
+        - Pagination
+
+        These features are only supported for the content types:
+
+        - application/json
+        - application/ld+json
 
         <!-- BELOW IS THE 'ResponseConfigFile' TOML FILE WITH SAMPLE DATA -->
         ```toml
@@ -225,7 +255,13 @@
             #     "body": "response body in JSON format",
             #     "status_code": "response status code",
             #     "headers": "response headers",
-            #     "cookies": "response cookies" 
+            #     "cookies": "response cookies",
+            #     "links": [ // Content from the Link header in the response, if it exists
+            #         "link_name": {
+            #             "rel": "link_name",
+            #             "url": "link url"
+            #         }
+            #     ]
             # }
             StatusCode = "<<response.status_code>>"  
 
@@ -246,9 +282,11 @@
                 # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING <<response.body.key>> ,  <<response.headers.key>>, 
                 # <<response.headers.key>>,  <<response.cookies.key>>
                 # ------------------------------------------------------------------------------
-                # You can only access the response body data in the parameters below. 
-                # Values without "<<>>" are not considered.
+                # In the below parameters, you can access all the field mentioned in 'Response.RuleSet.AppendColumn.Fields'.
+                # In addition to that, you can also access <<fromdate>> and <<todate>>.
                 # All 'Pagination' fields should be  specifed as key-value pair in the format: key = value.
+                URL = ""  # Specify the API endpoint.
+
                 [Response.RuleSet.Pagination.Header]
                 pageToken = "<<response.body.nextPageToken>>"
 
@@ -275,9 +313,9 @@
         ```
 
     4. InputFile (Mandatory)
-        - InputFile data is iterated for each data api will send request and all the response are collected and returened in json formate.
-        - For example in the below 'InputFile' we have 3 resourceGroups names, my aim is to get the resourceGroups details of mentioned in th e'InputFile', so 3 api call will be send in this task.
-        we can access the InputFile data using <<inputfile.FIELD_NAME>>, Lets assues your are going to get the details of below given 3 'resourceGroups' data in url you simply mention <<inputfile.name>>
+        - InputFile data is iterated for each data api will send request and all the response are collected and returned in json formate.
+        - For example in the below 'InputFile' we have 3 resourceGroups names, my aim is to get the resourceGroups details of mentioned in the 'InputFile', so 3 api call will be send in this task.
+        we can access the InputFile data using <<inputfile.FIELD_NAME>>, Lets assumes your are going to get the details of below given 3 'resourceGroups' data in url you simply mention <<inputfile.name>>
         
         URL = "<<application.AppURL>>/subscriptions/<<application.SubscriptionID>>/resourceGroups/<<inputfile.name>>?api-version=2021-04-01"
 
@@ -309,4 +347,57 @@
     1. OutputFile
         - This file contains the response details.
     2. LogFile
-        - If any errors araise in the task then this will catch all the errors
+        - If any errors arise in the task then this will catch all the errors
+
+
+- **NOTE:**
+
+    ## Libmagic Installation
+
+    python-magic is a Python interface for libmagic, which identifies file types by headers. As a wrapper for the libmagic C library, it requires libmagic to be installed separately:
+
+    Debian/Ubuntu: 
+
+        sudo apt-get install libmagic1
+
+    Windows: 
+
+        pip install python-magic-bin (includes DLLs)
+
+    macOS:
+
+        Homebrew: brew install libmagic
+
+        MacPorts: port install file
+
+    ## Supported Content Types for Output File
+
+    The following content types are supported for generating output files, along with their corresponding file extensions:
+
+    #### **Binary Formats:**
+    - `binary/octet-stream`  
+    - `application/octet-stream`  
+
+    #### **Data Formats:**
+    - `application/csv` (`.csv`)  
+    - `application/x-yaml` (`.yaml`)  
+    - `application/yaml` (`.yaml`)  
+    - `application/x-tar` (`.tar`)  
+    - `application/tar` (`.tar`)  
+    - `application/x-gzip` (`.tgz`, `.gz`)  
+    - `application/gzip` (`.tgz`, `.gz`)  
+    - `application/zip` (`.zip`)  
+    - `application/x-zip` (`.zip`)  
+    - `application/json` (`.json`)  
+    - `application/ld+json` (`.jsonld`)  
+    - `application/xml` (`.xml`)  
+
+    #### **Text Formats:**
+    - `text/css` (`.css`)  
+    - `text/csv` (`.csv`)  
+    - `text/html` (`.html`)  
+    - `text/plain` (`.txt`)  
+    - `text/javascript` (`.js`)  
+    - `text/xml` (`.xml`)  
+
+    Please ensure the response content type matches one of the supported types for correct processing.

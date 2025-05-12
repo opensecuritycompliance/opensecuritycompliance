@@ -56,6 +56,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().Bool("publish-app", false, "whether using cowctl binary")
 	cmd.Flags().Bool("publish-rule", false, "whether using cowctl binary")
 	cmd.Flags().String("app-name", "", "application name")
+	cmd.Flags().String("app-language", "", "application language")
 	cmd.Flags().String("rule-path", "", "path of the rule")
 
 	return cmd
@@ -74,6 +75,7 @@ func runE(cmd *cobra.Command) error {
 	var binaryEnabled bool
 	var appPublish bool
 	var appName string
+	var appLanguage string
 	rulePublish := true
 
 	if cmd.Flags().HasFlags() {
@@ -103,6 +105,7 @@ func runE(cmd *cobra.Command) error {
 			}
 		}
 		appName = utils.GetFlagValueAndResetFlag(cmd, "app-name", "")
+		appLanguage = utils.GetFlagValueAndResetFlag(cmd, "app-language", "")
 		appPublish, _ = cmd.Flags().GetBool("publish-app")
 	}
 
@@ -192,86 +195,96 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	isRuleAlreadyPublished := additionalInfo.CanOverride
+	if !binaryEnabled {
+		inputYAMLFileByts, err := os.ReadFile(filepath.Join(rulesPath, constants.TaskInputYAMLFile))
+		if err == nil {
+			var appInfo vo.TaskInputV2
+			err = yaml.Unmarshal(inputYAMLFileByts, &appInfo)
+			if err != nil {
+				return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
+			}
+			if appInfo.UserObject.App != nil {
+				applicationName := appInfo.UserObject.App.ApplicationName
 
-	inputYAMLFileByts, err := os.ReadFile(filepath.Join(rulesPath, constants.TaskInputYAMLFile))
-	if err == nil {
-		var appInfo vo.TaskInputV2
-		err = yaml.Unmarshal(inputYAMLFileByts, &appInfo)
-		if err != nil {
-			return fmt.Errorf("not a valid rule input structure. error :%s", err.Error())
-		}
-		if appInfo.UserObject.App != nil {
-			applicationName := appInfo.UserObject.App.ApplicationName
-
-			namePointer := &vo.CowNamePointersVO{}
-			namePointer.Name = applicationName
-			if binaryEnabled {
-				namePointer.Name = appName
-			}
-			languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
-			if err != nil {
-				return fmt.Errorf("failed to get application language %s", err)
-			}
-			ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
-			if err != nil {
-				return err
-			}
-			ruleYaml := &vo.RuleYAMLVO{}
-			err = yaml.Unmarshal(ruleFile, &ruleYaml)
-			if err != nil {
-				return fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
-			}
-			for _, task := range ruleYaml.Spec.Tasks {
-				if taskLanguage, exists := languages[task.Name]; exists {
-					additionalInfo.Language = taskLanguage
+				namePointer := &vo.CowNamePointersVO{}
+				namePointer.Name = applicationName
+				if binaryEnabled {
+					namePointer.Name = appName
+				}
+				languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
+				if err != nil {
+					return fmt.Errorf("failed to get application language %s", err)
+				}
+				ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
+				if err != nil {
+					return err
+				}
+				ruleYaml := &vo.RuleYAMLVO{}
+				err = yaml.Unmarshal(ruleFile, &ruleYaml)
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
+				}
+				for _, task := range ruleYaml.Spec.Tasks {
+					if taskLanguage, exists := languages[task.Name]; exists {
+						additionalInfo.Language = taskLanguage
+					}
+				}
+				if cowlibutils.IsNotEmpty(namePointer.Name) {
+					if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
+						return fmt.Errorf("error during publishing application : %s", err)
+					}
 				}
 			}
-			if cowlibutils.IsNotEmpty(namePointer.Name) {
-				if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
-					return fmt.Errorf("error during publishing application : %s", err)
-				}
-			}
-		}
 
-		if appInfo.UserObject != nil && len(appInfo.UserObject.Apps) > 0 {
-			processedApps := make(map[string]bool)
-			for _, app := range appInfo.UserObject.Apps {
-				if app != nil {
-					applicationName := app.ApplicationName
-					if processedApps[applicationName] {
-						continue
-					}
-					namePointer := &vo.CowNamePointersVO{}
-					namePointer.Name = applicationName
-					languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
-					if err != nil {
-						return fmt.Errorf("failed to get application language %s", err)
-					}
-					ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
-					if err != nil {
-						return err
-					}
-					ruleYaml := &vo.RuleYAMLVO{}
-					err = yaml.Unmarshal(ruleFile, &ruleYaml)
-					if err != nil {
-						return fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
-					}
-					for _, task := range ruleYaml.Spec.Tasks {
-						if reflect.DeepEqual(task.AppTags, app.AppTags) {
-							if taskLanguage, exists := languages[task.Name]; exists {
-								additionalInfo.Language = taskLanguage
-								if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
-									return fmt.Errorf("error during publishing application '%s': %s", applicationName, err)
+			if appInfo.UserObject != nil && len(appInfo.UserObject.Apps) > 0 {
+				processedApps := make(map[string]bool)
+				for _, app := range appInfo.UserObject.Apps {
+					if app != nil {
+						applicationName := app.ApplicationName
+						if processedApps[applicationName] {
+							continue
+						}
+						namePointer := &vo.CowNamePointersVO{}
+						namePointer.Name = applicationName
+						languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
+						if err != nil {
+							return fmt.Errorf("failed to get application language %s", err)
+						}
+						ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
+						if err != nil {
+							return err
+						}
+						ruleYaml := &vo.RuleYAMLVO{}
+						err = yaml.Unmarshal(ruleFile, &ruleYaml)
+						if err != nil {
+							return fmt.Errorf("failed to unmarshal rule YAML file: %w", err)
+						}
+						for _, task := range ruleYaml.Spec.Tasks {
+							if reflect.DeepEqual(task.AppTags, app.AppTags) {
+								if taskLanguage, exists := languages[task.Name]; exists {
+									additionalInfo.Language = taskLanguage
+									if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
+										return fmt.Errorf("error during publishing application '%s': %s", applicationName, err)
+									}
+									processedApps[applicationName] = true
+									break
 								}
-								processedApps[applicationName] = true
-								break
 							}
 						}
 					}
 				}
 			}
-		}
 
+		}
+	} else {
+		namePointer := &vo.CowNamePointersVO{}
+		if cowlibutils.IsNotEmpty(appName) {
+			namePointer.Name = appName
+			additionalInfo.Language = appLanguage
+			if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
+				return fmt.Errorf("error during publishing application '%s': %s", appName, err)
+			}
+		}
 	}
 
 	if !isRuleAlreadyPublished {
@@ -337,7 +350,7 @@ func GetValidRuleName(errorDesc string, additionalInfo *vo.AdditionalInfo, binar
 }
 
 func publishApplication(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo, binaryEnabled bool, appPublish bool) error {
-	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	packageName := strings.ToLower(namePointer.Name)
 
 	if !binaryEnabled {

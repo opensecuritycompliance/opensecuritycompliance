@@ -2,7 +2,7 @@
 from typing import overload
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.jiracloud import jiracloud
+from applicationtypes.jiracloud import jiracloud
 from datetime import timezone
 from datetime import datetime
 import pandas as pd
@@ -17,7 +17,7 @@ class Task(cards.AbstractTask):
 
         error = self.validate()
         if error:
-            return self.upload_log_file([{'Error': error}])    
+            return self.upload_log_file(error)    
         
         from_date_obj = self.task_inputs.from_date
         to_date_obj = self.task_inputs.to_date
@@ -142,16 +142,16 @@ class Task(cards.AbstractTask):
 
         user_object = self.task_inputs.user_object
         if not user_object or not user_object.app or not user_object.app.user_defined_credentials:
-            err_list.append("User defined credential is missing")
+            err_list.append({"Error" : "User defined credential is missing"})
         else:
             if not self.task_inputs.user_object.app.application_url:
               empty_attrs.append("appURL")
 
         if empty_attrs:
-            err_list.append("Empty field(s): " + ", ".join(empty_attrs))
+            err_list.append({"Error" :"Empty field(s): " + ", ".join(empty_attrs)})
 
         if invalid_attrs:
-            err_list.append("Invalid field(s): " + ", ".join(invalid_attrs))
+            err_list.append({"Error" : "Invalid field(s): " + ", ".join(invalid_attrs)})
 
         return err_list
     

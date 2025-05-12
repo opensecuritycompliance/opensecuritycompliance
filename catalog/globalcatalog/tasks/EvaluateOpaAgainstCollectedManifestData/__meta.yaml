@@ -16,6 +16,14 @@ applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
+- name: ConfigFile
+  description: ConfigFile
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
 - name: RegoFile
   description: RegoFile
   dataType: FILE
@@ -23,7 +31,7 @@ inputs:
   allowedValues: []
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
+  required: false
 - name: OpaConfigurationFile
   description: OpaConfigurationFile
   dataType: FILE
@@ -31,15 +39,15 @@ inputs:
   allowedValues: []
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
-- name: AuditFile
-  description: AuditFile
+  required: false
+- name: LogFile
+  description: LogFile
   dataType: FILE
   repeated: false
   allowedValues: []
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
+  required: false
 - name: DataFile
   description: DataFile
   dataType: FILE
@@ -47,7 +55,7 @@ inputs:
   allowedValues: []
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
+  required: false
 - name: Query
   description: Query
   dataType: STRING
@@ -55,13 +63,29 @@ inputs:
   allowedValues: []
   defaultValue: ""
   showField: true
-  required: true
+  required: false
+- name: Source
+  description: Source
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: ""
+  showField: true
+  required: false
+- name: OutputFileName
+  description: OutputFileName
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: ""
+  showField: true
+  required: false
 outputs:
 - name: OpaPolicyReport
   description: Opa Policy Report
   dataType: FILE
-- name: AuditFile
-  description: Audit File
+- name: LogFile
+  description: Log File
   dataType: FILE
 - name: ComplianceStatus_
   description: compliance status of the task

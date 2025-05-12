@@ -2,7 +2,7 @@
 package main
 
 import (
-	azureappconnector "appconnections/azureappconnector"
+	azureappconnector "applicationtypes/azureappconnector"
 	"time"
 )
 

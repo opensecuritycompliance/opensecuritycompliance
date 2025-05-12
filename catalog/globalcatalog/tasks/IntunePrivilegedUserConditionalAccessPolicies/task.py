@@ -1,7 +1,7 @@
 from typing import overload
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.azureappconnector import azureappconnector
+from applicationtypes.azureappconnector import azureappconnector
 from compliancecowcards.utils import cowdictutils
 import os
 import json
@@ -95,7 +95,7 @@ class Task(cards.AbstractTask):
                     # fetch policy info and named location of a user
                     policy_info , location_details, error = self.get_user_policy_info(user_id, policies_df)
                     if error:
-                        error_list.append([{"Error": error}])
+                        error_list.append({"Error": error})
                         return standard_reports, error_list
                 
 
@@ -172,11 +172,11 @@ class Task(cards.AbstractTask):
                 return standard_reports, error_list  
 
         except AttributeError as e:
-            error_list.append([{"Error": "Failed to fetch the conditional access policy details. Attribute exception occured."}])
+            error_list.append({"Error": "Failed to fetch the conditional access policy details. Attribute exception occured."})
             logging.exception("Failed to fetch the conditional access policy details: %s", str(e))
             return standard_reports, error_list
         except KeyError as e:
-            error_list.append([{"Error": "Failed to fetch the conditional access policy details. Keyerror exception occured."}])
+            error_list.append({"Error": "Failed to fetch the conditional access policy details. Keyerror exception occured."})
             logging.exception("Failed to fetch the conditional access policy details: %s", str(e))
             return standard_reports, error_list
 
@@ -219,7 +219,7 @@ class Task(cards.AbstractTask):
                                             'LocationStatus' : 'Included'}
                                             location_details.append(location_detail)
                                         else:
-                                            error_list.append("Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed.")
+                                            error_list.append({"Error" : "Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed."})
                                             return policy_details, location_details, error_list
                                 # excluded location object
                                 excluded_location = row['PolicyExcludedLocation']
@@ -236,18 +236,18 @@ class Task(cards.AbstractTask):
                                             'LocationStatus' : 'Included'}
                                             location_details.append(location_detail)
                                         else:
-                                            error_list.append("Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed.")
+                                            error_list.append({"Error" : "Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed."})
                                             return policy_details, location_details, error_list
                         else:
-                            error_list.append("Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed.")
+                            error_list.append({"Error" : "Invalid 'IntuneConditionalAccessPolicies'. Please provide valid 'IntuneConditionalAccessPolicies' to proceed."})
                             return policy_details, location_details, error_list            
 
             return policy_details, location_details, error_list
         except AttributeError as e:
-            error_list.append("Failed to fetch the conditional access policy details. Attribute exception occured.")
+            error_list.append({"Error" : "Failed to fetch the conditional access policy details. Attribute exception occured."})
             return policy_details, location_details, error_list
         except KeyError as e:
-            error_list.append("Failed to fetch the conditional access policy details. Keyerror exception occured.")
+            error_list.append({"Error" :"Failed to fetch the conditional access policy details. Keyerror exception occured."})
             return policy_details, location_details, error_list
 
     

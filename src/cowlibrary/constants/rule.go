@@ -202,7 +202,7 @@ func main() {
 					}
 
 					installPythonDependenciesWithRequirementsTxtFile(taskFolderName)
-					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "appconnections"))
+					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "applicationtypes"))
 
 					taskFolderNames = append(taskFolderNames, taskFolderName)
 

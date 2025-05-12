@@ -3,7 +3,7 @@ from typing import Tuple
 import json
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.salesforceappconnector import salesforceappconnector
+from applicationtypes.salesforceappconnector import salesforceappconnector
 import pandas as pd
 import toml
 import uuid

@@ -53,6 +53,9 @@ outputs:
 - name: SemgrepSupplyChainVulnerabilityReport
   description: SemgrepSupplyChainVulnerabilityReport
   dataType: FILE
+- name: SemgrepSecretsVulnerabilityReport
+  description: SemgrepSecretsVulnerabilityReport
+  dataType: FILE
 - name: SemgrepCodeFindingsSummaryReport
   description: SemgrepCodeFindingsSummaryReport
   dataType: FILE

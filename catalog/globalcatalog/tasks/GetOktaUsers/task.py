@@ -2,7 +2,7 @@
 from typing import overload
 from compliancecowcards.structs import cards
 # As per the selected app, we're importing the app package
-from appconnections.oktaconnector import oktaconnector
+from applicationtypes.oktaconnector import oktaconnector
 import uuid
 import pandas as pd
 
@@ -12,9 +12,9 @@ class Task(cards.AbstractTask):
     def execute(self) -> dict:
         error = self.check_inputs()
         if error:
-            log_file_url, error = self.upload_log_file([{'error': error}])
+            log_file_url, error = self.upload_log_file([{'Error': error}])
             if error:
-                return {'error': error}
+                return {'Error': error}
             return {"LogFile": log_file_url}
 
         self.okta_connector = oktaconnector.OktaConnector(
@@ -27,7 +27,7 @@ class Task(cards.AbstractTask):
         users, error = self.okta_connector.get_users()
         if error:
             file_url, error = self.upload_log_file(
-                [{'error': f"Error while getting users :: {error}"}])
+                [{'Error': f"Error while getting users :: {error}"}])
             if error:
                 return error
             return {"LogFile": file_url}
@@ -38,7 +38,7 @@ class Task(cards.AbstractTask):
         deactivated_users, error = self.okta_connector.get_deactivated_users()
         if error:
             file_url, error = self.upload_log_file(
-                [{'error': f"Error while getting the deactivated users :: {error}"}])
+                [{'Error': f"Error while getting the deactivated users :: {error}"}])
             if error:
                 return error
             return {"LogFile": file_url}
@@ -55,18 +55,18 @@ class Task(cards.AbstractTask):
         if errors_list:
             log_file_url, error = self.upload_log_file(errors_list)
             if error:
-                return {'error': error}
+                return {'Error': error}
             response["LogFile"] = log_file_url
 
         users_file_url, error = self.upload_output_file(
             users_list, "OktaUsers")
         if error:
-            return {'error': error}
+            return {'Error': error}
 
         admin_users_file_url, error = self.upload_output_file(
             admin_users_list, "OktaAdminUsers")
         if error:
-            return {'error': error}
+            return {'Error': error}
 
         response.update({
             "OktaUsers": users_file_url,
@@ -97,9 +97,7 @@ class Task(cards.AbstractTask):
         user_roles_data, error = self.okta_connector.get_user_roles(user_id)
         if error:
             return None, {
-                "UserID": user_id,
-                "UserName": user_name,
-                "Error": f"Error occurred while getting user roles :: {error}"
+                "Error": f"UserID: {user_id}, UserName: {user_name} - Error occurred while getting user roles :: {error}"
             }
 
         user_roles = [role.label for role in user_roles_data]
@@ -107,9 +105,7 @@ class Task(cards.AbstractTask):
         groups, error = self.okta_connector.get_user_groups(user_id)
         if error:
             return None, {
-                "UserID": user_id,
-                "UserName": user_name,
-                "Error": f"Error occurred while getting user groups :: {error}"
+                "Error": f"UserID: {user_id}, UserName: {user_name} - Error occurred while getting user groups :: {error}"
             }
 
         group_details = [{
@@ -174,7 +170,7 @@ class Task(cards.AbstractTask):
             content_type="application/json"
         )
         if error:
-            return None, {'error': f"Error while uploading LogFile :: {error}"}
+            return None, {'Error': f"Error while uploading LogFile :: {error}"}
         return file_url, None
 
     def upload_output_file(self, output_data, file_name):
@@ -186,5 +182,5 @@ class Task(cards.AbstractTask):
             file_name=file_name
         )
         if error:
-            return None, {'error': f"Error while uploading {file_name} file :: {error}"}
+            return None, {'Error': f"Error while uploading {file_name} file :: {error}"}
         return file_url, None

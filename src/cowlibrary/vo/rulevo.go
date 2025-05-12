@@ -127,6 +127,7 @@ type SynthesizeVO struct {
 type IOValues struct {
 	Inputs          map[string]interface{} `json:"inputs,omitempty"`
 	InputsMeta__    []*RuleUserInputVO     `json:"inputsMeta__,omitempty"`
+	OutputsMeta__   []*RuleUserInputVO     `json:"outputsMeta__,omitempty"`
 	Outputs         map[string]interface{} `json:"outputs,omitempty"`
 	Facts           map[string]interface{} `json:"facts,omitempty"`
 	OutputFiles     map[string]string      `json:"outputFiles,omitempty"`

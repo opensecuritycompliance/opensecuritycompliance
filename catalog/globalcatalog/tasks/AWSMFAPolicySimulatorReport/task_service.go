@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	awsconnector "appconnections/awsappconnector"
-	storage "appconnections/minio"
+	awsconnector "applicationtypes/awsappconnector"
+	storage "applicationtypes/minio"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
