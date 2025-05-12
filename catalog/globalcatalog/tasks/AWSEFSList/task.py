@@ -1,7 +1,7 @@
 from typing import overload 
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.kubernetes import kubernetes
+from applicationtypes.kubernetes import kubernetes
 from compliancecowcards.utils import cowdictutils
 from datetime import datetime, timezone
 import urllib.parse

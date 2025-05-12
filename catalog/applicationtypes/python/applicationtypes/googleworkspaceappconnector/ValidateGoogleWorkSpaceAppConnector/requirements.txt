@@ -1,0 +1,13 @@
+PyYAML
+SQLAlchemy
+azure-identity
+azure-mgmt-compute
+azure-mgmt-resource==21.2.1
+google-api-python-client
+google-auth
+google-cloud-storage
+jmespath
+minio
+paramiko
+requests
+xmltodict

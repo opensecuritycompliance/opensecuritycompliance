@@ -2,7 +2,7 @@ from compliancecowcards.structs import cards
 from typing import Tuple
 # As per the selected app, we're importing the app package
 import pandas as pd
-from appconnections.azureappconnector import azureappconnector
+from applicationtypes.azureappconnector import azureappconnector
 
 class Task(cards.AbstractTask):
     def execute(self) -> dict:

@@ -147,9 +147,9 @@ func (task *GoTask) InitTask(taskName, tasksPath string, taskInput *vo.TaskInput
 					if utils.IsNotEmpty(appClassName) {
 						packageName := strings.ToLower(appClassName)
 
-						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+						if utils.IsFolderExist(filepath.Join(utils.GetApplicationTypesPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
 							classAvailable = true
-							importPackage = strings.ToLower(appClassName) + ` "appconnections/` + packageName + `"`
+							importPackage = strings.ToLower(appClassName) + ` "applicationtypes/` + packageName + `"`
 							serverStructFile = strings.ReplaceAll(serverStructFile, "{{import()}}", importPackage)
 							userDefinedCredential := strings.ToLower(appClassName) + `.UserDefinedCredentials`
 							serverStructFile = strings.ReplaceAll(serverStructFile, "{{UserDefinedCredentials}}", userDefinedCredential)

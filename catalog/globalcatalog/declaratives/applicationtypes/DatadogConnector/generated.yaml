@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: DatadogConnector
+  displayName: DatadogConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - datadogconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - datadogconnector
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateDatadogConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: DataDogCred
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: DataDogCred
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

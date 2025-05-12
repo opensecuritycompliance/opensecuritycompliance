@@ -1,5 +1,5 @@
 from compliancecowcards.structs import cards
-from appconnections.privacybisonconnector import privacybisonconnector
+from applicationtypes.privacybisonconnector import privacybisonconnector
 from compliancecowcards.utils import cowdictutils
 import base64
 import hashlib

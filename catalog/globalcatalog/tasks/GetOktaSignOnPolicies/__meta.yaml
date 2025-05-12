@@ -1,0 +1,31 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 14/05/2024
+name: GetOktaSignOnPolicies
+displayName: GetOktaSignOnPolicies
+version: '1.0'
+description: GetOktaSignOnPolicies
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: OktaSignOnPolicies
+  description: OktaSignOnPolicies
+  dataType: FILE
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

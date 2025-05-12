@@ -1,0 +1,6 @@
+PyYAML
+boto3==1.34.134
+requests
+jq
+PyJWT
+cel-python

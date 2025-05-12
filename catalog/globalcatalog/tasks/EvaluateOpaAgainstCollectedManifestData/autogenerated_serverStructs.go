@@ -2,7 +2,7 @@
 package main
 
 import (
-	kubernetes "appconnections/kubernetes"
+	kubernetes "applicationtypes/kubernetes"
 	"time"
 )
 

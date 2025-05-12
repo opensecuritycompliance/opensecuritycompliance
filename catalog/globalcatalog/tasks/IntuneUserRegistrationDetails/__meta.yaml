@@ -1,0 +1,31 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 11/05/2024
+name: IntuneUserRegistrationDetails
+displayName: IntuneUserRegistrationDetails
+version: '1.0'
+description: IntuneUserRegistrationDetails
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: LogFile
+  description: Log File of the task
+  dataType: FILE
+- name: IntunePrivilegedUserDetails
+  description: Intune User RegistrationDetail list
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

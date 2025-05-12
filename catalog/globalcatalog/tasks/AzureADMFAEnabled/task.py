@@ -1,5 +1,5 @@
 from typing import Tuple, List
-from appconnections.azureappconnector import azureappconnector
+from applicationtypes.azureappconnector import azureappconnector
 from compliancecowcards.structs import cards
 import pandas as pd
 from datetime import datetime

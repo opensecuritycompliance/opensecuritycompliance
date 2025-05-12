@@ -69,6 +69,11 @@ import uuid
 from datetime import date
 import traceback
 
+TASK_OUTPUT_FILE = "task_output.json"
+INPUTS_YAML_FILE = "inputs.yaml"
+TASK_INPUT_JSON = "task_input.json"
+LOGS_TXT_FILE = "logs.txt"
+
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, date):
@@ -91,14 +96,14 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
                 data = None
 
                 try:
-                    if os.path.exists("inputs.yaml"):
+                    if os.path.exists(INPUTS_YAML_FILE):
                         # Open and read the YAML file
-                        with open("inputs.yaml", 'r') as yaml_file:
+                        with open(INPUTS_YAML_FILE, 'r') as yaml_file:
                             data = yaml.load(
                                 yaml_file, Loader=yaml.FullLoader)
 
-                    elif os.path.exists("task_input.json"):
-                        with open("task_input.json") as f:
+                    elif os.path.exists(TASK_INPUT_JSON):
+                        with open(TASK_INPUT_JSON) as f:
                             data = json.loads(f.read())
 
                     data = json.loads(os.path.expandvars(
@@ -115,24 +120,24 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
                                 cowvo.ObjectTemplate.from_dict, default_system_objects)
                             data.meta_data = cowvo.MetaDataTemplate(str(uuid.uuid4()), str(
                                 uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()))
-                        except:
+                        except Exception:
                             pass
 
                     cl.task_inputs = data
                     output = cl.execute()
                     if isinstance(output, dict) and bool(output):
-                        with open("task_output.json", "w") as f:
+                        with open(TASK_OUTPUT_FILE, "w") as f:
                             f.write(json.dumps({"Outputs": output}))
                     else:
-                        with open("task_output.json", "w") as f:
+                        with open(TASK_OUTPUT_FILE, "w") as f:
                             f.write(json.dumps({"error": "not able to retrieve the outputs from the task"}))
                     is_task_executed = True
                     break
                 except Exception as error:
-                    with open("logs.txt", "w") as file:
+                    with open(LOGS_TXT_FILE, "w") as file:
                         file.write(traceback.format_exc())
                     error_message = {"error": "Please review the stack trace in the logs.txt file within the task."}
-                    with open("task_output.json", "w") as file:
+                    with open(TASK_OUTPUT_FILE, "w") as file:
                         json.dump(error_message, file)
                     raise
 `

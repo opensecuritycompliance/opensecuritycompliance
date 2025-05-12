@@ -10,6 +10,7 @@ userInputs:
   InputFile1: <<MINIO_FILE_PATH>> # InputFile1 for transforming data
   TransformConfigFile: <<MINIO_FILE_PATH>> # Configuration for transforming data
   InputFile2: <<MINIO_FILE_PATH>> # InputFile2 for additional data (optional)
-  LogFile: 
+  OutputFileName: 
+  LogFile: <<MINIO_FILE_PATH>>
 fromDate: 2024-09-10
 toDate: 2024-09-10

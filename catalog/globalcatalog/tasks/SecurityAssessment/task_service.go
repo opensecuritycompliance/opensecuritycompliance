@@ -1,8 +1,8 @@
 package main
 
 import (
-	azure "appconnections/azureappconnector"
-	cowStorage "appconnections/minio"
+	azure "applicationtypes/azureappconnector"
+	cowStorage "applicationtypes/minio"
 	"cowlibrary/vo"
 	"encoding/json"
 	"fmt"

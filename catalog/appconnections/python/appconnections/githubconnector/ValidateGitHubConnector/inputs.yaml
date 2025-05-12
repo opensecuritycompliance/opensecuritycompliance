@@ -1,9 +1,0 @@
-userObject:
-  name: GitHubConnector
-userInputs:
-  BucketName: demo
-  appPort: 0
-  appURL: https://localhost.com/
-  userDefinedCredentials:
-    AccessToken:
-      AccessToken: "$GITHUB_ACCESS_TOKEN"

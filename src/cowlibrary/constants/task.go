@@ -408,7 +408,7 @@ const TaskService = `
 package main
 
 import (
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 	"cowlibrary/vo"
 	"encoding/json"
 	"fmt"

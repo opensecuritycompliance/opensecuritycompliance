@@ -21,9 +21,9 @@ import (
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args:  cobra.NoArgs,
-		Use:   "credential",
-		Short: "Create a credential",
-		Long:  "Create credential",
+		Use:   "credential-type",
+		Short: "Create a credential-type",
+		Long:  "Create credential-type",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -117,7 +117,7 @@ func runE(cmd *cobra.Command) error {
 		return errors.New(constants.ErroInvalidData)
 	}
 
-	emoji.Println("Credential creation is complete :smiling_face_with_sunglasses:! You can find the credential yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentials"))
+	emoji.Println("Credential creation is complete :smiling_face_with_sunglasses:! You can find the credential yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentialtypes"))
 
 	return nil
 

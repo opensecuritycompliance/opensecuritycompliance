@@ -2,7 +2,7 @@ from typing import overload
 from compliancecowcards.structs import cards
 from io import StringIO
 # As per the selected app, we're importing the app package
-from appconnections.awsappconnector import awsappconnector
+from applicationtypes.awsappconnector import awsappconnector
 from compliancecowcards.utils import cowdictutils
 import pandas as pd
 import json

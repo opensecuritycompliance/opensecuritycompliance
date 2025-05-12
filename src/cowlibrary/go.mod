@@ -3,7 +3,7 @@ module cowlibrary
 go 1.21.3
 
 require (
-	appconnections v0.0.0-00010101000000-000000000000
+	applicationtypes v0.0.0-00010101000000-000000000000
 	github.com/briandowns/spinner v1.23.0
 	github.com/charmbracelet/bubbletea v0.24.2
 	github.com/dmnlk/stringUtils v0.0.0-20150214151148-aa88c62978f5
@@ -84,4 +84,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-replace appconnections => ../../catalog/appconnections/go
+replace applicationtypes => ../../catalog/applicationtypes/go

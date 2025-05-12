@@ -1,7 +1,7 @@
 from typing import overload
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.httprequest import httprequest
+from applicationtypes.httprequest import httprequest
 import http
 from compliancecowcards.utils import cowdictutils
 import json
@@ -18,8 +18,14 @@ import jq
 import base64
 import copy
 from http import HTTPMethod
+import io
+import magic
+import gzip
+import tarfile
 
 class Task(cards.AbstractTask):
+
+    auth_responses: dict[str, bytes|None] = {}
 
     def execute(self) -> dict:
         
@@ -28,7 +34,7 @@ class Task(cards.AbstractTask):
         error_details = []
         
         if not(log_file == "" or log_file == "<<MINIO_FILE_PATH>>" or log_file == None ): 
-            if data_file == "" or data_file == "<<MINIO_FILE_PATH>>" :
+            if data_file == "" or data_file == "<<MINIO_FILE_PATH>>" or data_file == None :
                 return {'LogFile' : log_file}
             else:
                 input_log_details, error = self.download_log_file(log_file)
@@ -65,7 +71,7 @@ class Task(cards.AbstractTask):
                     self.task_inputs.user_object.app.user_defined_credentials)
                 )
         
-        http_request_file_data,error = self.reslove_config_placeholders(http_request_file_data)
+        http_request_file_data,error = self.resolve_config_placeholders(http_request_file_data)
         if error :
             error_details.append(error)
             return self.upload_log_file(error_details)
@@ -77,7 +83,7 @@ class Task(cards.AbstractTask):
         
         is_valid_credential_type = self.http_connector.validate_credetials_type(http_request_file_data.get("Request").get("CredentialType"))
         if not is_valid_credential_type:
-            error_details.append({"error" : "Invalid credentials or CredentialType mismatch between the application and RequestConfigFile.toml."})
+            error_details.append({"Error" : "Invalid credentials or CredentialType mismatch between the application and RequestConfigFile.toml."})
             return self.upload_log_file(error_details)
         
         http_request_file_data = request_query_info 
@@ -92,19 +98,23 @@ class Task(cards.AbstractTask):
             resource_data.append({})
             
         for data in resource_data :
-            http_response_ , error = self.process_api_request_and_responce(
-                http_request_file_data ,data , http_response_file_data )
+            http_request_file_data_copy = copy.deepcopy(http_request_file_data)
+            http_response_ , content_type, error = self.process_api_request_and_responce(
+                http_request_file_data_copy ,data , http_response_file_data )
             if error :
                 error_details.append({"Error" : error})
             if isinstance(http_response_ , list) :
                 output.extend(http_response_)
             else :
-                output.append(http_response_)
+                output = http_response_
                 
-        processed_output = self.http_connector.replace_empty_dicts_with_none(output)
+        if isinstance(http_response_, (dict, list)):
+            processed_output = self.http_connector.replace_empty_dicts_with_none(output)
+        else:
+            processed_output = http_response_
         response = {}
         if len(processed_output) > 0 :
-            response = self.upload_output_file(pd.DataFrame(processed_output) ,"OutputFile")
+            response = self.upload_output_file(file_content = processed_output ,file_name = "OutputFile",content_type = content_type)
         if len(error_details) > 0:
             log_file_response = self.upload_log_file(error_details)
             if cowdictutils.is_valid_key(log_file_response, 'LogFile'):
@@ -116,7 +126,7 @@ class Task(cards.AbstractTask):
 
 
     def process_api_request_and_responce(self, 
-        http_request_data , data_file,http_response_query ) : 
+        http_request_data , data_file,http_response_query ) -> tuple[list, str, list]: 
         
         result = []
         error_details = []
@@ -126,23 +136,33 @@ class Task(cards.AbstractTask):
                 )
         if error :
             if response == None :
-                return [] , error
+                return [], '', error
             error_details.extend(error)
             
         http_response_ = response.get('body', {} )
-        if isinstance(http_response_ , list) :
-            result.extend(http_response_)
+        content_type = response.get('headers', {} ).get("Content-Type","")
+        
+        if isinstance(http_response_, (dict, list)):
+            if isinstance(http_response_ , list) :
+                result.extend(http_response_)
+            else :
+                result.append(http_response_)
         else :
-            result.append(http_response_)
+            result = http_response_
         
-        http_response_,error = self.apply_input_rulesets_to_output(
-            http_request_data , response , http_response_query , data_file)
-        if error :
-            error_details.extend(error)
-            return [] , error_details
-        result.extend(http_response_)
+        if isinstance(http_response_, (dict, list)):
+            http_response_,error = self.apply_input_rulesets_to_output(
+                http_request_data , response , http_response_query , data_file)
+            if error :
+                error_details.extend(error)
+                return [] , '', error_details
+            result.extend(http_response_)
+        else:
+            if len(http_response_query.get("Response",{}).get("RuleSet",{}).get("PaginationCondition",{}).get("ConditionField",{})) > 0:
+                error_details.extend([{"Error":f"The content type '{response.get('headers', {}).get('Content-Type', '')}' does not support pagination. This feature is only supported for 'application/json' and 'application/ld+json'."}])
+            result = http_response_
         
-        return result, error_details
+        return result, response.get('response_file_type',''), error_details
     
     def apply_input_rulesets_to_output(
             self, http_request_data, response, http_response_query , data_file):
@@ -182,27 +202,38 @@ class Task(cards.AbstractTask):
         if pagination:
             required_pagination_call = False
 
+            context_dict = {
+                'fromdate': self.task_inputs.from_date.strftime("%Y-%m-%d"),
+                'todate': self.task_inputs.to_date.strftime("%Y-%m-%d"),
+                'inputfile': data_file,
+                'response': response
+            }
+
+            has_next_url, error_details = self.response_query_handle_next_url(pagination, request_data, error_details, context_dict)
+            if error_details:
+                return None, error_details
+
             has_header ,error_details = self.response_query_handle_headers(
-                pagination, request_data, error_details, response)
+                pagination, request_data, error_details, context_dict)
             if error_details:
                 return None, error_details
 
             has_body ,error_details = self.response_query_handle_body(
-                pagination, request_data, error_details, response)
+                pagination, request_data, error_details, context_dict)
             if error_details:
                 return None, error_details
 
             has_params, error_details = self.response_query_handle_params(
-                pagination, request_data, error_details, response)
+                pagination, request_data, error_details, context_dict)
             if error_details:
                 return None, error_details
             
-            if has_header or has_body or has_params :
+            if has_next_url or has_header or has_body or has_params :
                 required_pagination_call = True
             
             if required_pagination_call :
             # Process API request and response
-                http_response, error = self.process_api_request_and_responce(
+                http_response, _, error = self.process_api_request_and_responce(
                     http_request_data, data_file, http_response_query)
                 if error:
                     error_details.append({"Error": error})
@@ -214,7 +245,16 @@ class Task(cards.AbstractTask):
                 
         return result, error_details
 
-    def response_query_handle_headers(self, pagination, request_data, error_details, output_):
+    def response_query_handle_next_url(self, pagination, request_data, error_details, context_dict):
+        if not (value := str(pagination.get('URL', ''))):
+            return False, error_details
+
+        updated_value = self.response_query_replace_placeholders(value, context_dict, replace_double_quotes=False)
+        request_data['URL'] = updated_value if updated_value else request_data['URL']
+
+        return bool(updated_value), error_details
+
+    def response_query_handle_headers(self, pagination, request_data, error_details, context_dict):
         has_header = False
         request_headers = {}
         if 'Header' in pagination:
@@ -225,14 +265,20 @@ class Task(cards.AbstractTask):
             else:
                 request_data["Headers"] = {}
                 request_data_headers = {}
+
+            query_header_str = json.dumps(query_header)
+
+            if query_header_str:
+                query_header_str = self.response_query_replace_placeholders(query_header_str, context_dict)
                 
-            for key, value in query_header.items():
-                if value.startswith("<<") and value.endswith(">>"):
-                    value = re.sub(r"<<response(.*?)>>", r"\1", value)
-                    if not value.startswith(".") :
-                        value = f".{value.strip()}"
-                    parsed_value = self.jq_filter_query(value, output_)
-                    request_headers[key] = parsed_value
+            request_headers, error = self.load_json(
+                query_header_str,
+                "Invalid placeholder/value provided in 'ResponseConfigFile.Response.RuleSet.Pagination.Header'",
+                error_details)
+            if error:
+                error_details.append({'Error': error})
+                return has_header, error_details
+            
             if request_headers :
                 request_headers_temp = copy.deepcopy(request_headers)
                 for key, value in request_headers.items() :
@@ -245,7 +291,7 @@ class Task(cards.AbstractTask):
                     has_header = True
         return has_header,error_details
 
-    def response_query_handle_body(self, pagination, request_data, error_details, output_):
+    def response_query_handle_body(self, pagination, request_data, error_details, context_dict):
         has_body =False
         body_type = next(
             (key for key in ["URLEncoded", "FormData", "Raw", "Binary"] 
@@ -262,17 +308,6 @@ class Task(cards.AbstractTask):
             request_data["ContentType"] = "application/octet-stream"
             
         if body_type:
-            request_body = {}
-            query_body = pagination["Data"].get(body_type, "")
-            if body_type == "Raw" :
-                query_body, body_error = self.load_json(
-                    query_body.get("Value" , ""),
-                    "Invalid JSON string provided in 'ResponseConfigFile.RuleSet.Pagination.Data.Raw'",
-                    error_details
-                )
-                if body_error:
-                    return has_body, error_details
-            
              # Initialize request_data["Data"] if not present
             if "Data" in request_data and body_type in request_data.get("Data", {}):
                 request_data_body = request_data["Data"].get(body_type, {})
@@ -287,15 +322,25 @@ class Task(cards.AbstractTask):
             else:
                 request_data["Data"] = {body_type: {}}
                 request_data_body = {}
-                
-            for key, value in query_body.items():
-                if value.startswith("<<") and value.endswith(">>"):
-                    value = re.sub(r"<<response(.*?)>>", r"\1", value)
-                    if not value.startswith(".") :
-                        value = f".{value.strip()}"
-                    parsed_value = self.jq_filter_query(value, output_)
-                    if parsed_value :
-                        request_body[key] = parsed_value
+
+            request_body = {}
+            query_body = pagination["Data"].get(body_type, {})
+
+            if body_type == "Raw" :
+                query_body_str = str(query_body.get('Value', ''))
+            else:
+                query_body_str = json.dumps(query_body)
+
+            updated_query_body_str = self.response_query_replace_placeholders(query_body_str, context_dict)
+
+            request_body, body_error = self.load_json(
+                updated_query_body_str,
+                "Invalid value provided in response body :: 'ResponseConfigFile.RuleSet.Pagination.Data'",
+                error_details
+            )
+            if body_error:
+                return has_body, error_details
+
             if request_body :
                 request_body_temp = copy.deepcopy(request_body)
                 for key, value in request_body.items() :
@@ -312,7 +357,7 @@ class Task(cards.AbstractTask):
                     
         return has_body,error_details
 
-    def response_query_handle_params(self, pagination, request_data, error_details, output_):
+    def response_query_handle_params(self, pagination, request_data, error_details, context_dict):
         has_param =False
         if 'Params' in pagination:
             request_params = {}
@@ -324,14 +369,19 @@ class Task(cards.AbstractTask):
                 request_data["Params"] = {}
                 request_data_params = {}
                 
-            for key, value in query_params.items():
-                if value.startswith("<<") and value.endswith(">>"):
-                    value = re.sub(r"<<response(.*?)>>", r"\1", value)
-                    if not value.startswith(".") :
-                        value = f".{value.strip()}"
-                    parsed_value = self.jq_filter_query(value, output_)
-                    if parsed_value:
-                        request_params[key] = parsed_value
+            query_params_str = json.dumps(query_params)
+
+            if query_params_str:
+                query_params_str = self.response_query_replace_placeholders(query_params_str, context_dict)
+                
+            request_params, error = self.load_json(
+                query_params_str,
+                "Invalid placeholder/value provided in 'ResponseConfigFile.Response.RuleSet.Pagination.Params'",
+                error_details)
+            if error:
+                error_details.append({'Error': error})
+                return has_param, error_details
+            
             if request_params :
                 request_params_temp = copy.deepcopy(request_params)
                 for key, value in request_params.items() :
@@ -343,6 +393,19 @@ class Task(cards.AbstractTask):
                     request_data["Params"] = request_data_params
                     has_param = True
         return has_param ,error_details
+
+    def response_query_replace_placeholders(self, value_string: str, context_dict: dict, replace_double_quotes = True):
+        updated_value_string = value_string
+        placeholder_matches: list[str] = re.findall(r'<<(.+?)>>', value_string)
+        for match in placeholder_matches:
+            path = match.strip()
+            if not path.startswith('.'):
+                path = '.' + path
+            parsed_value = self.jq_filter_query(path, context_dict)
+            parsed_value = str(parsed_value).replace('"', "'") if replace_double_quotes else str(parsed_value)
+            updated_value_string = str(updated_value_string).replace(f'<<{match}>>', parsed_value)
+        
+        return updated_value_string
     
     def response_query_handle_append_columns_handler(self,
             response , response_json, request_data ,rule_set, data_file):
@@ -365,22 +428,30 @@ class Task(cards.AbstractTask):
     
     def response_query_handle_append_columns(self,
             response , response_json, request_data ,rule_set, data_file):
-        
+
+        modified_response = copy.deepcopy(response)  
+        if "response_file_type" in modified_response:
+            del modified_response["response_file_type"]
+
+        context_dict = {
+            'inputfile': data_file,
+            'request': request_data,
+            'response': modified_response,
+            'responsebody': modified_response.get("body" , {})
+        }
+
         proceed_append_column = False
         condition = rule_set.get("AppendColumnCondition")
         if condition :
             condition_field =  condition["ConditionField"]
             if condition_field != "" :
                 parsed_value = ""
-                if condition_field.startswith("<<response.") :
-                    value = f'.{condition_field.replace("response." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, response)
-            
-                elif condition_field.startswith("<<responsebody.") :
-                    value = f'.{condition_field.replace("responsebody." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, response.get("body" , {}))
+                condition_field = condition_field.strip()
+                if condition_field.startswith('<<'):
+                    condition_field_path = condition_field.strip('<>')
+                    if not condition_field_path.startswith('.'):
+                        condition_field_path = '.' + condition_field_path
+                    parsed_value = self.jq_filter_query(condition_field_path, context_dict)
                     
                 if f"{parsed_value}" == f"{condition['ConditionValue']}" :
                     proceed_append_column = True
@@ -396,39 +467,15 @@ class Task(cards.AbstractTask):
         
         append_column_fields = append_column['Fields']
         if append_column_fields:
-            for key , value in append_column_fields.items() :
-                if value.startswith("<<inputfile.") :
-                    value = f'.{value.replace("inputfile." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, data_file)
-                    response_json[key] = parsed_value
-                        
-                elif value.startswith("<<request.") :
-                    value = f'.{value.replace("request." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, request_data)
-                    
-                    parsed_value = parsed_value.replace("<<application.AppURL>>" , self.task_inputs.user_object.app.application_url)
-                    parsed_value_temp,error  = self.replace_placeholders(parsed_value, "" , {}, data_file)
-                    if error :
-                        response_json[key] = parsed_value
-                    else:
-                        response_json[key] = parsed_value_temp
+            append_columns_str = json.dumps(append_column_fields)
+            append_columns_str = self.response_query_replace_placeholders(append_columns_str, context_dict)
 
-                elif value.startswith("<<response.") :
-                    value = f'.{value.replace("response." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, response)
-                    response_json[key] = parsed_value
-                
-                elif value.startswith("<<responsebody.") :
-                    value = f'.{value.replace("responsebody." , "")}'
-                    value = re.sub(r"<<(.*?)>>", r"\1", value)
-                    parsed_value = self.jq_filter_query(value, response.get("body" , {}))
-                    response_json[key] = parsed_value
+            try:
+                updated_append_column_fields = json.loads(append_columns_str)
+            except json.JSONDecodeError:
+                return response_json, "Invalid value provided in one of 'ResponseConfigFile.Response.RuleSet.AppendColumn.Fields'"
 
-                else:
-                    response_json[key] = value
+            response_json.update(updated_append_column_fields)
         
         return response_json ,None
     
@@ -439,64 +486,24 @@ class Task(cards.AbstractTask):
         
         body = {}
         if request_data["Method"] !=  HTTPMethod.GET  :
-            body, error = self.prepare_body(request_data["ContentType"], request_data["Data"])
+            body, error = self.prepare_body(request_data["ContentType"], request_data["Data"], data_file)
             if error:
                 return None, [{"Error": error}]
+
+        for i in range(2):
+            response, error = self.generate_auth_and_make_api_call(request_data, data_file, body)
+            if error:
+                if i == 0 and isinstance(error, str) and error.startswith('Unauthorized - ') and self.auth_responses:
+                    # Try resetting existing auth_responses, to force creating new one, in case of 'Unauthorized' response
+                    self.auth_responses = {}
+                    continue
+                if response:
+                    error_details.append({"Error": error})
+                else:
+                    return None, [{'Error': error}] if isinstance(error, str) else error
+            break
         
-        auth_header, parsed_url, parsed_body, parsed_params, error_info = self.generate_auth_and_form_url_and_body(
-            request_data, data_file, body )
-        if error_info:
-            return None, error_info
-        
-        parsed_headers, error = self.create_request_header(
-            request_data.get("Headers", {}).get("Headers", {}),
-            request_data.get("ContentType", ""),
-            auth_header
-        )
-        if error:
-            return None, [{"Error": error}]
-        
-        api_request_info = {
-            "URL": parsed_url,
-            "Method": request_data.get("Method", ""),
-            "Redirect": request_data.get("Redirect", False),
-            "Verify" : request_data.get("Verify", True),
-            "CredentialType": request_data.get("CredentialType", ""),
-            "ContentType": request_data.get("ContentType", ""),
-            "Params": parsed_params,
-            "Body": parsed_body,
-            "Headers": parsed_headers,
-            "Retries": request_data.get("Retries", 0),
-            "RetryOnStatus": request_data.get("RetryOnStatus", []),
-            "TimeOut": request_data.get("TimeOut", 30),
-            "Files": {}
-        }
-        
-        
-        if request_data.get("ContentType", "") in ["multipart/form-data", "application/x-www-form-urlencoded"]:
-            files = {}
-            temp_body = parsed_body.copy()
-            if parsed_body:
-                number_of_file = 1
-                for key, value in parsed_body.items():
-                    if isinstance(value, str) and (value.startswith("https://") or value.startswith("http://")):
-                        file_name = os.path.basename(value)
-                        file_content, error = self.download_file_from_minio(value)
-                        if error:
-                            return None, [{"Error": f"Error while downloading {request_data['ContentType']} files, "
-                                                "assuming all the file paths are MinIO file paths."}]
-                        files[f"file{number_of_file}"] = (file_name, file_content)
-                        number_of_file += 1
-                        del temp_body[key]
-        
-            api_request_info["Files"] = files if files else None
-            api_request_info["Body"] = temp_body if files else parsed_body  
-            
-        response, error = self.http_connector.make_api_call(api_request_info)
-        if error:
-            return None, [{"Error": error}]
-        
-        response_json, error = self.convert_response(response)
+        converted_response, response_file_type, error = self.convert_response(response)
         if error:
             return None, [{"Error": error}]
         
@@ -507,24 +514,26 @@ class Task(cards.AbstractTask):
         required_append_column_call = bool(append_column)
         
         response_dict = {
-                'body': response_json,
+                'body': converted_response,
                 'status_code': response.status_code,
                 'headers': dict(response.headers),
                 'cookies': dict(response.cookies),
-                'url': response.url
+                'url': response.url,
+                'links': response.links,
+                'response_file_type' : response_file_type
             }
-
-        if required_append_column_call:
-            
-            response_json, error = self.response_query_handle_append_columns_handler(
-                response_dict, response_json, request_data, append_column, data_file
+        if (required_append_column_call and not("<<responsebody." in str(append_column)) and isinstance(converted_response, (dict, list))):
+            converted_response, error = self.response_query_handle_append_columns_handler(
+                response_dict, converted_response, request_data, append_column, data_file
             )
             if error:
                 error_details.append({"Error": f"Invalid data in ResponseConfigFile.RuleSet.AppendColumns: {error}"})
+        elif required_append_column_call:
+                error_details.append({"Error":f"The content type '{response.headers.get('Content-Type', '')}' does not support appending column fields. This feature is only supported for 'application/json' and 'application/ld+json'."})
         
         return response_dict, error_details
 
-    def reslove_config_placeholders(self , http_request_data) :
+    def resolve_config_placeholders(self , http_request_data) :
         
         constant_variables = http_request_data.get('Variables', {})
         request_data_json = http_request_data.get('Request', {})
@@ -538,17 +547,22 @@ class Task(cards.AbstractTask):
             return None , {"Error" : f"Only 'string' type values are allowed in request_config_file['variable'] :: {','.join(error_message)}"}
                 
         request_data_str = json.dumps(request_data_json)
-        matches = re.findall( "<<((?!response\.|validationCURLresponse\.|application\.|inputfile\.)[^>]+)>>", request_data_str)
+        matches = re.findall(r"<<((?!response\.|responsebody\.|validationCURLresponse\.|application\.|inputfile\.)[^>]+)>>", request_data_str)
 
         missing_variable = []
         for placeholder_key in matches:
             placeholder_key = placeholder_key.strip()
-            if placeholder_key == "" :
+            
+            # We are skipping the JWTBearer placeholder since the authorization is handled through the placeholder in the header. 
+            # This placeholder will be replaced in the `generate_auth_and_form_url_and_body()` function.
+            if placeholder_key == "" or placeholder_key == "JWTBearer" :
                 continue
             if placeholder_key == "fromdate"  :
                 request_data_str = request_data_str.replace( "<<fromdate>>" , self.task_inputs.from_date.strftime("%Y-%m-%d"))
             elif placeholder_key == "todate" :
                 request_data_str = request_data_str.replace( "<<todate>>" , self.task_inputs.to_date.strftime("%Y-%m-%d"))
+            elif placeholder_key == "random_uuid4" :
+                request_data_str = request_data_str.replace( "<<random_uuid4>>" ,str(uuid.uuid4()))
             else:
                 parsed_value = self.jq_filter_query(f".{placeholder_key}", constant_variables)
                 if parsed_value  : 
@@ -587,6 +601,8 @@ class Task(cards.AbstractTask):
         parsed_body = {}
         parsed_params = {}
         error_details = []
+
+        existing_auth_response = self.auth_responses.get(credential_type)
         
         app_info = self.task_inputs.user_object.app.user_defined_credentials.get(credential_type, {}) or {}
         if not app_info and credential_type != 'NoAuth':
@@ -630,39 +646,72 @@ class Task(cards.AbstractTask):
                 auth_header['Authorization'] = bearer_token_header['Authorization'] 
         
         elif credential_type == "JWTBearer" :
-            raw_response ,error = self.http_connector.generate_jwt_bearer()
-            if error :
-                error_details.append({"Error" : error})
-                return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
-            auth_header ,error = self.update_curl_resp_in_headers( header , raw_response)
-            if error :
-                error_details.append({"Error" : error})
+            if "<<JWTBearer>>" in header:
+                payload =self.task_inputs.user_object.app.user_defined_credentials.get('JWTBearer', {}).get('Payload', {})
+                private_key = self.task_inputs.user_object.app.user_defined_credentials.get('JWTBearer', {}).get("PrivateKey", '')
+                algorithm = self.task_inputs.user_object.app.user_defined_credentials.get('JWTBearer', {}).get('Algorithm', '')
+                
+                token, error =  self.http_connector.generate_jwt_token(algorithm , private_key , payload)
+                if error :
+                    error_details.append({"Error" : error})
+                    return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+                auth_header = header.replace("<<JWTBearer>>", token)
+                auth_header = json.loads(auth_header) if auth_header else {}
+            else:
+                # If self.auth_responses is not empty, we try to re-use the auth response value from that
+                if existing_auth_response:
+                    raw_response = existing_auth_response
+                else:   
+                    raw_response ,error = self.http_connector.generate_jwt_bearer()
+                    if error :
+                        error_details.append({"Error" : error})
+                        return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+                    self.auth_responses[credential_type] = raw_response
+
+                auth_header ,error = self.update_curl_resp_in_headers( header , raw_response)
+                if error :
+                    error_details.append({"Error" : error})
                 
         elif credential_type == "OAuth" :
-            raw_response ,error = self.http_connector.generate_o_auth()
-            if error :
-                error_details.append({"Error" : error})
-                return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+            # If self.auth_responses is not empty, we try to re-use the auth response value from that
+            if existing_auth_response:
+                raw_response = existing_auth_response
+            else:
+                raw_response ,error = self.http_connector.generate_o_auth()
+                if error :
+                    error_details.append({"Error" : error})
+                    return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+                self.auth_responses[credential_type] = raw_response
             auth_header ,error = self.update_curl_resp_in_headers( header , raw_response)
             if error :
                 error_details.append({"Error" : error})
                 
                 
         elif credential_type == "CustomType" :
-            raw_response ,error = self.http_connector.generate_custom_type()
-            if error :
-                error_details.append({"Error" : error})
-                return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+            # If self.auth_responses is not empty, we try to re-use the auth response value from that
+            if existing_auth_response:
+                raw_response = existing_auth_response
+            else:
+                raw_response ,error = self.http_connector.generate_custom_type()
+                if error :
+                    error_details.append({"Error" : error})
+                    return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+                self.auth_responses[credential_type] = raw_response
+
             if raw_response and header :
                 auth_header ,error = self.update_curl_resp_in_headers( header , raw_response)
                 if error :
-                    error_details.append({"error" : error})
+                    error_details.append({"Error" : error})
             
             # Error handling not required
             app_info_,error_ = self.http_connector.get_credential_json_data()
             app_info.update(app_info_)
                 
         elif credential_type == "AWSSignature":
+            
+            url_endpoint, error = self.replace_placeholders(url_endpoint, credential_type , app_info, data_file)
+            if error :
+                error_details.extend(error)
             
             service_name,region , error = self.extract_service_region(url_endpoint)
             if error : 
@@ -686,11 +735,11 @@ class Task(cards.AbstractTask):
             query_string = ""
             if parsed_params :
                 query_string = urllib.parse.urlencode(parsed_params)
-            auth_header ,error = self.http_connector.generate_aws_iam_signature(
+            auth_header_ ,error = self.http_connector.generate_aws_iam_signature( auth_header,
                 service_name ,region ,url_endpoint ,body, query_string , request_data["Method"])
             if error :
                 error_details.append({"Error" : error})
-                
+            auth_header = auth_header_ | auth_header
         else:
             error_details.append({"Error" :  "Invalid credential type supported types are 'Azure, BasicAuthentication, APIKey, AWSIAM, AWSRole'."})
             return auth_header, parsed_url ,parsed_body ,parsed_params ,error_details
@@ -711,6 +760,58 @@ class Task(cards.AbstractTask):
         except json.JSONDecodeError as e:
             return None, parsed_url ,parsed_body ,parsed_params,  [{"Error" : f'Invalid JSON format - {e}'}]
         return auth_header, parsed_url ,parsed_body ,parsed_params,  error_details
+
+    def generate_auth_and_make_api_call(self, request_data, data_file, body):
+        auth_header, parsed_url, parsed_body, parsed_params, error_info = self.generate_auth_and_form_url_and_body(
+            request_data, data_file, body )
+        if error_info:
+            return None, error_info
+        
+        parsed_headers, error = self.create_request_header(
+            request_data.get("Headers", {}).get("Headers", {}),
+            request_data.get("ContentType", ""),
+            auth_header
+        )
+        if error:
+            return None, [{"Error": error}]
+        
+        api_request_info = {
+            "URL": parsed_url,
+            "Method": request_data.get("Method", ""),
+            "Redirect": request_data.get("Redirect", False),
+            "Verify" : request_data.get("Verify", True),
+            "CredentialType": request_data.get("CredentialType", ""),
+            "ContentType": request_data.get("ContentType", ""),
+            "Params": parsed_params,
+            "Body": parsed_body,
+            "Headers": parsed_headers,
+            "Retries": request_data.get("Retries", 3),
+            "RetryOnStatus": request_data.get("RetryOnStatus", []),
+            "TimeOut": request_data.get("TimeOut", 30),
+            "Files": {}
+        }
+        
+        
+        if request_data.get("ContentType", "") in ["multipart/form-data", "application/x-www-form-urlencoded"]:
+            files = {}
+            temp_body = parsed_body.copy()
+            if parsed_body:
+                number_of_file = 1
+                for key, value in parsed_body.items():
+                    if isinstance(value, str) and (value.startswith("https://") or value.startswith("http://")):
+                        file_name = os.path.basename(value)
+                        file_content, error = self.download_file_from_minio(value)
+                        if error:
+                            return None, [{"Error": f"Error while downloading {request_data['ContentType']} files, "
+                                                "assuming all the file paths are MinIO file paths."}]
+                        files[f"file{number_of_file}"] = (file_name, file_content)
+                        number_of_file += 1
+                        del temp_body[key]
+        
+            api_request_info["Files"] = files if files else None
+            api_request_info["Body"] = temp_body if files else parsed_body  
+            
+        return self.http_connector.make_api_call(api_request_info)
     
     def parse_request_info(self ,app_type ,app_info ,data_file, raw_url , body , params) :
         
@@ -816,6 +917,9 @@ class Task(cards.AbstractTask):
                 return None,  {"Error" : f'Invalid JSON format - {e}'}
             if not data_file_json_formate :
                 data_file_json_formate = [{}]
+            
+            if isinstance(data_file_json_formate, dict):
+                data_file_json_formate = [data_file_json_formate]
         
         return data_file_json_formate,None
     
@@ -835,11 +939,6 @@ class Task(cards.AbstractTask):
     def replace_placeholders(self,target_str, app_type , app_data, data_file):
         error_details = []
         
-        if "<<fromdate>>" in target_str :
-            target_str = target_str.replace( "<<fromdate>>" , self.task_inputs.from_date.strftime("%Y-%m-%d"))
-        
-        if "<<todate>>" in target_str :
-            target_str = target_str.replace( "<<todate>>" , self.task_inputs.to_date.strftime("%Y-%m-%d"))
         
         # Replace App placeholders
         target_str, error = self.http_connector.replace_placeholder(target_str, "application.", app_data)
@@ -850,6 +949,12 @@ class Task(cards.AbstractTask):
         target_str ,error= self.http_connector.replace_placeholder(target_str, "inputfile.", data_file)
         if error :
             error_details.append(error)
+            
+        if "<<fromdate>>" in target_str :
+            target_str = target_str.replace( "<<fromdate>>" , self.task_inputs.from_date.strftime("%Y-%m-%d"))
+        
+        if "<<todate>>" in target_str :
+            target_str = target_str.replace( "<<todate>>" , self.task_inputs.to_date.strftime("%Y-%m-%d"))
         
         return target_str, error_details
     
@@ -985,77 +1090,122 @@ class Task(cards.AbstractTask):
 
     def convert_response(self, response):
         
-        sucessful_statues = [http.HTTPStatus.OK,http.HTTPStatus.ACCEPTED , http.HTTPStatus.NO_CONTENT ,http.HTTPStatus.CREATED]
-        is_resp_valid = True if response.status_code in sucessful_statues else False
-        if not is_resp_valid:
-            return None, [{"Error": response.text}]
+        successful_statues = [http.HTTPStatus.OK,http.HTTPStatus.ACCEPTED , http.HTTPStatus.NO_CONTENT ,http.HTTPStatus.CREATED]
+        if not (response.status_code in successful_statues):
+            return None, "", [{"Error": response.text}]
 
         content_type = response.headers.get('Content-Type', '').lower()
-        
+                        
+        # Handle binary/octet-stream, application/octet-stream response 
+        if 'octet-stream' in content_type:
+            try:
+                try:
+                    if len(response.content) > 0:
+                        response_data = response.content 
+                    else:
+                        response_data = response.text
+                except Exception as e:
+                    return None, "", f"Error processing api response: {e}"
+
+                mime = magic.Magic(mime=True)    
+                mime_type = mime.from_buffer(response_data)
+                if mime_type:
+                    content_type = mime_type
+                else:
+                    content_type = "text/plain"
+            except Exception as e:
+                content_type = "text/plain"
+                                
         # Handle empty response
         if content_type == "" :
-            json_data = {}
+            data = {}
         # Handle JSON response
-        elif 'application/json' in content_type :
+        elif ("application/" in content_type or "text/" in content_type) and "json" in content_type:
             try:
-                json_data = response.json()
-                if not json_data:
-                    json_data = {"data": response.text}
+                data = response.json()
+                if not data:
+                    data = {"data": response.text}
             except requests.exceptions.JSONDecodeError:
-                json_data = {"data": response.text}
+                data = {"data": response.text}
             except ValueError as e:
-                return None, f"Error parsing api response JSON: {e}"
-
-        # Handle XML response
-        elif 'application/xml' in content_type or 'text/xml' in content_type:
-            try:
-                xml_data = response.text
-                json_data = xmltodict.parse(xml_data)  # Convert XML to Python dict
-                json_data = json.loads(json.dumps(json_data))  # Ensure it's in JSON format
-            except Exception as e:
-                return None, f"Error parsing api response XML: {e}"
-
-        # Handle URL-encoded form data
-        elif 'application/x-www-form-urlencoded' in content_type:
-            try:
-                form_data = parse_qs(response.text)
-                json_data = json.loads(json.dumps(form_data))  # Convert form data to JSON
-            except Exception as e:
-                return None, f"Error parsing api response form data: {e}"
-
-        # Handle plain text response
-        elif 'text/plain' in content_type:
-            try:
-                json_data = {"data": response.text}
-            except Exception as e:
-                return None, f"Error processing api response plain text: {e}"
-
-        # Handle HTML response
-        elif 'text/html' in content_type:
-            try:
-                json_data = {"data": response.text}
-            except Exception as e:
-                return None, f"Error processing api response HTML: {e}"
-
-        # Handle binary response (octet-stream, etc.)
-        elif 'application/octet-stream' in content_type:
-            try:
-                json_data = {"response": response.content}
-            except Exception as e:
-                return None, f"Error processing api response binary data: {e}"
-
-        # Handle multipart form data (file uploads, etc.)
-        elif 'multipart/form-data' in content_type:
-            try:
-                json_data = {"response": response.content}  # Could enhance to parse multipart
-            except Exception as e:
-                return None, f"Error processing api response multipart data: {e}"
-
-        # Unsupported content type
+                return None, "", f"Error parsing api response JSON: {e}"
+        
         else:
-            return None, f"Unsupported api response Content-Type: {content_type}"
+            try:
+                if len(response.content) > 0:
+                    data = response.content 
+                else:
+                    data = response.text 
+            except Exception as e:
+                return None, "", f"Error processing api response: {e}"
 
-        return json_data, None
+        return data, content_type, None
+
+    def formate_response(self, response, content_type):
+
+        if content_type == "" :
+            if not (response and isinstance(response, list)):
+                response = {}
+            response_df = pd.DataFrame(response)
+            return (response_df).to_json(orient='records').encode('utf-8'), "json", None          
+        
+        elif 'text/csv'in content_type or 'application/csv' in content_type :
+            try:
+                bytes_io = io.BytesIO(response)
+                return pd.read_csv(bytes_io), "csv", None
+            except Exception as e:
+                return None, None, f"Error processing API response with Content-Type: {content_type}. Details: {e}."
+        
+        elif 'application/x-yaml' in content_type or 'application/yaml' in content_type :
+            return response, "yaml", None
+        
+        elif 'application/x-tar' in content_type or 'application/tar' in content_type :
+            return response, "tar", None
+        
+        elif 'application/xml' in content_type or 'xml' in content_type:
+            return response, "xml", None
+        
+        elif 'application/x-gzip' in content_type or 'application/gzip' in content_type:
+            try:
+                with gzip.GzipFile(fileobj=io.BytesIO(response)) as gz_file:
+                    decompressed_data = gz_file.read()
+                    
+                    # Check if the decompressed data is a TAR archive
+                    if tarfile.is_tarfile(io.BytesIO(decompressed_data)):
+                        return response, "tar.gz", None
+                    else:
+                        return response, "gz", None
+            except Exception as e:
+                return None, None, f"Error processing API response with Content-Type: {content_type}. Details: {e}."
+        
+        elif 'application/zip' in content_type or 'application/x-zip' in content_type:
+            return response, "zip", None
+        
+        elif 'text/plain' in content_type or 'text'in content_type:
+            try:
+                extension=""
+                if "text/plain" in content_type:
+                    extension = "txt"
+                elif "javascript" in content_type:
+                    extension = "js"
+                else:
+                    extension = content_type.split("/")[-1] if "/" in content_type and len(content_type.split("/")) > 1 else "txt"
+                return response, extension, None
+            except Exception as e:
+                return None, None, f"Error processing API response with Content-Type: {content_type}. Details: {e}."
+            
+        elif ("application/json" in content_type or "application/ld+json" in content_type) or isinstance(response, (dict, list)):
+            try:
+                extension = "json"
+                response_df = pd.DataFrame(response)
+                if "application/ld+json" in content_type:
+                    extension = "jsonld"
+                return (response_df).to_json(orient='records').encode('utf-8'), extension, None
+            except Exception as e:
+                return None, None, f"Error processing API response with Content-Type: {content_type}. Details: {e}."
+        else:
+            return None, None, f"Unsupported API response Content-Type: {content_type}."
+
     
     def extract_service_region(self,url):
 
@@ -1102,7 +1252,7 @@ class Task(cards.AbstractTask):
             error_details.append({"Error": error_message})
             return None, error_message
         
-    def prepare_body(self ,content_type, body_info ):
+    def prepare_body(self ,content_type, body_info, data_file):
         """Prepare the body based on the content type."""
         body = None
         error = None
@@ -1117,7 +1267,7 @@ class Task(cards.AbstractTask):
             if "Raw" in body_info :
                 body_info_ = body_info["Raw"].get("Value" , "")
             parsed_content,error = self.http_connector.parse_content(body_info_)
-            if parsed_content :
+            if not error :
                 body = json.dumps(parsed_content) if "Error" not in parsed_content else parsed_content
         elif content_type == 'application/x-www-form-urlencoded':
             if "URLEncoded" in body_info :
@@ -1127,7 +1277,11 @@ class Task(cards.AbstractTask):
                 body_info_ = body_info["Binary"].get("Value" , "")
             if body_info_ :
                 try:
-                    body = base64.b64decode(body_info_)
+                    # Replace InputFile placeholders
+                    target_str ,error= self.http_connector.replace_placeholder(body_info_, "inputfile.", data_file)
+                    if error:
+                       return None , "Invalid Base64 input. Please check your payload."
+                    body = base64.b64decode(target_str)
                 except base64.binascii.Error:
                     return None , "Invalid Base64 input. Please check your payload."
         else:
@@ -1136,26 +1290,19 @@ class Task(cards.AbstractTask):
         return body , error
     
     def flatten_data(self ,data):
-        errors = []
-        
+        error_list = []
         for error in data :
-            modified_error = self.process_error(error)
-            errors.append(modified_error)
-            
-        filtered_errors = []
-        seen = set()  # A set to track seen values
-        for obj in errors:
-            # Create a frozenset from the object's items to ensure it can be hashed
-            obj_items = frozenset(obj.items())
-            if obj_items not in seen:
-                seen.add(obj_items)  # Add the frozenset to the seen set
-                filtered_errors.append(obj) 
+            if not isinstance(error.get("Error" , ""), str) and error.get("Error" , None) is not None:
+                modified_error = self.process_error(error)
+                error_list.extend([{"Error": value} for value in modified_error])
+            else:
+                error_list.append(error)
         
-        return filtered_errors
+        return error_list
 
     def process_error(self ,data, parent_key='', last_key='', sep='_'):
-        flattened = {}
 
+        flattened = set()
         if isinstance(data, dict):
             for key, value in data.items():
                 flattened.update(self.process_error(value, parent_key, key, sep))
@@ -1163,8 +1310,7 @@ class Task(cards.AbstractTask):
             for i, value in enumerate(data):
                 flattened.update(self.process_error(value, parent_key, last_key, sep))
         else:
-            # Leaf level, use the last meaningful key
-            flattened[last_key] = data
+            flattened.add(data)
 
         return flattened
     
@@ -1213,12 +1359,16 @@ class Task(cards.AbstractTask):
         else:
             return parsed_values
     
-    def upload_output_file(self, http_response_df , file_name):
+    def upload_output_file(self, file_content=None , file_name=None,content_type=None):
         
+        formatted_response, file_type, error = self.formate_response(file_content,content_type.lower())
+        if error:
+            return self.upload_log_file([{"Error" : error}])
+
         absolute_file_path, error = self.upload_file_to_minio(
-            file_content=(http_response_df).to_json(orient='records').encode('utf-8'),
-             file_name=f'{file_name}-{str(uuid.uuid4())}.json',
-            content_type="application/json"
+            file_content = formatted_response,
+            file_name = f'{file_name}-{str(uuid.uuid4())}.{file_type}',
+            content_type = content_type
         )
         
         if error:

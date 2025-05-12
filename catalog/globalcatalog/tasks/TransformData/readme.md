@@ -1,76 +1,84 @@
-# TransformData - README
+# **TransformData - README**
 
 **TransformData**  allows you to perform a variety of column transformations on your input data files. You can add new columns, update existing columns, delete columns, and reorder columns. Below is a detailed guide on how to use these features effectively.
 
 ---
 
-### **Inputs and Outputs Structure**
+## **InputsAndOutputsStructure**
 
-#### **Inputs:**
-- **InputFile1**:  The input file to be transformed. [MANDATORY]
+### **Inputs:**
 
-- **TransformConfigFile**:  The toml file containing the transformation configuration. [MANDATORY]
+- InputFile1          :  The input file to be transformed. [MANDATORY]
 
-- **InputFile2**: This input file is an optional file used to add additional context to the data in **InputFile1**, such as mapping one piece of information (e.g., a user) to another related piece of information (e.g., a manager). This file typically contains data that helps establish relationships or enrich the data from **InputFile1**. [OPTIONAL]
+- TransformConfigFile :  The toml file containing the transformation configuration. [MANDATORY]
 
-- **LogFile**:  - This field is required only when this task is not acting as Task1 in the rule. Generally, when the previous task has a 'LogFile,' we will map that logfile to this input in the NoCode UI. If the 'LogFile' is empty, the 'TransformData' task will be processed. Otherwise, it will simply pass the previous task's 'LogFile' to the 'TransformData' task's 'LogFile. [OPTIONAL]
+- InputFile2          : This input file is an optional file used to add additional context to the data in **InputFile1**s. This file typically contains data that helps establish relationships or enrich the data from **InputFile1**. [OPTIONAL]
 
-#### **Outputs:**
-- **OutputFile**:  The output file that contains the transformed data.
+- LogFile             :  This field is required only when this task is not acting as Task1 in the rule. Generally, when the previous task has a 'LogFile,' we will map that logfile to this input in the NoCode UI. If the 'LogFile' is empty, the 'TransformData' task will be processed. Otherwise, it will simply pass the previous task's 'LogFile' to the 'TransformData' task's 'LogFile. [OPTIONAL]
 
-- **LogFile**:  The log file that contains details about any errors or issues during the transformation process, or the log from the previous task.
+### **Outputs:**
 
----
+- OutputFile :  The output file that contains the transformed data.
 
-## InputFile1 - Explanation
-
-File that requires transformations. It typically contains the raw data to be processed and transformed according to the rules specified in the TransformConfigFile. The file format for **InputFile1** is  JSON.
-The data in **InputFile1** can include multiple columns and values, which can be modified, added, deleted, or reordered based on the transformations defined in the TransformConfigFile.
-
-### Example for **InputFile1**:
-```json
-[
-  {
-    "UserName": "JohnDanie",
-    "Department": "Engineering",
-    "Users": ["JohnDanie", "JaneDoe"],
-    "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}]
-  },
-  {
-    "UserName": "JosephAntony",
-    "Department": "Marketing",
-    "Users": ["JosephAntony", "JackSmith"],
-    "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}]
-  }
-]
-```
-
-## TransformConfigFile - Explanation
-
-### 1. **Add Column**
-
-The `AddColumn` operation allows you to add new columns to your data in different ways. 
+- LogFile    :  The log file that contains details about any errors or issues during the transformation process, or the log from the previous task.
 
 ---
 
-#### Adding a Column with desired values
-You can add a new column with a below structure:
+## **InputsSection**
 
+### **InputFile1:**
+
+  File that requires transformations. It typically contains the raw data to be processed and transformed according to the rules specified in the TransformConfigFile. The file format for **InputFile1** is  JSON.
+  The data in **InputFile1** can include multiple columns and values, which can be modified, added, deleted, or reordered based on the transformations defined in the TransformConfigFile. 
+
+  **Example:**
+  ```json
+  [
+    {
+      "UserName": "JohnDanie",
+      "Department": "Engineering",
+      "Users": ["JohnDanie", "JaneDoe"],
+      "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}]
+    },
+    {
+      "UserName": "JosephAntony",
+      "Department": "Marketing",
+      "Users": ["JosephAntony", "JackSmith"],
+      "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}]
+    }
+  ]
+  ```
+
+### **TransformConfigFile**
+
+ A **TransformConfigFile** containing transformation configuration typically defines operations such as **AddColumn**, **UpdateColumn**, **DeleteColumn**, **ReorderColumn**, and **RemoveDuplicates** for transforming data. Below is a detailed explanation of each type of operation:
+
+ **Important Note:**
+   Be sure to define the path correctly using the format `<<file_name.path>>`. For example, if referencing a column in `InputFile1`, use `<<inputfile1.column_name>>`.
+
+#### 1. **Add Column**
+
+The `AddColumn` operation allows you to add new columns to your data (`InputFile1`) in different methods. 
+
+##### **Method 1 - Adding a Column with the Desired Value, Existing Column, or Replacing Placeholders**
+
+**Syntax:**
 ```toml
 [AddColumn]
 "NewColumn" = "value"
 ```
 
-- **NewColumn**: The name of the new column.
-- **value**: The possible ways for giving value in below structure
+**Syntax explanation:**
+- **NewColumn**  : The name of the new column.
+- **value**      : The possible ways to give value in the structure below:
 
-              - fixed value: "System" = "aws"
-              - value from InputFile1: "SystemUserName" = "<<inputfile1.UserName>>" or <<UserName>>
-              - Replace placeholders from InputFile1: "ResourceURL" = https://portal.azure.com/users/<<inputfile1.UserID>> 
+      - Fixed value                          : "System" = "aws"
+      - Value from InputFile1                : "SystemUserName" = "<<inputfile1.UserName>>"
+      - Replace placeholders from InputFile1 : "ResourceURL" = https://portal.azure.com/users/<<inputfile1.UserID>>
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -90,7 +98,7 @@ You can add a new column with a below structure:
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [AddColumn]
 "System" = "aws"
@@ -98,7 +106,7 @@ You can add a new column with a below structure:
 "ResourceURL" = "https://portal.azure.com/users/<<inputfile1.UserID>>>"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -124,27 +132,26 @@ You can add a new column with a below structure:
 
 ---
 
-#### Adding a Column Using a Function
-You can add a column by applying a function to an existing column. 
+##### **Method 2 - Adding a Column by Applying a Function to an Existing Column**
 
-Note: Supported Functions - 'Length', 'CurrentDateTime'
+**Note:** Supported Functions - `Length`, `CurrentDateTime`
 
-
+**Syntax:**
 ```toml
 [[AddColumn.ByFunction]]
-ColumnName = ""         
-Source = ""
-Function = ""
+ColumnName  = ""         
+Source      = ""
+Function    = ""
 ```
 
-- **ColumnName**: The name of the new column.
-- **Source**: The path to the existing column (e.g., `<<inputfile1.Users>>`).
-- **Function**: The transformation function to apply (e.g., `Length`).
+**Syntax explanation:**
+- **ColumnName**  : The name of the new column.
+- **Source**      : The path to the existing column (e.g., `<<inputfile1.Users>>`).
+- **Function**    : The transformation function to apply (e.g., `Length`).
 
+**Example for function 'Length':**
 
-##### **Sample Example** for function 'Length':
-
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -164,7 +171,7 @@ Function = ""
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [[AddColumn.ByFunction]]
 ColumnName = "TotalUsers"         
@@ -172,7 +179,7 @@ Source = "<<inputfile1.Users>>"
 Function = "Length"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -194,11 +201,11 @@ Function = "Length"
 ]
 ```
 
+**Example for function 'CurrentDateTime':**
 
-##### **Sample Example** for function 'CurrentDateTime':
+**Note:** Format for `CurrentDateTime` supported is `%Y-%m-%dT%H:%M:%S.%fZ`
 
-
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -218,7 +225,7 @@ Function = "Length"
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [[AddColumn.ByFunction]]
 ColumnName = "EvaluationTime"         
@@ -226,7 +233,7 @@ Source = ""
 Function = "CurrentDateTime"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -247,29 +254,26 @@ Function = "CurrentDateTime"
   }
 ]
 ```
-
-Note: Format for 'CurrentDateTime' supported is %Y-%m-%dT%H:%M:%S.%fZ
-
 ---
 
-#### Adding a Column as an Object
+##### **Method 3 - Adding a Column as an Object**
 
 You can add a new column by constructing an object from multiple fields in an existing record. The values for the new object can be derived from multiple columns, and they will be combined into a single object.
 
-##### Configuration:
-
+**Syntax:**
 ```toml
 [[AddColumn.AsObject]]
-ColumnName = ""                # Name of the new column
-ObjectValues = ""               # Comma-separated paths to the fields to include in the object
+ColumnName = ""                
+ObjectValues = ""               
 ```
 
+**Syntax explanation:**
 - **ColumnName**: The name of the new column.
 - **ObjectValues**: A comma-separated list of paths to the fields in the existing record that should be included in the new object. Ensure there are no spaces between the paths.
 
-##### Sample Example for 'AsObject':
+**Example:**
 
-##### InputFile1:
+**InputFile1:**
 ```json
 [
   {
@@ -299,14 +303,14 @@ ObjectValues = ""               # Comma-separated paths to the fields to include
 ]
 ```
 
-##### Config:
+**TransformConfigFile:**
 ```toml
 [[AddColumn.AsObject]]
 ColumnName = "AdditionalInfo"
 ObjectValues = "<<inputfile1.UserID>>,<<inputfile1.Role>>,<<inputfile1.Permission>>,<<inputfile1.Address>>,<<inputfile1.Profile.Skills>>"
 ```
 
-##### OutputFile:
+**OutputFile:**
 ```json
 [
   {
@@ -352,9 +356,11 @@ ObjectValues = "<<inputfile1.UserID>>,<<inputfile1.Role>>,<<inputfile1.Permissio
 
 ---
 
-#### Adding a Column Using Mapping
+##### **Method 4 - Adding a Column Using Mapping**
+
 You can create a new column by mapping data from one file to another. For example, mapping user names to managers:
 
+**Syntax:**
 ```toml
 [[AddColumn.ByMap]]
 ColumnName = ""         
@@ -363,14 +369,15 @@ Target = ""
 TargetMapping = ""
 ```
 
+**Syntax explanation:**
 - **ColumnName**: The name of the new column.
 - **Source**: The source column in the InputFile1(e.g., `<<inputfile1.UserName>>`).
 - **Target**: The target column in the InputFile2 (e.g., `<<inputfile2.Users>>`).
 - **TargetMapping**: The target mapping column in the InputFile2 (e.g., `<<inputfile2.Manager>>`).
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -390,14 +397,14 @@ TargetMapping = ""
 ]
 ```
 
-##### **InputFile2**:
+**InputFile2:**
 ```csv
 Users,Manager
 JohnDanie,PerterRutherFord
 JosephAntony,PerterRutherFord
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [[AddColumn.ByMap]]
 ColumnName = "Manager"         
@@ -406,9 +413,7 @@ Target = "<<inputfile1.Users>>"
 TargetMapping = "<<inputfile1.Manager>>"
 ```
 
-
-
-##### Sampe **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -432,9 +437,12 @@ TargetMapping = "<<inputfile1.Manager>>"
 
 ---
 
-#### Adding a Column as a List
-You can add a column as a list with values extracted from a source file or provided as a predefined list:
 
+##### **Method 5 - Adding a Column as a List**
+
+You can add a column as a list with values extracted from a source file or provided as a predefined data:
+
+**Syntax:**
 ```toml
 [[AddColumn.AsList]]
 ColumnName = ""         
@@ -446,14 +454,15 @@ ColumnName = ""
 ListData = []
 ```
 
+**Syntax explanation:**
 - **ColumnName**: The name of the new column.
 - **Source**: The path to the data in the source file (e.g., `<<inputfile1.requested_reviewers>>`).
 - **Target**: The path to a specific field within the list (e.g., `<<Source.login>>`).
-- **ListData**: A predefined list of values to populate the new column (e.g., `["data1", "data2", "data3"]`).
+- **ListData**: A predefined list of values to populate the new column (e.g., `"data1,data2,data3"`).
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -495,7 +504,7 @@ ListData = []
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [[AddColumn.AsList]]
 ColumnName = "PRReviewers"                      # New column name "PRReviewers"
@@ -505,11 +514,11 @@ Target = "<<Source.login>>"                     # Extracting the "login" field f
 
 [[AddColumn.AsList]]
 ColumnName = "DefaultList"                      # New column name "DefaultList"
-ListData = ["data1", "data2", "data3"]          # ListData should be an array.
-# As a result, the column 'DefaultList' will be added as a list that contains the values of all ListData.
+ListData = "data1,data2,data3"                  # String with comma seperated values
+# As a result, the column 'DefaultList' will be added as a list by splitting 'ListData' with a comma delimiter.
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -535,10 +544,9 @@ ListData = ["data1", "data2", "data3"]          # ListData should be an array.
 
 ---
 
-### Adding a Column by Condition
+##### **Method 6 - Adding a Column by Condition**
 
-You can add a column by condition:
-
+**Syntax:**
 ```toml
 [[AddColumn.ByCondition]]
 Condition = ""
@@ -552,11 +560,12 @@ ColumnName = ""
 ColumnName2 = ""
 ```
 
-- **Condition**: A condition that needs to be checked.
+**Syntax explanation:**
 
+- **Condition**: A condition that needs to be checked. (Nested structure is not supported (eg : <<inputfile1.User.skills.count>>))
 As a result, new columns will be added based on whether the condition evaluates to `True` or `False`.
 
-#### Supported Conditions:
+**Supported Conditions:**
 
 - `==` : Equal to
 - `!=` : Not equal to
@@ -570,13 +579,12 @@ As a result, new columns will be added based on whether the condition evaluates 
 
 Additionally, you can use functions and more complex expressions, such as:
 
-- **List or String Checks**: 
   - `<<inputfile1.requested_reviewers_count>> > 1` (e.g., check if the count is greater than 1)
   - `<<inputfile1.Users>> contains 'JohnDanie'` (e.g., check if a specific user exists in the `Users` list)
 
-#### Example Usage:
+**Example 1:**
 
-##### **InputFile1**:
+**InputFile1:**
 
 ```json
 [
@@ -616,7 +624,7 @@ Additionally, you can use functions and more complex expressions, such as:
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 
 ```toml
 # Adding a new column(s) based on condition
@@ -638,7 +646,7 @@ ComplianceStatus = "NON_COMPLIANT"
 ComplianceStatusReason = "The record is non-compliant because the required number of reviewers is not present for the user."
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 
 ```json
 [
@@ -671,7 +679,7 @@ ComplianceStatusReason = "The record is non-compliant because the required numbe
 
 ---
 
-### **Advanced Example: Complex Conditions**
+**Example 2:**
 
 You can also use more complex conditions involving multiple fields or logical expressions:
 
@@ -694,76 +702,55 @@ ComplianceStatusReason = "The user is either missing or does not meet the requir
 
 ---
 
-### 2. **Update Column**
+#### 2. **Update Column**
 
-The `UpdateColumn` section allows you to modify or transform the values of existing columns in your dataset. You can replace, concatenate, split, or update specific values using various operations. Additionally, you can create new columns by constructing objects from multiple fields.
+The `UpdateColumn` section allows you to modify the values of existing columns in your `InputFile1` in different methods 
 
----
+##### **Method 1 - Update Existing Columns**
 
-#### Syntax Overview
+Replaces the existing column value with another existing column value mentioned by the user.
 
+**Syntax:**
 ```toml
 [UpdateColumn]
-"NewColumnName" = "<<ExistingColumnName>>"
-
-[[UpdateColumn.Concat]]
-ColumnName = "SomeColumn"
-ConcatValue = "SomePrefix"
-Position = "Start" # Options: "Start", "End"
-
-[[UpdateColumn.Split]]
-Source = "<<inputfile1.some_field>>"
-Delimiter = ","
-Index = 0
-
-[[UpdateColumn.Replace]]
-ColumnName = "SomeColumn"
-Regex = "pattern_to_match"
-ReplaceValue = "new_value"
-
-[[UpdateColumn.ChangePath]]
-Source = "<<inputfile1.some_field>>"
-Target = "<<inputfile1.new_field>>"
-Type = "Append" # Options: "Concat", "Append"
-
-[[AddColumn.AsObject]]
-ColumnName = "NewObjectColumn"
-ObjectValues = "<<inputfile1.Field1>>,<<inputfile1.Field2>>,<<inputfile1.Field3>>"
+"ExistingColumn" = "<<path_to_existing_column>>"
 ```
 
----
+**Syntax explanation:**
 
-#### Detailed Configuration
+ The **ExistingColumn** value will be updated with the value referring to the column the user mentioned.
 
-##### **Update Existing Columns**
-The `UpdateColumn` operation is used to create new columns based on the values of existing columns. This operation essentially copies data from one column to another.
 
 **Example:**
 
-```toml
-[UpdateColumn]
-"ResourceName" = "<<UserName>>"
-"ResourceID" = "<<UserID>>"
-```
-
-- **ResourceName**: Will be populated with the value from the `UserName` column.
-- **ResourceID**: Will be populated with the value from the `UserID` column.
-
-**Input Example:**
+**InputFile1:**
 
 ```json
 [
   {
     "UserName": "JohnDanie",
     "UserID": "43893443",
-    "Department": "Engineering"
+    "Department": "Engineering",
+    "ResourceName" : "N/A",
+    "ResourceID" : "N/A"
   },
   {
     "UserName": "JosephAntony",
     "UserID": "43532253",
-    "Department": "Marketing"
+    "Department": "Marketing",
+    "ResourceName" : "N/A",
+    "ResourceID" : "N/A"
   }
 ]
+```
+
+
+**TransformConfigFile:**
+
+```toml
+[UpdateColumn]
+"ResourceName" = "<<inputfile1.UserName>>"
+"ResourceID" = "<<inputfile1.UserID>>"
 ```
 
 **Output Example:**
@@ -773,34 +760,43 @@ The `UpdateColumn` operation is used to create new columns based on the values o
   {
     "ResourceName": "JohnDanie",
     "ResourceID": "43893443",
-    "Department": "Engineering"
+    "Department": "Engineering",
+    "UserName": "JohnDanie",
+    "UserID": "43893443",
   },
   {
     "ResourceName": "JosephAntony",
     "ResourceID": "43532253",
-    "Department": "Marketing"
+    "Department": "Marketing",
+    "UserName": "JosephAntony",
+    "UserID": "43532253",
   }
 ]
 ```
 
-##### **Concatenate Values in a Column**
+---
+
+##### **Method 2 - Concatenate Values in a Column**
+
 Use the `Concat` operation to add additional text to the values of an existing column. You can define the position where the new value will be placed—either at the start or at the end of the original value.
 
-**Example:**
-
+**Syntax:**
 ```toml
 [[UpdateColumn.Concat]]
-ColumnName = "role"
-ConcatValue = "Role: "
-Position = "Start"  # Options: "Start", "End"
+ColumnName = ""
+ConcatValue = ""
+Position = ""  # Options: "Start", "End"
 ```
 
-- **ColumnName**: The column whose values you want to modify.
+**Syntax explanation:**
+- **ColumnName**: The column whose value you want to modify.
 - **ConcatValue**: The value to concatenate.
 - **Position**: Defines where the concatenation should happen. Choose either "Start" (to prepend) or "End" (to append).
 
-**Input Example:**
 
+**Example 1:**
+
+**InputFile1:**
 ```json
 [
   {
@@ -812,8 +808,15 @@ Position = "Start"  # Options: "Start", "End"
 ]
 ```
 
-**Output Example:**
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.Concat]]
+ColumnName = "<<inputfile1.role>>"
+ConcatValue = "Role: "
+Position = "Start"  # Options: "Start", "End"
+```
 
+**Output Example:**
 ```json
 [
   {
@@ -825,24 +828,63 @@ Position = "Start"  # Options: "Start", "End"
 ]
 ```
 
-##### **Split Values in a Column**
+
+**Example 2:**
+
+**InputFile1:**
+```json
+[
+  {
+    "role": "Admin"
+  },
+  {
+    "role": "User"
+  }
+]
+```
+
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.Concat]]
+ColumnName = "<<inputfile1.role>>"
+ConcatValue = " Role"
+Position = "End"  # Options: "Start", "End"
+```
+
+**Output Example:**
+```json
+[
+  {
+    "role": "Admin Role"
+  },
+  {
+    "role": "User Role"
+  }
+]
+```
+---
+
+##### **Method 3 - Split Values in a Column**
+
 The `Split` operation divides the values in a column based on a delimiter. You can specify the index of the part you want to extract from the split result.
+
+
+**Syntax:**
+```toml
+[[UpdateColumn.Split]]
+Source = ""
+Delimiter = ""
+Index = 0
+```
+
+**Syntax explanation:**
+- **Source**: The column or field whose value you want to split.
+- **Delimiter**: The character used to split the value.
+- **Index**: The index of the part you want to extract (starting from 0). Index should be integer.
 
 **Example:**
 
-```toml
-[[UpdateColumn.Split]]
-Source = "<<inputfile1.project>>"
-Delimiter = "/"
-Index = 3
-```
-
-- **Source**: The column or field whose value you want to split.
-- **Delimiter**: The character used to split the value.
-- **Index**: The index of the part you want to extract (starting from 0).
-
-**Input Example:**
-
+**InputFile1:**
 ```json
 [
   {
@@ -854,8 +896,15 @@ Index = 3
 ]
 ```
 
-**Output Example:**
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.Split]]
+Source = "<<inputfile1.project>>"
+Delimiter = "/"
+Index = 3
+```
 
+**OutputFile:**
 ```json
 [
   {
@@ -867,24 +916,28 @@ Index = 3
 ]
 ```
 
-##### **Replace Values in a Column**
+---
+
+##### **Method 4 - Replace Values in a Column**
+
 The `Replace` operation allows you to find a match within a column's values using a regular expression and replace it with a new value.
 
-**Example:**
-
+**Syntax:**
 ```toml
 [[UpdateColumn.Replace]]
-ColumnName = "project"
-Regex = "Tech"
-ReplaceValue = "Engineering"
+ColumnName = ""
+Regex = ""
+ReplaceValue = ""
 ```
 
+**Syntax explanation:**
 - **ColumnName**: The column in which you want to perform the replacement.
 - **Regex**: The regular expression pattern to match.
 - **ReplaceValue**: The value that will replace the matched value.
 
-**Input Example:**
+**Example:**
 
+**InputFile1:**
 ```json
 [
   {
@@ -896,12 +949,19 @@ ReplaceValue = "Engineering"
 ]
 ```
 
-**Output Example:**
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.Replace]]
+ColumnName = "<<inputfile1.project>>"
+Regex = "Tech"
+ReplaceValue = "Engineering"
+```
 
+**OutputFile:**
 ```json
 [
   {
-    "project": "2024/Engineering/Final/Overview"
+    "project": "Engineering"
   },
   {
     "project": "2024/Marketing/Launch/Intro"
@@ -909,11 +969,56 @@ ReplaceValue = "Engineering"
 ]
 ```
 
-##### **Change Path for Data**
+---
+
+##### **Method 5 - Change Path for Data**
+
 The `ChangePath` operation is used to move or transform data between different fields, including fields that are part of nested structures (e.g., dictionaries or lists).
 
-**Example:**
+**Syntax:**
+```toml
+[[UpdateColumn.ChangePath]]
+Source = ""
+Target = ""
+Type = ""
+```
 
+**Syntax explanation:**
+- **Source**: The source field containing the data you want to move. 
+- **Target**: The Target field where the data will be moved and field should be List or dict. If target field is list that should be list of dicts.
+- **Type**: This is mandatory if the Target field is a list. It defines the operation to apply when moving data. Use `"Append"` to add the data to the list, or `"Concat"` to merge the data with the existing value. If the Type is not mentioned, no changes will be reflected in the output file
+
+
+**Example1: Target PathType - List, Type - Append**
+
+
+**InputFile1:**
+```json
+[
+  {
+    "address": {
+      "zipcode": "12345",
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        }
+      ]
+    }
+  },
+  {
+    "address": {
+      "zipcode": "67890",
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        }
+      ]
+    }
+  }
+]
+```
+
+**TransformConfigFile:**
 ```toml
 [[UpdateColumn.ChangePath]]
 Source = "<<inputfile1.address.zipcode>>"
@@ -921,66 +1026,192 @@ Target = "<<inputfile1.address.previous_addresses>>"
 Type = "Append"
 ```
 
-- **Source**: The original field containing the data you want to move.
-- **Target**: The destination field where the data will be moved.
-- **Type**: Defines the operation to apply when moving data. Use `"Append"` to add the data to the list, or `"Concat"` to merge the data with the existing value.
-
-**Input Example:**
-
+**OutputFile:**
 ```json
 [
+  [
   {
     "address": {
       "zipcode": "12345",
-      "previous_addresses": []
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        },
+        {
+          "zipcode" : "12345"
+        }
+      ]
     }
   },
   {
     "address": {
       "zipcode": "67890",
-      "previous_addresses": []
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        },
+        {
+          "zipcode" : "12345"
+        }
+      ]
+    }
+  }
+]
+]
+```
+
+
+**Example2: Target PathType - List, Type - Concat**
+
+
+**InputFile1:**
+```json
+[
+  {
+    "address": {
+      "zipcode": "12345",
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        }
+      ]
+    }
+  },
+  {
+    "address": {
+      "zipcode": "67890",
+      "previous_addresses": [
+        {
+          "location" : "us-west"
+        }
+      ]
     }
   }
 ]
 ```
 
-**Output Example (After Append):**
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.ChangePath]]
+Source = "<<inputfile1.address.zipcode>>"
+Target = "<<inputfile1.address.previous_addresses>>"
+Type = "Concat"
+```
 
+**OutputFile:**
 ```json
 [
+  [
   {
     "address": {
       "zipcode": "12345",
-      "previous_addresses": ["12345"]
+      "previous_addresses": [
+        {
+          "location" : "us-west",
+          "zipcode" : "12345"
+        }
+      ]
     }
   },
   {
     "address": {
       "zipcode": "67890",
-      "previous_addresses": ["67890"]
+      "previous_addresses": [
+        {
+          "location" : "us-west",
+          "zipcode" : "12345"
+        }
+      ]
     }
   }
+]
+]
+```
+
+
+**Example3: Target PathType - Dict**
+
+
+**InputFile1:**
+```json
+[
+  {
+    "address": {
+      "zipcode": "12345",
+      "previous_addresses": 
+        {
+          "location" : "us-west"
+        }
+    }
+  },
+  {
+    "address": {
+      "zipcode": "67890",
+      "previous_addresses": 
+        {
+          "location" : "us-west"
+        }
+    }
+  }
+]
+```
+
+
+**TransformConfigFile:**
+```toml
+[[UpdateColumn.ChangePath]]
+Source = "<<inputfile1.address.zipcode>>"
+Target = "<<inputfile1.address.previous_addresses>>"
+Type = ""
+```
+
+**OutputFile:**
+```json
+[
+  [
+  {
+    "address": {
+      "zipcode": "12345",
+      "previous_addresses": 
+        {
+          "location" : "us-west",
+          "zipcode" : "12345"
+        }
+      
+    }
+  },
+  {
+    "address": {
+      "zipcode": "67890",
+      "previous_addresses": 
+        {
+          "location" : "us-west",
+          "zipcode" : "12345"
+        }
+    }
+  }
+]
 ]
 ```
 ---
 
 
-### 3. **Delete Column**
+#### 3. **Delete Column**
 
 You can remove one or more columns using the `DeleteColumn` operation.
 
-#### Syntax:
-
+**Syntax:**
 ```toml
 [DeleteColumn]
 "ColumnList" = "Column1,Column2,Column3"
 ```
 
+**Syntax explanation:**
 - **ColumnList**: A comma-separated list of column names to delete.
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -1000,13 +1231,13 @@ You can remove one or more columns using the `DeleteColumn` operation.
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [DeleteColumn]
 "ColumnList" = "Users,requested_reviewers"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -1024,23 +1255,23 @@ You can remove one or more columns using the `DeleteColumn` operation.
 
 ---
 
-### 4. **Reorder Columns**
+#### 4. **Reorder Columns**
 
-The `ReorderColumn` operation allows you to change the order of the columns in the output file.
+The `ReorderColumn` operation allows you to change the order of the columns in the output file. Only the columns mentioned in reorder will be present in outputfile.
 
-#### Syntax:
-
+**Syntax:**
 ```toml
 [ReorderColumn]
 "ColumnList" = "Column1,Column2,Column3"
 ```
 
+**Syntax explanation:**
 - **ColumnList**: A comma-separated list of columns in the desired order.
 
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -1048,7 +1279,9 @@ The `ReorderColumn` operation allows you to change the order of the columns in t
     "UserID": "43893443",
     "UserName": "JohnDanie",    
     "Users": ["JohnDanie", "JaneDoe"],
-    "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}]
+    "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}],
+    "HOD" : "Peter Will",
+    "College" : "Oxford university"
   },
   {
     
@@ -1056,18 +1289,20 @@ The `ReorderColumn` operation allows you to change the order of the columns in t
     "UserID": "43532253",
     "UserName": "JosephAntony",
     "Users": ["JosephAntony", "JackSmith"],
-    "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}]
+    "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}],
+    "HOD" : "Peter Will",
+    "College" : "Oxford university"
   }
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [ReorderColumn]
 "ColumnList" = "UserName,UserID,Department,Users,requested_reviewers"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -1089,22 +1324,22 @@ The `ReorderColumn` operation allows you to change the order of the columns in t
 
 ---
 
-### 5. **Remove Duplicates**
+#### 5. **Remove Duplicates**
 
 The RemoveDuplicates operation allows you to remove duplicate rows based on specific columns.
 
-#### Syntax:
-
+**Syntax:**
 ```toml
 [RemoveDuplicates]
 "ColumnList" = "Column1,Column2,Column3"
 ```
 
+**Syntax explanation:**
 - **ColumnList**: A comma-separated list of columns used to identify duplicates. Rows with the same values in these columns will be considered duplicates and removed.
 
-##### **Sample Example**:
+**Example:**
 
-##### **InputFile1**:
+**InputFile1:**
 ```json
 [
   {
@@ -1131,13 +1366,13 @@ The RemoveDuplicates operation allows you to remove duplicate rows based on spec
 ]
 ```
 
-##### **Config**:
+**TransformConfigFile:**
 ```toml
 [RemoveDuplicates]
-"ColumnList" = "UserID"
+"ColumnList" = "UserID,UserName"
 ```
 
-##### **OutputFile**:
+**OutputFile:**
 ```json
 [
   {
@@ -1159,47 +1394,105 @@ The RemoveDuplicates operation allows you to remove duplicate rows based on spec
 
 ---
 
-## **InputFile2** - Explanation
+### **InputFile2**
 
-#### **Example Structure of InputFile2:**
+This input file is optional and is used to provide additional context to the data in `InputFile1`, such as mapping one piece of information (e.g., a user) to another related piece (e.g., a manager).
 
+**Usage in TransformConfigFile:**
+
+**Syntax:**
+```toml
+[[AddColumn.ByMap]]
+ColumnName = ""         
+Source = ""
+Target = ""
+TargetMapping = ""
+```
+
+**Syntax explanation:**
+- **ColumnName**: The name of the new column.
+- **Source**: The source column in the InputFile1(e.g., `<<inputfile1.UserName>>`).
+- **Target**: The target column in the InputFile2 (e.g., `<<inputfile2.Users>>`).
+- **TargetMapping**: The target mapping column in the InputFile2 (e.g., `<<inputfile2.Manager>>`).
+
+**Example:**
+
+**InputFile2:**
 ```csv
 Users,Manager
 JohnDanie,PerterRutherFord
 JosephAntony,PerterRutherFord
 ```
 
-In this example, **InputFile2** contains two columns:
+The supported type for **InputFile2** is `CSV`. In this example,  **InputFile2** contains two columns:
 
 - **Users**: This column contains the names of users.
 - **Manager**: This column contains the names of the respective managers for the users listed in the **Users** column.
 
-The file essentially maps each user to their respective manager. This mapping is often useful when you want to enrich **InputFile1** with manager information, which might be applied during a transformation process.
 
-#### **Usage in Transformations:**
-You can reference **InputFile2** in the transformation configuration file, typically in the **AddColumn.ByMap** operation, to map a user's name (from **InputFile1**) to their respective manager (from **InputFile2**).
+**InputFile1:**
+```json
+[
+  {
+    "UserName": "JohnDanie",
+    "UserID": "43893443",
+    "Department": "Engineering",
+    "Users": ["JohnDanie", "JaneDoe"],
+    "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}]
+  },
+  {
+    "UserName": "JosephAntony",
+    "UserID": "43532253",
+    "Department": "Marketing",
+    "Users": ["JosephAntony", "JackSmith"],
+    "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}]
+  }
+]
+```
 
-For instance, if you wanted to add a **Manager** column to **InputFile1** using the data from **InputFile2**, you could use the following configuration:
-
+**TransformConfigFile:**
 ```toml
 [[AddColumn.ByMap]]
 ColumnName = "Manager"         
 Source = "<<inputfile1.UserName>>"
-Target = "<<inputfile2.Users>>"
-TargetMapping = "<<inputfile2.Manager>>"
+Target = "<<inputfile1.Users>>"
+TargetMapping = "<<inputfile1.Manager>>"
 ```
 
-- **Source**: Refers to the column in **InputFile1** that holds the user names (e.g., `<<inputfile1.UserName>>`).
-- **Target**: Refers to the column in **InputFile2** that also holds the user names (e.g., `<<inputfile2.Users>>`).
-- **TargetMapping**: Specifies the column in **InputFile2** containing the manager names (e.g., `<<inputfile2.Manager>>`).
+By using above mapping, the **Manager** column is added to **InputFile1**, where each user’s manager will be populated based on the mapping provided in **InputFile2**.
 
-By using this mapping, the **Manager** column is added to **InputFile1**, where each user’s manager will be populated based on the mapping provided in **InputFile2**.
+
+**OutputFile:**
+```json
+[
+  {
+    "UserName": "JohnDanie",
+    "UserID": "43893443",
+    "Department": "Engineering",
+    "Users": ["JohnDanie", "JaneDoe"],
+    "requested_reviewers": [{"login": "Reviewer1"}, {"login": "Reviewer2"}],
+    "Manager" : "PerterRutherFord"
+  },
+  {
+    "UserName": "JosephAntony",
+    "UserID": "43532253",
+    "Department": "Marketing",
+    "Users": ["JosephAntony", "JackSmith"],
+    "requested_reviewers": [{"login": "Reviewer3"}, {"login": "Reviewer4"}],
+    "Manager" : "PerterRutherFord"
+  }
+]
+```
 
 ---
 
-## Notes
 
-- Be sure to define the paths to columns correctly using the format `<<InputFile.Path>>`. For example, if referencing a column in `InputFile1`, use `<<inputfile1.Path>>`.
-- The operations in the configuration file are executed sequentially, so additions will happen before updates, deletions, or reordering.
-  
+## **OutputsSection**
+
+### **OutputFile:**
+The output file that contains the transformed data. 
+
+### **LogFile:**
+The log file that contains details about any errors or issues during the transformation process, or the log from the previous task.
+
 ---

@@ -45,13 +45,6 @@ spec:
   - name: FetchSemgrepFindings
     alias: t1
     type: task
-    appTags:
-      appType:
-      - semgrepconnector
-      environment:
-      - logical
-      execlevel:
-      - app
     purpose: To fetch, process, and summarize vulnerability findings from Semgrep, generating separate reports for code vulnerabilities and supply chain vulnerabilities based on specific criteria.
     description: This task interacts with the Semgrep API to retrieve deployment details, validate and filter projects, list findings based on severity, and format them into structured data. It generates and uploads detailed reports for both code and supply chain vulnerabilities, ensuring compliance status and validation information is clearly documented.
   ioMap:
@@ -65,3 +58,4 @@ spec:
   - '*.Output.SemgrepSupplyChainVulnerabilityReport:=t1.Output.SemgrepSupplyChainVulnerabilityReport'
   - '*.Output.SemgrepCodeFindingsSummaryReport:=t1.Output.SemgrepCodeFindingsSummaryReport'
   - '*.Output.SemgrepSupplyChainFindingsSummaryReport:=t1.Output.SemgrepSupplyChainFindingsSummaryReport'
+  # - '*.Output.SemgrepSecretsVulnerabilityReport:=t1.Output.SemgrepSecretsVulnerabilityReport'

@@ -1,0 +1,10 @@
+userObject:
+  name: JiraCloud
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: https://www.atlassian.com/software/jira
+  userDefinedCredentials:
+    BasicAuthentication:
+        UserName: "$JIRA_USER_NAME"
+        Password: "$JIRA_PASSWORD"

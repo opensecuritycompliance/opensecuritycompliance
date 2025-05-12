@@ -2,7 +2,7 @@
 from typing import Tuple, List
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.datadogconnector import datadogconnector
+from applicationtypes.datadogconnector import datadogconnector
 import uuid
 import pandas as pd
 from datetime import timezone, timedelta
@@ -13,7 +13,7 @@ class Task(cards.AbstractTask):
 
         error = self.check_inputs()
         if error:
-            return self.upload_log_file_panic({ 'error': error })
+            return self.upload_log_file_panic({'Error': error })
         
         app = datadogconnector.DatadogConnector(
             app_url=self.task_inputs.user_object.app.application_url,
@@ -32,10 +32,12 @@ class Task(cards.AbstractTask):
             to_date=to_date.astimezone(timezone.utc).isoformat(),
         )
         if error:
+            if 'error' in error:
+                error['Error'] = error.pop('error')
             return self.upload_log_file_panic(error)
         
         if not logs:
-            return self.upload_log_file_panic({ 'error': 'No logs found for the given time period.' })
+            return self.upload_log_file_panic({ 'Error': 'No logs found for the given time period.' })
         
         logs_list = []
         for log in logs:
@@ -94,7 +96,7 @@ class Task(cards.AbstractTask):
             content_type="application/json"
         )
         if error:
-            return { 'error': f"Error while uploading LogFile :: {error}" }
+            return { 'Error': f"Error while uploading LogFile :: {error}" }
         
         return {
             'LogFile': file_url
@@ -109,5 +111,5 @@ class Task(cards.AbstractTask):
             file_name=file_name
         )
         if error:
-            return None, { 'error': f"Error while uploading {file_name} file :: {error}" }
+            return None, { 'Error': f"Error while uploading {file_name} file :: {error}" }
         return file_url, None

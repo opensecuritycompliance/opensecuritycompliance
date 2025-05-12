@@ -10,6 +10,5 @@ userInputs:
   DataFile: "<<MINIO_FILE_PATH>>"
   ExtractPath:   # array -> "0.items.0.dataItem" object -> ""data.items.dataItem""
   LogFile: "<<MINIO_FILE_PATH>>"
-
 fromDate: 2024-09-11s
 toDate: 2024-09-11

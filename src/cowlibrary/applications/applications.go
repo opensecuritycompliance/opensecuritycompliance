@@ -136,7 +136,7 @@ func (applicationHandler *GoApplicationHandler) GenerateApplicationStruct(applic
 	var linkedAppsImports, linkedAppsStructElements strings.Builder
 	for _, app := range applicationVO.Spec.LinkableApplicationClasses {
 		appNameSmall := strings.ToLower(app.Name)
-		linkedAppsImports.WriteString(fmt.Sprintf(`%s "appconnections/%s"`+"\n", appNameSmall, appNameSmall))
+		linkedAppsImports.WriteString(fmt.Sprintf(`%s "applicationtypes/%s"`+"\n", appNameSmall, appNameSmall))
 		linkedAppsStructElements.WriteString(fmt.Sprintf("	%s.%s `"+`yaml:",inline"`+"`\n", appNameSmall, app.Name))
 	}
 	// {{IMPORT_PACKAGES}}
@@ -227,15 +227,15 @@ func (applicationHandler *GoApplicationHandler) GenerateApplicationStruct(applic
 		return err
 	}
 
-	if utils.IsEmpty(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath) {
-		additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath = constants.CowDataAppConnectionPath
+	if utils.IsEmpty(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath) {
+		additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath = constants.CowDataAppConnectionPath
 	}
 
 	packageName := strings.ToLower(applicationVO.Meta.Name)
 
-	// folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, "go", packageName, applicationVO.Meta.Version)
+	// folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, "go", packageName, applicationVO.Meta.Version)
 
-	folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, "go", packageName)
+	folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, "go", packageName)
 
 	if utils.IsFolderNotExist(folderPath) {
 		err = os.MkdirAll(folderPath, os.ModePerm)
@@ -522,21 +522,21 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 		// packageName := strings.ToLower(applicationVO.Meta.Name)
 
 		if utils.IsEmpty(additionalInfo.Language) {
-			if utils.IsFolderExist(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, "go", folderName)) {
+			if utils.IsFolderExist(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, "go", folderName)) {
 				additionalInfo.Language = "go"
 			} else {
 				additionalInfo.Language = "python"
 			}
 		}
 
-		// appConnectionPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language, folderName, applicationVO.Meta.Version)
+		// appConnectionPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language, folderName, applicationVO.Meta.Version)
 
-		appConnectionPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language, folderName)
+		appConnectionPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language, folderName)
 
-		allAppsSorucePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language)
+		allAppsSorucePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language)
 		if additionalInfo.Language == "python" {
-			appConnectionPath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath), folderName)
-			allAppsSorucePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath))
+			appConnectionPath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath), folderName)
+			allAppsSorucePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath))
 		}
 
 		taskName := strcase.ToCamel("Validate" + strcase.ToCamel(applicationVO.Meta.Name))
@@ -592,10 +592,10 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot write application module inside task"})
 						return errorDetails
 					}
-					taskAppconnectionFolder := filepath.Join(taskFolder, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath))
+					taskAppconnectionFolder := filepath.Join(taskFolder, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath))
 					err = os.MkdirAll(taskAppconnectionFolder, os.ModePerm)
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the appconnections folder inside task"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the applicationtypes folder inside task"})
 						return errorDetails
 					}
 					opt := copy.Options{
@@ -608,11 +608,11 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 					}
 					err = copy.Copy(allAppsSorucePath, taskAppconnectionFolder, opt)
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot copy the appconnections folder inside task"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot copy the applicationtypes folder inside task"})
 						return errorDetails
 					}
 
-					requirementsTxtPaths := []string{filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, additionalInfo.Language, "requirements.txt"),
+					requirementsTxtPaths := []string{filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, additionalInfo.Language, "requirements.txt"),
 						filepath.Join(taskFolder, "requirements.txt")}
 
 					mergeRequirements(requirementsTxtPaths, filepath.Join(taskFolder, "requirements.txt"))
@@ -824,11 +824,11 @@ func HandleDecalrativesCreation(applicationVO *vo.UserDefinedApplicationVO, addi
 
 	credentialsPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, constants.UserDefinedCredentialsPath)
 
-	appConnectionsPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, constants.UserDefinedApplicationPath)
+	applicationTypesPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, constants.UserDefinedApplicationPath)
 
-	// folderPath := filepath.Join(appConnectionsPath, folderName, strings.ToLower(applicationVO.Meta.Version))
+	// folderPath := filepath.Join(applicationTypesPath, folderName, strings.ToLower(applicationVO.Meta.Version))
 
-	folderPath := filepath.Join(appConnectionsPath, folderName)
+	folderPath := filepath.Join(applicationTypesPath, folderName)
 
 	if utils.IsFolderExist(folderPath) && !applicationVO.IsVersionToBeOverride {
 		errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: constants.ErrorApplicationAlreadyAvailable})

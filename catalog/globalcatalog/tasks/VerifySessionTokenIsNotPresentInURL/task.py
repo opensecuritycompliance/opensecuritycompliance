@@ -1,5 +1,5 @@
 from compliancecowcards.structs import cards
-from appconnections.privacybisonconnector import privacybisonconnector
+from applicationtypes.privacybisonconnector import privacybisonconnector
 import urllib.parse
 from typing import List, Tuple
 import uuid

@@ -2,7 +2,7 @@
 from typing import Tuple
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from appconnections.azureappconnector import azureappconnector
+from applicationtypes.azureappconnector import azureappconnector
 import pandas as pd
 
 
@@ -23,6 +23,11 @@ class Task(cards.AbstractTask):
 
         azure_groups_details = []
         for azure_groups_data in azure_groups_list :
+            users_list = []
+            azure_users_details,error = azure_connector.get_user_by_group_id(azure_groups_data.get("id"))
+            for user_details in azure_users_details :
+                users_list.append(user_details.get("mail"))
+            azure_groups_data["GroupMembers"] = users_list
             new_flattened_output = azure_connector.replace_empty_dicts_with_none(azure_groups_data)
 
             flattened_output = azure_connector.flatten_json(new_flattened_output)

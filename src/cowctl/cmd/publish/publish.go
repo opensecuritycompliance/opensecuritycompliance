@@ -14,8 +14,8 @@ func NewCommand() *cobra.Command {
 		Args: cobra.NoArgs,
 
 		Use:   "publish",
-		Short: "publish one of [application, credential, rule, synthesizer]",
-		Long:  "publish one of [application, credential, rule, synthesizer]",
+		Short: "publish one of [application-type, credential-type, rule]",
+		Long:  "publish one of [application-type, credential-type, rule]",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := cmd.Help()
 			if err != nil {

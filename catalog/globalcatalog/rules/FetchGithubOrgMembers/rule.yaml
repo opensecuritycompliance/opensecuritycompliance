@@ -29,13 +29,6 @@ spec:
   - name: FetchGithubOrgMembers
     alias: t1
     type: task
-    appTags:
-      appType:
-      - githubconnector
-      environment:
-      - logical
-      execlevel:
-      - app
     purpose: Fetch GitHub organization members
     description: Fetch GitHub organization members
   ioMap:
