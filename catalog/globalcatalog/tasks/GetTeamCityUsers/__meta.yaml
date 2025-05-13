@@ -1,0 +1,31 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 10/06/2024
+name: GetTeamCityUsers
+displayName: GetTeamCityUsers
+version: '1.0'
+description: GetTeamCityUsers
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: TeamCityUsers
+  description: TeamCityUsers
+  dataType: FILE

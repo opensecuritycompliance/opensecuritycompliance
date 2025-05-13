@@ -1,0 +1,9 @@
+userObject:
+  name: TeamCityConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: http://localhost.com
+  userDefinedCredentials:
+    AccessToken:
+      AccessToken: "$TEAMCITY_ACCESS_TOKEN"

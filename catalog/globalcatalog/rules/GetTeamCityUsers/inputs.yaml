@@ -1,0 +1,11 @@
+userObject:
+  app:
+    name: TeamCityConnector
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      AccessToken:
+        AccessToken: "$TEAMCITY_ACCESS_TOKEN"
+userInputs:
+fromDate: 2024-06-10
+toDate: 2024-06-10
