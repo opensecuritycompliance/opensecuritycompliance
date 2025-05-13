@@ -1,0 +1,34 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 10/05/2024
+name: GetIntuneUsers
+displayName: GetIntuneUsers
+version: '1.0'
+description: GetIntuneUsers
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: IntuneUsers
+  description: IntuneUsers
+  dataType: FILE
+- name: IntuneAdminUsers
+  description: IntuneAdminUsers
+  dataType: FILE
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
