@@ -213,7 +213,7 @@ func runE(cmd *cobra.Command) error {
 				}
 				languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
 				if err != nil {
-					return fmt.Errorf("failed to get application language %s", err)
+					return fmt.Errorf("failed to get ApplicationType language %s", err)
 				}
 				ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
 				if err != nil {
@@ -231,7 +231,7 @@ func runE(cmd *cobra.Command) error {
 				}
 				if cowlibutils.IsNotEmpty(namePointer.Name) {
 					if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
-						return fmt.Errorf("error during publishing application : %s", err)
+						return fmt.Errorf("error during publishing ApplicationType : %s", err)
 					}
 				}
 			}
@@ -248,7 +248,7 @@ func runE(cmd *cobra.Command) error {
 						namePointer.Name = applicationName
 						languages, err := cowlibutils.GetApplicationLanguageFromRule(additionalInfo.RuleName, additionalInfo)
 						if err != nil {
-							return fmt.Errorf("failed to get application language %s", err)
+							return fmt.Errorf("failed to get ApplicationType language %s", err)
 						}
 						ruleFile, err := os.ReadFile(filepath.Join(rulesPath, constants.RuleYamlFile))
 						if err != nil {
@@ -264,7 +264,7 @@ func runE(cmd *cobra.Command) error {
 								if taskLanguage, exists := languages[task.Name]; exists {
 									additionalInfo.Language = taskLanguage
 									if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
-										return fmt.Errorf("error during publishing application '%s': %s", applicationName, err)
+										return fmt.Errorf("error during publishing ApplicationType '%s': %s", applicationName, err)
 									}
 									processedApps[applicationName] = true
 									break
@@ -282,7 +282,7 @@ func runE(cmd *cobra.Command) error {
 			namePointer.Name = appName
 			additionalInfo.Language = appLanguage
 			if err := publishApplication(namePointer, additionalInfo, binaryEnabled, appPublish); err != nil {
-				return fmt.Errorf("error during publishing application '%s': %s", appName, err)
+				return fmt.Errorf("error during publishing ApplicationType '%s': %s", appName, err)
 			}
 		}
 	}
@@ -383,11 +383,11 @@ func publishApplication(namePointer *vo.CowNamePointersVO, additionalInfo *vo.Ad
 		}
 	} else {
 		if binaryEnabled && !appPublish {
-			return fmt.Errorf("The application '%s' is already published. Do you want to publish the application again?", namePointer.Name)
+			return fmt.Errorf("The ApplicationType '%s' is already published. Do you want to publish the application again?", namePointer.Name)
 		}
 		isConfirmed := true
 		if !binaryEnabled {
-			isConfirmed, err = utils.GetConfirmationFromCmdPrompt(fmt.Sprintf("The application '%s' is already published. Do you want to publish the application again?", namePointer.Name))
+			isConfirmed, err = utils.GetConfirmationFromCmdPrompt(fmt.Sprintf("The ApplicationType '%s' is already published. Do you want to publish the ApplicationType again?", namePointer.Name))
 			if err != nil {
 				return err
 			}
@@ -401,7 +401,7 @@ func publishApplication(namePointer *vo.CowNamePointersVO, additionalInfo *vo.Ad
 					return errors.New(errorDetails[0].Issue)
 				}
 				d := color.New(color.FgCyan, color.Bold)
-				d.Println("Hurray!.. Application Configuration has been published on behalf of you")
+				d.Println("Hurray!.. ApplicationType Configuration has been published on behalf of you")
 			}
 		}
 	}

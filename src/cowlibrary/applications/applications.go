@@ -60,8 +60,8 @@ func Init(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo) 
 
 	errorDetails = make([]*vo.ErrorDetailVO, 0)
 
-	if utils.IsFolderNotExist(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath) {
-		if err := os.MkdirAll(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, os.ModePerm); err != nil {
+	if utils.IsFolderNotExist(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath) {
+		if err := os.MkdirAll(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, os.ModePerm); err != nil {
 			errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: constants.ErrorFolderPathMissing})
 			return errorDetails
 		}
@@ -93,7 +93,7 @@ func Init(namePointer *vo.CowNamePointersVO, additionalInfo *vo.AdditionalInfo) 
 	}
 	appYAML = strings.ReplaceAll(appYAML, "{{LINKED_APPLICATION_CLASSES_YAML}}", linkedApplicationClassessYAML)
 
-	appFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, utils.GetYAMLFileNameWithoutVersion(namePointer))
+	appFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, utils.GetYAMLFileNameWithoutVersion(namePointer))
 
 	if utils.IsFileExist(appFilePath) && !additionalInfo.CanOverride {
 		errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: constants.ErrorCredentialsAlreadyAvailable})
@@ -581,7 +581,7 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 				if utils.IsFileExist(appModule) {
 					moduleByts, err := os.ReadFile(filepath.Join(appConnectionPath, folderName+".py"))
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot read application module"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot read ApplicationType module"})
 						return errorDetails
 					}
 
@@ -589,13 +589,13 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 
 					err = os.WriteFile(appTaskModulePath, moduleByts, os.ModePerm)
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot write application module inside task"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot write ApplicationType module inside task"})
 						return errorDetails
 					}
 					taskAppconnectionFolder := filepath.Join(taskFolder, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath))
 					err = os.MkdirAll(taskAppconnectionFolder, os.ModePerm)
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the applicationtypes folder inside task"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the ApplicationType folder inside task"})
 						return errorDetails
 					}
 					opt := copy.Options{
@@ -646,7 +646,7 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 						goto TarRetryLabel
 					}
 
-					errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create tar file for application validation task"})
+					errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create tar file for ApplicationType validation task"})
 					return errorDetails
 
 				}
@@ -718,7 +718,7 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 
 		}
 
-		s.Prefix = "Publishing the application ...."
+		s.Prefix = "Publishing the ApplicationType ...."
 
 		responseVO := &vo.CowResponseVO{}
 
@@ -748,7 +748,7 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 		}
 
 		if err != nil || (resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated) || utils.IsEmpty(responseVO.ID) {
-			errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot publish the application"})
+			errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot publish the ApplicationType"})
 			return errorDetails
 		}
 
@@ -986,8 +986,8 @@ func mergeRequirements(filePaths []string, outputFilePath string) error {
 func GetAvailableApplications(applicationName string, additionalInfo *vo.AdditionalInfo) (*vo.ApplicationValidatorRespVO, error) {
 	respVO := &vo.ApplicationValidatorRespVO{}
 
-	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationName))
-	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", applicationName))
+	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 	if err != nil {
 		return nil, err
 	}

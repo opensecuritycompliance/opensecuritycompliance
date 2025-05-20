@@ -114,11 +114,11 @@ func CommonCommandsList() []*cobra.Command {
 		},
 		{
 			Use:   "init rule",
-			Short: "Initialize the Rule",
+			Short: "Initialize the rule",
 		},
 		{
 			Use:   "init application-type",
-			Short: "Initialize the application-type class",
+			Short: "Initialize the application-type",
 		},
 		{
 			Use:   "init credential-type",

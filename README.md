@@ -12,8 +12,8 @@
    2. [Instructions](#instructions)
 3. [Getting Started](#getting-started)
    1. [Developing a Rule](#1-developing-a-rule)
-      1. [Creating a credential type](#11-creating-a-credential-type)
-      2. [Creating an application type](#12-creating-an-application-type)
+      1. [Creating a credential-type](#11-creating-a-credential-type)
+      2. [Creating an application-type](#12-creating-an-application-type)
       3. [Initializing a rule](#13-initializing-a-rule)
       4. [Implementing the business logic](#14-implementing-the-business-logic)
    2. [Executing a rule](#2-executing-a-rule)
@@ -32,7 +32,7 @@ environment.
 
 | Name                    | Description                                                                                                                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Application Package** | Application package contains the application scope validations and other common methods related to the application                                                                        |
+| **ApplicationType Package** | ApplicationType package contains the ApplicationType scope validations and other common methods related to the ApplicationType                                                                        |
 | **Task**                | A task is an automatic unit of work in OpenSecurityCompliance. This can be written in Go or Python, and can be unit tested.                                                               |
 | **Rule**                | A Rule, which is a collection of tasks, can be mapped to a control in any assessment. When an assessment is run, the mapped rules are executed to assess the controls they are mapped to. |
 
@@ -40,7 +40,7 @@ environment.
 
 - OpenSecurityCompliance has a folder named `catalog`, which in turn contains the sub-folders `globalcatalog` and `localcatalog` where we store the rules, tasks, etc.
   - The `globalcatalog` serves as a folder for publicly accessible rules, tasks and other related components.
-  - By default, rules, tasks, and other artifacts (except the application classes and the credential classes) are initialized in the localcatalog. To maintain code privacy, you can include this folder in the gitignore file.
+  - By default, rules, tasks, and other artifacts (except the ApplicationType classes and the CredentialType classes) are initialized in the localcatalog. To maintain code privacy, you can include this folder in the gitignore file.
   - To precisely choose an item from the globalcatalog or initialize an item within the globalcatalog, utilize the `--catalog=globalcatalog` flag.
   - A rule present in globalcatalog won't be able to access a task from localcatalog while the other way is possible.
 - cowctl CLI has Minio as a dependency. Minio is required to manage all the file outputs from tasks.
@@ -79,7 +79,7 @@ Please make sure to have the following installed in your machine.
 
 <img src="misc/img/docker_compose_uncomment.png" alt="docker_compose_uncomment" width="200"/>
 
-4.  Rename the `.credentials.env.template` in the `etc/` folder to `.credential.env`. This env file which contains predefined credential values, can be used to configure additional credentials for your custom applications. These credentials will be available as environment variables that can be used in your tasks.
+4.  Rename the `.credentials.env.template` in the `etc/` folder to `.credential.env`. This env file which contains predefined CredentialType values, can be used to configure additional CredentialTypes for your custom ApplicationTypes. These CredentialTypes will be available as environment variables that can be used in your tasks.
 
 5.  To start the cowctl docker container, run the `build_and_run` script in the OpenSecurityCompliance main folder (as explained in the OS specific collapsibles below). This step typically requires anywhere from 5 to 10 minutes to finish. In case you run into any errors related to loading metadata for certain libraries, rename the key `credsStore` to `credStore` in the docker config file in your system (For instance in Mac: `~/.docker/config.json`). This is a known issue in Docker. Note: You may have to restart docker.
 <details>
@@ -109,16 +109,16 @@ The development step consists of 4 sub-steps as demonstrated in the GIF below.
 
 <img src="misc/img/policy_cow_dev_steps.gif" alt="open_security_complaince_dev_steps" width="700"/>
 
-### 1.1 Creating a credential type
+### 1.1 Creating a credential-type
 
-As illustrated in the GIF above, credentials play a crucial role in enabling the task code to access applications. Therefore, let's begin by defining the specific type of credentials required for this purpose.
+As illustrated in the GIF above, CredentialTypes play a crucial role in enabling the task code to access ApplicationTypes. Therefore, let's begin by defining the specific type of CredentiaTypes required for this purpose.
 
-<u>1.1.1 **cowctl** init credential</u><br/>
-Initialize a new credential type (config YAML file) with the `init credential` command. You'll be prompted for a name and version.
+<u>1.1.1 **cowctl** init credential-type</u><br/>
+Initialize a new CredentialType (config YAML file) with the `init credential-type` command. You'll be prompted for a name and version.
 
 <img src="misc/img/init_cred_1.png" alt="init_cred" width="800"/>
 
-You can then locate the credential YAML file at `catalog/gobalcatalog/yamlfiles/credentials`. Customize the attributes in it to match your credential type, like connecting to GitHub with a Personal Access Token (1 attribute) or username/password (2 attributes).
+You can then locate the CredentialType YAML file at `catalog/gobalcatalog/yamlfiles/credentialtypes`. Customize the attributes in it to match your CredentialType, like connecting to GitHub with a Personal Access Token (1 attribute) or username/password (2 attributes).
 
 <details>
 <summary>Here is an example from the GitHub use case.</summary>
@@ -146,26 +146,26 @@ spec:
 
 </details>
 
-<u>1.1.2 **cowctl** create credential</u><br/>
-After defining the attributes in the credential YAML file, run `create credential` to validate it and copy it to `catalog/globalcatalog/declaratives/credentials`, where the subsequent cowctl commands will reference it.
+<u>1.1.2 **cowctl** create credential-type</u><br/>
+After defining the attributes in the CredentialType YAML file, run `create credential-type` to validate it and copy it to `catalog/globalcatalog/declaratives/credentialtypes`, where the subsequent cowctl commands will reference it.
 
 <img src="misc/img/create_cred_1.png" alt="create_cred_1" width="800"/>
 
-You will need to choose the YAML file for the credentials that you've just created.
+You will need to choose the YAML file for the CredentialTypes that you've just created.
 
-### 1.2 Creating an application type
+### 1.2 Creating an application-type
 
-An application type is essentially a class in Go or Python, where you can implement these:
+An ApplicationType is essentially a class in Go or Python, where you can implement these:
 
-- a validation method to verify the accessibility of the application using the provided credentials.
-- methods (for accessing the application or its resources) that can subsequently be used within the task code.
+- a validation method to verify the accessibility of the ApplicationType using the provided CredentialTypes.
+- methods (for accessing the ApplicationType or its resources) that can subsequently be used within the task code.
 
-<u>1.2.1 **cowctl** init application</u><br/>
-Use the `init application` command to initialize the application type (YAML file template). Following the name prompt, you'll be prompted to choose a credential, along with its version, to bind with the application (for access). If you've created multiple credentials, you'll be provided with an option to bind additional credentials to the application.
+<u>1.2.1 **cowctl** init application-type</u><br/>
+Use the `init application-type` command to initialize the ApplicationType (YAML file template). Following the name prompt, you'll be prompted to choose a CredentialType, along with its version, to bind with the ApplicationType (for access). If you've created multiple CredentialTypes, you'll be provided with an option to bind additional CredentialTypes to the ApplicationTypes.
 
 <img src="misc/img/init_app_1.png" alt="init_app_1" width="800"/>
 
-The `init application` command will create a file in `catalog/globalcatalog/yamlfiles/applications` where important fields will be auto filled.
+The `init application-type` command will create a file in `catalog/globalcatalog/yamlfiles/applicationtypes` where important fields will be auto filled.
 
 <details>
 <summary>Here is an example from the GitHub use case.</summary><br/>
@@ -194,22 +194,22 @@ spec:
 
 </details>
 
-<u>1.2.2 **cowctl** create application</u><br/>
-You can verify the details and modify the application YAML file as needed or continue to `create application` which will create the actual application package and the classes (including that of the credential type). You will be asked to select the application type (YAML file). Please select the one that you just created.
+<u>1.2.2 **cowctl** create application-type</u><br/>
+You can verify the details and modify the ApplicationType YAML file as needed or continue to `create application-type` which will create the actual ApplicationType package and the classes (including that of the CredentialType). You will be asked to select the ApplicationType type (YAML file). Please select the one that you just created.
 
 <img src="misc/img/create_app_1.png" alt="create_app_1" width="800"/>
 
-Once the `create application` is completed, a new package and a set of classes will be created in `catalog/appconnections/go/` for Golang and `catalog/appconnections/python/appconnections` for Python. Package name shall be the same as the application name.
+Once the `create application-type` is completed, a new package and a set of classes will be created in `catalog/applicationtypes/go/` for Golang and `catalog/applicationtypes/python/appconnections` for Python. Package name shall be the same as the ApplicationType name.
 
 ### 1.3 Initializing a rule
 
-Now that we have created the application type and its credentials, it's time to initialize a rule with its associated tasks. Use the `init rule` command which will prompt you to provide:
+Now that we have created the ApplicationType and its CredentialTypes, it's time to initialize a rule with its associated tasks. Use the `init rule` command which will prompt you to provide:
 
 - Enter a name for the rule.
 - Specify the number of tasks you want to include in the rule.
 - Provide the name and programming language (Go/Python) for each task.
-- Select the application type to bind with each task (This is required to import the application class package into the task and auto-fill the code related to the application package.)
-- Choose the primary application type to bind with the rule (This is necessary when different tasks use different application types)
+- Select the ApplicationType to bind with each task (This is required to import the ApplicationType class package into the task and auto-fill the code related to the ApplicationType package.)
+- Choose the primary ApplicationType to bind with the rule (This is necessary when different tasks use different ApplicationTypes)
 
 <img src="misc/img/init_rule_flow.png" alt="init_rule_flow" width="800"/>
 
@@ -267,14 +267,14 @@ ioMap:
 
 All inputs required to execute a rule should be specified in `inputs.yaml` which contains:
 
-- `userObject`: Many rules necessitate an application's ability to retrieve and process data. To facilitate this, you must furnish the credentials to grant the rule access to these applications, in `userObject`.
+- `userObject`: Many rules necessitate an ApplicationType's ability to retrieve and process data. To facilitate this, you must furnish the CredentialTypes to grant the rule access to these ApplicationTypes, in `userObject`.
 - `userInputs` which contains the user input values required for the rule and task execution.
 
 <img src="misc/img/inputs_yaml.png" alt="inputs_yaml" width="300"/>
 
-The `inputs.yaml` file will be automatically generated upon the initialization of a rule. Depending on the chosen application class, the `userObject` will have its credentials structure auto-populated.
+The `inputs.yaml` file will be automatically generated upon the initialization of a rule. Depending on the chosen ApplicationType class, the `userObject` will have its CredentialTypes structure auto-populated.
 
-Important Note: To keep critical credential values away from code, we recommend to use `etc/.credentials.env` (which is git ignored) as given below.
+Important Note: To keep critical CredentialType values away from code, we recommend to use `etc/.credentials.env` (which is git ignored) as given below.
 
 ```
 GITHUB_PERSONAL_ACCESS_TOKEN=github_pat_....
@@ -313,31 +313,31 @@ Below is a class diagram that explains the relationship among the Task, the App 
 
 ### 1.4 Implementing the business logic
 
-Both your task and application code will need to utilize the various auto-generated OpenSecurityCompliance classes. To facilitate seamless integration in your IDE, please execute the command `sh install_cow_packages.sh` (in Mac or Ubuntu) or `./windows_setup/install_cow_packages.ps1` (in Windows). You can find this file in the main folder of OpenSecurityCompliance.
+Both your task and ApplicationType code will need to utilize the various auto-generated OpenSecurityCompliance classes. To facilitate seamless integration in your IDE, please execute the command `sh install_cow_packages.sh` (in Mac or Ubuntu) or `./windows_setup/install_cow_packages.ps1` (in Windows). You can find this file in the main folder of OpenSecurityCompliance.
 
-In your task, the typical approach is to access your application to retrieve data and subsequently process it. To maintain a clear separation of concerns, it is advisable to refrain from writing code in your task that directly pertains to application access. Therefore, let's begin by implementing the application-specific methods within the application class.
+In your task, the typical approach is to access your ApplicationType to retrieve data and subsequently process it. To maintain a clear separation of concerns, it is advisable to refrain from writing code in your task that directly pertains to ApplicationType access. Therefore, let's begin by implementing the ApplicationType-specific methods within the ApplicationType class.
 
 Note: If you require any third-party libraries, you are free to install and incorporate them into your code.
 
 Please adhere to the relevant set of instructions, depending on your chosen programming language for task development.
 
-#### Implementing the application methods
+#### Implementing the ApplicationType methods
 
-Note that the package name shall be the same as the application name.
+Note that the package name shall be the same as the ApplicationType name.
 
 <details>
 <summary>Python instructions</summary><br/>
 
-You need to modify `catalog/appconnections/python/appconnections/<package name>/<package name>.py`, which includes several default classes, namely `{{ApplicationClassName}}`, `UserDefinedCredentials`, and `{{CredentialName}}(s)`, as depicted in the class diagram above. Each of these classes is furnished with 'from_dict' and 'to_dict' methods. These methods streamline the object initialization process by allowing the loading of values from any YAML file.
+You need to modify `catalog/applicationtypes/python/applicationtypes/<package name>/<package name>.py`, which includes several default classes, namely `{{ApplicationClassName}}`, `UserDefinedCredentials`, and `{{CredentialName}}(s)`, as depicted in the class diagram above. Each of these classes is furnished with 'from_dict' and 'to_dict' methods. These methods streamline the object initialization process by allowing the loading of values from any YAML file.
 
-The pre-populated `validate` method shall look like the below. You can add custom logic to validate the application's access by utilizing the provided credentials.
+The pre-populated `validate` method shall look like the below. You can add custom logic to validate the ApplicationType's access by utilizing the provided CredentialTypes.
 
 ```python
 def validate(self)->bool and dict:
     return True, None
 ```
 
-Within any of your custom methods, you can access the application attributes such URL, port, credentials, etc, as mentioned below, to retrieve data from the application:
+Within any of your custom methods, you can access the ApplicationType attributes such URL, port, credentials, etc, as mentioned below, to retrieve data from the ApplicationType:
 
 ```python
 class YourApp:
@@ -372,7 +372,7 @@ Now, you can invoke the `get_branches` method from your task code. Further detai
 <details>
 <summary>Go instructions</summary><br/>
 
-You need to modify `catalog/appconnections/go/<package name>/<package name>.go` file, which includes struct definitions for `{{ApplicationClassName}}`, `UserDefinedCredentials`, and structs for `{{CredentialsName}}(s)`. `UserDefinedCredentials` is basically a wrapper for the credential classes.
+You need to modify `catalog/applicationtypes/go/<package name>/<package name>.go` file, which includes struct definitions for `{{ApplicationClassName}}`, `UserDefinedCredentials`, and structs for `{{CredentialsName}}(s)`. `UserDefinedCredentials` is basically a wrapper for the CredentialType classes.
 
 By default, a `Validate` method is provided in the following format:
 
@@ -393,7 +393,7 @@ As explained in the class diagram above, a class called Task in the `task.py` fi
 
 You can access the user defined credentials details under `userObject` key and user input values under `userInputs` key in `inputs.yaml` using `self.task_inputs.user_object.app.user_defined_credentials` and using `self.task_inputs.user_inputs`.
 
-The application package chosen during the rule initialization will already be automatically imported into the `task.py` file. To instantiate the application class with the userDefinedCredentials from the `inputs.yaml` file, you can use the `<packageName>.UserDefinedCredentials.from_dict()` method and pass the `self.task_inputs.user_object.app.user_defined_credentials` in it. It is because the App's constructor expects `UserDefinedCredentials` object and not a dict.
+The ApplicationType package chosen during the rule initialization will already be automatically imported into the `task.py` file. To instantiate the ApplicationType class with the userDefinedCredentials from the `inputs.yaml` file, you can use the `<packageName>.UserDefinedCredentials.from_dict()` method and pass the `self.task_inputs.user_object.app.user_defined_credentials` in it. It is because the App's constructor expects `UserDefinedCredentials` object and not a dict.
 
 Here is an example from the GitHub use case, where the app's method `get_branches` is invoked.
 
@@ -445,7 +445,7 @@ You can import the applicationClass package to the `task_service.go`, if require
 
 ```javascript
 import (
-    {{packageName}} "appconnections/{{packageName}}"
+    {{packageName}} "applicationtypes/{{packageName}}"
 )
 ```
 
@@ -453,13 +453,13 @@ Once these are done, run `go mod tidy` to get all the packages required. In case
 
 ```javascript
 replace cowlibrary => ../../../../src/cowlibrary
-replace appconnections => ../../../appconnections/go
+replace applicationtypes => ../../../applicationtypes/go
 
 ```
 
 Now you will be able to access the `app` defined under `userObject` and `userInputs` keys in `inputs.yaml` using `inst.SystemInputs.UserObject` and `inst.UserInputs`.
 
-You can initiate the application class, as mentioned below, to validate the credentials and to use other methods that is already implemented in the application package.
+You can initiate the ApplicationType class, as mentioned below, to validate the CredentialTypes and to use other methods that is already implemented in the ApplicationType package.
 
 ```javascript
     varName := &packageName.ClassName{UserDefinedCredentials: &inst.SystemInputs.UserObject.App.UserDefinedCredentials}
@@ -467,13 +467,13 @@ You can initiate the application class, as mentioned below, to validate the cred
 
 Now you can continue with your implementation of the task.
 
-Note: You can import `appconnections/minio` to upload and download files. Please check `catalog/appconnections/go/minio` to see the available methods.
+Note: You can import `applicationtypes/minio` to upload and download files. Please check `catalog/applicationtypes/go/minio` to see the available methods.
 
 </details>
 
 ## 2. Executing a rule
 
-To execute a rule, along with its associated tasks, you are required to provide all inputs, including application details, credentials, and any user inputs, within a file named `inputs.yaml`. This file is situated in your rule folder.
+To execute a rule, along with its associated tasks, you are required to provide all inputs, including ApplicationType details, CredentialTypes, and any user inputs, within a file named `inputs.yaml`. This file is situated in your rule folder.
 
 In the case of Python, it's essential to specify any third-party library dependencies within the `requirements.txt` file located in each of your task folders. As an illustration, for the GitHub use case, you need to include these two Python libraries, as suggested below.
 

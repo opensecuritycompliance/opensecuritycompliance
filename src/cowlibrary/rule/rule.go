@@ -1160,7 +1160,7 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 				var appData *vo.UserDefinedApplicationVO
 				for _, app := range taskInput.SystemInputs.UserObject.Apps {
-					applicationYamlContent, err := os.ReadFile(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", (app.ApplicationName))))
+					applicationYamlContent, err := os.ReadFile(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", (app.ApplicationName))))
 					if err := yaml.Unmarshal(applicationYamlContent, &appData); err != nil {
 						return err
 					}
@@ -1744,7 +1744,7 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 		return nil, err
 	}
 	if len(ruleYaml.Meta.Labels) == 0 {
-		return nil, fmt.Errorf("invalid rule yaml. Primary Application is not present in the rule")
+		return nil, fmt.Errorf("invalid rule yaml. Primary ApplicationType is not present in the rule")
 	}
 
 	ruleTags := map[string][]string{
@@ -3628,7 +3628,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	languages, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to get application language", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to get ApplicationType language", Description: fmt.Sprintf("The language for the %s ApplicationType could not be retrieved ", applicationValidatorVO.ApplicationType)}}
 	}
 
 	var language string
@@ -3637,12 +3637,12 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	ruleFile, err := os.ReadFile(filepath.Join(rulePath, constants.RuleYamlFile))
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to read rule.yaml file", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to read rule.yaml file", Description: fmt.Sprintf("The language for the %s ApplicationType could not be retrieved ", applicationValidatorVO.ApplicationType)}}
 	}
 	err = yaml.Unmarshal(ruleFile, &ruleYaml)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to unmarshal rule.yaml file", Description: fmt.Sprintf("The language for the %s application could be retrieved from the rule details ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to unmarshal rule.yaml file", Description: fmt.Sprintf("The language for the %s ApplicationType could be retrieved from the rule details ", applicationValidatorVO.ApplicationType)}}
 	}
 
 	for _, task := range ruleYaml.Spec.Tasks {
@@ -3659,18 +3659,18 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 		}
 	}
 
-	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
+	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
 	fmt.Println("appClassPath :", appClassPath)
 
 	if utils.IsFileNotExist(appClassPath) {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", applicationValidatorVO.ApplicationType)}}
+			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' ApplicationType", applicationValidatorVO.ApplicationType)}}
 	}
 
-	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", applicationValidatorVO.ApplicationType),
+			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' ApplicationType", applicationValidatorVO.ApplicationType),
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
 
@@ -3686,7 +3686,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if utils.IsFolderNotExist(applicationPath) {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid Application", Description: fmt.Sprintf("Cannot find the application '%s'", applicationValidatorVO.ApplicationType)}}
+			Message: "Invalid ApplicationType", Description: fmt.Sprintf("Cannot find the ApplicationType '%s'", applicationValidatorVO.ApplicationType)}}
 	}
 
 	validateApplicationTask := filepath.Join(applicationPath, fmt.Sprintf("Validate%s", applicationValidatorVO.ApplicationType))
@@ -3742,7 +3742,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if !foundCredential {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid Credential", Description: fmt.Sprintf("The application doesn't support credention '%s'", applicationValidatorVO.CredentialType)}}
+			Message: "Invalid CredentialType", Description: fmt.Sprintf("The ApplicationType doesn't support credention '%s'", applicationValidatorVO.CredentialType)}}
 	}
 
 	userDefinedCredentials := map[string]interface{}{}
@@ -4019,7 +4019,7 @@ func GetAvailableLanguages(applicationVO *vo.ApplicationVO, additionalInfo *vo.A
 
 	appDeclarativesPath = filepath.Join(appDeclarativesPath, strings.ToLower(applicationVO.Name))
 	if utils.IsFolderNotExist(appDeclarativesPath) {
-		return nil, fmt.Errorf("application not available")
+		return nil, fmt.Errorf("ApplicationType not available")
 	}
 	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	if utils.IsFolderExist(filepath.Join(appPath, "go", packageName)) {

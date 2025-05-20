@@ -124,7 +124,7 @@ func GetCredentialWithVersionFromCMD(isMandatory bool, pathPrefix string, namesT
 	directories := make([]dropdownutils.Item, 0)
 
 	if utils.IsFolderNotExist(pathPrefix) {
-		return nil, errors.New("credential not found. please create and proceed")
+		return nil, errors.New("CredentialType not found. please create and proceed")
 	}
 	files, err := os.ReadDir(pathPrefix)
 	if err != nil {
@@ -157,9 +157,9 @@ func GetCredentialWithVersionFromCMD(isMandatory bool, pathPrefix string, namesT
 		}
 	}
 	if len(directories) == 0 {
-		errorMsg := "credential not found. please create and proceed"
+		errorMsg := "CredentialType not found. please create and proceed"
 		if sameNameAsCredential {
-			errorMsg = "credentials will be ignored if it contains same name as application. please add credential with different name"
+			errorMsg = "CredentialType will be ignored if it contains same name as ApplicationType. please add CredentialType with different name"
 		}
 		return nil, errors.New(errorMsg)
 	}
@@ -175,7 +175,7 @@ start:
 			filteredDirctorires = append(filteredDirctorires, dropdownutils.Item{Name: key})
 		}
 	}
-	selectedDir, err := getSelectedValue("Select Credential (if the name is same as application name, will be ignored):", true, filteredDirctorires)
+	selectedDir, err := getSelectedValue("Select CredentialType (if the name is same as ApplicationType name, will be ignored):", true, filteredDirctorires)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ start:
 	// INFO: As of now there's no limitation for choosing credential
 	// if len(credentials) < 5 && len(tempFilteredDirctorires) > 0 {
 	if len(tempFilteredDirctorires) > 0 {
-		userInput, _ = GetOptionFromCmdPrompt("Would you like to add another credential?  yes/no (default:no):", "no", []string{"yes", "no"})
+		userInput, _ = GetOptionFromCmdPrompt("Would you like to add another CredentialType?  yes/no (default:no):", "no", []string{"yes", "no"})
 	}
 	if userInput == "yes" {
 		goto start
@@ -263,7 +263,7 @@ start:
 	if len(directories) == 0 {
 		return nil, errors.New("application class not found")
 	}
-	userInput, _ = GetOptionFromCmdPrompt("Would you like to link another application?  yes/no (default:no):", "no", []string{"yes", "no"})
+	userInput, _ = GetOptionFromCmdPrompt("Would you like to link another ApplicationType?  yes/no (default:no):", "no", []string{"yes", "no"})
 	if userInput == "yes" {
 		goto start
 	}
