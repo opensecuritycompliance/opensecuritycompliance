@@ -946,12 +946,12 @@ func GetYamlFilesPathFromCatalog(additionalInfo *vo.AdditionalInfo, yamlFileName
 
 // applications yaml path
 func GetYamlFilesPathFromApplicationCatalog(additionalInfo *vo.AdditionalInfo, yamlFileName string) string {
-	return GetCatalogPath(additionalInfo, additionalInfo.PolicyCowConfig.PathConfiguration.YamlFilesPath, filepath.Join("yamlfiles", "applications"), yamlFileName)
+	return GetCatalogPath(additionalInfo, additionalInfo.PolicyCowConfig.PathConfiguration.YamlFilesPath, filepath.Join("yamlfiles", "applicationtypes"), yamlFileName)
 }
 
 // credentials yaml path
 func GetYamlFilesPathFromCredentialsCatalog(additionalInfo *vo.AdditionalInfo, yamlFileName string) string {
-	return GetCatalogPath(additionalInfo, additionalInfo.PolicyCowConfig.PathConfiguration.YamlFilesPath, filepath.Join("yamlfiles", "credentials"), yamlFileName)
+	return GetCatalogPath(additionalInfo, additionalInfo.PolicyCowConfig.PathConfiguration.YamlFilesPath, filepath.Join("yamlfiles", "credentialtypes"), yamlFileName)
 }
 
 // local catalog path using rule path
@@ -1538,7 +1538,7 @@ func GetApplicationsV2(additionalInfo *vo.AdditionalInfo, appCriteria *vo.CowApp
 	}
 	applications := make([]*vo.UserDefinedApplicationVO, 0)
 	// for _, pattern := range pathPrefixs {
-	matches, _ := filepath.Glob(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath)
+	matches, _ := filepath.Glob(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath)
 	for _, path := range matches {
 		files, err := os.ReadDir(path)
 		if err != nil {
@@ -1625,7 +1625,7 @@ func GetCredentialsV2(additionalInfo *vo.AdditionalInfo, credentialCriteria *vo.
 		additionalInfo = additionalInfoCopy
 	}
 	credentials := make([]*vo.UserDefinedCredentialVO, 0)
-	credPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentials")
+	credPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentialtypes")
 
 	matches, _ := filepath.Glob(credPath)
 	for _, path := range matches {
@@ -1859,7 +1859,7 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 
 	ruleAddInfo := &vo.RuleAdditionalInfo{RuleIOMapInfo: ruleIOInfo}
 	if IsNotEmpty(ruleYAML.Meta.App) {
-		appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", ruleYAML.Meta.App))
+		appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", ruleYAML.Meta.App))
 
 		fmt.Println("appClassPath :", appClassPath)
 
@@ -1869,7 +1869,7 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 				ErrorDetails: GetValidationError(err)}
 		}
 
-		primaryAppInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+		primaryAppInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 		if err != nil {
 			return nil, &vo.ErrorVO{
 				Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", ruleYAML.Meta.App),
@@ -1889,7 +1889,7 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 			var appClassPath string
 			appName := task.AppTags["appType"]
 
-			appDir := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath
+			appDir := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath
 			files, err := ioutil.ReadDir(appDir)
 			if err != nil {
 				return nil, &vo.ErrorVO{Message: "Application Directory Read Error", Description: fmt.Sprintf("Unable to access the directory at '%s'.", appDir),
@@ -1919,7 +1919,7 @@ func GetTaskInfosFromRule(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 					ErrorDetails: GetValidationError(err)}
 			}
 
-			applicationInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			applicationInfo, err := GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 			if err != nil {
 				return nil, &vo.ErrorVO{
 					Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", appName[0]),

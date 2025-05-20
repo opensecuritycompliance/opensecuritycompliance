@@ -12,8 +12,8 @@ pathConfiguration:
   localCatalogPath: /policycow/catalog/localcatalog
   declarativePath: /policycow/catalog/globalcatalog/declaratives
   applicationTypesPath: /policycow/catalog/applicationtypes
-  applicationClassPath: /policycow/catalog/globalcatalog/yamlfiles/applicationtypes
-  credentialTypesPath: /policycow/catalog/globalcatalog/yamlfiles/credentialtypes
+  applicationTypeConfigPath: /policycow/catalog/globalcatalog/yamlfiles/applicationtypes
+  credentialTypeConfigPath: /policycow/catalog/globalcatalog/yamlfiles/credentialtypes
 
   portNo: 13300
 userData:

@@ -6,7 +6,7 @@ const (
 )
 
 const (
-	UserDefinedCredentialsPath = "credentialTypes"
+	UserDefinedCredentialsPath = "credentialtypes"
 	UserDefinedApplicationPath = "applicationtypes"
 )
 

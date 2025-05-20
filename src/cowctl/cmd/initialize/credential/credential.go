@@ -53,7 +53,7 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	if cowlibutils.IsEmpty(credentialName) {
-		credentialNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("Credential Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)
+		credentialNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("CredentialType Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)
 		if err != nil {
 			return fmt.Errorf("invalid credential name. dashboard name:%s,err:%v", credentialNameFromCmd, err)
 		}
@@ -63,16 +63,16 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	if cowlibutils.IsEmpty(credentialVersion) {
-		labelName := "Credential Version (semantic version, e.g. 1.1.1)"
+		labelName := "CredentialType Version (semantic version, e.g. 1.1.1)"
 	GetVersion:
 		credentialVersionFromCmd, err := utils.GetValueAsStrFromCmdPrompt(labelName, true, validationutils.ValidateVersionTyping)
 
 		if err != nil {
-			return fmt.Errorf("invalid credential version. credential version:%s,err:%v", credentialVersionFromCmd, err)
+			return fmt.Errorf("invalid CredentialType version. CredentialType version:%s,err:%v", credentialVersionFromCmd, err)
 		}
 
 		if validationutils.ValidateVersion(credentialVersionFromCmd) != nil {
-			labelName = "invalid credential version. please re-enter a valid version"
+			labelName = "invalid CredentialType version. please re-enter a valid version"
 			goto GetVersion
 		}
 
@@ -88,7 +88,7 @@ func runE(cmd *cobra.Command) error {
 
 	if len(errorDetails) > 0 {
 		if strings.Contains(errorDetails[0].Issue, constants.ErrorCredentialsAlreadyAvailable) {
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Credential already presented in the system. Are you going to re-initialize again ?")
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("CredentialType already presented in the system. Are you going to re-initialize again ?")
 
 			if err != nil {
 				return err
@@ -109,7 +109,7 @@ func runE(cmd *cobra.Command) error {
 		}
 	}
 
-	emoji.Println("Credential template has been created :smiling_face_with_sunglasses:! you can see the credential yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath, cowlibutils.GetYAMLFileNameWithVersion(namePointer)))
+	emoji.Println("CredentialType template has been created :smiling_face_with_sunglasses:! you can see the CredentialType yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath, cowlibutils.GetYAMLFileNameWithVersion(namePointer)))
 	additionalInfo.GlobalCatalog = false
 	return err
 }
