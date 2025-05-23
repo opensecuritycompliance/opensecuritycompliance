@@ -14,5 +14,5 @@ type UserInputs struct {
 
 type Outputs struct {
 	OpaPolicyReport string
-	LogFile         string `yaml:"AuditFile"`
+	LogFile         string `yaml:"LogFile"`
 }

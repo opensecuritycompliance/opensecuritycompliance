@@ -52,6 +52,7 @@ type CowCredentialCriteriaVO struct {
 type CowRulesCriteriaVO struct {
 	CriteriaVO
 	Name []string `json:"name,omitempty" in:"query=name,name[],Name,Name[]"`
+	Apps  []string `json:"app,omitempty" in:"query=app,apps[],App,Apps[]"`
 	Type []string `json:"type,omitempty" in:"query=type,Type,type[],Type[]"`
 	Tags []string `json:"tags,omitempty" in:"query=tags,Tags,tags[],Tags[]"`
 }

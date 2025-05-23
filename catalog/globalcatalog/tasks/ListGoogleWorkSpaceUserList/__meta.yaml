@@ -1,0 +1,31 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 01/04/2024
+name: ListGoogleWorkSpaceUserList
+displayName: ListGoogleWorkSpaceUserList
+version: '1.0'
+description: ListGoogleWorkSpaceUserList
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: go
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: GooogleWorkSpaceUserList
+  description: GooogleWorkSpaceUserList
+  dataType: FILE

@@ -434,18 +434,18 @@ func GetDefaultConfigInfo() *vo.PolicyCowConfig {
 	policyCowConfig := &vo.PolicyCowConfig{
 		Version: "1.0",
 		PathConfiguration: &vo.CowPathConfiguration{
-			TasksPath:            constants.CowDataTaskPath,
-			RulesPath:            constants.CowDataRulesPath,
-			ExecutionPath:        constants.CowDataExecutionsPath,
-			RuleGroupPath:        constants.CowDataRuleGroupPath,
-			SynthesizersPath:     constants.CowDataSynthesizerPath,
-			DownloadsPath:        constants.CowDataDownloadsPath,
-			YamlFilesPath:        constants.CowDataYamlFilesPath,
-			ApplicationScopePath: constants.CowDataApplicationScopePath,
-			DeclarativePath:      constants.CowDataDeclarativesFilesPath,
-			AppConnectionPath:    constants.CowDataAppConnectionPath,
-			ApplicationClassPath: constants.CowApplicationClassPath,
-			CredentialsPath:      constants.CowCredentialsPath,
+			TasksPath:                 constants.CowDataTaskPath,
+			RulesPath:                 constants.CowDataRulesPath,
+			ExecutionPath:             constants.CowDataExecutionsPath,
+			RuleGroupPath:             constants.CowDataRuleGroupPath,
+			SynthesizersPath:          constants.CowDataSynthesizerPath,
+			DownloadsPath:             constants.CowDataDownloadsPath,
+			YamlFilesPath:             constants.CowDataYamlFilesPath,
+			ApplicationScopePath:      constants.CowDataApplicationScopePath,
+			DeclarativePath:           constants.CowDataDeclarativesFilesPath,
+			ApplicationTypesPath:      constants.CowDataAppConnectionPath,
+			ApplicationTypeConfigPath: constants.CowApplicationClassPath,
+			CredentialTypeConfigPath:  constants.CowCredentialsPath,
 		},
 	}
 
@@ -565,16 +565,16 @@ func GetCommonFlagsAndBuildConfig(cmd *cobra.Command) (*vo.PolicyCowConfig, erro
 		policyCowConfig.PathConfiguration.DeclarativePath = declarativesPath
 	}
 
-	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.AppConnectionPath) {
-		policyCowConfig.PathConfiguration.AppConnectionPath = appConnectionPath
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationTypesPath) {
+		policyCowConfig.PathConfiguration.ApplicationTypesPath = appConnectionPath
 	}
 
-	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationClassPath) {
-		policyCowConfig.PathConfiguration.ApplicationClassPath = applicationClassPath
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationTypeConfigPath) {
+		policyCowConfig.PathConfiguration.ApplicationTypeConfigPath = applicationClassPath
 	}
 
-	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.CredentialsPath) {
-		policyCowConfig.PathConfiguration.CredentialsPath = credentialsPath
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.CredentialTypeConfigPath) {
+		policyCowConfig.PathConfiguration.CredentialTypeConfigPath = credentialsPath
 	}
 
 	if policyCowConfig.UserData == nil {

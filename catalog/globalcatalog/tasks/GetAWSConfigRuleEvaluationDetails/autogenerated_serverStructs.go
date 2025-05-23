@@ -2,7 +2,7 @@
 package main
 import (
 	"time"
-	awsappconnector "appconnections/awsappconnector"
+	awsappconnector "applicationtypes/awsappconnector"
 )
 
 

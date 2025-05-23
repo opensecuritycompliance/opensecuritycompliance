@@ -1,0 +1,47 @@
+authors:
+- lokesh.b@continube.com
+domain: continube
+createdDate: 27/08/2024
+name: GithubBranchSettingsReport
+displayName: GithubBranchSettingsReport
+version: '1.0'
+description: GithubBranchSettingsReport
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: MinimumRequiredReviewersCount # A unique identifier of the task input
+  description: MinimumRequiredReviewersCount # A concise description of the task input
+  dataType: INT # data type of the input. Available Types STRING, INT, FLOAT, FILE, JSON
+  repeated: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: 0 # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: true # boolean: true | false
+- name: CriteriaConfig
+  description: CriteriaConfig
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: GithubBranchSettingsReport
+  description: GithubBranchSettingsReport
+  dataType: FILE

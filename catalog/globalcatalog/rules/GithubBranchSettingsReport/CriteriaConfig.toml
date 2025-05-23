@@ -1,0 +1,15 @@
+
+
+IncludeCriteria = [
+    "org/org-1/repo/*/branch/*" 
+    ]
+    
+ExcludeCriteria = [
+    "org/org-1/repo/repo-1/branch/dev" ,
+    "org/org-1/repo/repo-2/branch/test" 
+    ]
+
+
+# IMPORTANT:
+# The organization field must be a single value; you cannot specify multiple organizations using a comma or "*".
+# For the "repo" and "branch" fields, you can specify multiple values using commas or use "*" to select all.

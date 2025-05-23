@@ -1,0 +1,10 @@
+userObject:
+  name: DatadogConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: https://app.datadoghq.com
+  userDefinedCredentials:
+    DataDogCred:
+      APIKey: "$DATADOG_API_KEY"
+      ApplicationKey: "$DATADOG_APPLICATION_KEY"

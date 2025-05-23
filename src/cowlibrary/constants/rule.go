@@ -202,7 +202,7 @@ func main() {
 					}
 
 					installPythonDependenciesWithRequirementsTxtFile(taskFolderName)
-					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "appconnections"))
+					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "applicationtypes"))
 
 					taskFolderNames = append(taskFolderNames, taskFolderName)
 
@@ -962,8 +962,6 @@ meta:
   name: RuleName
   purpose: Purpose of the Rule 
   description: Description about the rule
-  labels:
-    app:
 spec:
   inputs:
     BucketName: demo

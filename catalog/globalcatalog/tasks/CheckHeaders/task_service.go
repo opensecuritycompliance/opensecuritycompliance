@@ -1,8 +1,8 @@
 package main
 
 import (
-	cowStorage "appconnections/minio"
-	"appconnections/privacybisonconnector"
+	cowStorage "applicationtypes/minio"
+	"applicationtypes/privacybisonconnector"
 	"cowlibrary/vo"
 	"encoding/json"
 	"errors"

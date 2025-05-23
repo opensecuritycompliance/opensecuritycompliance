@@ -3,13 +3,6 @@ userObject:
     name: SemgrepConnector
     appURL: https://semgrep.dev
     appPort: "0"
-    appTags:
-      appType:
-      - semgrepconnector
-      environment:
-      - logical
-      execlevel:
-      - app
     userDefinedCredentials:
       AccessToken:
         AccessToken: "$SEMGREP_ACCESS_TOKEN"

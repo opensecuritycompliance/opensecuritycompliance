@@ -4,7 +4,7 @@ import uuid
 from typing import overload
 from compliancecowcards.structs import cards
 # As per the selected app, we're importing the app package
-from appconnections.semgrepconnector import semgrepconnector
+from applicationtypes.semgrepconnector import semgrepconnector
 from compliancecowcards.utils import cowdictutils
 import pandas as pd
 
@@ -76,6 +76,7 @@ class Task(cards.AbstractTask):
             if upload_error:
                 return { "Error": upload_error }
             return { "LogFile": log_file_url }
+        # secrets_severities = self.convert_severities_for_secrets(valid_severities)
         log_messages = []
         valid_projects, validation_error = self.validate_and_filter_projects(all_projects, include_criteria, exclude_criteria, deployment_slug)
 
@@ -124,6 +125,25 @@ class Task(cards.AbstractTask):
                     if error:
                         return { "Error": f"Error while uploading {file_name} file :: {error}" }
                     response["SemgrepSupplyChainVulnerabilityReport"] = supplychain_file_url
+                    
+            # secrets_data, error = self.fetch_and_format_secrets(deployment_ID, valid_projects, secrets_severities)
+            # if error:
+            #     log_file_url, upload_error = self.upload_log_file(f"Failed to list Secrets findings: {error}")
+            #     if upload_error:
+            #         return { "Error": upload_error }
+            #     response["LogFile"] = log_file_url
+            # else:
+            #     if not secrets_data or secrets_data == "No Secrets Findings data found":
+            #         log_messages.append({"Error": "No Secrets Findings Data found."})
+            #     else:
+            #         file_name = f"SemgrepSecretsVulnerabilityReport"
+            #         secrets_file_url, error = self.upload_df_as_parquet_file_to_minio(
+            #             df=pd.json_normalize(secrets_data),
+            #             file_name=file_name
+            #         )
+            #         if error:
+            #             return { "Error": f"Error while uploading {file_name} file :: {error}" }
+            #         response["SemgrepSecretsVulnerabilityReport"] = secrets_file_url
 
             code_findings_summary_df, supply_chain_findings_summary_df = self.prepare_project_summary_dataframe(project_details, valid_projects, all_projects)
             if code_findings_summary_df.empty:
@@ -158,6 +178,89 @@ class Task(cards.AbstractTask):
             response["LogFile"] = log_file_url
 
         return response
+    
+    # def fetch_and_format_secrets(self, deployment_id, repo, severities):
+    #     secrets_findings = []
+    #     cursor = None
+    #     while True:
+    #         secrets_data, error = self.semgrep_app.list_secrets(deployment_id, cursor, repo, severities=severities)
+    #         if error:
+    #             return None, error
+    #         if secrets_data:
+    #             if not secrets_data['findings']:
+    #                 return "No Secrets Findings data found", None
+    #             for finding in secrets_data['findings']:
+    #                 secrets_findings.append(self.format_secret_finding(finding, deployment_id))
+    #             cursor = secrets_data.get('cursor')
+    #             if not cursor:
+    #                 break
+    #         else:
+    #             break
+    #     return secrets_findings, None
+
+    # def format_secret_finding(self, finding, deployment_id):
+    #     validation_status_code = ""
+    #     validation_status_notes = ""
+    #     compliance_status = ""
+    #     compliance_status_reason = ""
+
+    #     if finding['validationState'] == "VALIDATION_STATE_CONFIRMED_VALID":
+    #         validation_status_code = "SECRET_FOUND"
+    #         validation_status_notes = "Secret has been tested and is confirmed valid by Semgrep."
+    #         compliance_status = "NON_COMPLIANT"
+    #         compliance_status_reason = "The secret is confirmed valid and poses a security risk as it grants access to resources."
+    #     elif finding['validationState'] == "VALIDATION_STATE_CONFIRMED_INVALID":
+    #         validation_status_code = "SECRET_FOUND_INV"
+    #         validation_status_notes = "Secret has been tested and is confirmed invalid by Semgrep."
+    #         compliance_status = "COMPLIANT"
+    #         compliance_status_reason = "The secret is confirmed invalid and does not pose an active security risk."
+    #     elif finding['validationState'] == "VALIDATION_STATE_VALIDATION_ERROR":
+    #         validation_status_code = "VALIDATION_ERR"
+    #         validation_status_notes = "Secret test was attempted and there was an error in Semgrep."
+    #         compliance_status = "NON_COMPLIANT"
+    #         compliance_status_reason = "The secret could not be validated, and therefore, it cannot be confirmed whether it is a risk or not. Manual review is recommended."
+    #     elif finding['validationState'] == "VALIDATION_STATE_NO_VALIDATOR":
+    #         validation_status_code = "NO_VALIDATOR"
+    #         validation_status_notes = "There is no validator available for this secret in Semgrep."
+    #         compliance_status = "NON_COMPLIANT"
+    #         compliance_status_reason = "Without validation, it cannot be confirmed if the secret poses a risk. Manual review is required."
+
+    #     return {
+    #         "System": "semgrep",
+    #         "Source": "compliancecow",
+    #         "ResourceID": "N/A",
+    #         "ResourceName": finding['repository']['name'],
+    #         "ResourceType": "Repository",
+    #         "ResourceLocation": "N/A",
+    #         "ResourceTags": "N/A",
+    #         "ResourceURL": finding['findingPathUrl'],
+    #         "VulnerabilityID": finding['id'],
+    #         "FilePath": finding['findingPath'],
+    #         "ServiceType": finding['type'],
+    #         "Status": finding['status'],
+    #         "Severity": finding['severity'],
+    #         "Confidence": finding['confidence'],
+    #         "Mode": finding['mode'],
+    #         "SemgrepURL": self.get_resource_url(deployment_id, finding['id']),
+    #         "SecretValidationStatus": finding['validationState'],
+    #         "ValidationStatusCode": validation_status_code,
+    #         "ValidationStatusNotes": validation_status_notes,
+    #         "ComplianceStatus": compliance_status,
+    #         "ComplianceStatusReason": compliance_status_reason,
+    #         "EvaluatedTime": self.semgrep_app.get_current_datetime(),
+    #         "UserAction": "",
+    #         "ActionStatus": "",
+    #         "ActionResponseURL": ""
+    #     }
+    
+    # def convert_severities_for_secrets(self, severities):
+    #     severity_mapping = {
+    #         "low": "SEVERITY_LOW",
+    #         "medium": "SEVERITY_MEDIUM",
+    #         "high": "SEVERITY_HIGH",
+    #         "critical": "SEVERITY_CRITICAL"
+    #     }
+    #     return [severity_mapping.get(severity.lower(), "SEVERITY_UNSPECIFIED") for severity in severities]
 
     def validate_severities(self, severities):
         valid_severities = []

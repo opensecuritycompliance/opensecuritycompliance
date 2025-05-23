@@ -1,8 +1,8 @@
 package main
 
 import (
-	awsconnector "appconnections/awsappconnector"
-	storage "appconnections/minio"
+	awsconnector "applicationtypes/awsappconnector"
+	storage "applicationtypes/minio"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/configservice"

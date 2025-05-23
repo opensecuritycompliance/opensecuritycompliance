@@ -1,20 +1,18 @@
 userObject:
   app:
-    name: Kubernetes
+    name: NoCredApp
     appURL: http://localhost.com
     appPort: "0"
     appTags:
       appType:
-      - kubernetes
+      - nocredapp
       environment:
       - logical
       execlevel:
       - app
     userDefinedCredentials:
-      Jumphost:
-        UserID: "$INSTANCE_USER_NAME"
-        LoginUrl: "$INSTANCE_LOGIN_URL"
-        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
+      NoCred:
+        Dummy: ""
 userInputs:
   DataFile: "<<MINIO_FILE_PATH>>"
   LogFile : "<<MINIO_FILE_PATH>>"

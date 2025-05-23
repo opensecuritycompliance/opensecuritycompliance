@@ -1,8 +1,8 @@
 package main
 
 import (
-	jumphost "appconnections/kubernetes"
-	cowStorage "appconnections/minio"
+	jumphost "applicationtypes/kubernetes"
+	cowStorage "applicationtypes/minio"
 	cowlibutils "cowlibrary/utils"
 	"encoding/json"
 	"errors"

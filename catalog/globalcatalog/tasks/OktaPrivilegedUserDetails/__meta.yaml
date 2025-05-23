@@ -1,0 +1,31 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 16/05/2024
+name: OktaPrivilegedUserDetails
+displayName: OktaPrivilegedUserDetails
+version: '1.0'
+description: OktaPrivilegedUserDetails
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: OktaPrivilegedUserDetails
+  description: okta privilege user details
+  dataType: FILE
+- name: LogFile
+  description: log file
+  dataType: FILE

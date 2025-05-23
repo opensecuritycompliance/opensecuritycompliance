@@ -2,12 +2,12 @@ module SecurityAssessmentV
 
 go 1.21.3
 
-replace appconnections => ../../../appconnections/go
+replace applicationtypes => ../../../applicationtypes/go
 
 replace cowlibrary => ../../../../src/cowlibrary
 
 require (
-	appconnections v0.0.0-00010101000000-000000000000
+	applicationtypes v0.0.0-00010101000000-000000000000
 	cowlibrary v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.4.0
 	gopkg.in/yaml.v3 v3.0.1

@@ -21,9 +21,9 @@ import (
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args:  cobra.NoArgs,
-		Use:   "credential",
-		Short: "Create a credential",
-		Long:  "Create credential",
+		Use:   "credential-type",
+		Short: "Create a credential-type",
+		Long:  "Create credential-type",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -74,13 +74,13 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	if cowlibutils.IsEmpty(yamlFileName) || cowlibutils.IsFileNotExist(yamlFilePath) {
-		fileNameFromCmd, err := utils.GetValueAsFileNameFromCmdPrompt("Select a valid yaml file name", additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath, []string{".yaml", ".yml"})
+		fileNameFromCmd, err := utils.GetValueAsFileNameFromCmdPrompt("Select a valid yaml file name", additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath, []string{".yaml", ".yml"})
 		if err != nil || cowlibutils.IsEmpty(fileNameFromCmd) {
-			return errors.New("cannot get the credential")
+			return errors.New("cannot get the CredentialType")
 		}
-		yamlFilePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath, fileNameFromCmd)
+		yamlFilePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath, fileNameFromCmd)
 		if cowlibutils.IsFileNotExist(yamlFilePath) {
-			return fmt.Errorf("%s is not a valid credential file path", yamlFilePath)
+			return fmt.Errorf("%s is not a valid CredentialType file path", yamlFilePath)
 		}
 	}
 
@@ -99,7 +99,7 @@ func runE(cmd *cobra.Command) error {
 
 	if cowlibutils.IsEmpty(credentialPath) {
 		if credentials.IsCredentialAlreadyPresent(credential, additionalInfo) {
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("credential already presented in the directory. Are you sure you going to re-initialize ?")
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("CredentialType already presented in the directory. Are you sure you going to re-initialize ?")
 			if !isConfirmed || err != nil {
 				return err
 			}
@@ -117,7 +117,7 @@ func runE(cmd *cobra.Command) error {
 		return errors.New(constants.ErroInvalidData)
 	}
 
-	emoji.Println("Credential creation is complete :smiling_face_with_sunglasses:! You can find the credential yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentials"))
+	emoji.Println("CredentialType creation is complete :smiling_face_with_sunglasses:! You can find the CredentialType yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "credentialtypes"))
 
 	return nil
 

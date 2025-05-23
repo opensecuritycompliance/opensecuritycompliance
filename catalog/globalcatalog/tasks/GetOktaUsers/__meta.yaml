@@ -1,0 +1,34 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 10/05/2024
+name: GetOktaUsers
+displayName: GetOktaUsers
+version: '1.0'
+description: GetOktaUsers
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+outputs:
+- name: OktaUsers
+  description: list of okta users
+  dataType: FILE
+- name: OktaAdminUsers
+  description: list of okta admin users
+  dataType: FILE
+- name: LogFile
+  description: list of errors
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

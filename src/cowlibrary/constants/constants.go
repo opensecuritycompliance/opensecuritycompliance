@@ -45,6 +45,11 @@ var (
 	CoWConfigurationServiceHostName = os.Getenv("COW_CONFIG_SERVICE_HOST_NAME")
 	CoWConfigurationServicePortNo   = os.Getenv("COW_CONFIG_SERVICE_PORT_NUMBER")
 	CoWConfigurationServiceURL      = fmt.Sprintf("%s://%s:%s", CoWConfigurationServiceProtocol, CoWConfigurationServiceHostName, CoWConfigurationServicePortNo)
+
+	COWStorageServiceProtocol = os.Getenv("COW_STORAGE_SERVICE_PROTOCOL")
+	COWStorageServiceHostName = os.Getenv("COW_STORAGE_SERVICE_HOST_NAME")
+	COWStorageServicePortNo   = os.Getenv("COW_STORAGE_SERVICE_PORT_NUMBER")
+	COWStorageServiceURL      = fmt.Sprintf("%s://%s:%s", COWStorageServiceProtocol, COWStorageServiceHostName, COWStorageServicePortNo)
 )
 
 var USERHOMEDIR string
@@ -70,9 +75,9 @@ var (
 	CowDataDashboardsFilesPath   = getEnv("POLICYCOW_DASHBOARDSPATH", "/policycow/catalog/globalcatalog/dashboards")
 	CowDataDefaultConfigFilePath = getEnv("POLICYCOW_DEFAULTCONFIGPATH", "/policycow/etc/cowconfig.yaml")
 	CowDataDeclarativesFilesPath = getEnv("POLICYCOW_DECLARATIVES_PATH", "/policycow/catalog/globalcatalog/declaratives")
-	CowDataAppConnectionPath     = getEnv("POLICYCOW_DASH_APP_CONNECTIONS_PATH", "/policycow/catalog/appconnections")
-	CowApplicationClassPath      = getEnv("POLICYCOW_APPLICATION_CLASS_PATH", "/policyCow/catalog/globalcatalog/yamlfiles/applications")
-	CowCredentialsPath           = getEnv("POLICYCOW_CREDENTIALS_PATH", "/policyCow/catalog/globalcatalog/yamlfiles/credentials")
+	CowDataAppConnectionPath     = getEnv("POLICYCOW_DASH_APP_CONNECTIONS_PATH", "/policycow/catalog/applicationtypes")
+	CowApplicationClassPath      = getEnv("POLICYCOW_APPLICATION_CLASS_PATH", "/policyCow/catalog/globalcatalog/yamlfiles/applicationtypes")
+	CowCredentialsPath           = getEnv("POLICYCOW_CREDENTIALS_PATH", "/policyCow/catalog/globalcatalog/yamlfiles/credentialtypes")
 
 	CowPublishSubDomain   = getEnv("COW_SUB_DOMAIN", "partner")
 	CowPublishDomain      = getEnv("COW_HOST_NAME", "compliancecow.live")
@@ -233,7 +238,7 @@ const (
 	CatalogTypeGlobal = "globalcatalog"
 )
 
-const AppConnections = "appconnections"
+const ApplicationTypes = "applicationtypes"
 
 const (
 	FileNameTaskOutput = "task_output.json"

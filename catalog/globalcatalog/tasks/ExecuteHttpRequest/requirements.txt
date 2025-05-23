@@ -6,3 +6,5 @@ requests
 jq
 PyJWT
 boto3==1.34.134
+python-magic==0.4.27
+cel-python

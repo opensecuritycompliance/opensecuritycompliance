@@ -2,7 +2,7 @@ from typing import overload
 from compliancecowcards.structs import cards
 from compliancecowcards.utils import cowdictutils
 # As per the selected app, we're importing the app package
-from appconnections.githubconnector import githubconnector
+from applicationtypes.githubconnector import githubconnector
 from github import Github
 import json
 import uuid

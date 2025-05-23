@@ -16,8 +16,9 @@ import (
 	"strings"
 	"time"
 
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/minio/minio-go/v7"
 )
 
@@ -149,5 +150,30 @@ func DownloadFile(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.Addi
 	fmt.Println("fileContent :", string(fileContent))
 
 	return &vo.MinioFileVO{FileContent: fileContent, FileName: filepath.Base(objectPath)}, nil
+
+}
+
+func DownloadFileFromCC(minioFileInfoVO *vo.MinioFileInfoVO, additionalInfoVO *vo.AdditionalInfo) (*vo.MinioFileVO, *vo.ErrorResponseVO) {
+
+	headerMap, err := utils.GetAuthHeader(additionalInfoVO)
+	if err != nil {
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusUnauthorized, Error: &vo.ErrorVO{
+			Message: "UNAUTHORIZED", Description: "cannot read the file"}}
+	}
+
+	client := resty.New()
+	url := fmt.Sprintf("%s/url-hash/download/%s", constants.COWStorageServiceURL, minioFileInfoVO.FileURL)
+
+	fileContent := &vo.MinioFileVO{}
+	errorData := make(map[string]interface{}, 0)
+
+	_, err = client.R().SetHeaders(headerMap).SetResult(fileContent).SetError(&errorData).Get(url)
+	if err != nil {
+		log.Printf("Getting error while downloadig the file by hash '%s' %v", minioFileInfoVO.FileURL, err)
+		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: constants.ErrorInternalServerError, Description: constants.ErrorInternalServerErrorDescription}}
+	}
+
+	return fileContent, nil
 
 }

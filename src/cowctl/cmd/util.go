@@ -114,31 +114,31 @@ func CommonCommandsList() []*cobra.Command {
 		},
 		{
 			Use:   "init rule",
-			Short: "Initialize the Rule",
+			Short: "Initialize the rule",
 		},
 		{
-			Use:   "init application",
-			Short: "Initialize the Application class",
+			Use:   "init application-type",
+			Short: "Initialize the application-type",
 		},
 		{
-			Use:   "init credential",
-			Short: "Initialize the Credential",
+			Use:   "init credential-type",
+			Short: "Initialize the credential-type",
 		},
 		{
-			Use:   "create application",
-			Short: "Create the Application from YAML",
+			Use:   "create application-type",
+			Short: "Create the application-type from YAML",
 		},
 		{
-			Use:   "create credential",
-			Short: "Create the Credential from YAML",
+			Use:   "create credential-type",
+			Short: "Create the credential-type from YAML",
 		},
 		{
 			Use:   "publish rule",
 			Short: "Publish the rule in ComplianceCow",
 		},
 		{
-			Use:   "publish application",
-			Short: "Publish the application in ComplianceCow",
+			Use:   "publish application-type",
+			Short: "Publish the application-type in ComplianceCow",
 		},
 		{
 			Use:   "exec rule",

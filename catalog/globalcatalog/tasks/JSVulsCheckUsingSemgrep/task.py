@@ -2,9 +2,9 @@ from typing import overload
 from urllib.parse import urlparse
 from compliancecowcards.structs import cards
 # As per the selected app, we're importing the app package
-from appconnections.privacybisonconnector import privacybisonconnector
+from applicationtypes.privacybisonconnector import privacybisonconnector
 from compliancecowcards.utils import cowdictutils
-from appconnections.sshconnector import sshconnector
+from applicationtypes.sshconnector import sshconnector
 import json
 import uuid
 import pandas as pd

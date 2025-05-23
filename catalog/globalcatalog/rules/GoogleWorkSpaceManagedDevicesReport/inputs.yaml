@@ -1,0 +1,13 @@
+userObject:
+  app:
+    name: GoogleWorkSpaceAppConnector
+    appURL: https://admin.google.com
+    appPort: "0"
+    userDefinedCredentials:
+      GoogleWorkSpace:
+        UserEmail: "$GOOGLE_WORKSPACE_USER_MAIL"
+        ServiceAccountKeyFile: "$GOOGLE_WORKSPACE_SERVICE_ACCOUNT_KEY_FILE"
+userInputs:
+  MobileDevicesReport: "<<MINIO_FILE_PATH>>"
+fromDate: 2024-04-08
+toDate: 2024-04-08

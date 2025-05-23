@@ -1,0 +1,9 @@
+userObject:
+  name: OktaConnector
+userInputs:
+  BucketName: demo
+  appPort: 0
+  appURL: https://<your-domain>.okta.com
+  userDefinedCredentials:
+    APIKey:
+      APIKey: "$OKTA_API_KEY"

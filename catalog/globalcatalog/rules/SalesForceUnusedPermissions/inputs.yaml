@@ -136,13 +136,13 @@ userObject:
         ValidationCURL: "$VALIDATION_CURL"
         CredentialJson: "$CREDENTIAL_JSON"
 userInputs:
-  ExtractPath: 0.records
-  PermissionsMapFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/PermissionsMapFile.toml
-  RequestConfigFile: <<MINIO_FILE_PATH>>    #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile.toml   
-  RequestConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile2.toml
-  RequestConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/RequestConfigFile3.toml
-  ResponseConfigFile2: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile2.toml
-  ResponseConfigFile3: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/ResponseConfigFile3.toml
-  TransformConfigFile: <<MINIO_FILE_PATH>>   #file can be found in rules/SalesForceUnusedPermissions/TaskInputs/TransformConfigFile.toml
-fromDate: 2024-12-11T11:09:18Z
-toDate: 2024-12-11T11:09:18Z
+  ExtractPath: .[0].records
+  SalesforcePermissionsMapFile: <<MINIO_FILE_PATH>>                        #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforcePermissionsMapFile.toml
+  SalesforceUsersListRequestConfigFile: <<MINIO_FILE_PATH>>                #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUsersListRequestConfigFile.toml
+  SalesforceUsersPermissionSetRequestConfigFile: <<MINIO_FILE_PATH>>       #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUsersPermissionSetRequestConfigFile.toml 
+  SalesforceUsersPermissionSetResponseConfigFile: <<MINIO_FILE_PATH>>      #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUsersPermissionSetResponseConfigFile.toml 
+  SalesforceUserPermissionSetTransformConfigFile: <<MINIO_FILE_PATH>>      #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUserPermissionSetTransformConfigFile.toml 
+  SalesforceOrganizationEventLogRequestConfigFile: <<MINIO_FILE_PATH>>     #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceOrganizationEventLogRequestConfigFile.toml
+  SalesforceOrganizationEventLogResponseConfigFile: <<MINIO_FILE_PATH>>    #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceOrganizationEventLogResponseConfigFile.toml
+fromDate: 2025-02-10T12:07:20Z
+toDate: 2025-02-10T12:07:20Z

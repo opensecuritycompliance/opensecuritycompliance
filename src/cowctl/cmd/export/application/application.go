@@ -34,7 +34,7 @@ func runE(cmd *cobra.Command) error {
 		fmt.Println("err:", err)
 		return err
 	}
-	apps := utils.GetApplicationNamesForBinary([]string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+	apps := utils.GetApplicationNamesForBinary([]string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath})
 	jsonData, err := json.Marshal(apps)
     if err != nil {
 		fmt.Println("err:", err)

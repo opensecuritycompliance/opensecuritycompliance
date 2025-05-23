@@ -7,7 +7,7 @@ from typing import List
 import pandas as pd
 from compliancecowcards.structs import cards
 import urllib.parse
-from appconnections.privacybisonconnector import privacybisonconnector
+from applicationtypes.privacybisonconnector import privacybisonconnector
 import uuid
 
 

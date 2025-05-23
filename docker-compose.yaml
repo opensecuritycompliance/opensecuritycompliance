@@ -56,7 +56,7 @@ services:
     volumes:
       - ./catalog/globalcatalog/dashboards:/policycow/catalog/globalcatalog/dashboards
       - ./catalog/globalcatalog/rules:/policycow/catalog/globalcatalog/rules
-      - ./catalog/appconnections:/policycow/catalog/appconnections
+      - ./catalog/applicationtypes:/policycow/catalog/applicationtypes
       - ./catalog/applicationscope:/policycow/catalog/applicationscope
       - ./catalog/globalcatalog/methods:/policycow/catalog/globalcatalog/methods
       - ./catalog/globalcatalog/rulegroups:/policycow/catalog/globalcatalog/rulegroups
@@ -67,10 +67,10 @@ services:
       - ./catalog/globalcatalog/:/policycow/catalog/globalcatalog/
       - ./etc/cowconfig.yaml:/policycow/etc/cowconfig.yaml
       - ./exported-data:/policycow/exported-data
-      - ./catalog/globalcatalog/declaratives/applications:/policycow/catalog/globalcatalog/declaratives/applications
-      - ./catalog/globalcatalog/declaratives/credentials:/policycow/catalog/globalcatalog/declaratives/credentials
-      - ./catalog/globalcatalog/yamlfiles/applications:/policycow/catalog/globalcatalog/yamlfiles/applications
-      - ./catalog/globalcatalog/yamlfiles/credentials:/policycow/catalog/globalcatalog/yamlfiles/credentials
+      - ./catalog/globalcatalog/declaratives/applicationtypes:/policycow/catalog/globalcatalog/declaratives/applicationtypes
+      - ./catalog/globalcatalog/declaratives/credentialtypes:/policycow/catalog/globalcatalog/declaratives/credentialtypes
+      - ./catalog/globalcatalog/yamlfiles/applicationtypes:/policycow/catalog/globalcatalog/yamlfiles/applicationtypes
+      - ./catalog/globalcatalog/yamlfiles/credentialtypes:/policycow/catalog/globalcatalog/yamlfiles/credentialtypes
       - ./cowexecutions:/policycow/cowexecutions
     logging:
       driver: "json-file"

@@ -1,18 +1,11 @@
 userObject:
-  apps:
-  - name: GitHubConnector
+  app:
+    name: GitHubConnector
     appURL: https://github.com/
     appPort: "0"
-    appTags:
-      appType:
-      - githubconnector
-      environment:
-      - logical
-      execlevel:
-      - app
     userDefinedCredentials:
       AccessToken:
-        AccessToken: "$GITHUB_ACCESS_TOKEN"
+        AccessToken: "$GITHUB_ACCESSTOKEN"
 userInputs:
   OrganizationName: # Separated by commas
 fromDate: 2024-11-01T07:06:00Z

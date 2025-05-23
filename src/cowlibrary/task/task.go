@@ -147,9 +147,9 @@ func (task *GoTask) InitTask(taskName, tasksPath string, taskInput *vo.TaskInput
 					if utils.IsNotEmpty(appClassName) {
 						packageName := strings.ToLower(appClassName)
 
-						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+						if utils.IsFolderExist(filepath.Join(utils.GetApplicationTypesPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
 							classAvailable = true
-							importPackage = strings.ToLower(appClassName) + ` "appconnections/` + packageName + `"`
+							importPackage = strings.ToLower(appClassName) + ` "applicationtypes/` + packageName + `"`
 							serverStructFile = strings.ReplaceAll(serverStructFile, "{{import()}}", importPackage)
 							userDefinedCredential := strings.ToLower(appClassName) + `.UserDefinedCredentials`
 							serverStructFile = strings.ReplaceAll(serverStructFile, "{{UserDefinedCredentials}}", userDefinedCredential)
@@ -220,46 +220,37 @@ func GenerateTaskYAML(taskPath string, taskName string, additionalInfo *vo.Addit
 	if err != nil {
 		fmt.Printf("Error in unmarshalling task input yaml,error: %s", err)
 	}
-	hasAppInfo := false
+
 	if len(additionalInfo.ApplicationInfo) > 0 {
 		for _, appInfo := range additionalInfo.ApplicationInfo {
 			if appInfo != nil {
-				hasAppInfo = true
-				appAbstract := &vo.AppAbstract{}
-				appAbstract.ApplicationName = appInfo.App.Meta.Name
-				appAbstract.ApplicationURL = appInfo.App.Spec.URL
-				appAbstract.ApplicationPort = strconv.Itoa(appInfo.App.Spec.Port)
-				appAbstract.AppTags = appInfo.App.AppTags
-
-				credentials := utils.GetCredentialYAMLObjectV2(appInfo.Credential)
-				appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
-				if additionalInfo.PrimaryApplicationInfo != nil {
-					taskInput.UserObject.Apps = append(taskInput.UserObject.Apps, appAbstract)
-				} else {
-					taskInput.UserObject.App = appAbstract
+				isAppFound := false
+				for _, existingApp := range taskInput.UserObject.Apps {
+					if existingApp.ApplicationName == appInfo.App.Meta.Name && reflect.DeepEqual(existingApp.AppTags, appInfo.App.AppTags) {
+						isAppFound = true
+						break
+					}
 				}
+				if !isAppFound {
+					appAbstract := &vo.AppAbstract{}
+					appAbstract.ApplicationName = appInfo.App.Meta.Name
+					appAbstract.ApplicationURL = appInfo.App.Spec.URL
+					appAbstract.ApplicationPort = strconv.Itoa(appInfo.App.Spec.Port)
+					appAbstract.AppTags = appInfo.App.AppTags
+					credentials := utils.GetCredentialYAMLObjectV2(appInfo.Credential)
+					appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
 
-				if appInfo.LinkedApplications != nil && len(appInfo.LinkedApplications) > 0 {
-					AddLinkedApplicationsInAppAbstract(appInfo.LinkedApplications, appAbstract)
+					if additionalInfo.PrimaryApplicationInfo != nil {
+						taskInput.UserObject.Apps = append(taskInput.UserObject.Apps, appAbstract)
+					} else {
+						taskInput.UserObject.App = appAbstract
+					}
+
+					if appInfo.LinkedApplications != nil && len(appInfo.LinkedApplications) > 0 {
+						AddLinkedApplicationsInAppAbstract(appInfo.LinkedApplications, appAbstract)
+					}
 				}
-
 			}
-		}
-	}
-
-	if !hasAppInfo && additionalInfo.PrimaryApplicationInfo != nil {
-		appAbstract := &vo.AppAbstract{}
-		appAbstract.ApplicationName = additionalInfo.PrimaryApplicationInfo.App.Meta.Name
-		appAbstract.ApplicationURL = additionalInfo.PrimaryApplicationInfo.App.Spec.URL
-		appAbstract.ApplicationPort = strconv.Itoa(additionalInfo.PrimaryApplicationInfo.App.Spec.Port)
-		appAbstract.AppTags = additionalInfo.PrimaryApplicationInfo.App.AppTags
-
-		credentials := utils.GetCredentialYAMLObjectV2(additionalInfo.PrimaryApplicationInfo.Credential)
-		appAbstract.UserDefinedCredentials = credentials.UserDefinedCredentials
-		taskInput.UserObject.Apps = append(taskInput.UserObject.Apps, appAbstract)
-
-		if additionalInfo.PrimaryApplicationInfo.LinkedApplications != nil && len(additionalInfo.PrimaryApplicationInfo.LinkedApplications) > 0 {
-			AddLinkedApplicationsInAppAbstract(additionalInfo.PrimaryApplicationInfo.LinkedApplications, appAbstract)
 		}
 	}
 

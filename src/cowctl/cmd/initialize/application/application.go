@@ -24,9 +24,9 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.NoArgs,
 
-		Use:   "application",
-		Short: "Initialize a application",
-		Long:  "Initialize application and reports",
+		Use:   "application-type",
+		Short: "Initialize a application-type",
+		Long:  "Initialize application-type and reports",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -62,9 +62,9 @@ func runE(cmd *cobra.Command) error {
 		if !isDefaultConfigPath {
 			return errors.New("Set the application name using the 'name' flag")
 		}
-		applicationNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("Application Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)
+		applicationNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("ApplicationType Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)
 		if err != nil {
-			return fmt.Errorf("invalid application name. dashboard name:%s,err:%v", applicationNameFromCmd, err)
+			return fmt.Errorf("invalid ApplicationType name. dashboard name:%s,err:%v", applicationNameFromCmd, err)
 		}
 
 		applicationName = applicationNameFromCmd
@@ -80,13 +80,13 @@ func runE(cmd *cobra.Command) error {
 		return errors.New("no credentials provided. Provide credentials by set the flag --credential=name:version")
 	}
 
-	appFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, cowlibutils.GetYAMLFileNameWithoutVersion(&vo.CowNamePointersVO{Name: applicationName, Version: applicationVersion}))
+	appFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, cowlibutils.GetYAMLFileNameWithoutVersion(&vo.CowNamePointersVO{Name: applicationName, Version: applicationVersion}))
 
 	if cowlibutils.IsFileExist(appFilePath) && !additionalInfo.CanOverride {
 		if !isDefaultConfigPath && !additionalInfo.CanOverride {
-			return errors.New("The application is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
+			return errors.New("The ApplicationType is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
 		}
-		isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Application already presented in the system. Are you going to re-initialize again ?")
+		isConfirmed, err := utils.GetConfirmationFromCmdPrompt("ApplicationType already presented in the system. Are you going to re-initialize again ?")
 
 		if err != nil {
 			return err
@@ -137,7 +137,7 @@ func runE(cmd *cobra.Command) error {
 	userInput := "no"
 
 	if userInput == "yes" {
-		selectedAppItems, err := terminalutils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+		selectedAppItems, err := terminalutils.GetApplicationNamesFromCmdPromptInCatalogs("Select the ApplicationType : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath})
 		if err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func runE(cmd *cobra.Command) error {
 
 	if len(errorDetails) > 0 {
 		if strings.Contains(errorDetails[0].Issue, constants.ErrorCredentialsAlreadyAvailable) {
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("Application already presented in the system. Are you going to re-initialize again ?")
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("ApplicationType already presented in the system. Are you going to re-initialize again ?")
 
 			if err != nil {
 				return err
@@ -170,7 +170,7 @@ func runE(cmd *cobra.Command) error {
 		}
 	}
 
-	emoji.Println("Application template has been created :smiling_face_with_sunglasses:! feel free to modify the template. you can see the application yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, cowlibutils.GetYAMLFileNameWithoutVersion(namePointer)))
+	emoji.Println("ApplicationType template has been created :smiling_face_with_sunglasses:! feel free to modify the template. you can see the ApplicationType yaml at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, cowlibutils.GetYAMLFileNameWithoutVersion(namePointer)))
 	additionalInfo.GlobalCatalog = false
 	return err
 }

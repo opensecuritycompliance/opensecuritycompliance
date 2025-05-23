@@ -1,0 +1,39 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GenerateGoogleWorkSpaceTwoSVReport
+  purpose: Generate Google Work Space Two Step Verfifcation Report
+  description: Generate Google Work Space Two Step Verfifcation Report
+  labels:
+    appType:
+    - googleworkspaceappconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - googleworkspaceappconnector
+spec:
+  inputs:
+    GoogleWorkSpaceUsersListFile:  <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: GoogleWorkSpaceUsersListFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: GenerateGoogleWorkSpaceTwoSVReport
+    alias: t1
+    type: task
+    purpose: Generate Google Work Space Two Step Verfifcation Report
+    description: Generate Google Work Space Two Step Verfifcation Report
+  ioMap:
+  - t1.Input.GoogleWorkSpaceUsersListFile:=*.Input.GoogleWorkSpaceUsersListFile
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.EnforcePhishingResistantMFA:=t1.Output.EnforcePhishingResistantMFA'

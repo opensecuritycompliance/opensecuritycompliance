@@ -21,9 +21,9 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.NoArgs,
 
-		Use:   "application",
-		Short: "publish application",
-		Long:  "publish application",
+		Use:   "application-type",
+		Short: "publish application-type",
+		Long:  "publish application-type",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -103,18 +103,18 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 			return errors.New("Set the application name using the 'name' flag")
 		}
 
-		name, err := utils.GetValueAsFolderNameFromCmdPrompt("Select the Application :", true, appDeclarativesPath, utils.ValidateString)
+		name, err := utils.GetValueAsFolderNameFromCmdPrompt("Select the ApplicationType :", true, appDeclarativesPath, utils.ValidateString)
 		if err != nil {
-			return fmt.Errorf("invalid app name. app name:%s,error:%v", namePointer.Name, err)
+			return fmt.Errorf("invalid ApplicationType name. ApplicationType name:%s,error:%v", namePointer.Name, err)
 		}
 		namePointer.Name = name
 		if cowlibutils.IsEmpty(namePointer.Name) {
-			return fmt.Errorf("application name cannot be empty")
+			return fmt.Errorf("ApplicationType name cannot be empty")
 		}
 
-		appDeclarativesPath = filepath.Join(appDeclarativesPath, strings.ToLower(namePointer.Name))
+		appDeclarativesPath = filepath.Join(appDeclarativesPath, namePointer.Name)
 		if cowlibutils.IsFolderNotExist(appDeclarativesPath) {
-			return fmt.Errorf("application not available")
+			return fmt.Errorf("ApplicationType not available")
 		}
 	}
 	if !binaryEnabled {
@@ -125,7 +125,7 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 				linkedAppNames = append(linkedAppNames, linkedApp.Name)
 			}
 			d := color.New(color.FgGreen, color.Bold)
-			d.Printf("\nLinked application types found for '%s'. We are publishing the following linked application(s): %v\n", namePointer.Name, strings.Join(linkedAppNames, ","))
+			d.Printf("\nLinked ApplicationType found for '%s'. We are publishing the following linked ApplicationType(s): %v\n", namePointer.Name, strings.Join(linkedAppNames, ","))
 			for _, linkedApp := range linkedApplications {
 				newNamePointer := &vo.CowNamePointersVO{
 					Name:    linkedApp.Name,
@@ -142,11 +142,11 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 		}
 	}
 
-	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	packageName := strings.ToLower(namePointer.Name)
-	if cowlibutils.IsFolderExist(filepath.Join(appPath, "go", packageName)) && cowlibutils.IsFolderExist(filepath.Join(appPath, "python", "appconnections", packageName)) {
+	if cowlibutils.IsFolderExist(filepath.Join(appPath, "go", packageName)) && cowlibutils.IsFolderExist(filepath.Join(appPath, "python", "applicationtypes", packageName)) {
 		if cowlibutils.IsEmpty(additionalInfo.Language) {
-			languageFromCmd, err := utils.GetConfirmationFromCmdPromptWithOptions(fmt.Sprintf("Two implementations have been found for the '%s' application class. Which language do you intend to publish it in? Python/Go (default: Go):", namePointer.Name), "go", []string{"go", "python"})
+			languageFromCmd, err := utils.GetConfirmationFromCmdPromptWithOptions(fmt.Sprintf("Two implementations have been found for the '%s' ApplicationType. Which language do you intend to publish it in? Python/Go (default: Go):", namePointer.Name), "go", []string{"go", "python"})
 			if err != nil {
 				return err
 			}
@@ -154,14 +154,14 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 		}
 	}
 	d := color.New(color.FgMagenta, color.Italic)
-	d.Printf("We are publishing the %v application: %v\n", appType, namePointer.Name)
+	d.Printf("We are publishing the %v ApplicationType: %v\n", appType, namePointer.Name)
 	errorDetails := applications.PublishApplication(namePointer, additionalInfo)
 	if len(errorDetails) > 0 {
 		if strings.Contains(errorDetails[0].Issue, constants.ErrorAppAlreadyPresent) {
 			if !defaultConfigPath || binaryEnabled && !additionalInfo.CanOverride {
-				return errors.New("The application type is already present in the system. To override with a new implementation, set the 'can-override' flag as true")
+				return errors.New("The ApplicationType is already present in the system. To override with a new implementation, set the 'can-override' flag as true")
 			}
-			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The application type is already present in the system, and it will be overridden with a new implementation. Do you want to go ahead?")
+			isConfirmed, err := utils.GetConfirmationFromCmdPrompt("The ApplicationType is already present in the system, and it will be overridden with a new implementation. Do you want to go ahead?")
 			if err != nil {
 				return err
 			}
@@ -177,7 +177,7 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 		}
 	}
 	d = color.New(color.FgCyan, color.Bold)
-	d.Println("Hurray!.. Application Configuration has been published on behalf of you")
+	d.Println("Hurray!.. ApplicationType Configuration has been published on behalf of you")
 
 	return nil
 }

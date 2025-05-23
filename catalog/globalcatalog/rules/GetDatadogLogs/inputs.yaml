@@ -1,0 +1,13 @@
+userObject:
+  app:
+    name: DatadogConnector
+    appURL: https://app.datadoghq.com
+    appPort: "0"
+    userDefinedCredentials:
+      DataDogCred:
+        APIKey: "$DATADOG_API_KEY"
+        ApplicationKey: "$DATADOG_APPLICATION_KEY"
+userInputs:
+fromDate: 2024-06-11
+toDate: 2024-06-11
+

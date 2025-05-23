@@ -1,0 +1,516 @@
+package utils
+
+import (
+	"cowctl/utils/terminalutils"
+	"cowlibrary/constants"
+	cowlibutils "cowlibrary/utils"
+	"cowlibrary/vo"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/briandowns/spinner"
+	"github.com/manifoldco/promptui"
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+)
+
+const MaxLen = 120
+
+// func GetValueAsStrFromCmdPrompt(labelName string, isMandatory bool, validate func(input string) error) (string, error) {
+
+// 	prompt := promptui.Prompt{
+// 		Label:    labelName,
+// 		Validate: validate,
+// 	}
+
+// 	valueFromCmd, err := prompt.Run()
+// 	if IsCmdTerminationError(err) {
+// 		return "", errors.New("user exit")
+// 	}
+// 	if err != nil {
+// 		fmt.Printf("Enter a valid data %v\n", err)
+// 		if isMandatory {
+// 			return GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+// 		}
+// 	}
+
+// 	if MaxLen < len(valueFromCmd) {
+// 		fmt.Printf("value cannot be greater than %d\n", MaxLen)
+// 		if isMandatory {
+// 			return GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+// 		}
+// 	}
+
+// 	return valueFromCmd, nil
+// }
+
+func GetValueAsStrFromCmdPrompt(labelName string, isMandatory bool, validate func(input string) error) (string, error) {
+
+	terminalutils.GetValueAsStrFromCmdPrompt(labelName)
+
+	prompt := promptui.Prompt{
+		Label:    labelName,
+		Validate: validate,
+	}
+
+	valueFromCmd, err := prompt.Run()
+	if IsCmdTerminationError(err) {
+		return "", errors.New("user exit")
+	}
+	if err != nil {
+		fmt.Printf("Enter a valid data %v\n", err)
+		if isMandatory {
+			return GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+		}
+	}
+
+	if MaxLen < len(valueFromCmd) {
+		fmt.Printf("value cannot be greater than %d\n", MaxLen)
+		if isMandatory {
+			return GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+		}
+	}
+
+	return valueFromCmd, nil
+}
+
+func GetValueAsIntFromCmdPrompt(labelName string, isMandatory bool, min, max int, validate func(input string) error) (int, error) {
+
+	valueFromCmd, err := GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+	if IsCmdTerminationError(err) {
+		return -1, nil
+	}
+	intValue := 0
+	if err == nil {
+		i, err := strconv.Atoi(valueFromCmd)
+		if err != nil {
+			return intValue, err
+		}
+
+		intValue = i
+
+		if intValue < min {
+			fmt.Printf("Cannot be lesser than. %v\n", min)
+			return GetValueAsIntFromCmdPrompt(labelName, isMandatory, min, max, validate)
+		}
+
+		if intValue > max {
+			fmt.Printf("Counts restricted to. %v\n", max)
+			return GetValueAsIntFromCmdPrompt(labelName, isMandatory, min, max, validate)
+		}
+
+	}
+
+	return intValue, err
+
+}
+
+func GetValueAsFilePathFromCmdPrompt(labelName string, isMandatory bool, validate func(input string) error) (string, error) {
+
+	prompt := promptui.Prompt{
+		Label:    labelName,
+		Validate: validate,
+	}
+
+	valueFromCmd, err := prompt.Run()
+	if IsCmdTerminationError(err) {
+		return "", nil
+	}
+	if err != nil {
+		fmt.Println("not a valid file path")
+		if isMandatory {
+			return GetValueAsStrFromCmdPrompt(labelName, isMandatory, validate)
+		}
+	}
+	return valueFromCmd, nil
+}
+func GetValueAsFileNameFromCmdPrompt(labelName string, isMandatory bool, pathPrefix string, validate func(input string) error) (string, error) {
+
+	prompt := promptui.Prompt{
+		Label:    labelName,
+		Validate: validate,
+	}
+
+	valueFromCmd, err := prompt.Run()
+	if IsCmdTerminationError(err) {
+		return "", nil
+	}
+
+	if cowlibutils.IsFileNotExist(filepath.Join(pathPrefix, valueFromCmd)) {
+		fmt.Println(fmt.Sprintf(filepath.Join(pathPrefix, valueFromCmd) + " is not a valid  file path"))
+		if isMandatory {
+			return GetValueAsFileNameFromCmdPrompt(labelName, isMandatory, pathPrefix, validate)
+		}
+	}
+	return valueFromCmd, nil
+}
+func GetValueAsFolderNameFromCmdPrompt(labelName string, isMandatory bool, pathPrefix string, validate func(input string) error) (string, error) {
+
+	prompt := promptui.Prompt{
+		Label:    labelName,
+		Validate: validate,
+	}
+
+	valueFromCmd, err := prompt.Run()
+	if IsCmdTerminationError(err) {
+		return "", nil
+	}
+
+	if cowlibutils.IsFolderNotExist(filepath.Join(pathPrefix, valueFromCmd)) {
+		fmt.Println(fmt.Sprintf(filepath.Join(pathPrefix, valueFromCmd) + " is not a valid path"))
+		if isMandatory {
+			return GetValueAsFileNameFromCmdPrompt(labelName, isMandatory, pathPrefix, validate)
+		}
+	}
+	return valueFromCmd, nil
+}
+
+func GetConfirmationFromCmdPrompt(labelName string) (bool, error) {
+
+	prompt := promptui.Select{
+		Label: labelName,
+		Items: []string{"Yes", "No"},
+	}
+
+	_, result, err := prompt.Run()
+
+	if IsCmdTerminationError(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		fmt.Printf("Select a valid value")
+		return GetConfirmationFromCmdPrompt(labelName)
+	}
+	if result == "Yes" {
+		return true, nil
+	}
+	return false, nil
+}
+
+type CowctlOption interface {
+	bool | string
+}
+
+func GetConfirmationFromCmdPromptWithOptions(labelName, defaultOption string, options []string) (string, error) {
+
+	prompt := promptui.Select{
+		Label: labelName,
+		Items: options,
+	}
+	_, result, err := prompt.Run()
+	if IsCmdTerminationError(err) {
+		return defaultOption, nil
+	}
+	if err != nil {
+		fmt.Printf("Select a valid value")
+		return GetConfirmationFromCmdPromptWithOptions(labelName, defaultOption, options)
+	}
+	return result, nil
+}
+
+var ValidateString = func(input string) error {
+	matched, err := regexp.MatchString(`^[A-Za-z0-9][A-Za-z0-9\s&,.\-_>!?]*$`, input)
+	if err != nil || !matched {
+		return errors.New("invalid  name")
+	}
+	return nil
+}
+
+var ValidateVersion = func(input string) error {
+	matched, err := regexp.MatchString(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`, input)
+	if err != nil || (!matched && input != "latest") {
+		return errors.New("invalid  version")
+	}
+	return nil
+}
+
+var ValidateFilePath = func(input string) error {
+	if cowlibutils.IsEmpty(input) {
+		return errors.New("invalid path")
+	}
+	_, err := os.Stat(input)
+	if os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+var ValidateInt = func(input string) error {
+	if cowlibutils.IsEmpty(input) {
+		return errors.New("value cannot be empty")
+	}
+
+	_, err := strconv.Atoi(input)
+	if err != nil {
+		return errors.New("enter a valid number")
+	}
+	return nil
+}
+
+func IsCmdTerminationError(err error) bool {
+	return err != nil && (err.Error() == "^C" || err.Error() == "^D")
+}
+
+type Exit int
+
+func HandleTermination(err error) {
+	defer HandleExit()
+	if err != nil {
+		if err.Error() == "^C" || err.Error() == "^D" {
+			panic(Exit(0))
+		}
+	}
+}
+
+func HandleExit() {
+	switch v := recover().(type) {
+	case nil:
+		return
+	case Exit:
+		HandleCmdFunkyness()
+		os.Exit(int(v))
+	default:
+		fmt.Println(v)
+		HandleCmdFunkyness()
+	}
+}
+
+func HandleCmdFunkyness() {
+	cmd := exec.Command("stty", "sane")
+	cmd.Stdin = os.Stdin
+	cmd.Output()
+}
+
+func GetTaskLanguage(taskPath string) constants.SupportedLanguage {
+
+	taskMainFilePath := taskPath
+
+	if !strings.HasSuffix(taskMainFilePath, "/") {
+		taskMainFilePath += "/"
+	}
+
+	switch {
+	case cowlibutils.IsFileExist(taskMainFilePath + constants.AutoGeneratedFilePrefix + "main.py"):
+		return constants.SupportedLanguagePython
+	default:
+		return constants.SupportedLanguageGo
+	}
+
+}
+
+func GetDefaultConfigInfo() *vo.PolicyCowConfig {
+	policyCowConfig := &vo.PolicyCowConfig{
+		Version: "1.0",
+		PathConfiguration: &vo.CowPathConfiguration{
+			TasksPath:            constants.CowDataTaskPath,
+			RulesPath:            constants.CowDataRulesPath,
+			ExecutionPath:        constants.CowDataExecutionsPath,
+			RuleGroupPath:        constants.CowDataRuleGroupPath,
+			SynthesizersPath:     constants.CowDataSynthesizerPath,
+			DownloadsPath:        constants.CowDataDownloadsPath,
+			YamlFilesPath:        constants.CowDataYamlFilesPath,
+			ApplicationScopePath: constants.CowDataApplicationScopePath,
+			DeclarativePath:      constants.CowDataDeclarativesFilesPath,
+			ApplicationTypesPath:    constants.CowDataAppConnectionPath,
+		},
+	}
+
+	configFilePath := constants.CowDataDefaultConfigFilePath
+
+	if configFromENV, isPresent := os.LookupEnv("COWCTL_CONFIG"); isPresent {
+		configFilePath = configFromENV
+	}
+
+	isJSONConfig := strings.HasSuffix(configFilePath, ".json")
+
+	if !cowlibutils.IsFileExist(configFilePath) {
+		byts, err := yaml.Marshal(policyCowConfig)
+		if isJSONConfig {
+			byts, err = json.Marshal(policyCowConfig)
+		}
+
+		if err != nil {
+			// TODO: As of now we're ignoring
+		}
+
+		configDirectory := filepath.Dir(configFilePath)
+
+		if _, err := os.Stat(configDirectory); os.IsNotExist(err) {
+			err := os.Mkdir(configDirectory, os.ModePerm)
+			if err != nil {
+				fmt.Printf("cannot create the config file %s:", err)
+				panic(err)
+			}
+		}
+
+		if err == nil {
+			err := os.WriteFile(configFilePath, byts, os.ModePerm)
+			if err != nil {
+				fmt.Println("err while creating config :::")
+			}
+		}
+		return policyCowConfig
+	}
+
+	if cowlibutils.IsFileExist(configFilePath) {
+		byts, err := os.ReadFile(configFilePath)
+		if err == nil {
+			yaml.Unmarshal(byts, policyCowConfig)
+		}
+	}
+
+	return policyCowConfig
+}
+
+func GetConfigInfoWithPath(path string) (*vo.PolicyCowConfig, error) {
+	if cowlibutils.IsEmpty(path) || path == constants.CowDataDefaultConfigFilePath {
+		return GetDefaultConfigInfo(), nil
+	}
+
+	return cowlibutils.GetConfigFromFile(path)
+}
+
+func GetCommonFlagsAndBuildConfig(cmd *cobra.Command) (*vo.PolicyCowConfig, error) {
+	configPath, rulesPath, taskPath, executionPath, ruleGroupPath, synthesizerPath, declarativesPath, appConnectionPath :=
+		constants.CowDataDefaultConfigFilePath, constants.CowDataRulesPath, constants.CowDataTaskPath, constants.CowDataExecutionsPath, constants.CowDataRuleGroupPath,
+		constants.CowDataSynthesizerPath, constants.CowDataDeclarativesFilesPath, constants.CowDataAppConnectionPath
+	if cmd.Flags().HasFlags() {
+		if flagName := cmd.Flags().Lookup("config-path"); flagName != nil && flagName.Changed {
+			configPath = flagName.Value.String()
+		}
+	}
+	downloadsPath := constants.CowDataDownloadsPath
+	policyCowConfig, err := GetConfigInfoWithPath(configPath)
+
+	if err != nil {
+		return nil, err
+	}
+	if cmd.Flags().HasFlags() {
+
+		if rulesPath := GetFlagValueAndResetFlag(cmd, "rules-path", ""); cowlibutils.IsNotEmpty(rulesPath) {
+			policyCowConfig.PathConfiguration.RulesPath = rulesPath
+		}
+		if tasksPath := GetFlagValueAndResetFlag(cmd, "tasks-path", ""); cowlibutils.IsNotEmpty(tasksPath) {
+			policyCowConfig.PathConfiguration.TasksPath = tasksPath
+		}
+		if execPath := GetFlagValueAndResetFlag(cmd, "exec-path", ""); cowlibutils.IsNotEmpty(execPath) {
+			policyCowConfig.PathConfiguration.ExecutionPath = execPath
+		}
+		if ruleGroupPath := GetFlagValueAndResetFlag(cmd, "rule-group-path", ""); cowlibutils.IsNotEmpty(ruleGroupPath) {
+			policyCowConfig.PathConfiguration.RuleGroupPath = ruleGroupPath
+		}
+		if synthesizersPath := GetFlagValueAndResetFlag(cmd, "synthesizer-path", ""); cowlibutils.IsNotEmpty(synthesizersPath) {
+			policyCowConfig.PathConfiguration.SynthesizersPath = synthesizersPath
+		}
+		if downloadsPath := GetFlagValueAndResetFlag(cmd, "downloads-path", ""); cowlibutils.IsNotEmpty(downloadsPath) {
+			policyCowConfig.PathConfiguration.DownloadsPath = downloadsPath
+		}
+
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.RulesPath) {
+		policyCowConfig.PathConfiguration.RulesPath = rulesPath
+	}
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.TasksPath) {
+		policyCowConfig.PathConfiguration.TasksPath = taskPath
+	}
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ExecutionPath) {
+		policyCowConfig.PathConfiguration.ExecutionPath = executionPath
+	}
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.RuleGroupPath) {
+		policyCowConfig.PathConfiguration.RuleGroupPath = ruleGroupPath
+	}
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.SynthesizersPath) {
+		policyCowConfig.PathConfiguration.SynthesizersPath = synthesizerPath
+	}
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.DownloadsPath) {
+		policyCowConfig.PathConfiguration.DownloadsPath = downloadsPath
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.DeclarativePath) {
+		policyCowConfig.PathConfiguration.DeclarativePath = declarativesPath
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.PathConfiguration.ApplicationTypesPath) {
+		policyCowConfig.PathConfiguration.ApplicationTypesPath = appConnectionPath
+	}
+
+	if policyCowConfig.UserData == nil {
+		policyCowConfig.UserData = &vo.UserData{}
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.UserData.Credentials.Compliancecow.ClientID) {
+
+		policyCowConfig.UserData.Credentials.Compliancecow.ClientID = constants.CowClientID
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.UserData.Credentials.Compliancecow.ClientSecret) {
+		policyCowConfig.UserData.Credentials.Compliancecow.ClientSecret = constants.CowClientSecret
+	}
+
+	if cowlibutils.IsEmpty(policyCowConfig.UserData.Credentials.Compliancecow.SubDomain) {
+		policyCowConfig.UserData.Credentials.Compliancecow.SubDomain = constants.CowPublishSubDomain
+	}
+	return policyCowConfig, nil
+
+}
+
+func GetAdditionalInfoFromCmd(cmd *cobra.Command) (*vo.AdditionalInfo, error) {
+	policyCowConfig, err := GetCommonFlagsAndBuildConfig(cmd)
+	if err != nil {
+		return nil, err
+	}
+	additionalInfo := &vo.AdditionalInfo{PolicyCowConfig: policyCowConfig}
+	additionalInfo.GlobalCatalog = cowlibutils.IsNotEmpty(GetFlagValueAndResetFlag(cmd, "catalog", ""))
+	return additionalInfo, nil
+}
+
+func IsValidExportFileType(additionalType string) bool {
+	return cowlibutils.IsNotEmpty(additionalType) && (additionalType == "tar" || additionalType == "zip")
+}
+
+func DrawErrorTable(errorDetailsVOs []*vo.ErrorDetailVO) {
+	table := tablewriter.NewWriter(os.Stdout)
+
+	table.SetHeader([]string{"Issue", "Location"})
+
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgCyanColor})
+
+	for _, errorDetailsVO := range errorDetailsVOs {
+
+		row := []string{errorDetailsVO.Issue, errorDetailsVO.Location}
+		table.Rich(row, []tablewriter.Colors{tablewriter.Colors{}, tablewriter.Colors{tablewriter.Bold, tablewriter.FgRedColor}})
+	}
+
+	table.SetCaption(true, "** This is a basic validation. Please check the source code to fix the errors.")
+	table.Render()
+
+}
+
+func GetFlagValueAndResetFlag(cmd *cobra.Command, flagName, defaultValue string) string {
+	if cmd.Flags().HasFlags() {
+		if currentFlag := cmd.Flags().Lookup(flagName); currentFlag != nil && currentFlag.Changed {
+			if flagValue := currentFlag.Value.String(); cowlibutils.IsNotEmpty(flagValue) {
+				currentFlag.Value.Set("")
+				return flagValue
+			}
+		}
+	}
+	return defaultValue
+}
+
+func StopSpinner(s *spinner.Spinner) {
+	if s.Active() {
+		s.Stop()
+	}
+}

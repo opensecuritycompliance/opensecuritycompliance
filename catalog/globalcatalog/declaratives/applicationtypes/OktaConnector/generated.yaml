@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: OktaConnector
+  displayName: OktaConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - oktaconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - oktaconnector
+spec:
+  url: https://<your-domain>.okta.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateOktaConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: APIKey
+    version: 1.1.2
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: APIKey
+    version: 1.1.2
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

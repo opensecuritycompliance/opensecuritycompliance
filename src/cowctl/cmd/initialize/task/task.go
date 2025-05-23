@@ -134,18 +134,18 @@ func runE(cmd *cobra.Command) error {
 			return err
 		}
 
-		addApplication, err := utils.GetConfirmationFromCmdPrompt("Would you like to add Application ? ")
+		addApplication, err := utils.GetConfirmationFromCmdPrompt("Would you like to add ApplicationType ? ")
 		if err != nil {
 			return err
 		}
 
 		if addApplication {
-			selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the application class : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath})
+			selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the ApplicationType : ", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath})
 			if err != nil {
 				return err
 			}
 
-			applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			applicationInfo, err := utils.GetApplicationWithCredential(selectedAppItem.Path, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 			if err != nil {
 				return err
 			}
@@ -188,7 +188,7 @@ func runE(cmd *cobra.Command) error {
 		applicationpath := utils.GetFlagValueAndResetFlag(cmd, "applicationpath", "")
 
 		if cowlibutils.IsNotEmpty(applicationpath) {
-			applicationInfo, err := utils.GetApplicationWithCredential(applicationpath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+			applicationInfo, err := utils.GetApplicationWithCredential(applicationpath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 			if err != nil {
 				return err
 			}
@@ -207,14 +207,12 @@ func runE(cmd *cobra.Command) error {
 		taskWithSpecicficLanguage := task.GetTask(*supportedLanguage)
 		taskWithSpecicficLanguage.InitTask(taskName, tasksPath, &vo.TaskInputVO{}, additionalInfo)
 
-		if additionalInfo.ApplicationInfo != nil {
-			_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
-			if err != nil {
-				return err
-			}
+		_, err = task.GenerateTaskYAML(taskPath, taskName, additionalInfo)
+		if err != nil {
+			return err
 		}
-	}
 
+	}
 	return nil
 
 }

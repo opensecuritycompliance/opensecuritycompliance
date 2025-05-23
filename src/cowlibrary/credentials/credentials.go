@@ -34,8 +34,8 @@ func (credentialsHandler *CredentialsHandler) Init(namePointer *vo.CowNamePointe
 
 	errorDetails = make([]*vo.ErrorDetailVO, 0)
 
-	if utils.IsFolderNotExist(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath) {
-		if err := os.MkdirAll(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath, os.ModePerm); err != nil {
+	if utils.IsFolderNotExist(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath) {
+		if err := os.MkdirAll(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath, os.ModePerm); err != nil {
 			errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: constants.ErrorFolderPathMissing})
 			return errorDetails
 		}
@@ -49,7 +49,7 @@ func (credentialsHandler *CredentialsHandler) Init(namePointer *vo.CowNamePointe
 		"{{CREDENTIAL_VERSION}}", namePointer.Version,
 	).Replace(constants.CredentialYAML)
 
-	credFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath, namePointer.Name+"_v_"+strings.ReplaceAll(namePointer.Version, ".", "_")+".yaml")
+	credFilePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath, namePointer.Name+"_v_"+strings.ReplaceAll(namePointer.Version, ".", "_")+".yaml")
 
 	if utils.IsFileExist(credFilePath) && !additionalInfo.CanOverride {
 		errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: constants.ErrorCredentialsAlreadyAvailable})

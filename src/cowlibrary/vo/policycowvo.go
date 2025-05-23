@@ -44,20 +44,20 @@ type PolicyCowConfig struct {
 }
 
 type CowPathConfiguration struct {
-	TasksPath            string `json:"tasksPath" yaml:"tasksPath"`
-	RulesPath            string `json:"rulesPath" yaml:"rulesPath"`
-	ExecutionPath        string `json:"executionPath" yaml:"executionPath"`
-	RuleGroupPath        string `json:"ruleGroupPath" yaml:"ruleGroupPath"`
-	SynthesizersPath     string `json:"synthesizersPath" yaml:"synthesizersPath"`
-	DownloadsPath        string `json:"downloadsPath" yaml:"downloadsPath"`
-	YamlFilesPath        string `json:"yamlFilesPath" yaml:"yamlFilesPath"`
-	ApplicationScopePath string `json:"applicationScopePath" yaml:"applicationScopePath"`
-	DashboardsPath       string `json:"dashboardsPath" yaml:"dashboardsPath"`
-	LocalCatalogPath     string `json:"localCatalogPath" yaml:"localCatalogPath"`
-	DeclarativePath      string `json:"declarativePath" yaml:"declarativePath"`
-	AppConnectionPath    string `json:"appConnectionPath" yaml:"appConnectionPath"`
-	ApplicationClassPath string `json:"applicationClassPath" yaml:"applicationClassPath"`
-	CredentialsPath      string `json:"credentialsPath" yaml:"credentialsPath"`
+	TasksPath                 string `json:"tasksPath" yaml:"tasksPath"`
+	RulesPath                 string `json:"rulesPath" yaml:"rulesPath"`
+	ExecutionPath             string `json:"executionPath" yaml:"executionPath"`
+	RuleGroupPath             string `json:"ruleGroupPath" yaml:"ruleGroupPath"`
+	SynthesizersPath          string `json:"synthesizersPath" yaml:"synthesizersPath"`
+	DownloadsPath             string `json:"downloadsPath" yaml:"downloadsPath"`
+	YamlFilesPath             string `json:"yamlFilesPath" yaml:"yamlFilesPath"`
+	ApplicationScopePath      string `json:"applicationScopePath" yaml:"applicationScopePath"`
+	DashboardsPath            string `json:"dashboardsPath" yaml:"dashboardsPath"`
+	LocalCatalogPath          string `json:"localCatalogPath" yaml:"localCatalogPath"`
+	DeclarativePath           string `json:"declarativePath" yaml:"declarativePath"`
+	ApplicationTypesPath      string `json:"applicationTypesPath" yaml:"applicationTypesPath"`
+	ApplicationTypeConfigPath string `json:"applicationTypeConfigPath" yaml:"applicationTypeConfigPath"`
+	CredentialTypeConfigPath  string `json:"credentialTypeConfigPath" yaml:"credentialTypeConfigPath"`
 }
 
 type AdditionalInfo struct {
@@ -108,6 +108,7 @@ type AdditionalInfo struct {
 	UserDomain                 string                   `json:"userDomain,omitempty"`
 	RuleProgressWorker         *RuleProgressWorkerVO
 	TerminateFlow              bool
+	TaskVO                     *TaskVO
 	ClientCredentials
 }
 

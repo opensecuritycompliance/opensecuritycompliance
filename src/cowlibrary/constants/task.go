@@ -408,7 +408,7 @@ const TaskService = `
 package main
 
 import (
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 	"cowlibrary/vo"
 	"encoding/json"
 	"fmt"
@@ -919,9 +919,9 @@ inputs:
   required: true # boolean: true | false
 outputs:
 - name: ComplianceStatus_
-  description: compliance status of the task
+  description: Compliance status of the task
   dataType: STRING
 - name: CompliancePCT_
-  description: compliance percentage of the task
+  description: Compliance percentage of the task
   dataType: INT
 `

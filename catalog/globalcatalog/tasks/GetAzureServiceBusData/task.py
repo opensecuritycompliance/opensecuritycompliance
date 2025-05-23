@@ -1,7 +1,7 @@
 from typing import Tuple
 from compliancecowcards.structs import cards
 # As per the selected app, we're importing the app package
-from appconnections.azureappconnector import azureappconnector
+from applicationtypes.azureappconnector import azureappconnector
 import pandas as pd
 
 

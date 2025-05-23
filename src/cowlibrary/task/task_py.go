@@ -99,9 +99,9 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 					appClassName := appInfo.App.Meta.Name
 					if utils.IsNotEmpty(appClassName) {
 						packageName := strings.ToLower(appClassName)
-						if utils.IsFolderExist(filepath.Join(utils.GetAppConnectionsPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
+						if utils.IsFolderExist(filepath.Join(utils.GetApplicationTypesPathWithLanguage(additionalInfo, constants.SupportedLanguageGo.String()), packageName)) {
 							classAvailable = true
-							importPackage := "#As per the selected app, we're importing the app package \nfrom appconnections." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
+							importPackage := "#As per the selected app, we're importing the app package \nfrom applicationtypes." + strings.ToLower(appClassName) + " import " + strings.ToLower(appClassName)
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_with_imports}}", importPackage)
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_STRUCT_NAME}}", strcase.ToCamel(appClassName))
 							taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{APPLICATION_PACKAGE_NAME}}", strings.ToLower(appClassName))
@@ -132,6 +132,8 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 
 	taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_final_code}}", "")
 
+	codeLevelComments, taskLeveComments := ``, ``
+
 	if taskInputVO != nil {
 		if taskInputVO.IsSQLRule {
 			taskServiceFile = strings.ReplaceAll(constants.SQLRule_Task, "{{replace_method_name}}", taskDetails.SrcTaskName)
@@ -147,9 +149,14 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 				}
 			}
 		}
+
+		codeLevelComments = taskInputVO.Comments.Code
+		taskLeveComments = taskInputVO.Comments.Task
 	}
 
 	taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{replace_methods}}", "")
+	taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{code_level_comments}}", codeLevelComments)
+	taskServiceFile = strings.ReplaceAll(taskServiceFile, "{{task_level_comments}}", taskLeveComments)
 
 	if err := os.WriteFile(taskDetails.TaskPath+string(os.PathSeparator)+"task.py", []byte(taskServiceFile), os.ModePerm); err != nil {
 		return err

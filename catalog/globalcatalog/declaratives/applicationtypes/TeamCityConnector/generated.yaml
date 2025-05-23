@@ -1,0 +1,42 @@
+id: ""
+apiVersion: v1alpha1
+kind: applicationClass
+meta:
+  name: TeamCityConnector
+  displayName: TeamCityConnector
+  shortDescription: ""
+  longDescription: ""
+  labels:
+    appType:
+    - teamcityconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - teamcityconnector
+spec:
+  url: http://localhost.com
+  ipv4Address: ""
+  ipv6Address: ""
+  port: 0
+  validation:
+    taskName: ValidateTeamCityConnector
+    taskVersion: ""
+  credentialTypes:
+  - name: AccessToken
+    version: 1.1.1
+    repeated: false
+  selectors: null
+  defaultCredentialType:
+    name: AccessToken
+    version: 1.1.1
+  applicationType: ""
+  directAccess: true
+  linkableApplicationClasses: []
+  management: false
+  allowableChildrenApplicationClasses: []
+  type: user
+  expectedSystemApplicationClasses: []
+isVersionToBeOverride: true

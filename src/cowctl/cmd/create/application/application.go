@@ -24,9 +24,9 @@ func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Args: cobra.NoArgs,
 
-		Use:   "application",
-		Short: "Create a application",
-		Long:  "Create application",
+		Use:   "application-type",
+		Short: "Create a application-type",
+		Long:  "Create application-type",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runE(cmd)
 		},
@@ -73,13 +73,13 @@ func runE(cmd *cobra.Command) error {
 	}
 
 	if cowlibutils.IsEmpty(yamlFileName) || cowlibutils.IsFileNotExist(yamlFilePath) {
-		fileNameFromCmd, err := utils.GetValueAsFileNameFromCmdPrompt("Select a valid yaml file name", additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, []string{".yaml", ".yml"})
+		fileNameFromCmd, err := utils.GetValueAsFileNameFromCmdPrompt("Select a valid yaml file name", additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, []string{".yaml", ".yml"})
 		if err != nil || cowlibutils.IsEmpty(fileNameFromCmd) {
-			return errors.New("cannot get the application")
+			return errors.New("cannot get the ApplicationType")
 		}
-		yamlFilePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fileNameFromCmd)
+		yamlFilePath = filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fileNameFromCmd)
 		if cowlibutils.IsFileNotExist(yamlFilePath) {
-			return fmt.Errorf("%s is not a valid application file path", yamlFilePath)
+			return fmt.Errorf("%s is not a valid ApplicationType file path", yamlFilePath)
 		}
 	}
 
@@ -104,7 +104,7 @@ func runE(cmd *cobra.Command) error {
 		}
 	}
 	if applications.IsAppAlreadyPresent(applicationVO.Meta, additionalInfo) {
-		isConfirmed, err := terminalutils.GetConfirmationFromCmdPrompt("application already presented in the directory. Are you sure you going to re-initialize ?")
+		isConfirmed, err := terminalutils.GetConfirmationFromCmdPrompt("ApplicationType already presented in the directory. Are you sure you going to re-initialize ?")
 		if !isConfirmed || err != nil {
 			return err
 		}
@@ -113,16 +113,16 @@ func runE(cmd *cobra.Command) error {
 
 	supportedLanguage := constants.SupportedLanguageGo
 
-	filePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, supportedLanguage.String())
+	filePath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, supportedLanguage.String())
 
 	if supportedLanguage == constants.SupportedLanguagePython {
-		filePath = filepath.Join(filePath, "appconnections")
+		filePath = filepath.Join(filePath, "applicationtypes")
 	}
 
 	packagePath := filepath.Join(filePath, strings.ToLower(applicationVO.Meta.Name))
 
 	if cowlibutils.IsFolderExist(packagePath) && !additionalInfo.CanOverride {
-		isConfirmed, err := terminalutils.GetConfirmationFromCmdPrompt("An application class implementation already exists for this name (the version will be excluded). Are you sure you want to re-create it?")
+		isConfirmed, err := terminalutils.GetConfirmationFromCmdPrompt("An applicationType class implementation already exists for this name (the version will be excluded). Are you sure you want to re-create it?")
 		if !isConfirmed || err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func runE(cmd *cobra.Command) error {
 		return errors.New(constants.ErroInvalidData)
 	}
 
-	emoji.Println("Application creation is now complete! You can view the application YAML file at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "applications"), ", and the app connection codes are available inside ", additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, ":smiling_face_with_sunglasses:")
+	emoji.Println("ApplicationType creation is now complete! You can view the ApplicationType YAML file at ", filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.DeclarativePath, "applicationtypes"), ", and the ApplicationType codes are available inside ", additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, ":smiling_face_with_sunglasses:")
 
 	return nil
 

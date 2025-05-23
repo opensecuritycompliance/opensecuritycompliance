@@ -66,7 +66,7 @@ func (applicationHandler *PythonApplicationHandler) GenerateApplicationStruct(ap
 		paramName := strcase.ToSnake(app.Name) + "_app"
 		appNameSmall := strings.ToLower(app.Name)
 		linkedAppParamNames = append(linkedAppParamNames, paramName)
-		importStatement := fmt.Sprintf("from appconnections.%s import %s", appNameSmall, appNameSmall)
+		importStatement := fmt.Sprintf("from applicationtypes.%s import %s", appNameSmall, appNameSmall)
 		classVariables := fmt.Sprintf("\t%s: List[%s.%s]", paramName, appNameSmall, app.Name)
 
 		linkedAppsImports = append(linkedAppsImports, importStatement)
@@ -210,15 +210,15 @@ func (applicationHandler *PythonApplicationHandler) GenerateApplicationStruct(ap
 	// 	return err
 	// }
 
-	if utils.IsEmpty(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath) {
-		additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath = constants.CowDataAppConnectionPath
+	if utils.IsEmpty(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath) {
+		additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath = constants.CowDataAppConnectionPath
 	}
 
 	packageName := strings.ToLower(applicationVO.Meta.Name)
 
-	// folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, "python", packageName, applicationVO.Meta.Version)
+	// folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, "python", packageName, applicationVO.Meta.Version)
 
-	folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, "python", filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath), packageName)
+	folderPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, "python", filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath), packageName)
 
 	if utils.IsFolderNotExist(folderPath) {
 		err := os.MkdirAll(folderPath, os.ModePerm)

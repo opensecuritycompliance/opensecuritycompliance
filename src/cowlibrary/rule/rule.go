@@ -41,7 +41,7 @@ import (
 	progressbar "github.com/schollz/progressbar/v3"
 	"gopkg.in/yaml.v2"
 
-	cowStorage "appconnections/minio"
+	cowStorage "applicationtypes/minio"
 	constants "cowlibrary/constants"
 	"cowlibrary/executions"
 	"cowlibrary/storage"
@@ -79,8 +79,9 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 	if err != nil {
 		return fmt.Errorf("error in unmarshalling rule yaml,error:%S", err)
 	}
+	rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
+
 	if additionalInfo.PrimaryApplicationInfo != nil {
-		rule.Meta.Name = strcase.ToCamel(filepath.Base(directoryPath))
 		rule.Meta.Labels = additionalInfo.PrimaryApplicationInfo.App.Meta.Labels
 		rule.Meta.Annotations = additionalInfo.PrimaryApplicationInfo.App.Meta.Annotations
 	}
@@ -102,12 +103,13 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 				taskInfo.Description = "Detailed info about the task"
 			}
 			tasks = append(tasks, &vo.TaskVO{
-				Name:        strcase.ToCamel(taskInfo.TaskName),
-				Purpose:     "Purpose of the task",
-				Description: taskInfo.Description,
-				Type:        "task",
-				AppTags:     appTags,
-				Alias:       taskInfo.Alias,
+				Name:           strcase.ToCamel(taskInfo.TaskName),
+				Purpose:        "Purpose of the task",
+				Description:    taskInfo.Description,
+				Type:           "task",
+				AppTags:        appTags,
+				Alias:          taskInfo.Alias,
+				ValidationCURL: taskInfo.ValidationCURL,
 			})
 		}
 
@@ -130,6 +132,9 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			// 	}
 			// }
 			if len(additionalInfo.RuleYAMLVO.Meta.Labels) > 0 {
+				if len(rule.Meta.Labels) == 0 {
+					rule.Meta.Labels = make(map[string][]string, 0)
+				}
 				for annotation, tags := range additionalInfo.RuleYAMLVO.Meta.Labels {
 					rule.Meta.Labels[annotation] = tags
 				}
@@ -1155,7 +1160,7 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 
 				var appData *vo.UserDefinedApplicationVO
 				for _, app := range taskInput.SystemInputs.UserObject.Apps {
-					applicationYamlContent, err := os.ReadFile(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", (app.ApplicationName))))
+					applicationYamlContent, err := os.ReadFile(filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", (app.ApplicationName))))
 					if err := yaml.Unmarshal(applicationYamlContent, &appData); err != nil {
 						return err
 					}
@@ -1738,6 +1743,9 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(ruleYaml.Meta.Labels) == 0 {
+		return nil, fmt.Errorf("invalid rule yaml. Primary ApplicationType is not present in the rule")
+	}
 
 	ruleTags := map[string][]string{
 		"environment": {"logical"},
@@ -1768,6 +1776,7 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 	rule.RuleIOValues.Inputs = DefaultInputs
 
 	rule.RuleIOValues.InputsMeta__ = ruleYaml.Spec.InputsMeta__
+	rule.RuleIOValues.OutputsMeta__ = ruleYaml.Spec.OutputsMeta__
 
 	for _, input := range rule.RuleIOValues.InputsMeta__ {
 		if inputMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
@@ -2149,28 +2158,27 @@ func replaceLibraryPathsInGoMod(goModFilePath string, additionalInfo *vo.Additio
 	for i, line := range lines {
 
 		// TODO: Check the replace clause
-		if strings.Contains(line, "appconnections") && !strings.Contains(line, "appconnections v") {
+		if strings.Contains(line, "applicationtypes") && !strings.Contains(line, "applicationtypes v") {
 			lines[i] = ""
 		}
 		if strings.Contains(line, "cowlibrary") && !strings.Contains(line, "cowlibrary v") {
 			lines[i] = ""
 		}
 	}
-	appConnectionsPath := "/policycow/catalog/appconnections/go"
+	applicationTypesPath := "/policycow/catalog/applicationtypes/go"
 	cowlibraryPath := "/policycow/src/cowlibrary"
 	if utils.IsFolderExist(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath) {
 		repoPath := removeLastSubFolder(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath)
 		if utils.IsFolderExist(repoPath) {
-			if appPath := filepath.Join(repoPath, "catalog/appconnections/go"); utils.IsFolderExist(appPath) {
-				appConnectionsPath = filepath.Join(repoPath, "catalog/appconnections/go")
+			if appPath := filepath.Join(repoPath, "catalog/applicationtypes/go"); utils.IsFolderExist(appPath) {
+				applicationTypesPath = filepath.Join(repoPath, "catalog/applicationtypes/go")
 			}
 			if libPath := filepath.Join(repoPath, "src/cowlibrary"); utils.IsFolderExist(libPath) {
 				cowlibraryPath = filepath.Join(repoPath, "src/cowlibrary")
 			}
 		}
 	}
-
-	lines = append(lines, fmt.Sprintf("replace appconnections => %s", appConnectionsPath))
+	lines = append(lines, fmt.Sprintf("replace applicationtypes => %s", applicationTypesPath))
 	lines = append(lines, fmt.Sprintf("replace cowlibrary => %s", cowlibraryPath))
 
 	fileContent := []byte(strings.Join(lines, "\n"))
@@ -2327,7 +2335,7 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 				replaceLibraryPathsInGoMod(tasksNewFolder, additionalInfo)
 
 				if !utils.IsGoTask(tasksNewFolder) {
-					appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+					appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 					err := cp.Copy(filepath.Join(appConnPath, "python", filepath.Base(appConnPath)), filepath.Join(tasksNewFolder, filepath.Base(appConnPath)))
 					if err != nil {
 						return err
@@ -3440,8 +3448,10 @@ func CreateRuleWithYAMLV2(ruleYAML *vo.RuleYAMLVO, additionalInfo *vo.Additional
 
 		additionalInfo = addInfo
 	}
+	fmt.Println("additionalInfo::", additionalInfo)
 
 	ruleAddInfo, errorVO := utils.GetTaskInfosFromRule(ruleYAML, additionalInfo)
+	fmt.Println("ruleAddInfo: ", ruleAddInfo)
 	if errorVO != nil {
 		return &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: errorVO}
 	}
@@ -3618,7 +3628,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	languages, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to get application language", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to get ApplicationType language", Description: fmt.Sprintf("The language for the %s ApplicationType could not be retrieved ", applicationValidatorVO.ApplicationType)}}
 	}
 
 	var language string
@@ -3627,12 +3637,12 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	ruleFile, err := os.ReadFile(filepath.Join(rulePath, constants.RuleYamlFile))
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to read rule.yaml file", Description: fmt.Sprintf("The language for the %s application could not be retrieved ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to read rule.yaml file", Description: fmt.Sprintf("The language for the %s ApplicationType could not be retrieved ", applicationValidatorVO.ApplicationType)}}
 	}
 	err = yaml.Unmarshal(ruleFile, &ruleYaml)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Failed to unmarshal rule.yaml file", Description: fmt.Sprintf("The language for the %s application could be retrieved from the rule details ", applicationValidatorVO.ApplicationType)}}
+			Message: "Failed to unmarshal rule.yaml file", Description: fmt.Sprintf("The language for the %s ApplicationType could be retrieved from the rule details ", applicationValidatorVO.ApplicationType)}}
 	}
 
 	for _, task := range ruleYaml.Spec.Tasks {
@@ -3649,25 +3659,25 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 		}
 	}
 
-	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationClassPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
+	appClassPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath, fmt.Sprintf("%s.yaml", applicationValidatorVO.ApplicationType))
 	fmt.Println("appClassPath :", appClassPath)
 
 	if utils.IsFileNotExist(appClassPath) {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", applicationValidatorVO.ApplicationType)}}
+			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' ApplicationType", applicationValidatorVO.ApplicationType)}}
 	}
 
-	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialsPath)
+	applicationInfo, err := utils.GetApplicationWithCredential(appClassPath, additionalInfo.PolicyCowConfig.PathConfiguration.CredentialTypeConfigPath)
 	if err != nil {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' application", applicationValidatorVO.ApplicationType),
+			Message: "Invalid App", Description: fmt.Sprintf("not able to find '%s' ApplicationType", applicationValidatorVO.ApplicationType),
 			ErrorDetails: utils.GetValidationError(err)}}
 	}
 
-	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath, language)
+	baseFolder := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath, language)
 
 	if constants.SupportedLanguagePython.String() == language {
-		baseFolder = filepath.Join(baseFolder, constants.AppConnections)
+		baseFolder = filepath.Join(baseFolder, constants.ApplicationTypes)
 	}
 
 	appName := strings.ToLower(applicationValidatorVO.ApplicationType)
@@ -3676,7 +3686,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if utils.IsFolderNotExist(applicationPath) {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid Application", Description: fmt.Sprintf("Cannot find the application '%s'", applicationValidatorVO.ApplicationType)}}
+			Message: "Invalid ApplicationType", Description: fmt.Sprintf("Cannot find the ApplicationType '%s'", applicationValidatorVO.ApplicationType)}}
 	}
 
 	validateApplicationTask := filepath.Join(applicationPath, fmt.Sprintf("Validate%s", applicationValidatorVO.ApplicationType))
@@ -3732,7 +3742,7 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 
 	if !foundCredential {
 		return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-			Message: "Invalid Credential", Description: fmt.Sprintf("The application doesn't support credention '%s'", applicationValidatorVO.CredentialType)}}
+			Message: "Invalid CredentialType", Description: fmt.Sprintf("The ApplicationType doesn't support credention '%s'", applicationValidatorVO.CredentialType)}}
 	}
 
 	userDefinedCredentials := map[string]interface{}{}
@@ -3788,10 +3798,10 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 	if constants.SupportedLanguagePython.String() == language {
 
 		tmpDir := os.TempDir()
-		tmpAppConnectionDir := filepath.Join(tmpDir, constants.AppConnections)
+		tmpAppConnectionDir := filepath.Join(tmpDir, constants.ApplicationTypes)
 		err := cp.Copy(baseFolder, tmpAppConnectionDir)
 		if err != nil {
-			fmt.Println("Error copying appconnections to temporary directory:", err)
+			fmt.Println("Error copying applicationtypes to temporary directory:", err)
 		}
 
 		err = cp.Copy(tmpAppConnectionDir, filepath.Join(validateApplicationTask, filepath.Base(baseFolder)))
@@ -4009,13 +4019,13 @@ func GetAvailableLanguages(applicationVO *vo.ApplicationVO, additionalInfo *vo.A
 
 	appDeclarativesPath = filepath.Join(appDeclarativesPath, strings.ToLower(applicationVO.Name))
 	if utils.IsFolderNotExist(appDeclarativesPath) {
-		return nil, fmt.Errorf("application not available")
+		return nil, fmt.Errorf("ApplicationType not available")
 	}
-	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.AppConnectionPath
+	appPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
 	if utils.IsFolderExist(filepath.Join(appPath, "go", packageName)) {
 		availableLanguages = append(availableLanguages, "go")
 	}
-	if utils.IsFolderExist(filepath.Join(appPath, "python", "appconnections", packageName)) {
+	if utils.IsFolderExist(filepath.Join(appPath, "python", "applicationtypes", packageName)) {
 		availableLanguages = append(availableLanguages, "python")
 	}
 	return availableLanguages, nil
@@ -4033,9 +4043,12 @@ func updateRuleInputFilePath(tempDir string, additionalInfo *vo.AdditionalInfo) 
 	}
 
 	for _, inputMeta := range ruleSet.Rules[0].RuleIOValues.InputsMeta__ {
-		if inputMeta.DataType == constants.InputMetaFileType {
+		if inputMeta.DataType == constants.InputMetaFileType || inputMeta.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
 			inputMeta.DefaultValue = constants.MinioFilePath
 			ruleSet.Rules[0].RuleIOValues.Inputs[inputMeta.Name] = constants.MinioFilePath
+		}
+		if inputMeta.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
+			inputMeta.DataType = constants.DeclarativesDataTypeFILE
 		}
 	}
 

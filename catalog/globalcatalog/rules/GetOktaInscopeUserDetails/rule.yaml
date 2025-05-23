@@ -1,0 +1,73 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GetOktaInscopeUserDetails
+  purpose: Get Okta users granted access to in-scope applications and groups
+  description: Get Okta users granted access to in-scope applications and groups
+  labels:
+    appType:
+    - oktaconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - oktaconnector
+spec:
+  inputs:
+    IncludeGroups: 
+    ExcludeGroups: 
+    IncludeApps: 
+    ExcludeApps: 
+  inputsMeta__:
+  - name: IncludeGroups
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: 
+    showField: true
+    required: false
+  - name: ExcludeGroups
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: 
+    showField: true
+    required: false
+  - name: IncludeApps
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: 
+    showField: true
+    required: false
+  - name: ExcludeApps
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: 
+    showField: true
+    required: false
+  tasks:
+  - name: GetOktaUsers
+    alias: t1
+    type: task
+    purpose: GetOktaUsers
+    description: GetOktaUsers
+  - name: GetOktaInscopeUserDetails
+    alias: t2
+    type: task
+    purpose: Get Okta users granted access to in-scope applications and groups
+    description: Get Okta users granted access to in-scope applications and groups
+  ioMap:
+  - t2.Input.OktaUsers:=t1.Output.OktaUsers
+  - t2.Input.IncludeGroups:=*.Input.IncludeGroups
+  - t2.Input.ExcludeGroups:=*.Input.ExcludeGroups
+  - t2.Input.IncludeApps:=*.Input.IncludeApps
+  - t2.Input.ExcludeApps:=*.Input.ExcludeApps
+  - '*.Output.OktaInscopeUserDetails:=t2.Output.OktaInscopeUserDetails'
+  - '*.Output.CompliancePCT_:=t2.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t2.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=t1.Output.LogFile'
+  - '*.Output.LogFile:=t2.Output.LogFile'

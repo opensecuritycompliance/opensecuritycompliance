@@ -3,7 +3,7 @@ module GetAWSConfigRuleEvaluationDetailsNew
 go 1.21.3
 
 require (
-	appconnections v0.0.0-00010101000000-000000000000
+	applicationtypes v0.0.0-00010101000000-000000000000
 	cowlibrary v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-sdk-go v1.43.31
 	github.com/google/uuid v1.3.1
@@ -76,4 +76,4 @@ require (
 
 replace cowlibrary => ../../../../src/cowlibrary
 
-replace appconnections => ../../../appconnections/go
+replace applicationtypes => ../../../applicationtypes/go

@@ -43,6 +43,15 @@
 # ColumnName = "EvaluationTime"      # Name of the new column
 # Source = ""                        # No source, as the function will generate the value
 # Function = "CurrentDateTime"       # Apply the "CurrentDateTime" function to get the current date and time
+# Format = ""%Y-%m-%d""              # Format is optional, By default format - 2025-03-25T01:39:03.459229Z
+
+
+[[AddColumn.ByFunction]]
+# ColumnName = "Project"              # Name of the new column
+# Source = "<<inputfile1.Name>>"      # The source column ("Name") from InputFile1. 
+# Function = "SplitByDelimiter"       # Apply the "SplitByDelimiter" function to get the split value
+# Delimiter = "/"                     
+# Index = 3                           # Defines the index of the part to extract after splitting (starting from 0)
 
 
 # ======================
@@ -51,8 +60,7 @@
 
 [[AddColumn.AsObject]]
 # ColumnName = "AdditionalInfo"  # Name of the new column
-# ObjectValues = "<<inputfile1.user_id>>,<<inputfile1.role>>,<<inputfile1.permission>>,<<inputfile1.address>>,<<inputfile1.profile.skills>>"  
-# Comma-separated values to come under object, no spaces allowed
+# ObjectValues = "<<inputfile1.user_id>>,<<inputfile1.role>>,<<inputfile1.permission>>,<<inputfile1.address>>,<<inputfile1.profile.skills>>"
 
 
 # ========================
@@ -65,6 +73,7 @@
 # Source = "<<inputfile1.UserName>>"       # Source column from InputFile1 (UserName). 
 # Target = "<<inputfile2.Users>>"          # Target column from InputFile2 (Users). 
 # TargetMapping = "<<inputfile2.Manager>>" # Target mapping column from InputFile2 (Manager)
+# IsCaseSensitive = False                  # Optional. By default - false
 
 #Note: This InputFile2 is an optional file used to add additional context to the data in InputFile1, such as mapping one piece of information (e.g., a user) to another related piece of information (e.g., a manager). 
 #This file typically contains data that helps establish relationships or enrich the data from InputFile1. [OPTIONAL]
@@ -84,8 +93,8 @@
 
 [[AddColumn.AsList]]
 # ColumnName = "DefaultList"                      # New column name "DefaultList"
-# ListData = ["data1", "data2", "data3"]          # Corrected: ListData should be an array.
-# As a result, the column 'DefaultList' will be added as a list that contains the values of all ListData.
+# ListData = "data1,data2,data3"                  # String with comma seperated values
+# As a result,  the column 'DefaultList' will be added as a list by splitting 'ListData' with a comma delimiter.
 
  
 # ========================
@@ -95,6 +104,7 @@
 # Adding a new column(s) based on condition
 [[AddColumn.ByCondition]]
 # Condition = "<<inputfile1.requested_reviewers_count>> > 1" # Expecting requested_reviewers_count 
+# Note : (Nested structure is not supported (eg : <<inputfile1.User.skills.count>>))
 
 # Define behavior for when the condition is true
 [[AddColumn.ByCondition.True]]
@@ -120,14 +130,15 @@
 [UpdateColumn]
 
 # Replaces the "ResourceName" column with the value from the "UserName" column
-# "ResourceName" = "<<UserName>>"
+# "ResourceName" = "<<inputfile1.UserName>>"
+
 # Replaces the "ResourceID" column with the value from the "UserID" column
-# "ResourceID" = "<<UserID>>"
+# "ResourceID" = "<<inputfile1.UserID>>"
 
 # Concat Operation for "role" column
 [[UpdateColumn.Concat]]
 # Specifies the column to update
-# ColumnName = "role"                   
+# ColumnName = "<<inputfile1.role>>"                     
 
 # Specifies the value to concatenate with the existing value in the column
 # ConcatValue = "Role : " 
@@ -142,7 +153,7 @@
 # Source = "<<inputfile1.project>>"
 
 # Specifies the delimiter to split the value
-# Delimiter = "/"  # Check the spelling of 'Delimiter'
+# Delimiter = "/" 
 
 # Defines the index of the part to extract after splitting (starting from 0)
 # Index = 3
@@ -151,27 +162,28 @@
 # Replace Operation
 [[UpdateColumn.Replace]]
 # Specifies the column to apply the replace operation
-# ColumnName = "project"                   
+# ColumnName = "<<inputfile1.project>>"                   
 
 # Defines the regex pattern to find within the column's value
-# (Not specified in your original example; you may want to include a regex pattern here)
 # Regex = "some_pattern_to_find"  # You need to define a pattern here.
 # Note : If the user needs to replace the null value in the data, the regex field can be ignored.
 
 # Specifies the value to replace the found match with
 # ReplaceValue = "replace_value"
 
+#ReplaceWholeValue = "False" # Replace whole string or regex part alone
+
 
 # Change Path Operation
 [[UpdateColumn.ChangePath]]
-#Refers to the original field that contains the data.
+# Refers to the original field that contains the data.
 # Source = "<<inputfile1.address.zipcode>>"
 
 # Refers to the destination field where data will be moved or transformed.
 # Supported path - List, dict
 # Target = "<<inputfile1.address.previous_addresses>>"  
 
-#If the target field is a list, you need to specify the Type as either Concat or Append otherwise it is optional
+# If the target field is a list, you need to specify the Type as either Concat or Append otherwise it is optional
 # Specifies the operation to be applied, Supported : Concat or Append
 #Type = "Append" 
 
@@ -198,5 +210,6 @@
 # Remove Duplicates
 # ====================
 [RemoveDuplicates]
+
 # ColumnList holds an array (list) of column names, separated by commas, based on which duplicates should be removed.
 # ColumnList = "Userid, mobile" 
