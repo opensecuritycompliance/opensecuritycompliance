@@ -75,7 +75,7 @@ Please make sure to have the following installed in your machine.
 
 <img src="misc/img/minio_creds.png" alt="Minio Creds" width="400"/>
 
-3.  If you are running this on a Linux machine, please make sure to update the docker-compose file (`docker-compose.yaml`) and comment the specified line (as shown below).
+3.  If you are running this on a Linux machine, please make sure to update the docker-compose file (`docker-compose.yaml`) and comment the specified lines (as shown below).
 
 <img src="misc/img/docker_compose_uncomment.png" alt="docker_compose_uncomment" width="200"/>
 
@@ -500,6 +500,16 @@ Upon executing a rule, it generates an output that furnishes valuable informatio
 
 - Compliance Status: This indicates the outcome of the rule execution regarding compliance with the specified criteria, which can be categorized as either COMPLIANT, NON_COMPLIANT, or NOT_DETERMINED.
 - Compliance Percentage: If the calculation of the compliance percentage is integrated into the task logic, it will be included in the output. This percentage serves as a quantitative measure, quantifying the extent to which compliance has been achieved and providing a clear indicator of the rule's adherence.
+
+During rule execution in OpenSecurityCompliance, you are prompted to provide input values interactively such as:
+- String or Simple Inputs:
+    Direct values, such as repository names (GithubRepoName), identifiers, or other textual information. You will be prompted to enter these during execution.
+
+- File Inputs:
+    Rules can also accept file inputs. To test this locally, upload the file to Minio (http://localhost:9001) and when prompted, provide the file path as the value.
+
+- Control Period:
+    The from_date and to_date define the control period for the rule execution. You will be prompted to provide these dates to ensure the rule runs over the correct timeframe.
 
 <img src="misc/img/exec_rule_completion.png" alt="exec_rule_completion" width="950"/>
 
