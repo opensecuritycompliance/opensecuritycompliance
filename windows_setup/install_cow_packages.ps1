@@ -16,14 +16,14 @@ if (Get-Command pip -ErrorAction SilentlyContinue) {
 
 
 $ccPathReq = Join-Path $parentFolder "src\compliancecowcards\requirements.txt"
-$appConnReq = Join-Path $parentFolder "catalog\appconnections\python\requirements.txt"
+$appConnReq = Join-Path $parentFolder "catalog\applicationtypes\python\requirements.txt"
 
 & $PIP_COMMAND install -r $ccPathReq
 & $PIP_COMMAND install -r $libraryReq
 & $PIP_COMMAND install -r $appConnReq
 
 $ccCardsPath=Join-Path $parentFolder "src\compliancecowcards"
-$appPath=Join-Path $parentFolder "catalog\appconnections\python"
+$appPath=Join-Path $parentFolder "catalog\applicationtypes\python"
 
 & $PIP_COMMAND install $ccCardsPath
 & $PIP_COMMAND install $ccPath
