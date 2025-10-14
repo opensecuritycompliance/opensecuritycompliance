@@ -1,0 +1,22 @@
+[Response.RuleSet]
+
+    [Response.RuleSet.AppendColumnCondition]
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+    IncludeAllInputFields = false
+    
+    [Response.RuleSet.AppendColumn.Fields]
+    
+    [Response.RuleSet.PaginationCondition]
+    ConditionField = "<<response.body.nextPageToken>>"
+    ConditionValue = ""
+
+    [Response.RuleSet.Pagination]
+        [Response.RuleSet.Pagination.Header]
+
+        [Response.RuleSet.Pagination.Params]
+        nextPageToken = "<<response.body.nextPageToken>>"
+
+        [Response.RuleSet.Pagination.Data.URLEncoded]
