@@ -1,0 +1,28 @@
+[AddColumn]
+System = "GCP"
+Source = "compliancecow"
+ResourceID = "<<inputfile1.id>>"
+ResourceName = "<<inputfile1.name>>"
+ResourceType = "Storage Bucket"
+ResourceLocation = "<<inputfile1.location>>"
+ResourceTag = []
+ResourceURL = "https://console.cloud.google.com/storage/browser/<<inputfile1.id>>"
+StorageClass = "<<inputfile1.storageClass>>"
+BucketCreationTime = "<<inputfile1.timeCreated>>"
+BucketLastUpdated = "<<inputfile1.updated>>"
+LogBucket = "<<inputfile1.logging.logBucket>>"
+ValidationStatusCode = "BUCK_LOG_ENB"
+ValidationStatusNotes = "The bucket has logging enabled, capturing access logs for security and compliance monitoring."
+ComplianceStatus = "COMPLIANT"
+ComplianceStatusReason = "Bucket logging is enabled, ensuring access tracking and auditability."
+UserAction = ""
+ActionStatus = ""
+ActionResponseURL = ""
+
+[[AddColumn.ByFunction]]
+ColumnName = "EvaluationTime"      
+Function = "CurrentDateTime"       
+
+
+[ReorderColumn]
+ColumnList = "System, Source, ResourceID, ResourceName, ResourceType, ResourceLocation, ResourceTag, ResourceURL, StorageClass, BucketCreationTime, BucketLastUpdated, LogBucket, ValidationStatusCode, ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason, EvaluationTime, UserAction, ActionStatus, ActionResponseURL"

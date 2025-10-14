@@ -1,0 +1,66 @@
+authors:
+- vivek.p@continube.com
+domain: continube
+createdDate: 04/03/2025
+name: CustomExceptionHandler
+displayName: CustomExceptionHandler
+version: '1.0'
+description: Handles specific exceptions and map generic error messages to user-friendly, task-specific messages. It ensures that errors encountered during task execution are appropriately managed and presented in a more understandable format.
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile1
+  description: The input file that contains the output from the previous task, if present.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: InputFile2
+  description: The input file that contains the output from the previous task, if present.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: LogFile
+  description: The log file that contains the raw log data to be processed.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: CustomExceptionConfigFile
+  description: The custom exception configuration file that maps specific error messages to user-friendly messages. This file is used to replace generic error messages with more meaningful ones.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: The updated log file containing the task's execution details, with custom error handling applied to replace generic error messages with user-friendly descriptions.
+  dataType: FILE
+- name: OutputFile1
+  description: The output file that contains the input from the previous task, if present.
+  dataType: FILE
+- name: OutputFile2
+  description: The output file that contains the input from the previous task, if present.
+  dataType: FILE

@@ -1,0 +1,55 @@
+authors:
+- praveen.kj@continube.com
+domain: continube
+createdDate: 05/03/2025
+name: InputFieldValidation
+displayName: InputFieldValidation
+version: '1.0'
+description: "Validate JSON records to ensure all required fields are present. Flags missing fields and logs errors."
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile
+  description: "JSON file containing records to validate. Each record must include all fields in the RequiredFields list."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: RequiredFields
+  description: "List of field names that must be present in every record. Records missing any field are flagged as invalid."
+  dataType: STRING
+  repeated: true
+  allowedValues: []
+  defaultValue: 
+  showField: true
+  required: true
+- name: LogFile
+  description: "JSON log file from a previous task used for error handling and controlling task execution."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+outputs:
+- name: ValidDataFile
+  description: "JSON file containing records that passed all required field checks."
+  dataType: FILE
+- name: LogFile
+  description: "Logs detailed information about missing fields, affected record indices, and validation failures."
+  dataType: FILE
+- name: ComplianceStatus_
+  description: Compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: Compliance percentage of the task
+  dataType: INT

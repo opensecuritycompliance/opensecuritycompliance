@@ -1,0 +1,14 @@
+[[ConditionRules]]
+    ConditionLabel = "check_len_requested_reviewers"
+    Condition = "GT_EQ"
+    ConditionField = "<<inputfile.len_requested_reviewers>>"
+    ConditionValue = 2 
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_len_requested_reviewers"
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "check_len_requested_reviewers"
+    [ConditionFieldUpdates.PASS]
+        MinimumRequiredReviewersCount = 2
+    [ConditionFieldUpdates.FAIL]
+        MinimumRequiredReviewersCount = 2

@@ -79,3 +79,4 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
                         "error": "Please review the stack trace in the logs.txt file within the task."}
                     with open("task_output.json", "w") as file:
                         json.dump(error_message, file)
+                    raise

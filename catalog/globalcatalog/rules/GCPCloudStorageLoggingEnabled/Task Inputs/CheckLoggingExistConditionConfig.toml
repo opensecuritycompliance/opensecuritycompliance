@@ -1,0 +1,13 @@
+[[ConditionRules]]
+    ConditionLabel = "check_logging_contains"
+    Condition = "CONTAINS"
+    ConditionField = "<<inputfile>>"
+    ConditionValue = "logging"
+
+[[ConditionRules]]
+    ConditionLabel = "check_logging_not_empty"
+    Condition = "NOT_EMPTY"
+    ConditionField = "<<inputfile.logging>>"
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_logging_contains && check_logging_not_empty"

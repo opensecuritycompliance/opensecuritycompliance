@@ -424,8 +424,18 @@ type RuleExecutionVO struct {
 
 type RuleProgressVO struct {
 	OutputVO
-	Progress     []*TaskProgressVO `json:"progress,omitempty" yaml:"progress,omitempty"`
-	ErrorDetails interface{}       `json:"errorDetails,omitempty" yaml:"errorDetails,omitempty"`
+	RuleName            string               `json:"ruleName,omitempty" yaml:"ruleName,omitempty"`
+	Progress            []*TaskProgressVO    `json:"progress,omitempty" yaml:"progress,omitempty"`
+	ErrorDetails        interface{}          `json:"errorDetails,omitempty" yaml:"errorDetails,omitempty"`
+	TaskProgressSummary *TaskProgressSummary `json:"taskProgressSummary,omitempty" yaml:"taskProgressSummary,omitempty"`
+}
+
+type TaskProgressSummary struct {
+	Total              int     `json:"total,omitempty"`
+	Completed          int     `json:"completed,omitempty"`
+	InProgress         int     `json:"inProgress,omitempty"`
+	Error              int     `json:"error,omitempty"`
+	ProgressPercentage float64 `json:"progressPercentage,omitempty"`
 }
 
 type OutputVO struct {
@@ -485,4 +495,15 @@ type RuleLogData struct {
 type DeleteRuleVO struct {
 	RuleNames   []string `json:"ruleNames"`
 	IgnoreError bool     `json:"ignoreError"`
+}
+
+type DesignNotesVO struct {
+	RuleName           string `json:"ruleName,omitempty" validate:"required"`
+	DesignNotesContent string `json:"designNotesContent,omitempty"`
+	Type               string `json:"type,omitempty" validate:"oneof=mcp MCP"`
+}
+
+type DesignNotesResponseVO struct {
+	FileName           string `json:"fileName,omitempty"`
+	DesignNotesContent string `json:"designNotesContent,omitempty"`
 }

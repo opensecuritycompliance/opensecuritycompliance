@@ -1,0 +1,65 @@
+[
+  {
+      "UserName": "Alice",
+      "Role": "Developer",
+      "Department": "Engineering",
+      "Email": "alice@example.com",
+      "Location": "New York",
+      "JoiningDate": "2022-06-15",
+      "Skills": ["Python", "Django", "REST APIs"]
+  },
+  {
+      "UserName": "Bob",
+      "Role": "Senior Developer",
+      "Department": "Engineering",
+      "Email": "bob@example.com",
+      "Location": "San Francisco",
+      "JoiningDate": "2020-04-10",
+      "Skills": ["Java", "Spring Boot", "Microservices"]
+  },
+  {
+      "UserName": "Charlie",
+      "Role": "Team Lead",
+      "Department": "Engineering",
+      "Email": "charlie@example.com",
+      "Location": "Chicago",
+      "JoiningDate": "2018-09-25",
+      "Skills": ["JavaScript", "React", "Node.js"]
+  },
+  {
+      "UserName": "Eve",
+      "Role": "QA Engineer",
+      "Department": "Quality Assurance",
+      "Email": "eve@example.com",
+      "Location": "Austin",
+      "JoiningDate": "2021-01-05",
+      "Skills": ["Selenium", "Cypress", "Test Automation"]
+  },
+  {
+      "UserName": "Frank",
+      "Role": "Data Analyst",
+      "Department": "Data Science",
+      "Email": "frank@example.com",
+      "Location": "Seattle",
+      "JoiningDate": "2019-11-30",
+      "Skills": ["SQL", "Power BI", "Machine Learning"]
+  },
+  {
+      "UserName": "David",
+      "Role": "Engineering Manager",
+      "Department": "Engineering",
+      "Email": "david@example.com",
+      "Location": "New York",
+      "JoiningDate": "2015-07-20",
+      "Skills": ["Leadership", "Agile Methodology", "Project Management"]
+  },
+  {
+      "UserName": "Grace",
+      "Role": "Director",
+      "Department": "Leadership",
+      "Email": "grace@example.com",
+      "Location": "San Francisco",
+      "JoiningDate": "2012-03-18",
+      "Skills": ["Strategic Planning", "Budgeting", "Stakeholder Management"]
+  }
+]

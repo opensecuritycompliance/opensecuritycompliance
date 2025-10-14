@@ -1,0 +1,30 @@
+[[ConditionRules]]
+    ConditionLabel = "check_encryption_contains"
+    Condition = "CONTAINS"
+    ConditionField = "<<inputfile>>"
+    ConditionValue = "encryption"
+
+[[ConditionRules]]
+    ConditionLabel = "check_encryption_not_empty"
+    Condition = "NOT_EMPTY"
+    ConditionField = "<<inputfile.encryption>>"
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_encryption_contains && check_encryption_not_empty"
+
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "check_encryption_contains && check_encryption_not_empty"
+
+    [ConditionFieldUpdates.PASS]
+        Encryption = "<<inputfile.encryption.defaultKmsKeyName>>"
+        ValidationStatusCode = "CUST_MANG_ENCR_KEY_USED"
+        ValidationStatusNotes = "The bucket is encrypted using a CMEK, ensuring enhanced security and compliance."
+        ComplianceStatus = "COMPLIANT"
+        ComplianceStatusReason = "Bucket encryption is enabled with a Customer-Managed Encryption Key (CMEK)."
+
+    [ConditionFieldUpdates.FAIL]
+        Encryption = "Google-Managed Default Encryption (GMDE)"
+        ValidationStatusCode = "GCP_MANG_DEF_ENCR_KEY_USED"
+        ValidationStatusNotes = "The bucket relies on GMDE, which does not provide customer control over encryption keys."
+        ComplianceStatus = "NON_COMPLIANT"
+        ComplianceStatusReason = "The bucket is using Google-managed default encryption (GMDE), lacking user-controlled encryption."

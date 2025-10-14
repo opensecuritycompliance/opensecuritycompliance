@@ -2,7 +2,7 @@ module cowctl
 
 go 1.23.0
 
-toolchain go1.23.9
+toolchain go1.23.8
 
 replace cowlibrary => ../cowlibrary
 
@@ -21,6 +21,7 @@ require (
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/muesli/reflow v0.3.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -48,12 +49,11 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jwalton/go-supportscolor v1.1.0 // indirect

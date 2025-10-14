@@ -1,0 +1,7 @@
+[AddColumn]
+UserName = "<<inputfile1.user.login>>" 
+
+[[AddColumn.ByFunction]]
+ColumnName = "len_requested_reviewers"
+Source = "<<inputfile1.requested_reviewers>>"
+Function = "Length" 

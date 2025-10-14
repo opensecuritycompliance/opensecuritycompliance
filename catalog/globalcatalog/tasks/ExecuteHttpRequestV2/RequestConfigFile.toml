@@ -1,0 +1,173 @@
+# The Variables section allows you to define constants that can be used dynamically in the request below.
+# - You can reference these variables anywhere in the request using the <<variable_name>> syntax.
+# - Ensure all values are strings. For non-string values (like objects), convert them to JSON-formatted strings.
+# Example:
+#   - Method = "GET" can be referenced in the [Request] section as <<Method>>.
+#   - Params = "sample data" can be used in the query string or body as <<Params>>.
+[Variables]
+# Example:
+# Method = "GET"  # HTTP method to use, e.g., GET, POST, PUT, etc.
+# CredentialType = "OAuth"  # Type of credential to use for authentication, e.g., OAuth, APIKey, etc.
+# Params = "Params sample data"  # Placeholder for query or additional parameters.
+# Raw = "Raw sample data"  # Placeholder for raw data content.
+
+# The Request section contains the general configuration for making the API request.
+[Request]
+
+# URL Field:
+# - Specify the complete API URL or build it dynamically using application variables.
+# - You can access application-level fields using the syntax <<application.FieldName>>.
+# Example:
+# - Using Azure APIs: Combine AppURL and SubscriptionID:
+#   "<<application.AppURL>>/subscriptions/<<application.SubscriptionID>>/resourcegroups?api-version=2021-04-01"
+# - Using AWS APIs: 
+#   "<<application.AppURL>>/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
+URL = ""  # Specify the API endpoint.
+
+# HTTP Method:
+# - Specify the HTTP method to use for the request.
+# - Supported values: 
+#   GET, POST, PUT, DELETE, PATCH.
+Method = ""
+
+
+# Content Type:
+# - Specify the Content-Type header to define the format of the request body.
+# - Supported values: 
+#   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream.
+ContentType = ""
+
+# Follow Redirects:
+# - Set to true if HTTP redirects should be followed automatically.
+# - Set to false if redirects should not be followed.
+Redirect = true
+
+# Credential Type:
+# Select the credential type for the request. Options include:
+# AWSSignature, BasicAuthentication, BearerToken, CustomType, OAuth, APIKey, JWTBearer, NoAuth
+CredentialType = ""
+
+# Timeout:
+# - Specify the timeout for the request in seconds.
+TimeOut = 30
+
+# The verify parameter in the requests is used to specify whether SSL certificates should be verified when making an HTTPS request. 
+# Here's how it works:
+# verify=True: Validates SSL certificates against trusted CA bundles (default). Ensures secure communication.
+# verify=False: Disables SSL certificate validation. Not recommended for production due to security risks.
+Verify = true
+
+# Number of threads to use for parallel API requests
+# - Increase for faster parallel processing
+# - Decrease to reduce system load (especially in limited environments like Docker)
+# - If MaxWorkers is set to 1, requests are made sequentially
+# - If set too high (e.g., >20), it will be capped at 20 to protect system performance
+MaxWorkers = 5
+
+
+    [Request.Retries.RetryOnCondition]
+    # Configure the retry logic based on specific conditions.
+
+    ConditionField = "<<response.status_code>>"
+    # The response attribute used to determine whether a retry should be attempted.
+    # This can be any response property, such as status_code, headers, body, cookies, or url.
+
+    ConditionValue = "503|504|429"
+    # Specifies the values that trigger a retry, separated by a pipe (|).
+    # Supports multiple values (e.g., "503|504|429") or a single value (e.g., "200").
+
+    TimeInterval = 2
+    # The wait time (in seconds) between consecutive retry attempts.
+
+    MaxRetries = 3 
+    # The maximum number of retry attempts before stopping further retries.
+
+    RetryBaseDelay = 2
+    # The exponential base used in backoff calculation.
+
+    RetryMaxDelay = 60
+    # The maximum allowed wait time (in seconds) between retries.
+
+
+# Headers Section:
+# Request Headers Section: You can add custom headers here as needed.
+# The 'Authorization' field is not required for [AWSSignature, BasicAuthentication, BearerToken] as it will be generated internally based on 'CredentialType'.
+# For the following 'CredentialType' [CustomType, OAuth] header is required in 'RequestConfigFile'
+# [CustomType, OAuth] credential types requires a validation curl to generate auth headers, 
+# you can simply give that API CURL in application under 'ValidationCURL'. And access that CURL response.
+# FOR INSTANCE : --------------------------------------------------
+    # 1. Application -> ValidationCURL
+        # For Azure API you need to generate a 'Bearer' token using below CURL. 
+        # curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
+        #     --header 'Content-Type: application/x-www-form-urlencoded' \
+        #     --data-urlencode 'grant_type=client_credentials' \
+        #     --data-urlencode 'client_id=<<CustomType.ClientID>>'\
+        #     --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
+        #     --data-urlencode 'resource=https://servicebus.azure.net'
+    # 2. RequestConfigFile -> Headers
+        # you can access this CURL response body 
+        # [Request.Headers]
+        #  Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+# -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# - Specify additional HTTP headers as key-value pair in the format: key = value.
+# For example:
+#     Content-Type = "application/json"
+#     Connection = "keep-alive"
+[Request.Headers]
+# Example:
+# Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+
+# Query Parameters:
+# - Define query parameters for GET requests or additional parameters for other request types.
+# - Specify parameters as key-value pair in the format: key = value.
+# - You can use dynamic variables such as <<Params>> and <<Version>>.
+# - Additionally you can access <<fromdate>> and <<todate>> from the 'UserInputs'
+[Request.Params]
+# Example:
+# Action = "<<Params>>"
+# Version = "<<Version>>"
+
+# Request Data Section:
+# - Specify the request body based on the ContentType.
+# - Define one of the following sections depending on the request format.
+[Request.Data]
+    # Form-Data Body:
+    # - Used with ContentType = "multipart/form-data".
+    # - Define form fields as key-value pairs.
+    # - For file uploads, specify the file path or MinIO storage path.
+    [Request.Data.FormData]
+    # Example:
+    # field1 = "Value1"
+    # field2 = "Value2"
+
+    # URL-Encoded Body:
+    # - Used with ContentType = "application/x-www-form-urlencoded".
+    # - Define fields to be URL-encoded.
+    [Request.Data.URLEncoded]
+    # Example:
+    # field1 = "Value1"
+    # field2 = "Value2"
+
+    # Raw Body:
+    # - Used with ContentType = "application/json", "text/html", "text/plain", or "application/xml".
+    # - Define raw data as JSON or plain text.
+    [Request.Data.Raw]
+    # Example:
+    # Value = '{"key": "<<Raw>>", "field1": "Value1"}'
+
+    # Binary Body:
+    # - Used with ContentType = "application/octet-stream".
+    # - Define binary data, such as base64-encoded files.
+    [Request.Data.Binary]
+    # Example:
+    # Value = "QmluYXJ5IERhdGE="  # Base64-encoded binary data.
+
+
+# Additional Information:
+# - You can add any number of key-value pairs in the format key = value for the following sections:
+#   - Headers: Define additional HTTP headers required for the request.
+#   - Params: Specify query parameters or additional request parameters.
+#   - Data: Populate request body fields based on the selected ContentType.
+# - You can access dynamic variables from the input file or application configuration using <<inputfile.FieldName>> or <<application.FieldName>>.
+# - Example: <<application.SubscriptionID>> can be used to include a subscription ID in the request.

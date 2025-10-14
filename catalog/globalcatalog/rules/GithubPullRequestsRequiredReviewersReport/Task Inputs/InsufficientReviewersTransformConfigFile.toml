@@ -1,0 +1,55 @@
+[AddColumn]
+System = "github"
+Source = "compliancecow"
+ResourceID = "<<inputfile1.node_id>>"
+ResourceName = "<<inputfile1.title>>"
+ResourceType = "Pull Request"
+ResourceLocation = "N/A"
+ResourceTag = []
+ResourceURL = "<<inputfile1.html_url>>"
+PRNumber = "<<inputfile1.number>>"
+RepositoryName = "<<inputfile1.repo>>"
+BranchName = "<<inputfile1.branch>>"
+PRRequester = "<<inputfile1.UserName>>"
+PRReviewers = "<<inputfile1.PRReviewers>>"
+PullRequestState = "<<inputfile1.state>>"
+PRHeadRepo = "<<inputfile1.head.repo.full_name>>"
+PRHeadRef = "<<inputfile1.head.ref>>"
+PRHeadSHA = "<<inputfile1.head.sha>>"
+PRBaseRepo = "<<inputfile1.base.repo.full_name>>"
+PRBaseRef = "<<inputfile1.base.ref>>"
+PRBaseSHA = "<<inputfile1.base.sha>>"
+PRCreatedDate = "<<inputfile1.created_at>>"
+PRClosedDate = "<<inputfile1.closed_at>>"
+PRMergedDate = "<<inputfile1.merged_at>>"
+MinimumRequiredReviewersCount = "<<inputfile1.MinimumRequiredReviewersCount>>"
+ActualReviewerCount = "<<inputfile1.len_requested_reviewers>>"
+MeetsMinimumRequiredReviewersCount = false
+HasManagerOrAboveReviewer = false
+ValidationStatusCode = "PR_INSUFF_REQ_REV"
+ValidationStatusNotes = "PR has fewer than the required number of reviewers."
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "Required reviewers is mandatory, PR should have at least 2 required reviewers. Ensure at least one reviewer in 'Required reviewers' should have a higher hierarchy than requester."
+UserAction = ""
+ActionStatus = "" 
+ActionResponseURL = "" 
+
+[[AddColumn.ByFunction]]
+ColumnName = "EvaluationTime"    
+Source = ""                      
+Function = "CurrentDateTime"    
+
+[[UpdateColumn.Replace]]
+ColumnName = "<<inputfile1.PRMergedDate>>"
+ReplaceValue = "N/A"
+
+[[UpdateColumn.Replace]]
+ColumnName = "<<inputfile1.PRClosedDate>>"
+ReplaceValue = "N/A"
+
+[[UpdateColumn.Replace]]
+ColumnName = "<<inputfile1.PRHeadRepo>>"
+ReplaceValue = "N/A"
+
+[ReorderColumn]
+ColumnList = "System, Source, ResourceID, ResourceName, ResourceType, ResourceLocation, ResourceTag, ResourceURL, PRNumber, RepositoryName, BranchName, PRRequester, PRReviewers, PullRequestState, PRHeadRepo, PRHeadRef, PRHeadSHA, PRBaseRepo, PRBaseRef, PRBaseSHA, PRCreatedDate, PRClosedDate, PRMergedDate, MinimumRequiredReviewersCount, ActualReviewerCount, MeetsMinimumRequiredReviewersCount, HasManagerOrAboveReviewer, ValidationStatusCode, ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason, EvaluationTime, UserAction, ActionStatus, ActionResponseURL"

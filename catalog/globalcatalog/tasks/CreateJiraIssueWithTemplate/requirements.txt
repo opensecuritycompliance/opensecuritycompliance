@@ -1,0 +1,6 @@
+PyYAML
+jira==3.8.0
+jmespath
+requests
+
+

@@ -22,6 +22,7 @@ func handlePanic() {
 	if r != nil {
 		os.WriteFile("logs.txt", debug.Stack(), os.ModePerm)
 		os.WriteFile("task_output.json", []byte(`{"error":"`+fmt.Sprintf("%v, %s", r, "Please review the stack trace in the logs.txt file within the task.")+`"}`), os.ModePerm)
+		panic(r)
 	}
 }
 

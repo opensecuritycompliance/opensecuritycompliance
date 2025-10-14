@@ -1,0 +1,158 @@
+[[ConditionRules]]
+ConditionLabel = "filter_open_critical_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'open' && <<data.security_vulnerability.severity>> == 'critical'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_open_high_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'open' && <<data.security_vulnerability.severity>> == 'high'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_open_medium_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'open' && <<data.security_vulnerability.severity>> == 'medium'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_open_low_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'open' && <<data.security_vulnerability.severity>> == 'low'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_fixed_critical_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'fixed' && <<data.security_vulnerability.severity>> == 'critical'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_fixed_high_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'fixed' && <<data.security_vulnerability.severity>> == 'high'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_fixed_medium_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'fixed' && <<data.security_vulnerability.severity>> == 'medium'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_fixed_low_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "<<data.state>> == 'fixed' && <<data.security_vulnerability.severity>> == 'low'"
+
+[[ConditionRules]]
+ConditionLabel = "filter_dismissed_critical_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "(<<data.state>> == 'dismissed' && <<data.security_vulnerability.severity>> == 'critical') || (<<data.state>> == 'auto_dismissed' && <<data.security_vulnerability.severity>> == 'critical')"
+
+[[ConditionRules]]
+ConditionLabel = "filter_dismissed_high_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "(<<data.state>> == 'dismissed' && <<data.security_vulnerability.severity>> == 'high') || (<<data.state>> == 'auto_dismissed' && <<data.security_vulnerability.severity>> == 'high')"
+
+[[ConditionRules]]
+ConditionLabel = "filter_dismissed_medium_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "(<<data.state>> == 'dismissed' && <<data.security_vulnerability.severity>> == 'medium') || (<<data.state>> == 'auto_dismissed' && <<data.security_vulnerability.severity>> == 'medium')"
+
+[[ConditionRules]]
+ConditionLabel = "filter_dismissed_low_vulnerabilities"
+Condition = "CEL_CONDITION"
+ConditionValue = "(<<data.state>> == 'dismissed' && <<data.security_vulnerability.severity>> == 'low') || (<<data.state>> == 'auto_dismissed' && <<data.security_vulnerability.severity>> == 'low')"
+
+[ConditionRulesConfig]
+ConditionsCriteria = "true"
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_open_critical_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "OPEN_VULN_CRIT_SEV_FOU"
+validation_status_notes = "Contains open vulnerability with critical severity"
+compliance_status = "NON_COMPLIANT"
+compliance_status_reason = "The repository contains open vulnerabilities with critical severity, indicating non-compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_open_high_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "OPEN_VULN_HI_SEV_FOU"
+validation_status_notes = "Contains open vulnerability with high severity"
+compliance_status = "NON_COMPLIANT"
+compliance_status_reason = "The repository contains open vulnerabilities with high severity, indicating non-compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_open_medium_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "OPEN_VULN_MED_SEV_FOU"
+validation_status_notes = "Contains open vulnerability with medium severity"
+compliance_status = "NON_COMPLIANT"
+compliance_status_reason = "The repository contains open vulnerabilities with medium severity, indicating non-compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_open_low_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "OPEN_VULN_LOW_SEV_FOU"
+validation_status_notes = "Contains open vulnerability with low severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The repository contains open vulnerabilities with low severity, considered acceptable for compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_fixed_critical_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "FIX_VULN_CRIT_SEV_FOU"
+validation_status_notes = "Contains fixed vulnerability with critical severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The fixed critical vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_fixed_high_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "FIX_VULN_HI_SEV_FOU"
+validation_status_notes = "Contains fixed vulnerability with high severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The fixed high vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_fixed_medium_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "FIX_VULN_MED_SEV_FOU"
+validation_status_notes = "Contains fixed vulnerability with medium severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The fixed medium vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_fixed_low_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "FIX_VULN_LOW_SEV_FOU"
+validation_status_notes = "Contains fixed vulnerability with low severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The fixed low vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_dismissed_critical_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "DISM_VULN_CRIT_SEV_FOU"
+validation_status_notes = "Contains dismissed vulnerability with critical severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The dismissed critical vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_dismissed_high_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "DISM_VULN_HI_SEV_FOU"
+validation_status_notes = "Contains dismissed vulnerability with high severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The dismissed high vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_dismissed_medium_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "DISM_VULN_MED_SEV_FOU"
+validation_status_notes = "Contains dismissed vulnerability with medium severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The dismissed medium vulnerabilities in the repository indicate compliance."
+
+[[ConditionFieldUpdates]]
+ConditionsCriteria = "filter_dismissed_low_vulnerabilities"
+[ConditionFieldUpdates.PASS]
+validation_status_code = "DISM_VULN_LOW_SEV_FOU"
+validation_status_notes = "Contains dismissed vulnerability with low severity"
+compliance_status = "COMPLIANT"
+compliance_status_reason = "The dismissed low vulnerabilities in the repository indicate compliance."

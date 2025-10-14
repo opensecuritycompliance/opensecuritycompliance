@@ -1,0 +1,56 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: AzureUnusedPermissionReport
+  purpose: Generate Azure Users Unused Permissions List
+  description: Generate Azure Users Unused Permissions List
+  labels:
+    appType:
+    - azureappconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - azureappconnector
+spec:
+  inputs:
+    PermissionConfigFile: <<MINIO_FILE_PATH>>
+    UserManagerDetails: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: PermissionConfigFile
+    dataType: FILE
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
+  - name: UserManagerDetails
+    dataType: FILE
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
+  - name: InactivePermissionsWindow
+    dataType: INT
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: AzureUnusedPermissionReport
+    alias: t1
+    type: task
+    purpose: Generate Azure Users Unused Permissions List
+    description: Generate Azure Users Unused Permissions List
+  ioMap:
+  - t1.Input.PermissionConfigFile:=*.Input.PermissionConfigFile
+  - t1.Input.UserManagerDetails:=*.Input.UserManagerDetails
+  - t1.Input.InactivePermissionsWindow:=*.Input.InactivePermissionsWindow
+  - '*.Output.AzureUnusedPermissionReport:=t1.Output.AzureUnusedPermissionReport'
+  - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=t1.Output.LogFile'

@@ -1,0 +1,36 @@
+
+
+[AddColumn]
+ System = "github"  # Adds a "System" column with the fixed value "aws"
+ Source = "compliancecow"
+ ResourceID ="<<inputfile1.sha>>"
+ ResourceName ="<<inputfile1.commit_name>>"
+ ResourceType = "commit"
+ ResourceTags = "N/A"
+ ResourceURL = "<<inputfile1.self>>"
+ OwnerName = "<<inputfile1.owners>>"
+ RepositoryName= "<<inputfile1.repo>>"
+ BranchName = "<<inputfile1.branch>>"
+ AuhtorName = "<<inputfile1.author>>"
+ AuhtorMailID = "<<inputfile1.author_email>>" 
+ CommitTime = "<<inputfile1.time>>"
+ ComplianceStatus = "<<inputfile1.compliant_status>>"
+
+
+[[AddColumn.ByCondition]]
+ Condition = "<<inputfile1.compliant_status>> =='COMPLIANT'" 
+[[AddColumn.ByCondition.True]]
+ValidationStatusCode = "PR_AST_WITH_CMT"
+ValidationStatusNotes = "Pull Request Associated with Commit"
+ComplianceStatus = "COMPLIANT"
+ComplianceStatusReason = "The record is compliant because the commit made via PR."
+
+[[AddColumn.ByCondition.False]]
+ValidationStatusCode = "PR_NOT_AST_WITH_CMT"
+ValidationStatusNotes = "Pull Request Not Associated with Commit "
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "The record is not compliant because the commit is made directly without a PR."
+
+[ReorderColumn]
+ "ColumnList" = "System, Source, ResourceID, ResourceName, ResourceType, ResourceTags, ResourceURL, OwnerName, RepositoryName, BranchName, AuhtorName, AuhtorMailID, CommitTime, ComplianceStatus, ValidationStatusCode, ValidationStatusNotes, ComplianceStatusReason"
+

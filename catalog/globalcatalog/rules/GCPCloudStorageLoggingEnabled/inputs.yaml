@@ -1,0 +1,71 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: https://admin.google.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      JWTBearer:
+        Algorithm: "$ALGORITHM"
+        PrivateKey: "$PRIVATE_KEY"
+        Payload: "$PAYLOAD"
+        ValidationCURL: "$VALIDATION_CURL"
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-5
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  BucketsRequestConfigFile: <<MINIO_FILE_PATH>>               # Request Config file to get the list of buckets from GCP Cloud Storage
+  CheckIfLoggingExistConditionConfig: <<MINIO_FILE_PATH>>     # Condition config file to check if Logging Exists or not
+  ExtractBucketsJQExpression: .[].items[]                                 
+  MergeType: APPEND                                                   
+  OutputFileFormat: JSON                                            
+  TransformLoggingExistConfigFile: <<MINIO_FILE_PATH>>        # Transform config file to standardize Logging existing file
+  TransformLoggingNotExistConfigFile: <<MINIO_FILE_PATH>>     # Transform config file to standardize Logging not exist file
+fromDate: 2025-03-25T10:12:17Z
+toDate: 2025-03-25T10:12:17Z

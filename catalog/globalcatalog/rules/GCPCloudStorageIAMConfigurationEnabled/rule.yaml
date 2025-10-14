@@ -1,0 +1,301 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GCPCloudStorageIAMConfigurationEnabled
+  purpose: Ensures IAM settings like uniform bucket-level access and public access
+    prevention are correctly configured to enhance security and compliance
+  description: Ensures IAM settings like uniform bucket-level access and public access
+    prevention are correctly configured to enhance security and compliance
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    BucketsRequestConfigFile: <<MINIO_FILE_PATH>>                       # Request config file to get the list of buckets 
+    CheckIAMConfigurationExistsConditionConfig: <<MINIO_FILE_PATH>>     # Condition config file to check if IAM Config exists or not
+    CheckPAPEnabledConditionConfig: <<MINIO_FILE_PATH>>                 # Condition config file to check if PublicAccessPrevention is enabled or not 
+    CheckUBLAEnabledTransformConfigFile: <<MINIO_FILE_PATH>>            # Transform Config file to check if UniformBucketLevelAccess enabled or not   
+    ExtractBucketsJQExpression: .[].items[]                            
+    MergeType: APPEND          
+    OutputFileFormat: JSON          
+    OutputMethod: ALL            
+    StandardizeIAMConfigurationFile: <<MINIO_FILE_PATH>>                # Transform Config file to standardize IAM Config status report  
+    TypeCastPAPDisabledTransformConfigFile: <<MINIO_FILE_PATH>>         # Transform config file to type cast boolean values to string for consistency
+  inputsMeta__:
+  - name: BucketsRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ExtractBucketsJQExpression
+    dataType: STRING
+    repeated: false
+    defaultValue: .[].items[]
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputMethod
+    dataType: STRING
+    repeated: false
+    defaultValue: ALL
+    allowedValues:
+    - FIRST
+    - ALL
+    showField: true
+    required: true
+  - name: CheckIAMConfigurationExistsConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CheckPAPEnabledConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: MergeType
+    dataType: STRING
+    repeated: false
+    defaultValue: APPEND
+    allowedValues:
+    - APPEND
+    - CONCATENATE
+    showField: true
+    required: true
+  - name: CheckUBLAEnabledTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - YAML
+    - TOML
+    - CSV
+    - JSON
+    - PARQUET
+    showField: true
+    required: true
+  - name: StandardizeIAMConfigurationFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: TypeCastPAPDisabledTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: ExecuteHttpRequest
+    alias: GetBucketsList
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Get the list of buckets from the GCP Cloud Storage.
+    description: Get the list of buckets from the GCP Cloud Storage.
+  - name: ExtractDataUsingJQ
+    alias: ExtractBuckets
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Extract the data alone from the listed buckets.
+    description: Extract the data alone from the listed buckets.
+  - name: CheckCondition
+    alias: CheckIfIAMConfigurationExists
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Check if the IAM Configuration column exists or not.
+    description: Check if the IAM Configuration column exists or not.
+  - name: ConvertFileFormat
+    alias: ConvertIAMConfigNotExistFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert the IAM Configuration not exists file from PARQUET to JSON.
+    description: Convert the IAM Configuration not exists file from PARQUET to JSON.
+  - name: CheckCondition
+    alias: CheckPAPEnabled
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Checks if Public Access Prevention is enabled or not.
+    description: Checks if Public Access Prevention is enabled or not.
+  - name: ConvertFileFormat
+    alias: ConvertPAPDisabledFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-5
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert Public Access Prevention disabled PARQUET file to JSON.
+    description: Convert Public Access Prevention disabled PARQUET file to JSON.
+  - name: ConvertFileFormat
+    alias: ConvertPAPEnabledFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-5
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert Public Access Prevention enabled PARQUET file to JSON.
+    description: Convert Public Access Prevention enabled PARQUET file to JSON.
+  - name: TransformData
+    alias: CheckUBLAEnabled
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-6
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Checks if UniformBucketLevelAccess is Enabled or Not.
+    description: Checks if UniformBucketLevelAccess is Enabled or Not.
+  - name: TransformData
+    alias: TypeCastPAPDisabledFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-6
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Typecasting the boolean into string for consistency.
+    description: Typecasting the boolean into string for consistency.
+  - name: MergeData
+    alias: MergeIAMConfigNotExistAndPAPDisabledFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Merging the IAM Configuration Not Existing file and Public Access Prevention disabled file.
+    description: Merging the IAM Configuration Not Existing file and Public Access Prevention disabled file.
+  - name: MergeData
+    alias: MergeUBLAEnabledAndExistingFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Merging Uniform Bucket Level Acess Enabled file and previously merged file.
+    description: Merging Uniform Bucket Level Acess Enabled file and previously merged file.
+  - name: TransformData
+    alias: StandardizeIAMConfigurationFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Standardize the IAM Configuration Status report
+    description: Standardize the IAM Configuration Status report
+  ioMap:
+  - GetBucketsList.Input.RequestConfigFile:=*.Input.BucketsRequestConfigFile
+  - ExtractBuckets.Input.InputFile:=GetBucketsList.Output.OutputFile
+  - ExtractBuckets.Input.JQExpression:=*.Input.ExtractBucketsJQExpression
+  - ExtractBuckets.Input.OutputMethod:=*.Input.OutputMethod
+  - CheckIfIAMConfigurationExists.Input.InputFile:=ExtractBuckets.Output.OutputFile
+  - CheckIfIAMConfigurationExists.Input.ConditionConfig:=*.Input.CheckIAMConfigurationExistsConditionConfig
+  - ConvertIAMConfigNotExistFile.Input.InputFile:=CheckIfIAMConfigurationExists.Output.UnmatchedConditionFile
+  - ConvertIAMConfigNotExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - CheckPAPEnabled.Input.InputFile:=CheckIfIAMConfigurationExists.Output.MatchedConditionFile
+  - CheckPAPEnabled.Input.ConditionConfig:=*.Input.CheckPAPEnabledConditionConfig
+  - ConvertPAPDisabledFile.Input.InputFile:=CheckPAPEnabled.Output.UnmatchedConditionFile
+  - ConvertPAPDisabledFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - ConvertPAPEnabledFile.Input.InputFile:=CheckPAPEnabled.Output.MatchedConditionFile
+  - ConvertPAPEnabledFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - CheckUBLAEnabled.Input.InputFile1:=ConvertPAPEnabledFile.Output.OutputFile
+  - CheckUBLAEnabled.Input.TransformConfigFile:=*.Input.CheckUBLAEnabledTransformConfigFile
+  - TypeCastPAPDisabledFile.Input.InputFile1:=ConvertPAPDisabledFile.Output.OutputFile
+  - TypeCastPAPDisabledFile.Input.TransformConfigFile:=*.Input.TypeCastPAPDisabledTransformConfigFile
+  - MergeIAMConfigNotExistAndPAPDisabledFile.Input.InputFile1:=TypeCastPAPDisabledFile.Output.OutputFile
+  - MergeIAMConfigNotExistAndPAPDisabledFile.Input.InputFile2:=ConvertIAMConfigNotExistFile.Output.OutputFile
+  - MergeIAMConfigNotExistAndPAPDisabledFile.Input.MergeType:=*.Input.MergeType
+  - MergeUBLAEnabledAndExistingFile.Input.InputFile1:=MergeIAMConfigNotExistAndPAPDisabledFile.Output.MergedData
+  - MergeUBLAEnabledAndExistingFile.Input.InputFile2:=CheckUBLAEnabled.Output.OutputFile
+  - MergeUBLAEnabledAndExistingFile.Input.MergeType:=*.Input.MergeType
+  - StandardizeIAMConfigurationFile.Input.InputFile1:=MergeUBLAEnabledAndExistingFile.Output.MergedData
+  - StandardizeIAMConfigurationFile.Input.TransformConfigFile:=*.Input.StandardizeIAMConfigurationFile
+  - '*.Output.CompliancePCT_:=StandardizeIAMConfigurationFile.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=StandardizeIAMConfigurationFile.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=StandardizeIAMConfigurationFile.Output.LogFile'
+  - '*.Output.GCPCloudStorageIAMConfigurationStatusReport:=StandardizeIAMConfigurationFile.Output.OutputFile'

@@ -10,13 +10,11 @@ import uuid
 from datetime import date
 import traceback
 
-
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, date):
             return obj.isoformat()
         return super().default(obj)
-
 
 is_task_executed = False
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -46,7 +44,7 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
 
                     data = json.loads(os.path.expandvars(
                         json.dumps(data, cls=DateEncoder)))
-
+                            
                     cl = obj()
                     data = cowvo.task_inputs_from_dict(data)
 
@@ -68,15 +66,13 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
                             f.write(json.dumps({"Outputs": output}))
                     else:
                         with open("task_output.json", "w") as f:
-                            f.write(json.dumps(
-                                {"error": "not able to retrieve the outputs from the task"}))
+                            f.write(json.dumps({"error": "not able to retrieve the outputs from the task"}))
                     is_task_executed = True
                     break
                 except Exception as error:
                     with open("logs.txt", "w") as file:
                         file.write(traceback.format_exc())
-                    error_message = {
-                        "error": "Please review the stack trace in the logs.txt file within the task."}
+                    error_message = {"error": "Please review the stack trace in the logs.txt file within the task."}
                     with open("task_output.json", "w") as file:
                         json.dump(error_message, file)
                     raise

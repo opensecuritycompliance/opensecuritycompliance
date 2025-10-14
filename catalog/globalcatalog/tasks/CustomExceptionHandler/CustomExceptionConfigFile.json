@@ -1,0 +1,8 @@
+[
+    {
+        "Received error message from NoCodeTask.": "The specific custom error message to be displayed."
+    },
+    {
+        "Invalid API key.": "The API key provided is invalid. Please check and try again."
+    }
+]

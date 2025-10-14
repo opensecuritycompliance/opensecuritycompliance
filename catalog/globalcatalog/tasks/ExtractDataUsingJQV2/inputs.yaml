@@ -1,0 +1,18 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>
+  JQConfigFile: <<MINIO_FILE_PATH>>
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  LogFile: <<MINIO_FILE_PATH>>
+  ChunksPerIteration: # the number of data chunks processed per iteration (optional). 
+  ProceedIfLogExists: # (BOOLEAN) Determines whether the next task should execute based on the generated log file. If true, the next task proceeds with both LogFile and OutputFile; otherwise, only LogFile is provided.
+  ProceedIfErrorExists: # (BOOLEAN) Indicates whether the next task should proceed based on the generated error. If true, the next task continues with the output data; if false, the process terminates.
+fromDate: 2025-04-30T05:16:08Z
+toDate: 2025-04-30T05:16:08Z

@@ -1,0 +1,9 @@
+[InputFile]
+
+UserColumn = ""     # Column name in the input file that contains the user name (eg., "UserName")
+NewColumn = ""      # New column name to be added to the input file (eg., "Hierarchy")
+
+[HierarchyFile]
+
+UserColumn = ""     # Column name in the hierarchy file that contains the user name (eg., "User")
+ManagerColumn = ""   # Column name in the hierarchy file that contains the manager name (eg., "Manager")

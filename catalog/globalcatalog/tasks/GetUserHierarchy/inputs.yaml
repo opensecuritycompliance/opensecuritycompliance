@@ -1,0 +1,23 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  LogFile: 
+  Type: Hierarchy # Manger or Hierarchy
+  InputFile: <<MINIO_FILE_PATH>>  # Input File for User Hierarchy 
+  ConfigFile: <<MINIO_FILE_PATH>> # Config File for User Hierarchy
+  HierarchyFile: <<MINIO_FILE_PATH>>  # Hierarchy File for User Hierarchy
+fromDate: 2025-01-21T19:25:15Z
+toDate: 2025-01-21T19:25:15Z

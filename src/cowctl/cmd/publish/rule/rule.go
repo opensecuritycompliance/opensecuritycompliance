@@ -383,7 +383,7 @@ func publishApplication(namePointer *vo.CowNamePointersVO, additionalInfo *vo.Ad
 		}
 	} else {
 		if binaryEnabled && !appPublish {
-			return fmt.Errorf("The ApplicationType '%s' is already published. Do you want to publish the application again?", namePointer.Name)
+			return fmt.Errorf("The applicationType '%s' is already published. Do you want to publish the ApplicationType again?", namePointer.Name)
 		}
 		isConfirmed := true
 		if !binaryEnabled {

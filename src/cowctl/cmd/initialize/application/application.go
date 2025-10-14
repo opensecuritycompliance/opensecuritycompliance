@@ -64,7 +64,7 @@ func runE(cmd *cobra.Command) error {
 		}
 		applicationNameFromCmd, err := utils.GetValueAsStrFromCmdPrompt("ApplicationType Name (only alphabets and must start with a capital letter)", true, validationutils.ValidateAlphaName)
 		if err != nil {
-			return fmt.Errorf("invalid ApplicationType name. dashboard name:%s,err:%v", applicationNameFromCmd, err)
+			return fmt.Errorf("invalid applicationType name. dashboard name:%s,err:%v", applicationNameFromCmd, err)
 		}
 
 		applicationName = applicationNameFromCmd
@@ -84,7 +84,7 @@ func runE(cmd *cobra.Command) error {
 
 	if cowlibutils.IsFileExist(appFilePath) && !additionalInfo.CanOverride {
 		if !isDefaultConfigPath && !additionalInfo.CanOverride {
-			return errors.New("The ApplicationType is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
+			return errors.New("The applicationType is already present in the system. To want to re-initialize again, set the 'can-override' flag as true")
 		}
 		isConfirmed, err := utils.GetConfirmationFromCmdPrompt("ApplicationType already presented in the system. Are you going to re-initialize again ?")
 

@@ -1,0 +1,5 @@
+[[ConditionRules]]
+    Condition = "EQUALS"  # Specifies the type of condition to apply.
+    ConditionField = "<<inputfile.[0].success>>"  # Field extracted from InputFile for evaluation.
+    ConditionValue = false  # The expected value for the condition to be met.
+    ErrorMessage = "SQL compilation error. Please review the query and try again."  # Custom error message to log if the condition is met.

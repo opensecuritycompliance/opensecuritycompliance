@@ -1,0 +1,112 @@
+[TransformData]
+
+[TransformData.Inputs]
+
+    # Logfile
+    LogFile.download_error                          = "Error while downloading LogFile. {error}."
+    LogFile.invalid                                 = "Invalid logfile passed from the previous task. Expected format: {Error: err_msg}."
+
+    # Inputfile1
+    InputFile1.missing                              = "InputFile1 is missing in user inputs."
+    InputFile1.invalid_path                         = "Invalid file path for InputFile1: Must be a valid URL."
+    InputFile1.unsupported_extension                = "Unsupported extension for InputFile1: Expected one of following - .json, .ndjson, .csv, .parquet."
+    InputFile1.download_error                       = "Error occurred while downloading InputFile1. {error}."
+    InputFile1.empty_content                        = "Provided InputFile1 file is empty, please provide valid file."
+
+    # TransformConfigFile
+    TransformConfigFile.missing                     = "TransformConfigFile is missing in user inputs."
+    TransformConfigFile.invalid_path                = "Invalid file path for TransformConfigFile: Must be a valid URL."
+    TransformConfigFile.unsupported_extension       = "Unsupported extension for TransformConfigFile: Expected '.toml'."
+    TransformConfigFile.download_error              = "Error occurred while downloading TransformConfigFile. {error}."
+    TransformConfigFile.empty_content               = "Provided TransformConfigFile file is empty, please provide valid file."
+
+    ######################################## Add coloumn ########################################
+
+    # ByFunction
+    TransformConfigFile.add_column.by_function.empty_function        = "AddColumn.ByFunction - 'Function' is missing or empty."
+    TransformConfigFile.add_column.by_function.empty_column_name     = "AddColumn.ByFunction - 'ColumnName' is missing or empty."
+    TransformConfigFile.add_column.by_function.empty_source          = "AddColumn.ByFunction - 'Source' is missing or empty."
+    TransformConfigFile.add_column.by_function.invalid_function      = "Invaid function '{function}'. Supported function - Length, CurrentDateTime, SplitByDelimiter."
+    # ByFunction - SplitByDelimiter
+    TransformConfigFile.add_column.by_function.empty_Delimiter       = "AddColumn.ByFunction - 'Delimiter' is missing or empty. The field 'Delimiter' is mandatory for the function SplitByDelimiter."
+    TransformConfigFile.add_column.by_function.empty_index           = "AddColumn.ByFunction - 'Index' is missing or empty. The field 'Index' is mandatory for the function SplitByDelimiter."
+
+    # AsObject
+    TransformConfigFile.add_column.as_object.empty_column_name       = "AddColumn.AsObject - 'ColumnName' is missing or empty."
+    TransformConfigFile.add_column.as_object.empty_object_values     = "AddColumn.AsObject - 'ObjectValues' is missing or empty."
+
+    # ByMap
+    TransformConfigFile.add_column.by_map.empty_column_name          = "AddColumn.ByMap - 'ColumnName' is missing or empty."
+    TransformConfigFile.add_column.by_map.empty_source               = "AddColumn.ByMap - 'Source' is missing or empty."
+    TransformConfigFile.add_column.by_map.empty_target               = "AddColumn.ByMap - 'Target' is missing or empty."
+    TransformConfigFile.add_column.by_map.empty_target_mapping       = "AddColumn.ByMap - 'TargetMapping' is missing or empty."
+
+    # AsList
+    TransformConfigFile.add_column.as_list.empty_column_name         = "AddColumn.AsList - 'ColumnName' is missing or empty."
+    TransformConfigFile.add_column.as_list.missing_required_fields   = "Missing AddColumn.AsList required fields. Required fields: Source, Target or ListData."
+
+    # ByCondition
+    TransformConfigFile.add_column.by_condition.empty_condition      = "AddColumn.ByCondition - 'Condition' is missing or empty."
+    TransformConfigFile.add_column.by_condition.empty_true_config    = "AddColumn.ByCondition - 'True' config is missing or empty."
+    TransformConfigFile.add_column.by_condition.empty_false_config   = "AddColumn.ByCondition - 'False' config is missing or empty."
+
+    ######################################## Update coloumn ########################################
+
+    # Concat
+    TransformConfigFile.update_column.concat.empty_column_name       = "UpdateColumn.Concat - 'ColumnName' is missing or empty."
+    TransformConfigFile.update_column.concat.empty_concat_value      = "UpdateColumn.Concat - 'ConcatValue' is missing or empty."
+    TransformConfigFile.update_column.concat.empty_position          = "UpdateColumn.Concat - 'Position' is missing or empty."
+    TransformConfigFile.update_column.concat.invalid_position          = "UpdateColumn.Concat -  Invalid 'Position' - {position}. Supported values - 'Start' or 'End'."
+
+    # Split
+    TransformConfigFile.update_column.Split.empty_source             = "UpdateColumn.Split - 'Source' is missing or empty."
+    TransformConfigFile.update_column.Split.empty_delimiter          = "UpdateColumn.Split - 'Delimiter' is missing or empty."
+    TransformConfigFile.update_column.Split.empty_index              = "UpdateColumn.Split - 'Index' is missing or empty."
+
+    # Replace
+    TransformConfigFile.update_column.replace.empty_column_name      = "UpdateColumn.Replace - 'ColumnName' is missing or empty."
+    TransformConfigFile.update_column.replace.empty_replace_whole_value = "UpdateColumn.Replace - 'ReplaceValue' is missing or empty."
+
+    # ChangePath
+    TransformConfigFile.update_column.change_path.empty_source       = "UpdateColumn.ChangePath - 'Source' is missing or empty."
+    TransformConfigFile.update_column.change_path.empty_target       = "UpdateColumn.ChangePath - 'Target' is missing or empty."
+    TransformConfigFile.update_column.change_path.empty_type         = "UpdateColumn.ChangePath - 'Type' is missing or empty."
+
+    ######################################## Delete coloumn ########################################
+    TransformConfigFile.delete_column.empty_column_list              = "DeleteColumn - 'ColumnList' is missing or empty."
+
+    ######################################## Reorder coloumn ########################################
+    TransformConfigFile.reorder_column.empty_column_list             = "ReorderColumn - 'ColumnList' is missing or empty."
+
+    ######################################## Remove duplicates coloumn ########################################
+    TransformConfigFile.remove_duplicates.empty_column_list          = "RemoveDuplicates - 'ColumnList' is missing or empty."
+
+    # Inputfile2
+    InputFile2.invalid_path                          = "Invalid file path for InputFile2: Must be a valid URL."
+    InputFile2.unsupported_extension                 = "Unsupported extension for InputFile2: Expected '.csv'."
+    InputFile2.download_error                        = "Error occurred while downloading InputFile2. {error}."
+    InputFile2.empty_content                         = "Provided InputFile2 file is empty, please provide valid file."
+
+
+[TransformData.Exceptions]
+    
+    TransformConfigFile.toml_parse_error                  = "Exception occured while parsing 'TransformConfigFile'. {error}"
+    TransformConfigFile.add_column_exception              = "Exception occured while processing 'AddColumn'. {error}"
+    
+    TransformConfigFile.update_column_exception           = "Exception occured while processing 'UpdateColumn'. {error}"
+    TransformConfigFile.invalid_update_column             = "Failed to update column. Invalid column {error}. Please provide valid column"
+    
+    TransformConfigFile.delete_column_exception           = "Exception occured while processing 'DeleteColumn'. {error}"
+    TransformConfigFile.invalid_delete_column             = "Failed to delete column. Invalid column {error}. Please provide valid column"
+
+    TransformConfigFile.remove_duplicate_invalid_column   = "Failed to remove duplicate column. Invalid column {error}. Please provide valid column"
+    TransformConfigFile.remove_duplicate_exception        = "Exception occured while processing 'RemoveDuplicates'. {error}"
+
+    TransformConfigFile.reorder_invalid_column            = "Failed to reorder duplicate column. Invalid column {error}. Please provide valid column"
+    TransformConfigFile.reorder_exception                 = "Exception occured while processing 'ReorderColumn'. {error}"
+    
+
+[TransformData.Outputs]
+    
+    OutputFile.upload_failed                         = "Unable to upload the transform data output file to MinIO. {error}"
+    OutputFile.logfile_failed                        = "Unable to upload the transform data log file to MinIO. {error}"

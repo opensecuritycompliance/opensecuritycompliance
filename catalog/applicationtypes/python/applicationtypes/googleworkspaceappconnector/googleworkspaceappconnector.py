@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict, Any
 import base64
 import re
 from google.auth.exceptions import GoogleAuthError
@@ -10,10 +10,14 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.http import MediaIoBaseUpload
 from compliancecowcards.utils import cowdictutils
+from googleapiclient.http import BatchHttpRequest
+from google.auth.exceptions import DefaultCredentialsError
+from google.auth.exceptions import RefreshError
 import logging
 import os
 import io
 import pandas as pd
+
 
 
 class GoogleWorkSpace:
@@ -501,3 +505,96 @@ class GoogleWorkSpaceAppConnector:
           return f'{self.app_url.strip("/")}/sql/instances/{instance_name}/databases?project={project_id}'
         except Exception as e:
             return ''
+           
+    def handle_batch_response(self, request_id: str, response: Optional[Dict[str, Any]], exception: Optional[Exception] ):
+        """
+        The function `handle_batch_response` processes batch responses from API requests, handling
+        success and failure cases and recursively fetching additional pages of data if available.
+        """
+        email = request_id
+        if exception:
+            self.results[email] = f"Failed : {exception}"
+        else:
+            all_activities = []
+            if not response:
+                all_activities.append("No API Response.")
+            else:
+                if 'items' in response:
+                    all_activities.extend(response['items'])
+
+            next_page_token = response.get('nextPageToken')
+            if next_page_token:
+                self.batch.add(
+                    self.service.activities().list(
+                        userKey = email,
+                        applicationName = self.applicationName,
+                        maxResults = 1000,
+                        pageToken = next_page_token
+                    ),
+                    callback = self.handle_batch_response,
+                    request_id = email
+                )
+            else:
+                self.results[email] = all_activities
+
+    # https://admin.googleapis.com/admin/reports/v1/activity/users/{userKey}/applications/login
+    def get_activities(self, emailID_list: list, applicationName: str) -> Tuple[any, str]:
+        """
+        The function `get_activities` retrieves user activities from Google Workspace using the Admin
+        SDK Reports API in batches.
+        """
+        try:
+            scope = 'https://www.googleapis.com/auth/admin.reports.audit.readonly'
+            token_source, err = self.create_config(scope)
+            if err:
+                return None, err
+            try:
+                token_source.refresh(Request())
+            except RefreshError as re:
+                return None, f"Token refresh failed: {re}"
+            try:
+                token_source._subject = self.user_defined_credentials.google_work_space.user_email
+            except AttributeError as ae:
+                return None, f"User email is not properly set in credentials: {ae}"
+            try:
+                service = build('admin', 'reports_v1', credentials=token_source)
+            except DefaultCredentialsError as ce:
+                return None, f"Failed to build Google API client: {ce}"
+
+            self.applicationName = applicationName
+            self.results = {}
+            self.log_file = ""
+
+            batch_size = 1000
+            batches = [emailID_list[i:i + batch_size] for i in range(0, len(emailID_list), batch_size)]
+            for batch_emails in batches:
+                self.batch = BatchHttpRequest(callback=self.handle_batch_response, batch_uri='https://admin.googleapis.com/batch')
+                for email in batch_emails:
+                    self.batch.add(
+                        service.activities().list(
+                            userKey = email,
+                            applicationName = applicationName,
+                            maxResults = 1000
+                        ),
+                        callback = self.handle_batch_response,
+                        request_id = email
+                    )
+                
+                try: 
+                    self.batch.execute()
+                except HttpError as he:
+                    return None, f"HTTP error during batch execution: {he.reason}"
+                except Exception as be:
+                    return None, f"Unexpected error during batch execution: {be}"
+
+            final_results = [
+                {
+                    'email' : email,
+                    'activities' : self.results.get(email, "No data returned")
+                }
+                for email in emailID_list
+            ]
+            return final_results, None
+        except Exception as e:
+            self.log_file = f"API request failed: {e}"
+            return None, self.log_file

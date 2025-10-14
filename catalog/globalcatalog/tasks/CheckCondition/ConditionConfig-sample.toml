@@ -1,0 +1,207 @@
+# CONDITION CONFIG STRUCTURE
+
+# [[ConditionRules]] -> [MANDATORY] Specifies the condition data, such as the condition values, and the type of condition
+#   ConditionLabel   -> Unique name for the condition
+#   Condition        -> Type of condition
+#   ConditionField   -> Field path from the InputFile to check with the condition
+#   ConditionValue   -> Static/dynamic value that must be compared with the value of ConditionField
+#   DateFormat       -> Specific for date related conditions, this field holds the format of the date value in ConditionField and ConditionValue
+#  - You can have as many ConditionRules as necessary
+
+# [ConditionRulesConfig] -> [MANDATORY]
+#   ConditionsCriteria   -> CEL expression with ConditionLabel(s) that determine the splitting of the InputFile
+
+# [[ConditionFieldUpdates]]      -> [OPTIONAL] Can be used to update fields in the InputFile based on provided CEL expression in ConditionsCriteria
+#   ConditionsCriteria           -> CEL expression with ConditionLabel(s) that determine whether the current record from InputFile must be updated with PASS / FAIL values
+#   [ConditionFieldUpdates.PASS] -> Values to update in the record, if ConditionsCriteria passes
+#   [ConditionFieldUpdates.FAIL] -> Values to update in the record, if ConditionsCriteria fails
+
+# For ConditionField, ConditionValue and ConditionFieldUpdates.PASS/FAIL fields:
+# Use <<inputfile.FieldName>> to access data from InputFile
+# Use <<custominputs.FieldName>> to access data from CustomInputs file. For CustomInputs, only the first element/row will be considered
+
+[[ConditionRules]]
+    ConditionLabel = "check_patchable"
+    Condition = "EQUALS"
+    # EMPTY
+    # NOT_EMPTY
+    # CONTAINS
+    # NOT_CONTAINS
+    # REGEX
+    # EQUALS
+    # NOT_EQUALS
+    # LESSER_THAN/LT
+    # GREATER_THAN/GT
+    # LESSER_THAN_OR_EQUALS/LT_EQ
+    # GREATER_THAN_OR_EQUALS/GT_EQ
+    # NUMBER_RANGE - refer below for syntax
+    ConditionField = "<<inputfile.isPatchable>>"
+    ConditionValue = true # Here you can specify the value from the data file similar to 'ConditionField'. Eg: "<<inputfile.title>>"
+    # ConditionValue is not required for 'EMPTY and NOT_EMPTY' conditions
+
+    # ConditionValue SYNTAX for NUMBER_RANGE:
+    #   <start-value>:<end-value> -> sets range from start value to end value
+    #   <start-value>:            -> sets start value as minimum value
+    #                :<end-value> -> sets end value as maximum value
+
+# CEL CONDITION
+[[ConditionRules]]
+    ConditionLabel = "cel_check"
+    Condition = "CEL_CONDITION"
+    ConditionValue = "<<inputfile.isPatchable>> && <<inputfile.createdDate>> != ''"
+    # You can give a CEL Expression as ConditionValue, and you can omit the 'ConditionField' completely in this case
+    # The fields that you access from InputFile or CustomInputs using <<inputfile.FieldName>> or <<custominputs.InputName>> must not contain spaces
+    # For example: <<inputfile.Created date>> is invalid. You can use the TransformData task to rename the field without spaces.
+
+[[ConditionRules]]
+    # Conditions for date
+    ConditionLabel = "check_date"
+    Condition = "FROM_DATE_OFFSET"
+    # FROM_DATE_OFFSET   - refer 'DATE OFFSET SYNTAX' below
+    # TO_DATE_OFFSET     - refer 'DATE OFFSET SYNTAX' below
+    # DATE_OFFSET_RANGE  - refer below for syntax
+    # FROM_DATE          - date must be in the same format as DateFormat
+    # TO_DATE            - date must be in the same format as DateFormat
+    # DATE_RANGE         - refer below for syntax
+    # FROM_RULE_DATE     - considers any date after the FromDate from rule inputs
+    # TO_RULE_DATE       - considers any date upto the ToDate from rule inputs
+    # RULE_DATE_RANGE    - considers date starting with FromDate, upto ToDate from the rule inputs
+    ConditionField = "<<inputfile.createdDate>>" # For date conditions, you can mention 'now' to set ConditionField's value to current date & time
+    ConditionValue = "-30d" # not required for 'FROM_RULE_DATE, TO_RULE_DATE and RULE_DATE_RANGE' conditions
+
+    # For ConditionValue, you can also mention expressions like "<<inputfile.createdDate>> - 30d" and "<<inputfile.createdDate>> + 5d", to calculate date using data from InputFile
+    # But the left operand must a date in the provided DateFormat, and the right operand must be of the 'DATE OFFSET SYNTAX' below
+    # Similar to ConditionField, you can also mention 'now' to set ConditionValue to current date & time
+
+    # DateFormat is optional, and can provide one of the below 2 types of values:
+    # You can parse the date values using one of the following two methods:
+    # 1. Specify the date format manually
+    # DateFormat = "%d/%m/%y %H:%M" # see the 'Reference Table for DateFormat' for more information
+    # 2. Automatically detect the date format
+    #    It is recommended to manually specify the DateFormat if the date value doesn't contain a 4-digit year, as detection can be inconsistent in this case
+    #    The below value is also used as default if DateFormat is not mentioned
+    # DateFormat.IsDayFirst = false # Determines whether to prioritize day (True) or month (False) in a date such as: 2012-1-9
+        # EXAMPLE: 2012-1-9
+        # ------------------
+        # IsDayFirst = true
+        #   Year  - 2012
+        #   Day   - 01
+        #   Month - 09
+        # ------------------
+        # IsDayFirst = false
+        #   Year  - 2012
+        #   Day   - 09
+        #   Month - 01
+
+    # DATE OFFSET SYNTAX:
+    #   <years>y <months>m <days>d <hours>H <minutes>M <seconds>S -> Sets date offset after current date
+    #   - <years>y <months>m <days>d <hours>H <minutes>M <seconds>S -> Use the (-) minus symbol at the beginning to set date offset before current date
+
+    # ConditionValue SYNTAX FOR DATE_OFFSET_RANGE:
+    #   <date-offset>:now   -> Considers date starting from the specified offset, to current date
+    #       Example: -5d:now -> Assuming current date is: Aug 28 2024, this range considers from Aug 23 2024 to Aug 28 2024
+    #
+    #      :<date-offset>   -> Considers and date before the offset specified
+    #       Example: 5d:   -> Assuming current date is: Aug 28 2024, this range considers any date on or later than Sep 02 2024
+    #
+    #   now:<date-offset>   -> Considers date starting from current date, to the offset specified after the current date
+    #       Example: now:5d -> Assuming current date is: Aug 28 2024, this range considers from Aug 28 2024 to Sep 02 2024
+    #
+    #   now:<date-offset>   -> Considers date starting from current date, to the offset specified after the current date
+    #       Example:    :-5d -> Assuming current date is: Aug 28 2024, this range considers any date on or before Aug 23 2024
+
+    # ConditionValue SYNTAX FOR DATE_RANGE:
+    #   <start-date>-><end-date> -> sets range from start date to end date
+    #   <start-date>->now        -> sets range from start date to current date
+    #   <start-date>->           -> considers every date after the start date
+    #            now-><end-date> -> sets range from current date to end date
+    #               -><end-date> -> considers every date before the end date
+    #   NOTE: <start-date> and <end-date> must be in the same format as DateFormat
+
+
+# Use ConditionRulesConfig to specify which conditions must pass or fail, to collectively consider the condition outcome
+[ConditionRulesConfig]
+    ConditionsCriteria = "!check_patchable && condition.check_date"
+    # This is a CEL Expression, with the criteria to consider for the final outcome
+    # You can use the syntax: `condition.[condition_label]`, where `condition_label` is the 'ConditionLabel' value of any declared 'ConditionRules' in the expression
+    # To avoid splitting the InputFile, you can mention `true` to add all records into the MatchedConditionFile, or `false` to add them to UnmatchedConditionFile
+    # You can also mention `[condition_label]` instead of `condition.[condition_label]`, but the later one is more error-safe
+
+    # JSON STRUCTURE OF ConditionsCriteria CEL ENVIRONMENT:
+    # {
+    #     "check_patchable": true, // value depends based on whether the condition passed (true) or failed (false)
+    #     "cel_check": false,
+    #     // Conditions that were NOT evaluated successfully (i.e some exception occurred due to user/task errors), will not be added to the environment
+    #     "conditions": { // Contains a copy of conditions as above, but inside the 'conditions' object.
+    #         "check_patchable": true,
+    #         "cel_check": false
+    #     }
+    # }
+    # If you want to use CEL functions such as 'has', you need to access the condition status only through the 'conditions' object.
+    # Example: has(conditions.check_date)
+    # Trying to use CEL functions by accessing conditions at the root of the environment using `has(check_date)` will result in an error.
+
+
+# OPTIONAL
+# You can use ConditionFieldUpdates to add or update values in the data based on the condition status.
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "!check_patchable && !condition.check_date"
+    [ConditionFieldUpdates.PASS]
+        # Values to update in OutputFile, if condition passes
+        Result = "NOT_PATCHABLE"
+        Reason = "Not patchable, but not created within 30 days"
+        RecordID = "<<custominputs.InputName>>" # You can also access InputFile and CustomInputs data in any of the fields in ConditionFieldUpdates.PASS or ConditionFieldUpdates.FAIL
+        # Add more fields as needed
+    [ConditionFieldUpdates.FAIL]
+        # Values to update in OutputFile, if condition fails
+        Result = "PATCHABLE"
+        Reason = "Patchable and not created within 30 days"
+
+# Each ConditionFieldUpdates must have values for both, or either of ConditionFieldUpdates.PASS and ConditionFieldUpdates.FAIL fields
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "!check_patchable && condition.check_date"
+    [ConditionFieldUpdates.PASS]
+        Result = "NOT_PATCHABLE_CREATED_WITHIN_30DAYS"
+        Reason = "Not patchable and created within 30 days"
+
+# Add as many ConditionFieldUpdates as necessary
+
+
+
+# Reference Table for DateFormat:
+# https://www.geeksforgeeks.org/how-to-format-date-using-strftime-in-python/
+# |--------------------------|------------------------------------------------------|--------------------------------------|
+# | Directive or Format Code | Returned Value                                       | Example                              |
+# |--------------------------|------------------------------------------------------|--------------------------------------|
+# | %Y                       | Full year with century                               | 2021, 2022                           |
+# | %y                       | Year without century with zero padded value          | 00, 01, …, 21, 22, …, 99             |
+# | %-y                      | Year without century                                 | 0, 1, …, 99                          |
+# | %m                       | Month with zero padded value                         | 01-12                                |
+# | %-m                      | Month without zero padded value                      | 1-12                                 |
+# | %B                       | Full month name                                      | January, February, …, December       |
+# | %b                       | Short form of month                                  | Jan, Feb, …, Dec                     |
+# | %A                       | Full weekday name                                    | Sunday, Monday, …                    |
+# | %a                       | Short form of weekday name                           | Sun, Mon, …                          |
+# | %w                       | Weekday as decimal value                             | 0-6                                  |
+# | %d                       | Days with zero padded value                          | 01-31                                |
+# | %-d                      | Days with decimal value                              | 1-31                                 |
+# | %H                       | Hour (24-hour clock) as a zero-padded value          | 00-23                                |
+# | %-H                      | Hour (24-hour clock) without zero-padded value       | 0, 1, …, 23                          |
+# | %I                       | Hour (12-hour clock) as a zero-padded value          | 01-12                                |
+# | %-I                      | Hour (12-hour clock) without zero-padded value       | 1-12                                 |
+# | %M                       | Mins with zero-padded                                | 00-59                                |
+# | %-M                      | Mins without zero padded value                       | 0-59                                 |
+# | %S                       | Secs with zero padded value                          | 00-59                                |
+# | %-S                      | Secs without zero padded value                       | 0-59                                 |
+# | %f                       | Micro Secs with zero-padded value                    | 000000 – 999999                      |
+# | %p                       | Locale’s AM or PM                                    | AM/PM                                |
+# | %j                       | Day of the year with zero padded value               | 001-366                              |
+# | %-j                      | Day of the year without zero padded value            | 1-366                                |
+# | %z                       | UTC offset in the form +HHMM or -HHMM                |                                      |
+# | %Z                       | Time zone name                                       |                                      |
+# | %C                       | Locale’s appropriate date and time                   | Fri Apr 02 02:09:07 2020             |
+# | %x                       | Locale’s appropriate date                            | 02/04/22                             |
+# | %X                       | Locale’s appropriate time                            | 02:04:22                             |
+# | %W                       | Week number of the year. Monday as first day of week | 00-53                                |
+# | %U                       | Week number of the year. Sunday as first day of week | 00-53                                |
+# |--------------------------|------------------------------------------------------|--------------------------------------|

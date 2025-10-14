@@ -1,0 +1,92 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: https://api.github.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      provider:
+      - github
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: |-
+          curl --location 'https://api.github.com/user' \
+          --header 'Authorization: <<BearerToken>>'
+        Token: $TOKEN
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  GitHubDependabotConditionConfig: <<MINIO_FILE_PATH>>
+  GitHubDependabotInputFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: JSON
+  GitHubDependabotRequestConfig: <<MINIO_FILE_PATH>>
+  GitHubDependabotResponseConfig: <<MINIO_FILE_PATH>>
+  GitHubDependabotTransformConfig: <<MINIO_FILE_PATH>>
+fromDate: 2025-01-06T09:24:37Z
+toDate: 2025-01-06T09:24:37Z

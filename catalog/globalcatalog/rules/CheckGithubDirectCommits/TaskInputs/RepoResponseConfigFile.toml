@@ -1,0 +1,18 @@
+
+[Response]
+
+[Response.RuleSet]
+
+    [Response.RuleSet.AppendColumnCondition]
+
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+
+    IncludeAllInputFields = false
+    
+    [Response.RuleSet.AppendColumn.Fields]
+
+    owners = "<<inputfile.account_owner>>"
+    repo= "<<inputfile.repository_name>>"

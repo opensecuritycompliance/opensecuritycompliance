@@ -1,0 +1,27 @@
+[JQConfig]
+JQExpression = '''
+.[].data.search.nodes[] | {
+  "System": "github",
+  "Source": "compliancecow",
+  "ResourceID": .id,
+  "ResourceName": .title,
+  "ResourceType": "Pull Request",
+  "ResourceLocation": "N/A",
+  "ResourceTags": [],
+  "ResourceURL": .url,
+  "PRNumber": .number,
+  "PRCreatedBy": .author.login,
+  "PRState": .state,
+  "PRIsDraft": (.isDraft | tostring | ascii_upcase),
+  "PRHeadRef": .headRefName,
+  "PRHeadRepo": .headRepository.nameWithOwner,
+  "PRHeadSHA": .headRefOid,
+  "PRBaseRef": .baseRefName,
+  "PRBaseRepo": .baseRepository.nameWithOwner,
+  "PRBaseSHA": .baseRefOid,
+  "PRCreatedDate": .createdAt,
+  "PRClosedDate": .closedAt,
+  "PRMergedDate": .mergedAt
+}
+'''
+OutputMethod = "ALL"

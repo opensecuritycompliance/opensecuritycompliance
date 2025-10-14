@@ -1,0 +1,133 @@
+# 'Response' is a configuration object used to specify how to process HTTP responses based on defined conditions.
+# 'Response' is optional. You can skip passing it as input to the task, or leave it as an empty file if necessary.
+
+[Response]
+
+[Response.Filter]
+    JQExpression = ""  
+    # JQExpression to process the response body.
+    # Example: .[].fields.statuscategorychangedate
+
+    OutputMethod = ""
+    # OutputMethod specifies how the output from the JQ filter should be handled.
+    # Valid values might include "ALL", "FIRST"(Default).
+
+    # Note:
+    # - The JQExpression is optional and only has an effect if specified.
+    # - When using the "AppendColumn Fields" feature along with a JQ filter,
+    #   the append operation is applied to the filtered response instead of the original unfiltered response.
+
+
+# Each entry in the 'RuleSet' contains conditions to evaluate and defines the actions to perform when those conditions are met.
+# Supported action types are 'AppendColumn' and 'Pagination'.
+[Response.RuleSet]
+
+    # Condition for the 'AppendColumn' action
+    [Response.RuleSet.AppendColumnCondition]
+    # The 'ConditionField' is used to determine when to apply the 'AppendColumn' action.
+    # For example, if the response status code is 200, then proceed with appending columns to the output.
+    # 'ConditionField' is not mandatory; you can leave it as an empty string.
+    # In that case, it won't check any condition and will directly append the columns to the output.
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+    # If you want to include all columns from the input file in the output, set 'IncludeAllInputFields' to true.
+    # This eliminates the need to specify each column individually in 'AppendColumn'.
+    # If you want to add only specific fields from the input file, use the 'AppendColumn' section instead.
+    IncludeAllInputFields = true
+    
+    [Response.RuleSet.AppendColumn.Fields]
+    # You can add custom fields to the output.
+    # Example
+    # Status = "AccountDisabled" 
+
+    # You can add fields from the input file to the output using the "inputfile." prefix inside "<<>>".
+    # 'inputfile' refers to the input file for the task, "InputFile.json".
+    # Example
+    # Arn = "<<inputfile.Arn>>"  
+
+    # To access a specific value from the array, use the index (e.g., "owners[0]" for the first element). 
+    # To access the entire array, use [] in place of the index (e.g., "<<inputfile.owners[].name>>").
+    # Example
+    # Owners = "<<inputfile.Owners[].name>>"  
+
+    # You can add fields from the request config to the output using the "request." prefix inside "<<>>".
+    # 'request' refers to the input file for the task, "RequestConfigFile.toml".
+    # Example
+    # URL = "<<request.URL>>"      
+
+    # You can add fields from the raw API response using the "response." prefix inside "<<>>".
+    # 'response' contains the following fields:
+    # { 
+    #     "url": "request URL",
+    #     "body": "response body in JSON format",
+    #     "status_code": "response status code",
+    #     "headers": "response headers",
+    #     "cookies": "response cookies",
+    #     "links": [ // Content from the Link header in the response, if it exists
+    #         "link_name": {
+    #             "rel": "link_name",
+    #             "url": "link url"
+    #         }
+    #     ]
+    # }
+    # Example
+    # StatusCode = "<<response.status_code>>"  
+
+    # You can reference fields from the JSON response body using the "response.body." prefix within "<<>>". 
+    # To access a field in a JSON object or array, simply use "<<response.body.ID>>". 
+    # If the response body is an array (e.g., [{}, {}]), this query will apply to all objects in the array.
+    # Example
+    # ID = "<<response.body.ID>>"       
+
+    # Condition for the 'Pagination' action
+    [Response.RuleSet.PaginationCondition]
+    # Specify conditions for triggering pagination actions
+    # MAKE SURE : Pagination will stop only when the specified codition gets matched.
+    # Example:
+    #   ConditionField = "<<response.body.entries>>"
+    #   ConditionValue = ""
+    ConditionField = ""
+    ConditionValue = ""
+
+    [Response.RuleSet.Pagination]
+        # ------------------------------------------------------------------------------
+        # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING <<response.body.key>> ,  <<response.headers.key>>, 
+        # <<response.headers.key>>,  <<response.cookies.key>>
+        # ------------------------------------------------------------------------------
+        # In the below parameters, you can access all the field mentioned in 'Response.RuleSet.AppendColumn.Fields'.
+        # In addition to that, you can also access <<fromdate>> and <<todate>>.
+        # All 'Pagination' fields should be  specifed as key-value pair in the format: key = value.
+        URL = ""  # Specify the API endpoint.
+        
+        [Response.RuleSet.Pagination.Header]
+        # Example:
+        # pageToken = "<<response.body.nextPageToken>>"
+
+        # For Query Params
+        [Response.RuleSet.Pagination.Params]
+        # Example:
+        # pageToken = "<<response.body.nextPageToken>>"
+
+        # For URLEncoded data
+        [Response.RuleSet.Pagination.Data.URLEncoded]
+        # Example:
+        # pageToken = "<<response.body.nextPageToken>>"
+
+        # For FormData 
+        [Response.RuleSet.Pagination.Data.FormData]
+        # Example:
+        # pageToken = "<<response.body.nextPageToken>>"
+        # (or)
+        # page = "<<response.body.Page>> + 1"
+
+        # For Raw data
+        [Response.RuleSet.Pagination.Data.Raw]
+        # Example:
+        # Value = '{"pageToken": "<<response.body.nextPageToken>>"}'
+
+        # For FormData 
+        [Response.RuleSet.Pagination.Data.Binary]
+        # Example:
+        # Value = "QmluYXJ5IERhdGE="

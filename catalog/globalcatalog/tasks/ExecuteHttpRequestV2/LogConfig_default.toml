@@ -1,0 +1,23 @@
+# Main configuration for ExecuteHttpRequest feature
+[ExecuteHttpRequest]
+ 
+TaskInputs.empty = "missing: Task inputs"
+UserDefinedCredentials.empty = "missing: User defined credentials"
+RequestConfigFile.empty = "'RequestConfigFile' cannot be empty"
+
+LogFile.download_failed = "Unable to download the log file from MinIO. Please find more details: {Error}"
+InputFile.download_failed = "Unable to download InputFile from MinIO. Please find more details: {Error}"
+RequestConfigFile.download_failed = "Unable to download RequestConfigFile from MinIO. Please find more details: {Error}"
+ResponseConfigFile.download_failed = "Unable to download ResponseConfigFile from MinIO. Please find more details: {Error}"
+InputFileValidationConfig.download_failed = "Unable to download InputFileValidationConfig from MinIO. Please find more details: {Error}"
+
+CredentialType.NotFound = "Could not find '{credential_type}' credential type in Application."
+CredentialType.NotSupport = "Invalid credential type supported types are 'Azure, BasicAuthentication, APIKey, AWSIAM, AWSRole'."
+Credentials.Mismatch = "Invalid credentials or CredentialType mismatch between the application and RequestConfigFile.toml."
+RequestConfigFile.FieldMissing = "'{fields}' are missing in request_config variables"
+RequestConfigFile.VariableMissing = "'{missing_variable}' is missing in request_config variables"
+ContentType.NotSupportAppending = "The content type '{content_type}' does not support appending column fields. This feature is only supported for 'application/json' and 'application/ld+json'."
+RequestConfigFile.AllowedValues = "Only 'string' type values are allowed in request_config_file['variable'] :: {error}"
+RequestConfigFile.InvalidParams = "Invalid JSON string provided in 'RequestConfigFile.Params'"
+PLaceHolder.ProcessingFailed = "Error while processing place holders."
+

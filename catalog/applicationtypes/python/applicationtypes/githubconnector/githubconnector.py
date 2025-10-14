@@ -1,5 +1,5 @@
 from typing import List
-
+from github import GithubException
 from github import Github, Auth
 import datetime
 from  datetime import timezone
@@ -149,6 +149,18 @@ class GitHubConnector:
         except Exception as e:
             repo = None 
         return repo
+
+    def list_github_orgs(self):
+        try:
+            github_client = self.create_github_client()
+            orgs = github_client.get_user().get_orgs()
+            return orgs, None
+        except GithubException as ge:
+            return None, f"An error occurred while fetching GitHub organizations: {ge}"
+        except ConnectionError:
+            return None, "Failed to connect to GitHub API."
+        except TimeoutError:
+            return None, "Connection to GitHub API timed out."
     
     def validate_organization_repo_branch(self, x_criterias_as_dict_list):
         github_client = self.create_github_client()

@@ -1,0 +1,20 @@
+userObject:
+  apps:
+  - name: JiraCloud
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - jiracloud
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      BasicAuthentication:
+        UserName: ""
+        Password: ""
+userInputs:
+  JiraIssueTemplate: <<MINIO_FILE_PATH>>
+fromDate: 2025-05-20T09:08:49Z
+toDate: 2025-05-20T09:08:49Z

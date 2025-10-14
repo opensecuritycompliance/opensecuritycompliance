@@ -272,12 +272,13 @@ func main() {
 						if len(taskProgressVO.Errors) > 0 {
 							ruleProgressVO.Errors["taskName"] = taskDisplayableName
 							ruleProgressVO.Errors["error"] = taskProgressVO.Errors["error"]
-							if logTxt, ok := taskProgressVO.Errors["logText"]; ok {
-								ruleProgressVO.Errors["logText"] = logTxt
-							}else if outputByts, err := os.ReadFile("logs.txt"); err == nil {
-								ruleProgressVO.Errors["logText"] = outputByts
-							}
-
+							if len(taskProgressVO.Outputs) == 0 {
+								if logTxt, ok := taskProgressVO.Errors["logText"]; ok {
+									ruleProgressVO.Errors["logText"] = logTxt
+								}else if outputByts, err := os.ReadFile("logs.txt"); err == nil {
+									ruleProgressVO.Errors["logText"] = outputByts
+								}
+							}			
 						}
 						return
 					}
@@ -777,6 +778,18 @@ func taskExecutor(taskName string) error{
 		err = json.Unmarshal(outputByts, &outputMap)
 		if _, ok := outputMap["error"]; ok {
 			return fmt.Errorf("Task execution failed for :%s", taskName)
+		}
+		if outputs, ok := outputMap["Outputs"].(map[string]interface{}); ok {
+			if errVal, exists := outputs["Errors"]; exists {
+				if errList, ok := errVal.([]interface{}); ok && len(errList) > 0 {
+					return fmt.Errorf("Task execution failed for: %s", taskName)
+				}
+			}
+			if errVal, exists := outputs["Error"]; exists {
+				if errStr, ok := errVal.(string); ok && errStr != "" {
+					return fmt.Errorf("Task execution failed for: %s", taskName)
+				}
+			}
 		}
 	}
 

@@ -1,0 +1,52 @@
+[[ConditionRules]]
+    ConditionLabel = "is_closed_date_empty"
+    Condition = "EMPTY" 
+    ConditionField = "<<inputfile.CLOSED_DATE>>"
+
+[[ConditionRules]]
+    ConditionLabel = "is_closed_date_na"
+    Condition = "EQUALS" 
+    ConditionField = "<<inputfile.CLOSED_DATE>>"
+    ConditionValue = "N/A"
+
+[[ConditionRules]]
+    ConditionLabel = "is_closed_within_sla"
+    Condition = "TO_DATE" 
+    ConditionField = "<<inputfile.CLOSED_DATE>>"
+    ConditionValue = "<<inputfile.CREATED_DATE>> + <<inputfile.SLA_IN_DAYS>>d"
+
+[[ConditionRules]]
+    ConditionLabel = "is_valid_sla"
+    Condition = "GT" 
+    ConditionField = "<<inputfile.SLA_IN_DAYS>>"
+    ConditionValue = 0
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "!is_closed_date_empty && !is_closed_date_na"
+
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "!is_valid_sla"
+    [ConditionFieldUpdates.PASS]
+        ValidationStatusCode = "INV_SLA"
+        ValidationStatusNotes = "An SLA is not defined for this issue’s priority in the SLA configuration file." 
+        ComplianceStatus = "NOT_DETERMINED"
+        ComplianceStatusReason = "An SLA is not defined for this issue’s priority in the SLA configuration file." 
+
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "is_valid_sla && !is_closed_date_empty && has(condition.is_closed_within_sla) && condition.is_closed_within_sla"
+    [ConditionFieldUpdates.PASS]
+        ValidationStatusCode = "CLSD_SLA"
+        ValidationStatusNotes = "This Jira issue was closed within the SLA timeframe based on its priority." 
+        ComplianceStatus = "COMPLIANT"
+        ComplianceStatusReason = "This record is COMPLIANT as the Jira issue was closed within the SLA timeframe defined by its priority, ensuring compliance with the expected resolution standards." 
+
+[[ConditionFieldUpdates]]
+    ConditionsCriteria = "is_valid_sla && !is_closed_date_empty && has(condition.is_closed_within_sla) && !condition.is_closed_within_sla"
+    [ConditionFieldUpdates.PASS]
+        ValidationStatusCode = "CLSD_N_SLA"
+        ValidationStatusNotes = "This Jira issue was not closed within the SLA timeframe based on its priority." 
+        ComplianceStatus = "NON_COMPLIANT"
+        ComplianceStatusReason = "This record the NON_COMPLIANT as the Jira issue was not closed within the SLA timeframe defined by its priority, resulting in a breach of the expected resolution standards." 
+
+
+

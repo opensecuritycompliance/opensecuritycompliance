@@ -1,0 +1,6 @@
+[
+    {
+        "account_owner":"<<github_account_owner>>",
+        "repository_name":"<<github_repository_name>>"
+    }
+]

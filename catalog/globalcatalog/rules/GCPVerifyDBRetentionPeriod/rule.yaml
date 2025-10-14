@@ -1,0 +1,64 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GCPVerifyDBRetentionPeriod
+  purpose: GCPVerifyDBRetentionPeriod
+  description: GCPVerifyDBRetentionPeriod
+  labels:
+    appType:
+    - gcpconnector
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - gcpconnector
+spec:
+  inputs:
+    MinimumRequiredRetentionPeriod: 
+    IncludeProjects:
+    ExcludeProjects:
+  inputsMeta__:
+  - name: MinimumRequiredRetentionPeriod
+    dataType: INT
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: true
+  - name: IncludeProjects
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: false
+  - name: ExcludeProjects
+    dataType: STRING
+    repeated: false
+    defaultValue: 
+    allowedValues: []
+    showField: true
+    required: false
+  tasks:
+  - name: FetchGCPDataBaseInstanceList
+    alias: t1
+    type: task
+    purpose: FetchGCPDataBaseInstanceList
+    description: FetchGCPDataBaseInstanceList
+  - name: GCPVerifyDBRetentionPeriod
+    alias: t2
+    type: task
+    purpose: GCPVerifyDBRetentionPeriod
+    description: GCPVerifyDBRetentionPeriod
+  ioMap:
+  - t1.Input.IncludeProjects:=*.Input.IncludeProjects
+  - t1.Input.ExcludeProjects:=*.Input.ExcludeProjects
+  - t2.Input.MinimumRequiredRetentionPeriod:=*.Input.MinimumRequiredRetentionPeriod
+  - t2.Input.LogFile:=t1.Output.LogFile
+  - t2.Input.GCPDataBaseInstanceList:=t1.Output.GCPDataBaseInstanceList
+  - '*.Output.CompliancePCT_:=t2.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t2.Output.ComplianceStatus_'
+  - '*.Output.GCPDBRetentionPeriodReport:=t2.Output.GCPDBRetentionPeriodReport'
+  - '*.Output.LogFile:=t2.Output.LogFile'

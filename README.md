@@ -14,8 +14,9 @@
    1. [Developing a Rule](#1-developing-a-rule)
       1. [Creating a credential-type](#11-creating-a-credential-type)
       2. [Creating an application-type](#12-creating-an-application-type)
-      3. [Initializing a rule](#13-initializing-a-rule)
-      4. [Implementing the business logic](#14-implementing-the-business-logic)
+      3. [Initializing a task](#13-initializing-a-task)
+      4. [Initializing a rule](#14-initializing-a-rule)
+      5. [Implementing the business logic](#15-implementing-the-business-logic)
    2. [Executing a rule](#2-executing-a-rule)
 4. [Other Essential Features](#other-essential-features)
    1. [File as a rule input](#file-as-a-rule-input)
@@ -32,7 +33,7 @@ environment.
 
 | Name                    | Description                                                                                                                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ApplicationType Package** | ApplicationType package contains the ApplicationType scope validations and other common methods related to the ApplicationType                                                                        |
+| **ApplicationType** | A package for a specific application type that provides reusable methods and validations, which can be imported and used within tasks to perform application-related operations.                                                                        |
 | **Task**                | A task is an automatic unit of work in OpenSecurityCompliance. This can be written in Go or Python, and can be unit tested.                                                               |
 | **Rule**                | A Rule, which is a collection of tasks, can be mapped to a control in any assessment. When an assessment is run, the mapped rules are executed to assess the controls they are mapped to. |
 
@@ -199,9 +200,22 @@ You can verify the details and modify the ApplicationType YAML file as needed or
 
 <img src="misc/img/create_app_1.png" alt="create_app_1" width="800"/>
 
-Once the `create application-type` is completed, a new package and a set of classes will be created in `catalog/applicationtypes/go/` for Golang and `catalog/applicationtypes/python/appconnections` for Python. Package name shall be the same as the ApplicationType name.
+Once the `create application-type` is completed, a new package and a set of classes will be created in `catalog/applicationtypes/go/` for Golang and `catalog/applicationtypes/python/applicationtypes` for Python. Package name shall be the same as the ApplicationType name.
 
-### 1.3 Initializing a rule
+### 1.3 Initializing a task
+
+Now that we have created the ApplicationType and its CredentialTypes, it’s time to initialize a task.
+A task is essentially a unit of execution that performs a specific action (e.g., fetching GitHub branches, validating configurations, or collecting data, etc.) using the defined ApplicationType.
+Use the `init task` command which will prompt you to provide:
+- Enter a Task Name
+- Choose the programming language — either Python or Go.
+- Decide whether to add an ApplicationType. This determines which application or service the task interacts.
+
+<img src="misc/img/init_task.png" alt="init_task" width="800"/>
+
+Note: Task initialization is optional. You can also create and include tasks directly while initializing a rule (see section 1.4).
+
+### 1.4 Initializing a rule
 
 Now that we have created the ApplicationType and its CredentialTypes, it's time to initialize a rule with its associated tasks. Use the `init rule` command which will prompt you to provide:
 
@@ -311,7 +325,7 @@ Below is a class diagram that explains the relationship among the Task, the App 
 
 <img src="misc/img/class_diagram_task_app.png" alt="class_diagram_task_app" width="500"/>
 
-### 1.4 Implementing the business logic
+### 1.5 Implementing the business logic
 
 Both your task and ApplicationType code will need to utilize the various auto-generated OpenSecurityCompliance classes. To facilitate seamless integration in your IDE, please execute the command `sh install_cow_packages.sh` (in Mac or Ubuntu) or `./windows_setup/install_cow_packages.ps1` (in Windows). You can find this file in the main folder of OpenSecurityCompliance.
 
@@ -449,7 +463,7 @@ import (
 )
 ```
 
-Once these are done, run `go mod tidy` to get all the packages required. In case of any errors in accessing `appconnections` or `cowlibrary`, modify the `go.mod` file relative path in such a way that it will be able to access the `catalog/appconnections/go` path.
+Once these are done, run `go mod tidy` to get all the packages required. In case of any errors in accessing `applicationtypes` or `cowlibrary`, modify the `go.mod` file relative path in such a way that it will be able to access the `catalog/applicationtypes/go` path.
 
 ```javascript
 replace cowlibrary => ../../../../src/cowlibrary
@@ -516,6 +530,16 @@ During rule execution in OpenSecurityCompliance, you are prompted to provide inp
 ### Troubleshooting
 
 If any errors occur, you can readily review the execution logs in Minio, accessible at http://localhost:9001/. To log in, use the username and password that you've set up in the `etc/policycow.env` configuration. The path to the log file in Minio is specified within the `cowexecutions/execution.ndjson` file (in the last line).
+
+If an unexpected error occurs during rule execution, you’ll see a message like the one shown below:
+
+<img src="misc/img/exec_rule_error.png" alt="exec_rule_error" width="950"/>
+
+This indicates that the rule encountered an issue during execution.
+To investigate further:
+- Open the corresponding rule execution folder mentioned in the message.
+- Review the logs.txt file for detailed task-level logs.
+- If the error is handled within the task, check the task_output.json file for additional context and error details.
 
 # Other essential features
 

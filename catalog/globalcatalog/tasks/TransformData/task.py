@@ -1066,7 +1066,7 @@ class Task(cards.AbstractTask):
                 ]
             else:
                 target_row = target_data_df[
-                    target_data_df[target_column].str.lower() == str(source_column_value).lower()
+                    target_data_df[target_column].astype(str) == str(source_column_value or "")
                 ]
 
             if not target_row.empty:
@@ -1152,7 +1152,7 @@ class Task(cards.AbstractTask):
         # Replace each match with its corresponding value from the data
         for match in matches:
             value = self.extract_value_from_data(row, match)
-            path = path.replace(f"<<{match}>>", value)
+            path = path.replace(f"<<{match}>>", str(value))
         return path
 
     def extract_value_from_data(self, row, path):

@@ -1,0 +1,30 @@
+[
+    {
+        "id": "SNYK-DEBIAN12-OPENSSH-1555766",
+        "title": "Access Restriction Bypass",
+        "createdDate": "04/01/2023 05:44",
+        "type": "vuln",
+        "isPatchable": false,
+        "security": "high",
+        "cvssScore": 8.8,
+        "affectedSystems": [
+            "Debian 12",
+            "OpenSSH 8.9",
+            "OpenSSH 9.0"
+        ],
+        "relatedExploits": [
+            {
+                "exploitId": "EXPLOIT-001",
+                "description": "Exploit for bypassing access restrictions in OpenSSH.",
+                "severity": "critical",
+                "discoveredDate": "03/15/2023 17:20"
+            },
+            {
+                "exploitId": "EXPLOIT-002",
+                "description": "Remote code execution vulnerability in OpenSSH.",
+                "severity": "high",
+                "discoveredDate": "02/20/2023 19:33"
+            }
+        ]
+    }
+]

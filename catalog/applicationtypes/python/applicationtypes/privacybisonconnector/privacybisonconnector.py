@@ -1,8 +1,8 @@
 from typing import Tuple
 from datetime import datetime, timezone
 import urllib.parse
-
-
+import requests
+import http
 
 class NoCred:
     dummy: str
@@ -197,5 +197,40 @@ class PrivacyBisonConnector:
         current_time = datetime.now(timezone.utc)
         formatted_time = current_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         return formatted_time        
+    
+    def make_api_request(
+        self, url, headers, method="GET", json=None, data=None, params=None
+    ):
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                json=json,
+                data=data,
+                headers=headers,
+                params=params,
+                timeout=None,
+            )
+
+            if response is None:
+                return None, "No response from server"
+            
+            if response.ok and response.status_code == http.HTTPStatus.OK:
+                try:
+                    return response.json(), None
+                except ValueError:
+                    return None, "Error decoding JSON response."
+            else:
+                return (
+                    None,
+                    f"Validation failed. Exception occurred while validating app. {response.status_code} :: {response.text}",
+                )
+
+        except requests.exceptions.ConnectionError as e:
+            return None, f"Connection error: {e}"
+        except requests.exceptions.Timeout as e:
+            return None, f"Request timed out: {e}"
+        except requests.exceptions.RequestException as e:
+            return None, f"Other request exception: {e}"
 
 # INFO : You can implement methods (to access the application) which can be then invoked from your task code

@@ -1,0 +1,101 @@
+userObject:
+  apps:
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: "$GITHUB_APP_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      BearerToken:
+        ValidationCURL: "$VALIDATION_CURL"
+        Token: "$GITHUB_ACCESS_TOKEN"
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-9
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-10
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-11
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  CheckReviewersConditionConfig: <<MINIO_FILE_PATH>>      # ConditionConfig File to check if the Pull Requests are empty
+  ConfigFile: <<MINIO_FILE_PATH>>     # Config File for User Hierarchy    
+  ConvertOutputMethod: FIRST
+  ExtractRequestedReviewersTransformConfigFile: <<MINIO_FILE_PATH>>     # Extract Requested Reviewers from the Pull Request
+  HierarchicalPersonExistTransformConfigFile: <<MINIO_FILE_PATH>>     # Transform config file for Hierarchical Person Exist
+  HierarchicalPersonNotExistTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform config file for Hierarchical Person Not Exist
+  HierarchyFile: <<MINIO_FILE_PATH>>      # Hierarchy File for User Hierarchy
+  InputFile: <<MINIO_FILE_PATH>>      # IncludeCriteria file for the rule
+  InsufficientReviewersTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform config file for Insufficient Reviewers
+  JQExpression: '    .[]    | .query    | split("/")    | {org: .[1], repo: .[3],
+    branches: (.[5] | split(","))}   | . as $base   | .branches[]   | {org: $base.org,
+    repo: $base.repo, branch: .} '
+  LengthReviewersConditionConfig: <<MINIO_FILE_PATH>>     # ConditionConfig file to check the length of the requested reviewers
+  MergeType: APPEND
+  OutputFileFormat: JSON
+  OutputMethod: ALL
+  PRNumberJQExpression: map(.PRNumber |= floor)
+  PRRequestConfigFile: <<MINIO_FILE_PATH>>      # Request Config File for Pull Request
+  PRResponseConfigFile: <<MINIO_FILE_PATH>>     # Response Config File for Pull Request
+  RequestedReviewersExistConditionConfig: <<MINIO_FILE_PATH>>     # ConditionConfig file to check if the hierarchical requested reviewers exist
+  ReviewersCountColumnTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform config file to add the count of requested reviewers
+  ReviewersJQExpression: 'map(. + { requested_reviewers_login: (.requested_reviewers
+    | map(.login)) })'
+  Type: Hierarchy
+fromDate: 2025-03-11T10:05:53Z
+toDate: 2025-03-11T10:05:53Z

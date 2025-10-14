@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: AzureAppConnector
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      Azure:
+        clientID: $AZURE_CLIENT_ID
+        clientSecret: $AZURE_CLIENT_SECRET
+        tenantID: $AZURE_TENANT_ID
+        subscriptionID:  $AZURE_SUBSCRIPTION_ID
+userInputs:
+  PermissionConfigFile: <<MINIO_FILE_PATH>>
+  UserManagerDetails: <<MINIO_FILE_PATH>>
+  InactivePermissionsWindow: 
+fromDate: 2024-09-03T15:25:00Z
+toDate: 2024-10-01T15:25:00Z

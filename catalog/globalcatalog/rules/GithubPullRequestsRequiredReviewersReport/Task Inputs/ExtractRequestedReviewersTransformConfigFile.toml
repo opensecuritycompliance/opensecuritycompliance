@@ -1,0 +1,4 @@
+[[AddColumn.AsList]]
+ColumnName = "PRReviewers"
+Source = "<<inputfile1.requested_reviewers>>"
+Target = "<<Source.login>>"
