@@ -1,0 +1,41 @@
+[AddColumn]
+System = "GCP"
+Source = "compliancecow"
+ResourceID = "<<inputfile1.id>>"
+ResourceName = "<<inputfile1.name>>"
+ResourceType = "Storage Bucket"
+ResourceLocation = "<<inputfile1.location>>"
+ResourceTag = []
+ResourceURL = "https://console.cloud.google.com/storage/browser/<<inputfile1.id>>"
+StorageClass = "<<inputfile1.storageClass>>"
+BucketCreationTime = "<<inputfile1.timeCreated>>"
+BucketLastUpdated = "<<inputfile1.updated>>"
+LifecycleRules = "<<inputfile1.lifecycle.rule>>"
+VersioningStatus = "<<inputfile1.versioning.enabled>>"
+UserAction = ""
+ActionStatus = ""
+ActionResponseURL = ""
+
+[[AddColumn.ByFunction]]
+ColumnName = "EvaluationTime"      
+Function = "CurrentDateTime"       
+
+[[AddColumn.ByCondition]]
+Condition = "<<inputfile1.VersioningStatus>> == 1"
+
+[[AddColumn.ByCondition.True]]
+VersioningStatus = "True"
+ValidationStatusCode = "BUCK_VER_ENBL"
+ValidationStatusNotes = "The bucket has object versioning enabled, allowing recovery of previous object versions."
+ComplianceStatus = "COMPLIANT"
+ComplianceStatusReason = "Bucket versioning is enabled , ensuring protection against accidental deletion or modification."
+
+[[AddColumn.ByCondition.False]]
+VersioningStatus = "False"
+ValidationStatusCode = "BUCK_VER_DIS"
+ValidationStatusNotes = "The bucket has versioning disabled, making it vulnerable to unintended deletions without recovery options."
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "Bucket versioning is explicitly disabled , increasing the risk of permanent data loss."
+
+[ReorderColumn]
+ColumnList = "System, Source, ResourceID, ResourceName, ResourceType, ResourceLocation, ResourceTag, ResourceURL, StorageClass, BucketCreationTime, BucketLastUpdated, LifecycleRules, VersioningStatus, ValidationStatusCode, ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason, EvaluationTime, UserAction, ActionStatus, ActionResponseURL"

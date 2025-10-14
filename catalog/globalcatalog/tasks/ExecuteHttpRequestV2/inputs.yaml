@@ -1,0 +1,51 @@
+userObject:
+  app:
+    name: HttpRequest
+    appURL: "$APP_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      APIKey:
+        APIKey: "$API_KEY"
+        ValidationCURL: "$VALIDATION_CURL"
+      AWSSignature:
+        AccessKey: "$AWS_ACCESS_KEY" 
+        SecretKey: "$AWS_SECRET_KEY"
+        ValidationCURL: "$VALIDATION_CURL"
+      BasicAuthentication:
+        UserName: "$USERNAME"
+        Password: "$PASSWORD"
+        ValidationCURL: "$VALIDATION_CURL"
+      BearerToken:
+        Token: "$ACCESS_TOKEN"
+        ValidationCURL: "$VALIDATION_CURL"
+      CustomType:
+        CredentialJson: "$CREDENTIAL_JSON"
+        ValidationCURL: "$VALIDATION_CURL"
+      NoAuth:
+      OAuth:
+        ClientID: "$CLIENT_ID"
+        ClientSecret: "$CLIENT_SECRET"
+        ValidationCURL: "$VALIDATION_CURL"
+      JWTBearer:
+          Algorithm: "$ALGORITHM"
+          Payload: "$PAYLOAD"
+          PrivateKey: "$PRIVATE_KEY"
+          ValidationCURL:  "$VALIDATION_CURL"
+userInputs:
+  RequestConfigFile: <<MINIO_FILE_PATH>>
+  ResponseConfigFile: <<MINIO_FILE_PATH>>
+  InputFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists:  # True or False (Default: True)
+  ProceedIfErrorExists:  # True or False (Default: True)
+  InputFileValidationConfig: <<MINIO_FILE_PATH>>
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  LogFile: <<MINIO_FILE_PATH>> 
+fromDate: 2024-09-05
+toDate: 2024-09-05

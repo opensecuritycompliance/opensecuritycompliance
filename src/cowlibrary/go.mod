@@ -2,7 +2,7 @@ module cowlibrary
 
 go 1.23.0
 
-toolchain go1.23.9
+toolchain go1.23.8
 
 require (
 	applicationtypes v0.0.0-00010101000000-000000000000
@@ -42,7 +42,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect

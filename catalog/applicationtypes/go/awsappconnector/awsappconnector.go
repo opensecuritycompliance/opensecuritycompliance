@@ -2,6 +2,7 @@ package awsappconnector
 
 import (
 	"applicationtypes/compliancecow"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,13 @@ import (
 	"time"
 
 	cowlibutils "cowlibrary/utils"
+
+	awsV2 "github.com/aws/aws-sdk-go-v2/aws"
+	configV2 "github.com/aws/aws-sdk-go-v2/config"
+	credentialsV2 "github.com/aws/aws-sdk-go-v2/credentials"
+	s3V2 "github.com/aws/aws-sdk-go-v2/service/s3"
+	stsV2 "github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/smithy-go"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -36,6 +44,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/qldb"
 	"github.com/aws/aws-sdk-go/service/rds"
 	"github.com/aws/aws-sdk-go/service/route53"
+
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/securityhub"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -239,6 +248,104 @@ func (thisObj *AWSAppConnector) IsEmptyAWSIAM() bool {
 	return cowlibutils.IsEmpty(iamCreds.AccessKey) || cowlibutils.IsEmpty(iamCreds.SecretKey)
 }
 
+func (thisObj *AWSAppConnector) CreateAWSSessionWithAccessKeyV2(options Options) (*awsV2.Config, error) {
+	iamCreds := thisObj.UserDefinedCredentials.AWSIAM
+
+	cfg, err := configV2.LoadDefaultConfig(context.TODO(),
+		configV2.WithRegion(options.Region),
+		configV2.WithCredentialsProvider(credentialsV2.NewStaticCredentialsProvider(
+			iamCreds.AccessKey, iamCreds.SecretKey, "",
+		)),
+	)
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			return nil, errors.New(aerr.Message())
+		}
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func (thisObj *AWSAppConnector) CreateAWSSessionWithRoleV2(options Options) (*awsV2.Config, error) {
+	roleCreds := thisObj.UserDefinedCredentials.AWSRole
+
+	// Create initial config with static credentials
+	cfg, err := configV2.LoadDefaultConfig(context.TODO(),
+		configV2.WithRegion(options.Region),
+		configV2.WithCredentialsProvider(
+			credentialsV2.NewStaticCredentialsProvider(
+				roleCreds.AccessKey,
+				roleCreds.SecretKey,
+				"", // session token (empty for initial credentials)
+			),
+		),
+	)
+	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			return nil, errors.New(ae.ErrorMessage())
+		}
+		return nil, err
+	}
+
+	// Create STS client
+	stsClient := stsV2.NewFromConfig(cfg)
+	sessionName := "compliancecowsession"
+
+	// Assume role
+	assumeRoleOutput, err := stsClient.AssumeRole(context.TODO(), &stsV2.AssumeRoleInput{
+		RoleArn:         awsV2.String(roleCreds.RoleARN),
+		RoleSessionName: awsV2.String(sessionName),
+	})
+	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			switch ae.ErrorCode() {
+			case "InvalidClientTokenId":
+				return nil, errors.New("Invalid AccessKey")
+			case "SignatureDoesNotMatch":
+				return nil, errors.New("Invalid SecretKey")
+			case "AccessDenied":
+				return nil, errors.New("Invalid RoleARN")
+			default:
+				return nil, errors.New(ae.ErrorMessage())
+			}
+		}
+		return nil, err
+	}
+
+	// Create new config with assumed role credentials
+	assumedRoleCfg, err := configV2.LoadDefaultConfig(context.TODO(),
+		configV2.WithRegion(options.Region),
+		configV2.WithCredentialsProvider(
+			credentialsV2.NewStaticCredentialsProvider(
+				*assumeRoleOutput.Credentials.AccessKeyId,
+				*assumeRoleOutput.Credentials.SecretAccessKey,
+				*assumeRoleOutput.Credentials.SessionToken,
+			),
+		),
+	)
+	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			switch ae.ErrorCode() {
+			case "InvalidClientID", "InvalidClientTokenId":
+				return nil, errors.New("Invalid AccessKey")
+			case "SignatureDoesNotMatch":
+				return nil, errors.New("Invalid SecretKey")
+			case "AccessDenied":
+				return nil, errors.New("Invalid RoleARN")
+			default:
+				return nil, errors.New(ae.ErrorMessage())
+			}
+		}
+		return nil, err
+	}
+
+	return &assumedRoleCfg, nil
+}
+
 func (thisObj *AWSAppConnector) CreateAWSSessionWithAccessKey(options Options) (*session.Session, error) {
 	iamCreds := thisObj.UserDefinedCredentials.AWSIAM
 	config := aws.Config{
@@ -297,6 +404,25 @@ func (thisObj *AWSAppConnector) CreateAWSSession(options Options) (*session.Sess
 	return sess, nil
 }
 
+func (thisObj *AWSAppConnector) CreateAWSSessionV2(options Options) (*awsV2.Config, error) {
+	var cfg *awsV2.Config
+	var err error
+	if !thisObj.IsEmptyAWSIAM() {
+		cfg, err = thisObj.CreateAWSSessionWithAccessKeyV2(options)
+		if err != nil {
+			return nil, err
+		}
+	} else if !thisObj.IsEmptyAWSRole() {
+		cfg, err = thisObj.CreateAWSSessionWithRoleV2(options)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("Not a valid application")
+	}
+	return cfg, nil
+}
+
 // https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_GetFindings.html
 func (thisObj *AWSAppConnector) GetSecurityHubFindings(input *securityhub.GetFindingsInput) ([]*securityhub.AwsSecurityFinding, []ErrorVO) {
 	var findings []*securityhub.AwsSecurityFinding
@@ -338,28 +464,225 @@ func (thisObj *AWSAppConnector) GetSecurityHubFindingsInput(inputs []string) []*
 }
 
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
-func (thisObj *AWSAppConnector) DownloadFileFromAWSS3Bucket(s3FileURI string) (*s3.GetObjectOutput, error) {
+func (thisObj *AWSAppConnector) DownloadFileFromAWSS3Bucket(s3FileURI string) (string, *s3V2.GetObjectOutput, error) {
 	s3URLObject, err := url.Parse(s3FileURI)
 	if err != nil {
-		return nil, err
+		return s3FileURI, nil, err
 	}
-	sess, err := thisObj.CreateAWSSession(Options{Region: thisObj.Region[0]})
+	cfg, err := thisObj.CreateAWSSessionV2(Options{Region: thisObj.Region[0]})
 	if err != nil {
-		return nil, err
+		return s3FileURI, nil, err
 	}
-	svc := s3.New(sess)
-	s3BucketInputs := &s3.GetObjectInput{
-		Bucket: aws.String(s3URLObject.Host),
-		Key:    aws.String(s3URLObject.Path),
+
+	s3Client := s3V2.NewFromConfig(*cfg)
+
+	path := s3URLObject.Path
+	if strings.HasPrefix(path, "/") {
+		path = path[1:]
 	}
-	result, err := svc.GetObject(s3BucketInputs)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			return nil, errors.New(aerr.Message())
+
+	// Check if bucket exists and is accessible in this region
+	bucketExists, bucketErr := thisObj.CheckBucketInRegion(context.TODO(), s3Client, s3URLObject.Host, thisObj.Region[0])
+	if bucketErr != nil {
+		return s3FileURI, nil, bucketErr
+	}
+	if !bucketExists {
+		return s3FileURI, nil, fmt.Errorf("Bucket '%s' not found or not accessible in region '%s'", s3URLObject.Host, thisObj.Region[0])
+	}
+
+	// Check if key is a file
+	if thisObj.IsFile(s3Client, s3URLObject.Host, path) {
+		result, err := s3Client.GetObject(context.TODO(), &s3V2.GetObjectInput{
+			Bucket: awsV2.String(s3URLObject.Host),
+			Key:    awsV2.String(path),
+		})
+		if err != nil {
+			return s3FileURI, nil, err
 		}
-		return nil, err
+		return s3FileURI, result, nil
+	} else {
+		lastestFileURI, err := thisObj.FindLatestFileRecursively(context.TODO(), s3Client, s3URLObject.Host, path)
+		if err != nil {
+			return lastestFileURI, nil, err
+		}
+		latestS3URLObject, err := url.Parse(lastestFileURI)
+		if err != nil {
+			return lastestFileURI, nil, err
+		}
+
+		path_ := latestS3URLObject.Path
+		if strings.HasPrefix(path_, "/") {
+			path_ = path_[1:]
+		}
+
+		result, err := s3Client.GetObject(context.TODO(), &s3V2.GetObjectInput{
+			Bucket: awsV2.String(latestS3URLObject.Host),
+			Key:    awsV2.String(path_),
+		})
+		if err != nil {
+			return lastestFileURI, nil, err
+		}
+		return lastestFileURI, result, nil
 	}
-	return result, nil
+}
+
+// CheckBucketInRegion checks if bucket exists and is accessible in the specified region
+func (thisObj *AWSAppConnector) CheckBucketInRegion(ctx context.Context, s3Client *s3V2.Client, bucketName string, expectedRegion string) (bool, error) {
+	// Method 1: Try HeadBucket first (most efficient)
+	_, err := s3Client.HeadBucket(ctx, &s3V2.HeadBucketInput{
+		Bucket: awsV2.String(bucketName),
+	})
+
+	if err == nil {
+		// Bucket exists and is accessible in this region
+		return true, nil
+	}
+
+	// Check specific error types
+	var ae smithy.APIError
+	if errors.As(err, &ae) {
+		switch ae.ErrorCode() {
+		case "NotFound":
+			return false, fmt.Errorf("Bucket '%s' does not exist", bucketName)
+		case "Forbidden":
+			return false, fmt.Errorf("Access denied to bucket '%s'", bucketName)
+		case "MovedPermanently", "PermanentRedirect":
+			// Bucket exists but in different region
+			actualRegion, regionErr := thisObj.GetBucketRegionV2(ctx, s3Client, bucketName)
+			if strings.Contains(fmt.Sprintf("%s", regionErr), "AccessDenied") {
+				return false, fmt.Errorf("Access denied to bucket '%s'", bucketName)
+			} else if regionErr != nil {
+				return false, fmt.Errorf("Bucket exists in different region but failed to get region: %w", regionErr)
+			}
+			return false, fmt.Errorf("Bucket '%s' exists in region '%s', not '%s'", bucketName, actualRegion, expectedRegion)
+		default:
+			return false, fmt.Errorf("Failed to check bucket: %s", ae.ErrorMessage())
+		}
+	}
+
+	return false, err
+}
+
+// GetBucketRegion retrieves the actual region of a bucket
+func (thisObj *AWSAppConnector) GetBucketRegionV2(ctx context.Context, s3Client *s3V2.Client, bucketName string) (string, error) {
+
+	location, err := s3Client.GetBucketLocation(ctx, &s3V2.GetBucketLocationInput{
+		Bucket: awsV2.String(bucketName),
+	})
+	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			if ae.ErrorCode() == "NoSuchBucket" {
+				return "", fmt.Errorf("bucket does not exist")
+			}
+		}
+		return "", err
+	}
+
+	// GetBucketLocation returns empty string for us-east-1
+	if location.LocationConstraint == "" {
+		return "us-east-1", nil
+	}
+
+	return string(location.LocationConstraint), nil
+}
+
+func (thisObj *AWSAppConnector) FindLatestFileRecursively(ctx context.Context, s3Client *s3V2.Client, bucket, prefix string) (string, error) {
+	// Normalize prefix
+	prefix = strings.TrimPrefix(prefix, "/")
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+
+	var latestTime time.Time
+	var candidateKey string
+	var candidateIsFolder bool
+
+	// Step 1: Get subfolders and files
+	folderInput := &s3V2.ListObjectsV2Input{
+		Bucket:    awsV2.String(bucket),
+		Prefix:    awsV2.String(prefix),
+		Delimiter: awsV2.String("/"),
+	}
+
+	folderOutput, err := s3Client.ListObjectsV2(ctx, folderInput)
+	if err != nil {
+		return "", fmt.Errorf("error listing prefix contents: %v", err)
+	}
+
+	// Step 2: Find latest file
+	for _, obj := range folderOutput.Contents {
+		if *obj.Key == prefix {
+			continue // skip self-folder object
+		}
+		if obj.LastModified.After(latestTime) {
+			latestTime = *obj.LastModified
+			candidateKey = *obj.Key
+			candidateIsFolder = false
+		}
+	}
+
+	// Step 3: Find latest subfolder
+	for _, cp := range folderOutput.CommonPrefixes {
+		subfolder := *cp.Prefix
+		subfolderTime, err := thisObj.GetLastModifiedInFolder(ctx, s3Client, bucket, subfolder)
+		if err != nil {
+			return "", err
+		}
+		if subfolderTime.After(latestTime) {
+			latestTime = subfolderTime
+			candidateKey = subfolder
+			candidateIsFolder = true
+		}
+	}
+
+	// Step 4: Recurse or return
+	if candidateIsFolder {
+		return thisObj.FindLatestFileRecursively(ctx, s3Client, bucket, candidateKey)
+	}
+
+	if candidateKey != "" {
+		return "s3://" + bucket + "/" + candidateKey, nil
+	}
+
+	return "", fmt.Errorf("no file found under prefix %s", prefix)
+}
+
+func (thisObj *AWSAppConnector) GetLastModifiedInFolder(ctx context.Context, s3Client *s3V2.Client, bucket, folder string) (time.Time, error) {
+	var latest time.Time
+	var token *string
+
+	for {
+		input := &s3V2.ListObjectsV2Input{
+			Bucket:            awsV2.String(bucket),
+			Prefix:            awsV2.String(folder),
+			ContinuationToken: token,
+		}
+		output, err := s3Client.ListObjectsV2(ctx, input)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("error listing folder contents: %v", err)
+		}
+
+		for _, obj := range output.Contents {
+			if obj.LastModified.After(latest) {
+				latest = *obj.LastModified
+			}
+		}
+
+		if !*output.IsTruncated {
+			break
+		}
+		token = output.NextContinuationToken
+	}
+	return latest, nil
+}
+
+func (thisObj *AWSAppConnector) IsFile(s3Client *s3V2.Client, bucket, key string) bool {
+	_, err := s3Client.HeadObject(context.TODO(), &s3V2.HeadObjectInput{
+		Bucket: awsV2.String(bucket),
+		Key:    awsV2.String(key),
+	})
+	return err == nil
 }
 
 // https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetAccountPasswordPolicy.html

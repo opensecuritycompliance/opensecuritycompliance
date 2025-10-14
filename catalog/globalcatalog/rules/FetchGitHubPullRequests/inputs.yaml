@@ -1,0 +1,68 @@
+userObject:
+  apps:
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      framework:
+      - github
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+userInputs:
+  CustomExceptionConfigFileForPR: <<MINIO_FILE_PATH>>
+  InScopeRepos: <<MINIO_FILE_PATH>>
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  PR-JQConfig: <<MINIO_FILE_PATH>>
+  PRRequestConfig: <<MINIO_FILE_PATH>>
+  PRResponseConfig: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: false
+  RequiredFields:
+  - RepositoryName
+  RuleOutputFileFormat: PARQUET
+fromDate: 2025-05-27T11:09:18Z
+toDate: 2025-05-27T11:09:18Z

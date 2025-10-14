@@ -1,0 +1,65 @@
+authors:
+- divakaran.s@continube.com
+domain: continube
+createdDate: 05/03/2025
+name: ConditionalLogGenerator
+displayName: ConditionalLogGenerator
+version: '1.0'
+description: ConditionalLogGenerator
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile
+  description: The file containing the response from the previous task, which includes the response data in a json structure.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: LogFile
+  description: Map the LogFile from the previous task, to handle errors.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: LogConfigFile
+  description: LogConfigFile enables custom conditional logging based on the specified output file.
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  format: toml
+  showField: true
+  templateFile: W1tDb25kaXRpb25SdWxlc11dCiAgICBDb25kaXRpb24gPSAiRVFVQUxTIiAgIyBTcGVjaWZpZXMgdGhlIHR5cGUgb2YgY29uZGl0aW9uIHRvIGFwcGx5LgogICAgQ29uZGl0aW9uRmllbGQgPSAiPDxpbnB1dGZpbGUuWzBdLnN1Y2Nlc3M+PiIgICMgRmllbGQgZXh0cmFjdGVkIGZyb20gSW5wdXRGaWxlIGZvciBldmFsdWF0aW9uLgogICAgQ29uZGl0aW9uVmFsdWUgPSBmYWxzZSAgIyBUaGUgZXhwZWN0ZWQgdmFsdWUgZm9yIHRoZSBjb25kaXRpb24gdG8gYmUgbWV0LgogICAgRXJyb3JNZXNzYWdlID0gIlNRTCBjb21waWxhdGlvbiBlcnJvci4gUGxlYXNlIHJldmlldyB0aGUgcXVlcnkgYW5kIHRyeSBhZ2Fpbi4iICAjIEN1c3RvbSBlcnJvciBtZXNzYWdlIHRvIGxvZyBpZiB0aGUgY29uZGl0aW9uIGlzIG1ldC4=
+  required: true
+- name: ProceedIfLogExists
+  description: Check if the LogFile from the previous task exists to determine whether to proceed with the process.
+  dataType: BOOLEAN
+  repeated: false
+  allowedValues: []
+  defaultValue:  
+  showField: true
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: OutputFile
+  description: The file containing the response from the previous task, which includes the response data in a json structure.
+  dataType: FILE
+- name: LogFile
+  description: The file that contains information about errors that have occurred while processing the conditions.
+  dataType: FILE

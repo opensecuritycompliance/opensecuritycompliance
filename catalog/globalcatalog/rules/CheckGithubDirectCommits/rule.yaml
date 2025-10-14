@@ -1,0 +1,181 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: CheckGithubDirectCommits
+  purpose: To check whether the commit in the Github is a direct commit
+  description: Check whether the commit in the Github is a direct commit
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    BranchCommitRequestConfigFile: <<MINIO_FILE_PATH>>
+    BranchCommitResponseConfigFile: <<MINIO_FILE_PATH>>
+    CommitDetailsTransformConfigFile: <<MINIO_FILE_PATH>>
+    ExtractComplaintStatusJQConfig: <<MINIO_FILE_PATH>>
+    GithubInputFile: <<MINIO_FILE_PATH>>
+    PRWithCommitRequestConfigFile: <<MINIO_FILE_PATH>>
+    PRWithCommitResponseConfigFile: <<MINIO_FILE_PATH>>
+    RepoRequestConfigFile: <<MINIO_FILE_PATH>>
+    RepoResponseConfigFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: RepoRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RepoResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: GithubInputFile
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: BranchCommitRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: BranchCommitResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PRWithCommitRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PRWithCommitResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ExtractComplaintStatusJQConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CommitDetailsTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: ExecuteHttpRequestV2
+    alias: GetRepo
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get github repository details
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExecuteHttpRequestV2
+    alias: GetBranchCommit
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get the commit details of a branch
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExecuteHttpRequestV2
+    alias: GetPullRequestAssociatedWithCommit
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get the pull request associated with a commit
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExtractDataUsingJQ
+    alias: Extract complaint status using JQ
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To Extract the Pull request details and check with the commit
+    description: Extracts data from the InputFile based on the provided JQ filter/expression
+  - name: TransformData
+    alias: Extended Schema for commit details
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To transform the data into the extended schema
+    description: TransformData allows you to perform a variety of column transformations
+      on your InputFile1
+  ioMap:
+  - GetRepo.Input.RequestConfigFile:=*.Input.RepoRequestConfigFile
+  - GetRepo.Input.ResponseConfigFile:=*.Input.RepoResponseConfigFile
+  - GetRepo.Input.InputFile:=*.Input.GithubInputFile
+  - GetBranchCommit.Input.RequestConfigFile:=*.Input.BranchCommitRequestConfigFile
+  - GetBranchCommit.Input.ResponseConfigFile:=*.Input.BranchCommitResponseConfigFile
+  - GetBranchCommit.Input.InputFile:=GetRepo.Output.OutputFile
+  - GetPullRequestAssociatedWithCommit.Input.RequestConfigFile:=*.Input.PRWithCommitRequestConfigFile
+  - GetPullRequestAssociatedWithCommit.Input.ResponseConfigFile:=*.Input.PRWithCommitResponseConfigFile
+  - GetPullRequestAssociatedWithCommit.Input.InputFile:=GetBranchCommit.Output.OutputFile
+  - Extract complaint status using JQ.Input.InputFile:=GetPullRequestAssociatedWithCommit.Output.OutputFile
+  - Extract complaint status using JQ.Input.JQConfig:=*.Input.ExtractComplaintStatusJQConfig
+  - Extended Schema for commit details.Input.InputFile1:=Extract complaint status
+    using JQ.Output.OutputFile
+  - Extended Schema for commit details.Input.TransformConfigFile:=*.Input.CommitDetailsTransformConfigFile
+  - '*.Output.CompliancePCT_:=Extended Schema for commit details.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=Extended Schema for commit details.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=Extended Schema for commit details.Output.LogFile'
+  - '*.Output.GithubDirectCommitReport:=Extended Schema for commit details.Output.OutputFile'

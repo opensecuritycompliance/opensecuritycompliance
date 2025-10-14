@@ -1,0 +1,50 @@
+userObject:
+  apps:
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      framework:
+      - github
+    userDefinedCredentials:
+      JWTBearer:
+        Algorithm: "RS256"
+        PrivateKey: # GitHub application's private key
+        Payload: '{"iat": <<CURRENT_TIME>>, "exp": <<CURRENT_TIME + 600>>, "iss": [github-app-id]}'
+        ValidationCURL: |
+          curl --location --request POST 'https://api.github.com/app/installations/[github-app-installation-id]/access_tokens' \
+            --header 'Authorization: Bearer <<JWTBearer>>>>' \
+            --header 'Accept: application/vnd.github+json'
+userInputs:
+  CustomExceptionConfigFileForCheckRuns: <<MINIO_FILE_PATH>>
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: JSON
+  PRCheckRunJQConfig: <<MINIO_FILE_PATH>>
+  PRCheckRunRequestConfig: <<MINIO_FILE_PATH>>
+  PRCheckRunResponseConfig: <<MINIO_FILE_PATH>>
+  PRListForInScopeRepos: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: true
+  RequiredFields:
+  - ResourceID
+  RuleOutputFileFormat: PARQUET
+fromDate: 2025-06-04T11:19:46Z
+toDate: 2025-06-04T11:19:46Z

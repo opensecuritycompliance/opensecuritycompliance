@@ -9,6 +9,7 @@ from compliancecowcards.utils import cowdictutils, cowstorageserviceutils
 import hashlib
 from urllib import parse
 import pandas as pd
+import base64
 from posixpath import join as urljoin
 
 file_store_bucket_name = os.getenv("COW_STORAGE_BUCKET_NAME")
@@ -417,42 +418,54 @@ def download_file(task_inputs: cowvo.TaskInputs = None, minio_client=None, bucke
 
     resp_file_name, resp_file_bytes, error = None, None, None
 
-    if persistence_type == "minio" and object_name:
+    while True:
 
-        if minio_client is None:
-            minio_client, error = get_minio_client_with_inputs(task_inputs)
-            if error and bool(error):
-                return resp_file_name, resp_file_bytes, error
+        is_url = object_name and (object_name.startswith("http://") or object_name.startswith("https://"))
 
-        if minio_client:
-            try:
-                resp_file_name, resp_file_bytes, error = get_file_content(task_inputs, minio_client, bucket_name, object_name, file_name)
-            except:
-                error = {"error": "cannot download the file"}
+        if persistence_type == "minio" and object_name and is_url:
 
-    elif persistence_type == "storage" and hash:
-        """We'll consider this as a internal process - means the process is in our system - We'll use storage service"""
-        file_resp = cowstorageserviceutils.getfile(hash, header)
-        if cowdictutils.is_valid_key(file_resp, "error"):
-            return resp_file_name, resp_file_bytes, file_resp
+            if minio_client is None:
+                minio_client, error = get_minio_client_with_inputs(task_inputs)
+                if error and bool(error):
+                    return resp_file_name, resp_file_bytes, error
 
-        if cowdictutils.is_valid_key(file_resp, "FileContent"):
-            resp_file_bytes = file_resp["FileContent"]
+            if minio_client:
+                try:
+                    resp_file_name, resp_file_bytes, error = get_file_content(task_inputs, minio_client, bucket_name, object_name, file_name)
+                except:
+                    try:
+                        assert str(object_name).startswith('http://localhost')
+                        obj_file_path = str(parse.urlparse(object_name).path).lstrip('/')
+                        file_hash_resp: dict[str, str] | None = cowstorageserviceutils.getfilehash(obj_file_path, header)
+                        object_name = file_hash_resp.get('hash') if file_hash_resp else None
+                        assert bool(object_name)
+                    except:
+                        return resp_file_name, resp_file_bytes, {"error": "cannot download the file"}
+                    continue
 
-        if cowdictutils.is_valid_key(file_resp, "FileName"):
-            resp_file_name = file_resp["FileName"]
+        elif not is_url or (persistence_type == "storage" and hash):
+            """We'll consider this as a internal process - means the process is in our system - We'll use storage service"""
+            file_resp = cowstorageserviceutils.getfile(object_name, header)
+            if cowdictutils.is_valid_key(file_resp, "error"):
+                return resp_file_name, resp_file_bytes, file_resp
+
+            if cowdictutils.is_valid_key(file_resp, "FileContent"):
+                resp_file_bytes = base64.b64decode(file_resp["FileContent"])
+
+            if cowdictutils.is_valid_key(file_resp, "FileName"):
+                resp_file_name = file_resp["FileName"]
+
+            return resp_file_name, resp_file_bytes, error
+
+        else:
+            return get_file_in_local_storage(task_inputs=task_inputs, file_path=file_name)
+
+        # another elif to be added for local file system
+
+        if not resp_file_name and not resp_file_bytes:
+            error = {"error": "cannot download the file"}
 
         return resp_file_name, resp_file_bytes, error
-
-    else:
-        return get_file_in_local_storage(task_inputs=task_inputs, file_path=file_name)
-
-    # another elif to be added for local file system
-
-    if not resp_file_name and not resp_file_bytes:
-        error = {"error": "cannot download the file"}
-
-    return resp_file_name, resp_file_bytes, error
 
 
 def get_persistence_type():

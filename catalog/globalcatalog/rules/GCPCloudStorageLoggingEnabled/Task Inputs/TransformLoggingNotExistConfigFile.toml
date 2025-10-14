@@ -1,0 +1,28 @@
+
+[AddColumn]
+System = "GCP"
+Source = "compliancecow"
+ResourceID = "<<inputfile1.id>>"
+ResourceName = "<<inputfile1.name>>"
+ResourceType = "Storage Bucket"
+ResourceLocation = "<<inputfile1.location>>"
+ResourceTag = []
+ResourceURL = "https://console.cloud.google.com/storage/browser/<<inputfile1.id>>"
+StorageClass = "<<inputfile1.storageClass>>"
+BucketCreationTime = "<<inputfile1.timeCreated>>"
+BucketLastUpdated = "<<inputfile1.updated>>"
+LogBucket = "N/A"
+ValidationStatusCode = "BUCK_LOG_DIS"
+ValidationStatusNotes = "The bucket lacks logging, making it difficult to track unauthorized access or changes."
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "Bucket logging is not enabled, reducing visibility into access and modification events."
+UserAction = ""
+ActionStatus = "" 
+ActionResponseURL = "" 
+
+[[AddColumn.ByFunction]]
+ColumnName = "EvaluationTime"      
+Function = "CurrentDateTime"       
+
+[ReorderColumn]
+ColumnList = "System, Source, ResourceID, ResourceName, ResourceType, ResourceLocation, ResourceTag, ResourceURL, StorageClass, BucketCreationTime, BucketLastUpdated, LogBucket, ValidationStatusCode, ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason, EvaluationTime, UserAction, ActionStatus, ActionResponseURL"

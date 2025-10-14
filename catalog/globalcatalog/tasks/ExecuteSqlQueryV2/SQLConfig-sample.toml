@@ -1,0 +1,20 @@
+SQLQuery = '''
+SELECT
+    inputfile1.*,
+    CASE 
+        WHEN COUNT(inputfile2.timestamp) = 0 THEN NULL
+        ELSE json_group_array(
+            json_object(
+                'timestamp', inputfile2.timestamp
+            )
+        )
+    END AS UsageLogTimestamps
+FROM
+    inputfile1
+LEFT JOIN
+    inputfile2
+ON
+    inputfile1.email = inputfile2.`resource.labels.email_id`
+GROUP BY
+    inputfile1.email;
+'''

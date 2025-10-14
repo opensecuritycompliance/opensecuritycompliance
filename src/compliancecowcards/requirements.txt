@@ -7,4 +7,8 @@ requests
 SQLAlchemy
 pyarrow
 tomli
+python-dateutil
 tomli-w
+jq
+typing-extensions
+fastparquet

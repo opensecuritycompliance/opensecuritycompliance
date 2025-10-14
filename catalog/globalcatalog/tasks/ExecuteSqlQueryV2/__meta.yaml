@@ -1,0 +1,90 @@
+authors:
+- vivek.p@continube.com
+domain: continube
+createdDate: 23/04/2025
+name: ExecuteSqlQueryV2
+displayName: ExecuteSqlQueryV2
+version: '1.0'
+description: "Executes a validated SQL query (from a TOML SQLConfig) against one or two input JSON files by loading them into an in-memory SQLite3 database. The task accepts InputFile1 (required) and InputFile2 (optional), automatically normalizes JSON into tables named inputfile1/inputfile2, supports SQL operations including JOINs, GROUP BY, aggregates, and can also merge the two JSON files using SQL."
+shaToken: ''
+showInCatalog: true
+icon: '<svg fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 	 width="800px" height="800px" viewBox="0 0 585.918 585.918"	 xml:space="preserve"><g>	<path d="M170.398,259.672c-17.877,0.748-27.977,19.158-27.977,41.387c-0.167,22.577,10.266,40.062,27.801,40.397		c18.184,0.354,29.005-17.29,29.005-41.568C199.228,277.245,188.761,258.909,170.398,259.672z"/>	<path d="M11.176,46.206v492.311l346.22,47.401v-50.583c0.776,0.053,1.542,0.115,2.329,0.115h177.39		c20.756,0,37.627-16.888,37.627-37.628V86.602c0-20.743-16.871-37.628-37.627-37.628h-177.39c-0.787,0-1.553,0.076-2.329,0.123V0		L11.176,46.206z M63.135,359.296c-11.258-0.4-22.174-4.036-27.562-7.622l4.399-20.363c5.847,3.507,14.948,7.108,24.493,7.287		c10.437,0.189,16.032-4.583,16.032-11.979c0-7.065-4.85-11.097-16.911-15.906c-16.326-6.32-26.743-16.282-26.743-32.187		c0-18.663,13.732-33.732,37.155-35.087c11.518-0.667,20.145,1.56,26.381,4.286l-5.299,21.2c-4.176-2.056-11.546-4.974-21.522-4.564		c-9.838,0.405-14.541,5.555-14.541,11.336c0,7.103,5.596,10.113,18.604,15.336c18.228,7.134,27,17.634,27,33.916		C104.621,344.313,91.048,360.287,63.135,359.296z M221.381,384.709c-17.788-6.059-32.263-12.017-48.203-19.545		c-2.611-1.176-5.396-1.815-8.171-2.095c-25.764-2.672-48.953-22.824-48.953-60.856c0-34.924,20.874-62.402,55.035-64.381		c36.912-2.129,58.027,25.985,58.027,60.576c0,28.766-13.342,48.772-29.711,55.759v0.734c9.519,3.051,20.283,5.628,30.281,8.017		L221.381,384.709z M335.463,366.881l-87.121-2.96V235.472l30.48-1.708v106.278l56.641,0.955V366.881z M359.726,70.48h177.39		c8.893,0,16.125,7.236,16.125,16.127v411.215c0,8.893-7.232,16.127-16.125,16.127h-177.39c-0.797,0-1.563-0.111-2.329-0.232		V399.438h16.126v-11.77h-16.126v-29.345h9.164v-11.764h-9.164v-62.725h15.841v-11.767h-15.841V210.01h48.938v-11.767h-48.938		V70.722C358.157,70.604,358.929,70.48,359.726,70.48z"/>	<rect x="367.548" y="234.596" width="38.153" height="11.766"/>	<rect x="412.855" y="234.596" width="38.157" height="11.766"/>	<rect x="380.603" y="272.069" width="43.703" height="11.767"/>	<rect x="432.504" y="272.069" width="43.696" height="11.767"/>	<rect x="365.732" y="310.261" width="18.54" height="11.769"/>	<rect x="387.743" y="310.261" width="18.54" height="11.769"/>	<rect x="409.407" y="310.261" width="18.54" height="11.769"/>	<rect x="431.418" y="310.261" width="18.53" height="11.769"/>	<rect x="454.353" y="310.261" width="18.541" height="11.769"/>	<rect x="476.369" y="310.261" width="18.539" height="11.769"/>	<rect x="498.027" y="310.261" width="18.541" height="11.769"/>	<rect x="520.044" y="310.261" width="18.529" height="11.769"/>	<rect x="371.506" y="346.555" width="26.363" height="11.77"/>	<rect x="402.777" y="346.555" width="26.361" height="11.77"/>	<rect x="434.084" y="346.555" width="26.368" height="11.77"/>	<rect x="464.903" y="346.555" width="26.374" height="11.77"/>	<rect x="496.222" y="346.555" width="26.356" height="11.77"/>	<rect x="377.423" y="387.669" width="21.018" height="11.765"/>	<rect x="402.383" y="387.669" width="21.004" height="11.765"/>	<rect x="426.924" y="387.669" width="21.009" height="11.765"/>	<rect x="451.885" y="387.669" width="21.009" height="11.765"/></g></svg>'
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile1
+  description: "Primary JSON file with data records converted into the 'inputfile1' table for SQL execution. Serves as the main data source and is required for the task."
+  dataType: FILE
+  repeated: false
+  allowedValues: [] 
+  defaultValue:  
+  showField: true
+  required: true
+- name: InputFile2
+  description: "Optional secondary JSON file with additional data converted into the 'inputfile2' table. Supports complex SQL operations like JOINs and cross-references alongside InputFile1."
+  dataType: FILE
+  repeated: false
+  allowedValues: [] 
+  defaultValue:  
+  showField: true
+  required: false
+- name: SQLConfig
+  description: "Configuration file containing the SQL query to run on input tables. Uses TOML format with the SQLQuery field. Automatically creates input tables from the provided JSON files. To reference fields in queries, use the table names 'inputfile1' or 'inputfile2' (e.g., inputfile1.* for all columns). Includes safety checks to prevent dangerous operations like DROP, DELETE, TRUNCATE, ALTER, UPDATE, or INSERT."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  templateFile: U1FMUXVlcnkgPSAnJycKU0VMRUNUCiAgICBpbnB1dGZpbGUxLiosCiAgICBDQVNFIAogICAgICAgIFdIRU4gQ09VTlQoaW5wdXRmaWxlMi50aW1lc3RhbXApID0gMCBUSEVOIE5VTEwKICAgICAgICBFTFNFIGpzb25fZ3JvdXBfYXJyYXkoCiAgICAgICAgICAgIGpzb25fb2JqZWN0KAogICAgICAgICAgICAgICAgJ3RpbWVzdGFtcCcsIGlucHV0ZmlsZTIudGltZXN0YW1wCiAgICAgICAgICAgICkKICAgICAgICApCiAgICBFTkQgQVMgVXNhZ2VMb2dUaW1lc3RhbXBzCkZST00KICAgIGlucHV0ZmlsZTEKTEVGVCBKT0lOCiAgICBpbnB1dGZpbGUyCk9OCiAgICBpbnB1dGZpbGUxLmVtYWlsID0gaW5wdXRmaWxlMi5gcmVzb3VyY2UubGFiZWxzLmVtYWlsX2lkYApHUk9VUCBCWQogICAgaW5wdXRmaWxlMS5lbWFpbDsKJycn
+  format: toml
+  defaultValue:  
+  showField: true
+  required: true
+- name: LogConfigFile
+  description: "Error management configuration with custom exception messages and handling templates for SQL execution failures. Uses TOML with dynamic placeholders to provide clear error reporting for download issues, validation problems, query errors, and unsafe query detection."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  templateFile: W0V4Y2VjdXRlU1FMUXVlcnldCgpbRXhjZWN1dGVTUUxRdWVyeS5WYWxpZGF0aW9uXQoKIyBMb2cgZmlsZSB2YWxpZGF0aW9uIGVycm9ycwpMb2dGaWxlLmRvd25sb2FkX2ZhaWxlZCA9ICJVbmFibGUgdG8gZG93bmxvYWQgdGhlIGxvZyBmaWxlIGZyb20gTWluSU8uIFBsZWFzZSBjaGVjayB0aGUgZGV0YWlsczoge2Vycm9yfSIKCiMgSW5wdXQgZmlsZSB2YWxpZGF0aW9uIGVycm9ycwpJbnB1dHMuZW1wdHlfb3JfaW52YWxpZCA9ICJNYW5kYXRvcnkgaW5wdXQgZmlsZXMgYXJlIG1pc3Npbmcgb3IgaW52YWxpZC4gUGxlYXNlIGNoZWNrIHRoZSBkZXRhaWxzOiB7ZXJyb3J9LiIKCklucHV0RmlsZTEubG9hZF9mYWlsZWQgPSAiRmFpbGVkIHRvIGxvYWQgSW5wdXRGaWxlMS4gUGxlYXNlIGNoZWNrIHRoZSBkZXRhaWxzOiB7ZXJyb3J9LiIKSW5wdXRGaWxlMi5sb2FkX2ZhaWxlZCA9ICJGYWlsZWQgdG8gbG9hZCBJbnB1dEZpbGUyLiBQbGVhc2UgY2hlY2sgdGhlIGRldGFpbHM6IHtlcnJvcn0uIgoKSW5wdXRGaWxlMS5kb3dubG9hZF9mYWlsZWQgPSAiVW5hYmxlIHRvIGRvd25sb2FkIElucHV0RmlsZTEgZnJvbSBNaW5JTy4gUGxlYXNlIGNoZWNrIHRoZSBkZXRhaWxzOiB7ZXJyb3J9IgpJbnB1dEZpbGUyLmRvd25sb2FkX2ZhaWxlZCA9ICJVbmFibGUgdG8gZG93bmxvYWQgSW5wdXRGaWxlMiBmcm9tIE1pbklPLiBQbGVhc2UgY2hlY2sgdGhlIGRldGFpbHM6IHtlcnJvcn0iCgpTUUxDb25maWcuZG93bmxvYWRfZmFpbGVkID0gIlVuYWJsZSB0byBkb3dubG9hZCB0aGUgU1FMQ29uZmlnIGZpbGUgZnJvbSBNaW5JTy4gUGxlYXNlIGNoZWNrIHRoZSBkZXRhaWxzOiB7ZXJyb3J9IgpTUUxDb25maWcudmFsaWRhdGlvbl9mYWlsZWQgPSAiU1FMQ29uZmlnIGZpbGUgdmFsaWRhdGlvbiBmYWlsZWQuIFBsZWFzZSBjaGVjayB0aGUgZGV0YWlsczoge2Vycm9yfSIKU1FMQ29uZmlnLnVuc2FmZV9xdWVyeV9kZXRlY3RlZCA9ICJUaGUgU1FMIHF1ZXJ5IGNvbnRhaW5zIHBvdGVudGlhbGx5IGRhbmdlcm91cyBrZXl3b3JkcyAoRFJPUCwgREVMRVRFLCBUUlVOQ0FURSwgQUxURVIsIFVQREFURSwgSU5TRVJUKS4gUGxlYXNlIHJldmlldyB0aGUgU1FMUXVlcnkgYW5kIHJlbW92ZSBhbnkgdW5zYWZlIGtleXdvcmRzIGJlZm9yZSBwcm9jZWVkaW5nLiIKU1FMQ29uZmlnLnF1ZXJ5X2V4ZWN1dGlvbl9mYWlsZWQgPSAiU1FMIHF1ZXJ5IGV4ZWN1dGlvbiBmYWlsZWQuIFBsZWFzZSBjaGVjayB0aGUgZGV0YWlsczoge2Vycm9yfSIKU1FMQ29uZmlnLnF1ZXJ5X25vX291dHB1dCA9ICJUaGUgU1FMIHF1ZXJ5IGRpZCBub3QgcmV0dXJuIGFueSBvdXRwdXQuIgoKIyBVcGxvYWQgZmlsZSBlcnJvcnMKT3V0cHV0RmlsZS51cGxvYWRfZmFpbGVkID0gIlVuYWJsZSB0byB1cGxvYWQgdGhlIG91dHB1dCBmaWxlIHRvIE1pbklPLiBQbGVhc2UgY2hlY2sgdGhlIGRldGFpbHM6IHtlcnJvcn0iCkxvZ0ZpbGUudXBsb2FkX2ZhaWxlZCA9ICJVbmFibGUgdG8gdXBsb2FkIHRoZSBsb2cgZmlsZSB0byBNaW5JTy4gUGxlYXNlIGNoZWNrIHRoZSBkZXRhaWxzOiB7ZXJyb3J9Ig==
+  format: toml
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: LogFile
+  description: "Log file from previous tasks containing errors and execution context. Determines whether SQL query execution continues or skips based on existing errors and the ProceedIfLogExists setting."
+  dataType: FILE
+  repeated: false
+  allowedValues: [] 
+  defaultValue:  
+  showField: true
+  required: false
+- name: ProceedIfLogExists
+  description: "Controls task execution when previous log files exist. If enabled (default: true), the SQL query runs and the log is included in output. If disabled (false), execution is skipped and the existing log file is returned."
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: True
+  showField: true 
+  required: false 
+- name: ProceedIfErrorExists
+  description: "Error handling strategy for SQL tasks. If enabled (default: true), errors are logged and subsequent tasks continue. If disabled (false), any error stops execution immediately."
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: True
+  showField: true 
+  required: false
+outputs:
+- name: ComplianceStatus_
+  description: Compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: Compliance percentage of the task
+  dataType: INT
+- name: OutputFile
+  description: "Parquet file containing results of the executed SQL query. Includes selected columns, calculated fields, aggregates, and joined records, formatted for downstream analysis."
+  dataType: FILE
+- name: LogFile
+  description: "Detailed error log capturing exceptions, SQL validation failures, query execution issues, and processing problems. Includes messages from LogConfigFile with dynamic placeholders for comprehensive troubleshooting and debugging."
+  dataType: FILE

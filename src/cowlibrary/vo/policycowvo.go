@@ -58,6 +58,7 @@ type CowPathConfiguration struct {
 	ApplicationTypesPath      string `json:"applicationTypesPath" yaml:"applicationTypesPath"`
 	ApplicationTypeConfigPath string `json:"applicationTypeConfigPath" yaml:"applicationTypeConfigPath"`
 	CredentialTypeConfigPath  string `json:"credentialTypeConfigPath" yaml:"credentialTypeConfigPath"`
+	DesignNotesPath           string `json:"designNotesPath" yaml:"designNotesPath"`
 }
 
 type AdditionalInfo struct {
@@ -109,6 +110,7 @@ type AdditionalInfo struct {
 	RuleProgressWorker         *RuleProgressWorkerVO
 	TerminateFlow              bool
 	TaskVO                     *TaskVO
+	RuleMetaTags               []string
 	ClientCredentials
 }
 
@@ -207,6 +209,7 @@ type DetailedInput struct {
 	DefaultValue      interface{}       `json:"defaultvalue,omitempty" yaml:"defaultValue,omitempty"`
 	Description       string            `json:"description,omitempty"`
 	OutputFiles       map[string]string `json:"outputFiles,omitempty"`
+	Explanation       string            `json:"explanation" yaml:"explanation,omitempty"`
 }
 
 type RuleFlow struct {

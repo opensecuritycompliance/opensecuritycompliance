@@ -1,0 +1,21 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>> # File containing records for validation 
+  RequiredFields: # List of mandatory field names eg: ["name", "email"]
+  LogFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-03-05T08:59:39Z
+toDate: 2025-03-05T08:59:39Z

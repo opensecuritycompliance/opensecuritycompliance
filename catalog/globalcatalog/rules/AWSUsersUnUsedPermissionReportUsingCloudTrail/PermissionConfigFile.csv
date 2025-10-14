@@ -1,0 +1,331 @@
+Service,AccessLevel,Permission,Description
+S3,Read,DescribeJob,Describe a job
+S3,Read,DescribeMultiRegionAccessPointOperation,Describe multi-region access point operations
+S3,Read,GetAccelerateConfiguration,Get accelerate configuration
+S3,Read,GetAccessGrant,Get access grants
+S3,Read,GetAccessGrantsInstance,Get access grants for specific instance
+S3,Read,GetAccessGrantsInstanceForPrefix,Get instance access grants for a prefix
+S3,Read,GetAccessGrantsInstanceResourcePolicy,Get resource policy for access grants instance
+S3,Read,GetAccessGrantsLocation,Get location of access grants
+S3,Read,GetAccessPoint,Get access point details
+S3,Read,GetAccessPointConfigurationForObjectLambda,Get configuration for Object Lambda access point
+S3,Read,GetAccessPointForObjectLambda,Get Object Lambda access point
+S3,Read,GetAccessPointPolicy,Get policy for access point
+S3,Read,GetAccessPointPolicyForObjectLambda,Get policy for Object Lambda access point
+S3,Read,GetAccessPointPolicyStatus,Get status of access point policy
+S3,Read,GetAccessPointPolicyStatusForObjectLambda,Get status of Object Lambda access point policy
+S3,Read,GetAccountPublicAccessBlock,Get public access block for account
+S3,Read,GetAnalyticsConfiguration,Get analytics configuration
+S3,Read,GetBucketAcl,Get bucket ACL
+S3,Read,GetBucketCORS,Get CORS for bucket
+S3,Read,GetBucketLocation,Get location of the bucket
+S3,Read,GetBucketLogging,Get logging configuration for bucket
+S3,Read,GetBucketNotification,Get notification configuration for bucket
+S3,Read,GetBucketObjectLockConfiguration,Get object lock configuration for bucket
+S3,Read,GetBucketOwnershipControls,Get ownership controls for bucket
+S3,Read,GetBucketPolicy,Get policy for bucket
+S3,Read,GetBucketPolicyStatus,Get status of bucket policy
+S3,Read,GetBucketPublicAccessBlock,Get public access block for bucket
+S3,Read,GetBucketRequestPayment,Get request payment configuration for bucket
+S3,Read,GetBucketTagging,Get tagging configuration for bucket
+S3,Read,GetBucketVersioning,Get versioning configuration for bucket
+S3,Read,GetBucketWebsite,Get website configuration for bucket
+S3,Read,GetDataAccess,Get data access configuration
+S3,Read,GetEncryptionConfiguration,Get encryption configuration
+S3,Read,GetIntelligentTieringConfiguration,Get intelligent tiering configuration
+S3,Read,GetInventoryConfiguration,Get inventory configuration
+S3,Read,GetJobTagging,Get job tagging configuration
+S3,Read,GetLifecycleConfiguration,Get lifecycle configuration
+S3,Read,GetMetricsConfiguration,Get metrics configuration
+S3,Read,GetMultiRegionAccessPoint,Get multi-region access point details
+S3,Read,GetMultiRegionAccessPointPolicy,Get policy for multi-region access point
+S3,Read,GetMultiRegionAccessPointPolicyStatus,Get status of multi-region access point policy
+S3,Read,GetMultiRegionAccessPointRoutes,Get routes for multi-region access point
+S3,Read,GetObject,Get an object
+S3,Read,GetObjectAcl,Get ACL of object
+S3,Read,GetObjectAttributes,Get attributes of object
+S3,Read,GetObjectLegalHold,Get legal hold status of object
+S3,Read,GetObjectRetention,Get retention status of object
+S3,Read,GetObjectTagging,Get tagging information of object
+S3,Read,GetObjectTorrent,Get torrent of object
+S3,Read,GetObjectVersion,Get version of object
+S3,Read,GetObjectVersionAcl,Get ACL of object version
+S3,Read,GetObjectVersionAttributes,Get attributes of object version
+S3,Read,GetObjectVersionForReplication,Get object version for replication
+S3,Read,GetObjectVersionTagging,Get tagging information of object version
+S3,Read,GetObjectVersionTorrent,Get torrent of object version
+S3,Read,GetReplicationConfiguration,Get replication configuration
+S3,Read,GetStorageLensConfiguration,Get Storage Lens configuration
+S3,Read,GetStorageLensConfigurationTagging,Get tagging for Storage Lens configuration
+S3,Read,GetStorageLensDashboard,Get Storage Lens dashboard
+S3,Read,GetStorageLensGroup,Get Storage Lens group
+S3,Write,AbortMultipartUpload,Abort multipart upload
+S3,Write,AssociateAccessGrantsIdentityCenter,Associate access grants with identity center
+S3,Write,CreateAccessGrant,Create an access grant
+S3,Write,CreateAccessGrantsInstance,Create an access grants instance
+S3,Write,CreateAccessGrantsLocation,Create access grants location
+S3,Write,CreateAccessPoint,Create an access point
+S3,Write,CreateAccessPointForObjectLambda,Create an Object Lambda access point
+S3,Write,CreateBucket,Create a bucket
+S3,Write,CreateJob,Create a job
+S3,Write,CreateMultiRegionAccessPoint,Create a multi-region access point
+S3,Write,CreateStorageLensGroup,Create a Storage Lens group
+S3,Write,DeleteAccessGrant,Delete an access grant
+S3,Write,DeleteAccessGrantsInstance,Delete an access grants instance
+S3,Write,DeleteAccessGrantsInstanceResourcePolicy,Delete the resource policy for an access grants instance
+S3,Write,DeleteAccessGrantsLocation,Delete access grants location
+S3,Write,DeleteAccessPoint,Delete an access point
+S3,Write,DeleteAccessPointForObjectLambda,Delete an Object Lambda access point
+S3,Write,DeleteBucket,Delete a bucket
+S3,Write,DeleteBucketWebsite,Delete website configuration for bucket
+S3,Write,DeleteMultiRegionAccessPoint,Delete a multi-region access point
+S3,Write,DeleteObject,Delete an object
+S3,Write,DeleteObjectVersion,Delete an object version
+S3,Write,DeleteStorageLensConfiguration,Delete Storage Lens configuration
+S3,Write,DeleteStorageLensGroup,Delete Storage Lens group
+S3,Write,DissociateAccessGrantsIdentityCenter,Dissociate access grants from identity center
+S3,Write,InitiateReplication,Initiate replication
+S3,Write,PauseReplication,Pause replication
+S3,Write,PutAccelerateConfiguration,Put accelerate configuration
+S3,Write,PutAccessGrantsInstanceResourcePolicy,Put resource policy for access grants instance
+S3,Write,PutAccessPointConfigurationForObjectLambda,Put configuration for Object Lambda access point
+S3,Write,PutAnalyticsConfiguration,Put analytics configuration
+S3,Write,PutBucketCORS,Put CORS for bucket
+S3,Write,PutBucketLogging,Put logging configuration for bucket
+S3,Write,PutBucketNotification,Put notification configuration for bucket
+S3,Write,PutBucketObjectLockConfiguration,Put object lock configuration for bucket
+S3,Write,PutBucketOwnershipControls,Put ownership controls for bucket
+S3,Write,PutBucketRequestPayment,Put request payment configuration for bucket
+S3,Write,PutBucketVersioning,Put versioning configuration for bucket
+S3,Write,PutBucketWebsite,Put website configuration for bucket
+S3,Write,PutEncryptionConfiguration,Put encryption configuration
+S3,Write,PutIntelligentTieringConfiguration,Put intelligent tiering configuration
+S3,Write,PutInventoryConfiguration,Put inventory configuration
+S3,Write,PutLifecycleConfiguration,Put lifecycle configuration
+S3,Write,PutMetricsConfiguration,Put metrics configuration
+S3,Write,PutObject,Put an object
+S3,Write,PutObjectLegalHold,Put legal hold on an object
+S3,Write,PutObjectRetention,Put retention on an object
+S3,Write,PutReplicationConfiguration,Put replication configuration
+S3,Write,PutStorageLensConfiguration,Put Storage Lens configuration
+S3,Write,ReplicateDelete,Replicate delete
+S3,Write,ReplicateObject,Replicate an object
+S3,Write,RestoreObject,Restore an object
+S3,Write,SubmitMultiRegionAccessPointRoutes,Submit routes for multi-region access point
+S3,Write,UpdateAccessGrantsLocation,Update access grants location
+S3,Write,UpdateJobPriority,Update job priority
+S3,Write,UpdateJobStatus,Update job status
+S3,Write,UpdateStorageLensGroup,Update Storage Lens group
+S3,List,ListAccessGrants,List access grants
+S3,List,ListAccessGrantsInstances,List access grants instances
+S3,List,ListAccessGrantsLocations,List access grants locations
+S3,List,ListAccessPoints,List access points
+S3,List,ListAccessPointsForObjectLambda,List access points for Object Lambda
+S3,List,ListAllMyBuckets,List all buckets
+S3,List,ListBucket,List bucket contents
+S3,List,ListBucketMultipartUploads,List multipart uploads for bucket
+S3,List,ListBucketVersions,List versions of bucket objects
+S3,List,ListJobs,List jobs
+S3,List,ListMultipartUploadParts,List parts of a multipart upload
+S3,List,ListMultiRegionAccessPoints,List multi-region access points
+S3,List,ListStorageLensConfigurations,List Storage Lens configurations
+S3,List,ListStorageLensGroups,List Storage Lens groups
+S3,List,ListTagsForResource,List tags for resource
+S3,Tagging,DeleteJobTagging,Delete job tagging
+S3,Tagging,DeleteObjectTagging,Delete object tagging
+S3,Tagging,DeleteObjectVersionTagging,Delete object version tagging
+S3,Tagging,DeleteStorageLensConfigurationTagging,Delete Storage Lens configuration tagging
+S3,Tagging,PutBucketTagging,Put bucket tagging
+S3,Tagging,PutJobTagging,Put job tagging
+S3,Tagging,PutObjectTagging,Put object tagging
+S3,Tagging,PutObjectVersionTagging,Put object version tagging
+S3,Tagging,PutStorageLensConfigurationTagging,Put Storage Lens configuration tagging
+S3,Tagging,ReplicateTags,Replicate tags
+S3,Tagging,TagResource,Tag a resource
+S3,Tagging,UntagResource,Untag a resource
+S3,Permission Management,BypassGovernanceRetention,Bypass governance retention
+S3,Permission Management,DeleteAccessPointPolicy,Delete access point policy
+S3,Permission Management,DeleteAccessPointPolicyForObjectLambda,Delete access point policy for Object Lambda
+S3,Permission Management,DeleteBucketPolicy,Delete bucket policy
+S3,Permission Management,ObjectOwnerOverrideToBucketOwner,Override object ownership to bucket owner
+S3,Permission Management,PutAccessPointPolicy,Put access point policy
+S3,Permission Management,PutAccessPointPolicyForObjectLambda,Put access point policy for Object Lambda
+S3,Permission Management,PutAccessPointPublicAccessBlock,Put public access block for access point
+S3,Permission Management,PutAccountPublicAccessBlock,Put public access block for account
+S3,Permission Management,PutBucketAcl,Put bucket ACL
+S3,Permission Management,PutBucketPolicy,Put bucket policy
+S3,Permission Management,PutBucketPublicAccessBlock,Put public access block for bucket
+S3,Permission Management,PutMultiRegionAccessPointPolicy,Put policy for multi-region access point
+S3,Permission Management,PutObjectAcl,Put object ACL
+S3,Permission Management,PutObjectVersionAcl,Put object version ACL
+IAM,Read,GenerateCredentialReport,Generate a credential report
+IAM,Read,GenerateOrganizationsAccessReport,Generate organizations access report
+IAM,Read,GenerateServiceLastAccessedDetails,Generate last accessed details for services
+IAM,Read,GetAccessKeyLastUsed,Get last used details for access key
+IAM,Read,GetAccountAuthorizationDetails,Get account authorization details
+IAM,Read,GetAccountEmailAddress,Get account email address
+IAM,Read,GetAccountName,Get account name
+IAM,Read,GetAccountPasswordPolicy,Get account password policy
+IAM,Read,GetCloudFrontPublicKey,Get CloudFront public key
+IAM,Read,GetContextKeysForCustomPolicy,Get context keys for custom policy
+IAM,Read,GetContextKeysForPrincipalPolicy,Get context keys for principal policy
+IAM,Read,GetCredentialReport,Get credential report
+IAM,Read,GetGroup,Get a group
+IAM,Read,GetGroupPolicy,Get policy for a group
+IAM,Read,GetInstanceProfile,Get instance profile
+IAM,Read,GetMFADevice,Get MFA device details
+IAM,Read,GetOpenIDConnectProvider,Get OpenID Connect provider details
+IAM,Read,GetOrganizationsAccessReport,Get organizations access report
+IAM,Read,GetPolicy,Get policy details
+IAM,Read,GetPolicyVersion,Get specific policy version
+IAM,Read,GetRole,Get role details
+IAM,Read,GetRolePolicy,Get policy for a role
+IAM,Read,GetSAMLProvider,Get SAML provider details
+IAM,Read,GetServerCertificate,Get server certificate details
+IAM,Read,GetServiceLastAccessedDetails,Get last accessed details for services
+IAM,Read,GetServiceLastAccessedDetailsWithEntities,Get last accessed details with entities
+IAM,Read,GetServiceLinkedRoleDeletionStatus,Get deletion status for service-linked role
+IAM,Read,GetSSHPublicKey,Get SSH public key details
+IAM,Read,GetUser,Get user details
+IAM,Read,GetUserPolicy,Get policy for a user
+IAM,Read,SimulateCustomPolicy,Simulate custom policy
+IAM,Read,SimulatePrincipalPolicy,Simulate principal policy
+IAM,Write,AddClientIDToOpenIDConnectProvider,Add client ID to OpenID Connect provider
+IAM,Write,AddRoleToInstanceProfile,Add role to instance profile
+IAM,Write,AddUserToGroup,Add user to group
+IAM,Write,ChangePassword,Change user password
+IAM,Write,CreateAccessKey,Create an access key
+IAM,Write,CreateAccountAlias,Create an account alias
+IAM,Write,CreateGroup,Create a group
+IAM,Write,CreateInstanceProfile,Create an instance profile
+IAM,Write,CreateLoginProfile,Create a login profile
+IAM,Write,CreateOpenIDConnectProvider,Create OpenID Connect provider
+IAM,Write,CreateRole,Create a role
+IAM,Write,CreateSAMLProvider,Create SAML provider
+IAM,Write,CreateServiceLinkedRole,Create a service-linked role
+IAM,Write,CreateServiceSpecificCredential,Create service-specific credential
+IAM,Write,CreateUser,Create a user
+IAM,Write,CreateVirtualMFADevice,Create a virtual MFA device
+IAM,Write,DeactivateMFADevice,Deactivate MFA device
+IAM,Write,DeleteAccessKey,Delete an access key
+IAM,Write,DeleteAccountAlias,Delete account alias
+IAM,Write,DeleteCloudFrontPublicKey,Delete CloudFront public key
+IAM,Write,DeleteGroup,Delete a group
+IAM,Write,DeleteInstanceProfile,Delete an instance profile
+IAM,Write,DeleteLoginProfile,Delete a login profile
+IAM,Write,DeleteOpenIDConnectProvider,Delete OpenID Connect provider
+IAM,Write,DeleteRole,Delete a role
+IAM,Write,DeleteSAMLProvider,Delete SAML provider
+IAM,Write,DeleteServerCertificate,Delete server certificate
+IAM,Write,DeleteServiceLinkedRole,Delete service-linked role
+IAM,Write,DeleteServiceSpecificCredential,Delete service-specific credential
+IAM,Write,DeleteSigningCertificate,Delete signing certificate
+IAM,Write,DeleteSSHPublicKey,Delete SSH public key
+IAM,Write,DeleteUser,Delete a user
+IAM,Write,DeleteVirtualMFADevice,Delete virtual MFA device
+IAM,Write,EnableMFADevice,Enable MFA device
+IAM,Write,PassRole,Pass role to another AWS service
+IAM,Write,RemoveClientIDFromOpenIDConnectProvider,Remove client ID from OpenID Connect provider
+IAM,Write,RemoveRoleFromInstanceProfile,Remove role from instance profile
+IAM,Write,RemoveUserFromGroup,Remove user from group
+IAM,Write,ResetServiceSpecificCredential,Reset service-specific credential
+IAM,Write,ResyncMFADevice,Resync MFA device
+IAM,Write,SetSecurityTokenServicePreferences,Set preferences for security token service
+IAM,Write,SetSTSRegionalEndpointStatus,Set regional endpoint status for STS
+IAM,Write,UpdateAccessKey,Update an access key
+IAM,Write,UpdateAccountEmailAddress,Update account email address
+IAM,Write,UpdateAccountName,Update account name
+IAM,Write,UpdateAccountPasswordPolicy,Update account password policy
+IAM,Write,UpdateCloudFrontPublicKey,Update CloudFront public key
+IAM,Write,UpdateGroup,Update a group
+IAM,Write,UpdateLoginProfile,Update login profile
+IAM,Write,UpdateOpenIDConnectProviderThumbprint,Update thumbprint for OpenID Connect provider
+IAM,Write,UpdateRole,Update role details
+IAM,Write,UpdateRoleDescription,Update role description
+IAM,Write,UpdateSAMLProvider,Update SAML provider
+IAM,Write,UpdateServerCertificate,Update server certificate
+IAM,Write,UpdateServiceSpecificCredential,Update service-specific credential
+IAM,Write,UpdateSigningCertificate,Update signing certificate
+IAM,Write,UpdateSSHPublicKey,Update SSH public key
+IAM,Write,UpdateUser,Update user details
+IAM,Write,UploadCloudFrontPublicKey,Upload CloudFront public key
+IAM,Write,UploadServerCertificate,Upload server certificate
+IAM,Write,UploadSigningCertificate,Upload signing certificate
+IAM,Write,UploadSSHPublicKey,Upload SSH public key
+IAM,List,GetAccountSummary,Get summary of account
+IAM,List,GetLoginProfile,Get login profile details
+IAM,List,ListAccessKeys,List access keys
+IAM,List,ListAccountAliases,List account aliases
+IAM,List,ListAttachedGroupPolicies,List attached policies for group
+IAM,List,ListAttachedRolePolicies,List attached policies for role
+IAM,List,ListAttachedUserPolicies,List attached policies for user
+IAM,List,ListCloudFrontPublicKeys,List CloudFront public keys
+IAM,List,ListEntitiesForPolicy,List entities for a policy
+IAM,List,ListGroupPolicies,List group policies
+IAM,List,ListGroups,List groups
+IAM,List,ListGroupsForUser,List groups for a user
+IAM,List,ListInstanceProfiles,List instance profiles
+IAM,List,ListInstanceProfilesForRole,List instance profiles for a role
+IAM,List,ListInstanceProfileTags,List tags for instance profile
+IAM,List,ListMFADevices,List MFA devices
+IAM,List,ListMFADeviceTags,List tags for MFA device
+IAM,List,ListOpenIDConnectProviders,List OpenID Connect providers
+IAM,List,ListOpenIDConnectProviderTags,List tags for OpenID Connect provider
+IAM,List,ListPolicies,List IAM policies
+IAM,List,ListPoliciesGrantingServiceAccess,List policies granting service access
+IAM,List,ListPolicyTags,List tags for policy
+IAM,List,ListPolicyVersions,List versions of a policy
+IAM,List,ListRolePolicies,List role policies
+IAM,List,ListRoles,List roles
+IAM,List,ListRoleTags,List tags for role
+IAM,List,ListSAMLProviders,List SAML providers
+IAM,List,ListSAMLProviderTags,List tags for SAML provider
+IAM,List,ListServerCertificates,List server certificates
+IAM,List,ListServerCertificateTags,List tags for server certificate
+IAM,List,ListServiceSpecificCredentials,List service-specific credentials
+IAM,List,ListSigningCertificates,List signing certificates
+IAM,List,ListSSHPublicKeys,List SSH public keys
+IAM,List,ListSTSRegionalEndpointsStatus,List status of STS regional endpoints
+IAM,List,ListUserPolicies,List user policies
+IAM,List,ListUsers,List users
+IAM,List,ListUserTags,List tags for user
+IAM,List,ListVirtualMFADevices,List virtual MFA devices
+IAM,Tagging,TagInstanceProfile,Tag an instance profile
+IAM,Tagging,TagMFADevice,Tag an MFA device
+IAM,Tagging,TagOpenIDConnectProvider,Tag an OpenID Connect provider
+IAM,Tagging,TagPolicy,Tag a policy
+IAM,Tagging,TagRole,Tag a role
+IAM,Tagging,TagSAMLProvider,Tag a SAML provider
+IAM,Tagging,TagServerCertificate,Tag a server certificate
+IAM,Tagging,TagUser,Tag a user
+IAM,Tagging,UntagInstanceProfile,Untag an instance profile
+IAM,Tagging,UntagMFADevice,Untag an MFA device
+IAM,Tagging,UntagOpenIDConnectProvider,Untag an OpenID Connect provider
+IAM,Tagging,UntagPolicy,Untag a policy
+IAM,Tagging,UntagRole,Untag a role
+IAM,Tagging,UntagSAMLProvider,Untag a SAML provider
+IAM,Tagging,UntagServerCertificate,Untag a server certificate
+IAM,Tagging,UntagUser,Untag a user
+IAM,Permission Management,AttachGroupPolicy,Attach policy to a group
+IAM,Permission Management,AttachRolePolicy,Attach policy to a role
+IAM,Permission Management,AttachUserPolicy,Attach policy to a user
+IAM,Permission Management,CreatePolicy,Create a new policy
+IAM,Permission Management,CreatePolicyVersion,Create a new version of a policy
+IAM,Permission Management,DeleteAccountPasswordPolicy,Delete account password policy
+IAM,Permission Management,DeleteGroupPolicy,Delete policy from group
+IAM,Permission Management,DeletePolicy,Delete a policy
+IAM,Permission Management,DeletePolicyVersion,Delete a version of a policy
+IAM,Permission Management,DeleteRolePermissionsBoundary,Delete role permissions boundary
+IAM,Permission Management,DeleteRolePolicy,Delete policy from role
+IAM,Permission Management,DeleteUserPermissionsBoundary,Delete user permissions boundary
+IAM,Permission Management,DeleteUserPolicy,Delete policy from user
+IAM,Permission Management,DetachGroupPolicy,Detach policy from group
+IAM,Permission Management,DetachRolePolicy,Detach policy from role
+IAM,Permission Management,DetachUserPolicy,Detach policy from user
+IAM,Permission Management,PutGroupPolicy,Put policy for group
+IAM,Permission Management,PutRolePermissionsBoundary,Put role permissions boundary
+IAM,Permission Management,PutRolePolicy,Put policy for role
+IAM,Permission Management,PutUserPermissionsBoundary,Put user permissions boundary
+IAM,Permission Management,PutUserPolicy,Put policy for user
+IAM,Permission Management,SetDefaultPolicyVersion,Set default version of a policy
+IAM,Permission Management,UpdateAssumeRolePolicy,Update assume role policy

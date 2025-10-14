@@ -1,0 +1,23 @@
+[ExtractDataUsingJQ]
+    ############ INPUT_FILE EXCEPTIONS ############
+    InputFile.missing = "InputFile is missing in user inputs."
+    InputFile.type_error = "InputFile must be a JSON file, got file with '{extension}' extension instead"
+    InputFile.download_error = "Error while downloading InputFile :: {error}"
+    InputFile.empty = "The input file is empty. Please verify that the file contains valid data before proceeding."
+    
+    ############ JQ EXCEPTIONS ############
+    JQExpression.no_result = "The JQ expression returned no results. Please check the query and ensure the input data matches the expected structure."
+    JQExpression.invalid_result = "JQExpression must return an object or an array, got '{jq_result_type}' instead"
+    
+    ############ OUTPUT_FILE EXCEPTIONS ############
+    OutputFile.upload_error = "An error occurred while uploading the result: {error}. Please check the error details and try again"
+    
+    ############ LOG_FILE EXCEPTIONS ############
+    LogFile.download_error = "Error while downloading LogFile :: {error}"
+    
+    ############ JQ_CONFIG_FILE EXCEPTIONS ############
+    JQConfigFile.missing = "'JQConfig' file is missing. Please ensure the configuration file is present. Please refer to the provided JQConfig-sample.toml file."
+    JQConfigFile.download_error = "Error occurred while downloading JQConfig file :: {error}"
+    JQConfigFile.jq_config_field_missing_or_empty = "'JQConfig' table is missing or empty in the provided JQConfig file. Please refer to the JQConfig-sample.toml file."
+
+    

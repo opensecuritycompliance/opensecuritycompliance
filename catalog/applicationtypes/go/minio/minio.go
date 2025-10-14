@@ -9,6 +9,7 @@ import (
 	"cowlibrary/vo"
 	cowvo "cowlibrary/vo"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -16,6 +17,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -551,57 +553,72 @@ func DownloadFile(absoluteFilePath string, systemInputs interface{}) ([]byte, er
 		return fileContent, nil
 	}
 
-	fileURL, err := url.Parse(absoluteFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("invalid file URL: %w", err)
-	}
-	// Default bucketName
-	bucketName := "demo"
-	if fileURL.Scheme == "http" {
-		splitPath := strings.Split(fileURL.Path, "/")
-		if len(splitPath) > 2 {
-			bucketName = splitPath[1]
+	if strings.HasPrefix(absoluteFilePath, "http://") || strings.HasPrefix(absoluteFilePath, "https://") {
+
+		fileURL, err := url.Parse(absoluteFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("invalid file URL: %w", err)
 		}
-	}
-	systemInputsVO, err := LoadSystemInputsFromInterface(systemInputs)
-	if err != nil {
-		return nil, err
-	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return nil, err
-	}
-
-	objectPath := strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
-
-	if IsAmazonS3Host(absoluteFilePath) {
-		parts := strings.Split(fileURL.Path, "/")
-		if len(parts) < 4 {
-			return nil, fmt.Errorf("invalid URL structure, cannot extract bucket and object")
+		// Default bucketName
+		bucketName := "demo"
+		if fileURL.Scheme == "http" || fileURL.Scheme == "https" {
+			splitPath := strings.Split(fileURL.Path, "/")
+			if len(splitPath) > 2 {
+				bucketName = splitPath[1]
+			}
 		}
-		bucketName = parts[3]
-		objectPath = strings.Join(parts[4:], "/")
-	}
+		systemInputsVO, err := LoadSystemInputsFromInterface(systemInputs)
+		if err != nil {
+			return nil, err
+		}
+		endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
+		if err != nil {
+			return nil, err
+		}
 
-	if prefix := fileURL.Query().Get("prefix"); prefix != "" {
-		objectPath = prefix
-	}
+		objectPath := strings.TrimPrefix(fileURL.Path, fmt.Sprintf("/%v", bucketName))
 
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
-	if err != nil {
-		return nil, err
-	}
+		if IsAmazonS3Host(absoluteFilePath) {
+			parts := strings.Split(fileURL.Path, "/")
+			if len(parts) < 4 {
+				return nil, fmt.Errorf("invalid URL structure, cannot extract bucket and object")
+			}
+			bucketName = parts[3]
+			objectPath = strings.Join(parts[4:], "/")
+		}
 
-	object, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
-	if err != nil {
-		return nil, err
+		if prefix := fileURL.Query().Get("prefix"); prefix != "" {
+			objectPath = prefix
+		}
+
+		minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+		if err != nil {
+			return nil, err
+		}
+
+		object, err := minioClient.GetObject(context.Background(), bucketName, objectPath, minio.GetObjectOptions{})
+		if err != nil {
+			return nil, err
+		}
+		defer object.Close()
+		fileContent, err := io.ReadAll(object)
+		if err != nil {
+			return nil, err
+		}
+		return fileContent, nil
+
+	} else {
+		fileResp, err := GetFile(absoluteFilePath)
+		if err != nil {
+			return nil, err
+		}
+		if fileContent, ok := fileResp["FileContent"].(string); ok {
+			if fileBytes, err := base64.StdEncoding.DecodeString(fileContent); err == nil {
+				return fileBytes, nil
+			}
+		}
+		return nil, fmt.Errorf("FileContent not found in response")
 	}
-	defer object.Close()
-	fileContent, err := io.ReadAll(object)
-	if err != nil {
-		return nil, err
-	}
-	return fileContent, nil
 }
 
 func DownloadJSONFile[T comparable](absoluteFilePath string, systemInputs interface{}, outputStruct T) ([]*T, error) {
@@ -955,4 +972,22 @@ func loadBool(name string, defaultValue bool) bool {
 		return defaultValue
 	}
 	return boolV
+}
+
+func GetFile(hashedFilename string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("%s/url-hash/download/%s", constants.COWStorageServiceURL, hashedFilename)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("error while making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		var result map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err == nil {
+			return result, nil
+		}
+	}
+	return nil, fmt.Errorf("file not found")
 }

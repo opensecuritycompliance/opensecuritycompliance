@@ -1,0 +1,4 @@
+[[ConditionRules]]
+    Condition = "EMPTY"
+    ConditionField = "<<inputfile.[].data.search.nodes>>"  
+    ErrorMessage = "The provided repository '<<inputfile.[].repositoryName>>' is either invalid or empty."

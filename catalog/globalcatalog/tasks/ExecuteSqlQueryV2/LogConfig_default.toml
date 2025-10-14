@@ -1,0 +1,25 @@
+[ExcecuteSQLQuery]
+
+[ExcecuteSQLQuery.Validation]
+
+# Log file validation errors
+LogFile.download_failed = "Unable to download the log file from MinIO. Please check the details: {error}"
+
+# Input file validation errors
+Inputs.empty_or_invalid = "Mandatory input files are missing or invalid. Please check the details: {error}."
+
+InputFile1.load_failed = "Failed to load InputFile1. Please check the details: {error}."
+InputFile2.load_failed = "Failed to load InputFile2. Please check the details: {error}."
+
+InputFile1.download_failed = "Unable to download InputFile1 from MinIO. Please check the details: {error}"
+InputFile2.download_failed = "Unable to download InputFile2 from MinIO. Please check the details: {error}"
+
+SQLConfig.download_failed = "Unable to download the SQLConfig file from MinIO. Please check the details: {error}"
+SQLConfig.validation_failed = "SQLConfig file validation failed. Please check the details: {error}"
+SQLConfig.unsafe_query_detected = "The SQL query contains potentially dangerous keywords (DROP, DELETE, TRUNCATE, ALTER, UPDATE, INSERT). Please review the SQLQuery and remove any unsafe keywords before proceeding."
+SQLConfig.query_execution_failed = "SQL query execution failed. Please check the details: {error}"
+SQLConfig.query_no_output = "The SQL query did not return any output."
+
+# Upload file errors
+OutputFile.upload_failed = "Unable to upload the output file to MinIO. Please check the details: {error}"
+LogFile.upload_failed = "Unable to upload the log file to MinIO. Please check the details: {error}"

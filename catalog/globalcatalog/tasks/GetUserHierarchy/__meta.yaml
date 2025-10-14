@@ -1,0 +1,71 @@
+authors:
+- jasim.a@continube.com
+domain: continube
+createdDate: 21/01/2025
+name: GetUserHierarchy
+displayName: GetUserHierarchy
+version: '1.0'
+description: GetUserHierarchy
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: Type 
+  description: Manger or Hierarchy # The requirement of the user ie., whether he/she needs the manager alone or the whole hierarchy.
+  dataType: STRING 
+  repeated: false 
+  allowedValues: []
+  defaultValue:   
+  showField: true  
+  required: true  
+- name: InputFile 
+  description: The input user file that contains the user data and which needs to be checked for the hierarchy.
+  dataType: FILE  
+  repeated: false 
+  allowedValues: []
+  defaultValue:  <<MINIO_FILE_PATH>>
+  showField: true  
+  required: true 
+- name: HierarchyFile 
+  description: The hierarchy file which contains the hierarchy data.
+  dataType: FILE  
+  repeated: false 
+  allowedValues: []
+  defaultValue:   <<MINIO_FILE_PATH>>
+  showField: true  
+  required: true 
+- name: ConfigFile 
+  description: This file helps match users with their managers and adds hierarchy information to the input data.
+  dataType: FILE  
+  repeated: false 
+  allowedValues: []
+  defaultValue:   <<MINIO_FILE_PATH>>
+  showField: true  
+  required: true  
+- name: LogFile 
+  description: Log file of previous task.
+  dataType: STRING 
+  repeated: false 
+  allowedValues: []
+  defaultValue:   
+  showField: true  
+  required: false 
+outputs:
+- name: ComplianceStatus_
+  description: Compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: Compliance percentage of the task
+  dataType: INT
+- name: OutputFile
+  description: File with hierarchy data
+  dataType: FILE
+- name: LogFile
+  description: Log file with issue details
+  dataType: FILE

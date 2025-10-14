@@ -1,0 +1,8 @@
+[[AddColumn.ByCondition]]
+Condition = "<<inputfile1.UBLA>> == 1"
+
+[[AddColumn.ByCondition.True]]
+UBLA = "True"
+
+[[AddColumn.ByCondition.False]]
+UBLA = "False"

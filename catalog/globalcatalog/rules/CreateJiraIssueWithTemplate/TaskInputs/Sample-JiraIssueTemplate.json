@@ -1,0 +1,50 @@
+{
+    "fields": {
+        "project": {
+            "key": "CC"
+        },
+        "summary": "Ticket summary Q2 - 2024",
+        "description": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "text": "This ticket is created to ensure compliance with the ",
+                            "type": "text"
+                        },
+                        {
+                            "type": "text",
+                            "text": "log self-serve document",
+                            "marks": [
+                                {
+                                    "type": "link",
+                                    "attrs": {
+                                        "href": "https://example.com/log-self-serve"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "text": ". Please follow the instructions below to complete the task.",
+                            "type": "text"
+                        }
+                    ]
+                }
+            ]
+        },
+        "labels": ["compliance", "log-self-serve"],
+        "issuetype": {
+            "name": "Task"
+        },
+        "priority": {
+            "name": "Medium"
+        },
+        "assignee": {
+            "id": "123456"
+        },
+        "duedate": "2024-06-30"
+    }
+}

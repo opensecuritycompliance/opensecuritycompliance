@@ -1,0 +1,27 @@
+
+[Request]
+
+URL = "https://api.github.com/graphql"
+Method = "POST"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "JWTBearer"
+TimeOut = 30
+Verify = true
+
+[Request.Retries.RetryOnCondition]
+
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429|403"
+MaxRetries = 3
+TimeInterval = "<<response.headers.Retry-After>>"
+
+[Request.Headers]
+Accept = "application/vnd.github+json"
+Authorization = "Bearer <<validationCURLresponse.token>>"
+
+[Request.Params]
+
+[Request.Data]
+    [Request.Data.Raw]
+    Value = '{"query":"query ($queryString: String!, $afterCursor: String) {\n    search(query: $queryString, type: ISSUE, first: 100, after: $afterCursor) {\n        pageInfo {\n            endCursor\n            hasNextPage\n        }\n        nodes {\n            ... on PullRequest {\n                id\n                title\n                number\n                url\n                state\n                author {\n                    login\n                }\n                isDraft\n                headRefName\n                headRefOid\n                headRepository {\n                    nameWithOwner\n                }\n                baseRefName\n                baseRefOid\n                baseRepository {\n                    nameWithOwner\n                }\n                createdAt\n                lastEditedAt\n                closedAt\n                mergedAt\n                reviews(first: 100, states: APPROVED) {\n                    totalCount\n                    nodes {\n                        author {\n                            login\n                        }\n                        bodyText\n                        id\n                        state\n                        submittedAt\n                        url\n                        commit {\n                            oid\n                            abbreviatedOid\n                        }\n                    }\n                }\n            }\n        }\n        issueCount\n    }\n}\n","variables":{"queryString":"repo:<<inputfile.RepositoryName>> type:pr is:merged created:<<fromdate>>..<<todate>>","afterCursor":""}}'

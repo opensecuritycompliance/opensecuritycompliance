@@ -1,0 +1,10 @@
+[Request]
+URL = "<<application.AppURL>>/repos/<<inputfile.account_owner>>/<<inputfile.repository_name>>/code-scanning/alerts?per_page=100"
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "BearerToken"
+TimeOut = 30  
+Retries = 3  
+RetryOnStatus = [503]
+Verify=true

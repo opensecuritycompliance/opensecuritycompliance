@@ -1,0 +1,13 @@
+[Request]
+URL = "https://storage.googleapis.com/storage/v1/b?project=rule-analysis-test&fields=*" 
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "JWTBearer"
+TimeOut = 30
+Verify = true
+Retries = 3
+RetryOnStatus = [503, 504, 429]
+
+[Request.Headers]
+Authorization  = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"

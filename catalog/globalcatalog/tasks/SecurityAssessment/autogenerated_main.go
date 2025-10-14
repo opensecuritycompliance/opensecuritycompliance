@@ -4,8 +4,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -15,7 +17,17 @@ import (
 	"cowlibrary/constants"
 )
 
+func handlePanic() {
+	r := recover()
+	if r != nil {
+		os.WriteFile("logs.txt", debug.Stack(), os.ModePerm)
+		os.WriteFile("task_output.json", []byte(`{"error":"`+fmt.Sprintf("%v, %s", r, "Please review the stack trace in the logs.txt file within the task.")+`"}`), os.ModePerm)
+		panic(r)
+	}
+}
+
 func main() {
+	defer handlePanic()
 	inst := new(TaskInstance)
 
 	taskInput := &TaskInputs{}

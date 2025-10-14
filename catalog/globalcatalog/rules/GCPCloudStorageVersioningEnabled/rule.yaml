@@ -1,0 +1,222 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GCPCloudStorageVersioningEnabled
+  purpose: This rule ensures that object versioning is enabled for all Cloud Storage
+    buckets in the specified Google Cloud project.
+  description: This rule ensures that object versioning is enabled for all Cloud Storage
+    buckets in the specified Google Cloud project.
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    BucketsRequestConfigFile: <<MINIO_FILE_PATH>>                 # Request config file to get the list of buckets from GCP Cloud Storage    
+    CheckIfVersioningExistsConditionConfig: <<MINIO_FILE_PATH>>   # Condition config file to check Versioning column exists or not in the bucket      
+    ExtractBucketsJQExpression: .[].items[]              
+    MergeType: APPEND           
+    OutputFileFormat: JSON                    
+    OutputMethod: ALL                    
+    TransformVersioningExistConfigFile: <<MINIO_FILE_PATH>>       # Transform config file for standardizing the Versioning exist file  
+    TransformVersioningNotExistConfigFile: <<MINIO_FILE_PATH>>    # Transform config file for standardizing the Versioning not existing file    
+  inputsMeta__:
+  - name: BucketsRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ExtractBucketsJQExpression
+    dataType: STRING
+    repeated: false
+    defaultValue: .[].items[]
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputMethod
+    dataType: STRING
+    repeated: false
+    defaultValue: ALL
+    allowedValues:
+    - FIRST
+    - ALL
+    showField: true
+    required: true
+  - name: CheckIfVersioningExistsConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - YAML
+    - TOML
+    - CSV
+    - JSON
+    - PARQUET
+    showField: true
+    required: true
+  - name: TransformVersioningNotExistConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: TransformVersioningExistConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: MergeType
+    dataType: STRING
+    repeated: false
+    defaultValue: APPEND
+    allowedValues:
+    - APPEND
+    - CONCATENATE
+    showField: true
+    required: true
+  tasks:
+  - name: ExecuteHttpRequest
+    alias: GetBucketsList
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Get the list of buckets from the GCP Cloud Storage.
+    description: Get the list of buckets from the GCP Cloud Storage.
+  - name: ExtractDataUsingJQ
+    alias: ExtractBuckets
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Extract the data alone from the listed buckets.
+    description: Extract the data alone from the listed buckets.
+  - name: CheckCondition
+    alias: CheckIfVersioningExists
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Check if Versioning column exists or not.
+    description: Check if Versioning column exists or not.
+  - name: ConvertFileFormat
+    alias: ConvertVersioningNotExistFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert the Versioning not existing PARQUET file to JSON file.
+    description: Convert the Versioning not existing PARQUET file to JSON file.
+  - name: ConvertFileFormat
+    alias: ConvertVersioningExist
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert the Versioning existing PARQUET file to JSON file.
+    description: Convert the Versioning existing PARQUET file to JSON file.
+  - name: TransformData
+    alias: TransformVersioningNotExistFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-5
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Standardize the Versioning not exist file.
+    description: Standardize the Versioning not exist file.
+  - name: TransformData
+    alias: TransformVersioningExistFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-5
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Standardize the Versioning exist file.
+    description: Standardize the Versioning exist file.
+  - name: MergeData
+    alias: MergeVersioningExistAndNotExistFile
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Merge the Versionig Exist and Not Exist file.
+    description: Merge the Versionig Exist and Not Exist file.
+  ioMap:
+  - GetBucketsList.Input.RequestConfigFile:=*.Input.BucketsRequestConfigFile
+  - ExtractBuckets.Input.InputFile:=GetBucketsList.Output.OutputFile
+  - ExtractBuckets.Input.JQExpression:=*.Input.ExtractBucketsJQExpression
+  - ExtractBuckets.Input.OutputMethod:=*.Input.OutputMethod
+  - CheckIfVersioningExists.Input.InputFile:=ExtractBuckets.Output.OutputFile
+  - CheckIfVersioningExists.Input.ConditionConfig:=*.Input.CheckIfVersioningExistsConditionConfig
+  - ConvertVersioningNotExistFile.Input.InputFile:=CheckIfVersioningExists.Output.UnmatchedConditionFile
+  - ConvertVersioningNotExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - ConvertVersioningExist.Input.InputFile:=CheckIfVersioningExists.Output.MatchedConditionFile
+  - ConvertVersioningExist.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - TransformVersioningNotExistFile.Input.InputFile1:=ConvertVersioningNotExistFile.Output.OutputFile
+  - TransformVersioningNotExistFile.Input.TransformConfigFile:=*.Input.TransformVersioningNotExistConfigFile
+  - TransformVersioningExistFile.Input.InputFile1:=ConvertVersioningExist.Output.OutputFile
+  - TransformVersioningExistFile.Input.TransformConfigFile:=*.Input.TransformVersioningExistConfigFile
+  - MergeVersioningExistAndNotExistFile.Input.InputFile1:=TransformVersioningNotExistFile.Output.OutputFile
+  - MergeVersioningExistAndNotExistFile.Input.InputFile2:=TransformVersioningExistFile.Output.OutputFile
+  - MergeVersioningExistAndNotExistFile.Input.MergeType:=*.Input.MergeType
+  - '*.Output.CompliancePCT_:=MergeVersioningExistAndNotExistFile.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=MergeVersioningExistAndNotExistFile.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=MergeVersioningExistAndNotExistFile.Output.LogFile'
+  - '*.Output.GCPCloudStorageVersioningStatusReport:=MergeVersioningExistAndNotExistFile.Output.MergedData'

@@ -1,0 +1,14 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: # (Supported format for conversion: json, yaml, toml, csv, parquet)
+  OutputFileName: 
+fromDate: 2024-09-17
+toDate: 2024-09-17

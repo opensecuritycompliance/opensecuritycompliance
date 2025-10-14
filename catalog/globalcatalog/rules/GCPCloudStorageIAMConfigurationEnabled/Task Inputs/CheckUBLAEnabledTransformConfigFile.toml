@@ -1,0 +1,19 @@
+[AddColumn]
+"UBLA" = "<<inputfile1.iamConfiguration.uniformBucketLevelAccess.enabled>>"
+
+[[AddColumn.ByCondition]]
+Condition = "<<inputfile1.UBLA>> == 1"
+
+[[AddColumn.ByCondition.True]]
+UBLA = "True"
+ValidationStatusCode = "IAM_CONF_ENFD"
+ValidationStatusNotes = "publicAccessPrevention is 'enforced' and uniformBucketLevelAccess is true, ensuring strict access control."
+ComplianceStatus = "COMPLIANT"
+ComplianceStatusReason = "IAM configuration settings are properly enforced, restricting unauthorized access."
+
+[[AddColumn.ByCondition.False]]
+UBLA = "False"
+ValidationStatusCode = "ACL_PERM_ALWD"
+ValidationStatusNotes = "uniformBucketLevelAccess is false, meaning ACLs may still be used, increasing security risks."
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "ACL-based permissions are allowed, increasing access misconfigurations."

@@ -270,7 +270,7 @@ class AzureAppConnector:
     def get_azure_container_registries_data(self):
         token, err = self.get_access_token()
         if err:
-            return f"Error in creating access token.{err}"
+            return None, f"Error in creating access token.{err}"
         headers = {
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'}

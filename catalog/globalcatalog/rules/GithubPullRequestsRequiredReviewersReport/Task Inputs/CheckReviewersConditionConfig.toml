@@ -1,0 +1,8 @@
+
+[[ConditionRules]]
+    ConditionLabel = "check_requested_reviewers"
+    Condition = "NOT_EMPTY" 
+    ConditionField = "<<data.requested_reviewers>>"
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_requested_reviewers"

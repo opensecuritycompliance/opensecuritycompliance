@@ -37,6 +37,7 @@ type PolicyCowTaskInputVO struct {
 	TemplateFile    string        `json:"templateFile,omitempty" yaml:"templateFile,omitempty"`
 	Format          string        `json:"format,omitempty" yaml:"format,omitempty"`
 	AllowUserValues bool          `json:"allowUserValues" yaml:"allowUserValues,omitempty"`
+	Explanation     string        `json:"explanation" yaml:"explanation,omitempty"`
 }
 
 type PolicyCowTaskOutputVO struct {
@@ -58,4 +59,39 @@ type CowTaskCriteriaVO struct {
 	Tags            []string `json:"tags,omitempty" in:"query=tags,Tags,tags[],Tags[]"`
 	ApplicationType []string `json:"applicationType,omitempty" in:"query=application_type,application_type[],applicationType,applicationType[]"`
 	ApplicationName []string `json:"applicationName,omitempty" in:"query=application_name,application_name[],applicationName,applicationName[]"`
+}
+
+type TaskExecutionVO struct {
+	TaskName    string             `json:"taskName,omitempty" yaml:"taskName,omitempty" binding:"required"`
+	Application *ApplicationCredVO `json:"application,omitempty" yaml:"application,omitempty"`
+	TaskInputs  *TaskUserInputVO   `json:"taskInputs,omitempty" yaml:"taskInputs,omitempty"`
+}
+
+type TaskUpdateVO struct {
+	TaskName  []string `json:"taskName,omitempty"`
+	Tags      []string `json:"tags,omitempty"`
+	Operation string   `json:"operation,omitempty"`
+}
+type TaskUserInputVO struct {
+	Inputs map[string]interface{} `json:"inputs,omitempty" yaml:"inputs,omitempty" binding:"required" validate:"required"`
+}
+
+type TaskOutputsVO struct {
+	Outputs map[string]interface{} `json:"Outputs,omitempty"`
+	Error   string                 `json:"Error,omitempty"`
+}
+type TaskOutputResponse struct {
+	TaskOutputs *TaskOutputsVO `json:"taskOutputs,omitempty"`
+}
+
+type RuleUpdateVO struct {
+	RuleNames []string `json:"ruleNames,omitempty"`
+	Tags      []string `json:"tags,omitempty"`
+	Operation string   `json:"operation,omitempty"`
+}
+
+type UpsertReadMe struct {
+	Type          string `json:"type,omitempty" yaml:"type,omitempty"`
+	ReadmeContent string `json:"readmeContent,omitempty" yaml:"readmeContent,omitempty"`
+	RuleName      string `json:"ruleName,omitempty" yaml:"ruleName,omitempty"`
 }

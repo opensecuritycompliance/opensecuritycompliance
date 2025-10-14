@@ -1,0 +1,71 @@
+authors:
+- vivek.p@continube.com
+domain: continube
+createdDate: 23/01/2025
+name: ConvertTableDataToKeyedRecords
+displayName: ConvertTableDataToKeyedRecords
+version: '1.0'
+description: Formats the api response, which is in table data format, into keyed records format using JQ expression.
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile
+  description: The file containing the response from the ExecuteHTTPRequest task, which includes the response data in a table structure with rows and columns separately. (mandatory)
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: LogFile
+  description: Map the LogFile from the previous task, to handle errors (Optional).
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: true
+- name: OutputFileName
+  description: The name of the output file to be generated.
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: 
+  showField: true
+  required: false
+- name: ColumnSelectorExpression
+  description: The jq expression for the field that contains the column names in the given input file response.
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: 
+  showField: true
+  required: true
+- name: RowDataExpression
+  description:  The jq expression for the field that contains the column values corresponding to the column names in the given input file response.
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: 
+  showField: true
+  required: true
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: OutputFile
+  description: The file that contains the processed data in a structured table format, with rows and columns.
+  dataType: FILE
+- name: LogFile
+  description: The file that contains information about errors that have occurred while processing the conditions.
+  dataType: FILE

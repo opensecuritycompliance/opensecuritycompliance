@@ -1,0 +1,22 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile1: <<MINIO_FILE_PATH>>
+  InputFile2: <<MINIO_FILE_PATH>>
+  LogFile: <<MINIO_FILE_PATH>>
+  CustomExceptionConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-03-04T09:26:33Z
+toDate: 2025-03-04T09:26:33Z

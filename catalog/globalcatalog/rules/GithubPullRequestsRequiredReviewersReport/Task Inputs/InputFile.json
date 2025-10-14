@@ -1,0 +1,20 @@
+[
+    {
+        "query" : "org/<<org_name>>/repo/<<repo_name>>/branch/<<branches>>"
+    },
+    {
+        "query" : "org/<<org_name>>/repo/<<repo_name>>/branch/<<branches>>"
+    },
+    {
+        "query" : "org/<<org_name>>/repo/<<repo_name>>/branch/<<branches>>"
+    },
+
+    {
+        "_comment" : {
+            "_description" : "This is a comment explaining the data above",
+            "org_name" : "Your organisation name. And only one value is allowed.",
+            "repo_name" : "Your repository name. You can give multiple repositories by adding multiple queries.",
+            "branches" : "Branches to be fetched from the repo. You can give multiple branches as comma separated values (eg.,branch1,branch2,branch3)"
+        }
+    }
+]

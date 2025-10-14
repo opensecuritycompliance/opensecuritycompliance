@@ -10,6 +10,7 @@ type Meta struct {
 	App         string              `yaml:"app,omitempty" json:"app,omitempty" binding:"omitempty,alpha" validate:"omitempty,alpha"`
 	Labels      map[string][]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Annotations map[string][]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Tags        []string            `json:"tags,omitempty" yaml:"tags,omitempty"`
 }
 
 type MetaDataTemplate struct {
@@ -45,6 +46,7 @@ type RuleYAMLVO struct {
 	Spec        *RuleYAMLSpecVO `json:"spec" yaml:"spec" binding:"required" validate:"required"`
 	Catalog     string          `json:"catalog,omitempty" yaml:"catalog,omitempty"`
 	RuleStatus  string          `json:"ruleStatus,omitempty" yaml:"ruleStatus,omitempty"`
+	ReadmeData  string          `json:"readmeData,omitempty" yaml:"readmeData,omitempty"`
 }
 
 type RuleYAMLSpecVO struct {
@@ -115,22 +117,24 @@ type RuleGroupYAMLVO struct {
 type RuleUserInputVO struct {
 	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`
-	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'BOOLEAN' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'BOOLEAN' 'HTTP_CONFIG'"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'BOOLEAN' 'FLOAT' 'FILE'  'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'BOOLEAN' 'HTTP_CONFIG' 'JQ_EXPRESSION'"`
 	Repeated      bool          `json:"repeated" yaml:"repeated"`
 	Format        string        `json:"format,omitempty" yaml:"format,omitempty" binding:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego' 'xml'" validate:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego' 'xml'"`
 	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty" binding:"required" validate:"required"`
 	AllowedValues []interface{} `json:"allowedValues" yaml:"allowedValues"`
 	ShowField     bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
 	Required      bool          `json:"required,omitempty" yaml:"required,omitempty"`
+	Explanation   string        `json:"explanation" yaml:"explanation,omitempty"`
 }
 
 type RuleUserInputVOV2 struct {
 	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
-	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG'"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'"`
 	Repeated      bool          `json:"repeated" yaml:"repeated"`
 	Format        string        `json:"format,omitempty" yaml:"format,omitempty"`
 	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty"`
 	AllowedValues []interface{} `json:"allowedValues" yaml:"allowedValues"`
 	ShowField     bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
 	Required      bool          `json:"required,omitempty" yaml:"required,omitempty"`
+	Explanation   string        `json:"explanation" yaml:"explanation,omitempty"`
 }

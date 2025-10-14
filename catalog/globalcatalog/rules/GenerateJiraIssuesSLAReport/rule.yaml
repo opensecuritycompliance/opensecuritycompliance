@@ -1,0 +1,284 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GenerateJiraIssuesSLAReport
+  purpose: GenerateJiraIssuesSLAReport
+  description: GenerateJiraIssuesSLAReport
+  labels:
+    appType:
+    - nocredapp
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    ConvertFileFormat: JSON
+    CustomExceptionConfigForJiraSLA: <<MINIO_FILE_PATH>>
+    JiraIssueSLAConfig: <<MINIO_FILE_PATH>>
+    JiraIssuesList: <<MINIO_FILE_PATH>>
+    JiraSLA-CondtionConfig: <<MINIO_FILE_PATH>>
+    JiraSLA-SQLConfig: <<MINIO_FILE_PATH>>
+    JiraSLA-TransformConfig: <<MINIO_FILE_PATH>>
+    OutputFileFormat: JSON
+    ProceedIfLogExistsForJiraSLA: false
+    RequiredFieldForJiraSLA:
+    - Priority
+    - SLAInDays
+    RuleInputConversionFileFormat: JSON
+    RuleOutputFileFormat: PARQUET
+  inputsMeta__:
+  - name: ConvertFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - YAML
+    - TOML
+    - CSV
+    - JSON
+    - PARQUET
+    showField: true
+    required: true
+  - name: JiraIssuesList
+    dataType: FILE
+    repeated: false
+    format: parquet
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JiraSLA-SQLConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JiraSLA-CondtionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    - YAML
+    - TOML
+    - XLSX
+    showField: true
+    required: true
+  - name: JiraSLA-TransformConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RequiredFieldForJiraSLA
+    dataType: STRING
+    repeated: true
+    defaultValue:
+    - Priority
+    - SLAInDays
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CustomExceptionConfigForJiraSLA
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ProceedIfLogExistsForJiraSLA
+    dataType: BOOLEAN
+    repeated: false
+    defaultValue: false
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JiraIssueSLAConfig
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RuleOutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: PARQUET
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    - YAML
+    - TOML
+    - XLSX
+    showField: true
+    required: true
+  - name: RuleInputConversionFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    - YAML
+    - TOML
+    - XLSX
+    showField: true
+    required: true
+  tasks:
+  - name: InputFieldValidation
+    alias: Field Validation for SLAConfig file
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Validates records by ensuring all required fields are present
+    description: Validates records by ensuring all required fields are present, logging
+      errors for missing fields.
+  - name: ConvertFileFormatV2
+    alias: Convert Rule Input File Format
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
+      YAML, TOML, and XLSX.'
+  - name: ExecuteSqlQueryV2
+    alias: Add SLA to JiraIssues data
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Add SLA to JiraIssues data
+    description: ExecuteSqlQueryV2
+  - name: CheckConditionV2
+    alias: Add compliance data
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Add compliance data
+    description: Checks whether the records in the InputFile matches the conditions
+      provided in the ConditionConfig file
+  - name: ConvertFileFormatV2
+    alias: t4
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
+      YAML, TOML, and XLSX.'
+  - name: TransformDataV2
+    alias: Add EvaluatedTime and reorder columns
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: TransformData allows you to perform a variety of column transformations
+      on your InputFile1
+  - name: CustomExceptionHandler
+    alias: Custom Error Message for Exception Handling
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Handles specific exceptions and map generic error messages to user-friendly
+    description: Handles specific exceptions and map generic error messages to user-friendly,
+      task-specific messages. It ensures that errors encountered during task execution
+      are appropriately managed and presented in a more understandable format.
+  - name: ConvertFileFormatV2
+    alias: Convert Rule Output File Format
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
+      YAML, TOML, and XLSX.'
+  ioMap:
+  - Field Validation for SLAConfig file.Input.InputFile:=*.Input.JiraIssueSLAConfig
+  - Field Validation for SLAConfig file.Input.RequiredFields:=*.Input.RequiredFieldForJiraSLA
+  - Convert Rule Input File Format.Input.InputFile:=*.Input.JiraIssuesList
+  - Convert Rule Input File Format.Input.OutputFileFormat:=*.Input.RuleInputConversionFileFormat
+  - Convert Rule Input File Format.Input.LogFile:=Field Validation for SLAConfig file.Output.LogFile
+  - Add SLA to JiraIssues data.Input.InputFile1:=Convert Rule Input File Format.Output.OutputFile
+  - Add SLA to JiraIssues data.Input.InputFile2:=Field Validation for SLAConfig file.Output.ValidDataFile
+  - Add SLA to JiraIssues data.Input.SQLConfig:=*.Input.JiraSLA-SQLConfig
+  - Add SLA to JiraIssues data.Input.LogFile:=Field Validation for SLAConfig file.Output.LogFile
+  - Add SLA to JiraIssues data.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExistsForJiraSLA
+  - Add compliance data.Input.InputFile:=Add SLA to JiraIssues data.Output.OutputFile
+  - Add compliance data.Input.ConditionConfig:=*.Input.JiraSLA-CondtionConfig
+  - Add compliance data.Input.LogFile:=Add SLA to JiraIssues data.Output.LogFile
+  - t4.Input.InputFile:=Add compliance data.Output.MatchedConditionFile
+  - t4.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - t4.Input.LogFile:=Add compliance data.Output.LogFile
+  - Add EvaluatedTime and reorder columns.Input.InputFile1:=t4.Output.OutputFile
+  - Add EvaluatedTime and reorder columns.Input.TransformConfigFile:=*.Input.JiraSLA-TransformConfig
+  - Add EvaluatedTime and reorder columns.Input.LogFile:=t4.Output.LogFile
+  - Custom Error Message for Exception Handling.Input.InputFile1:=Add EvaluatedTime
+    and reorder columns.Output.OutputFile
+  - Custom Error Message for Exception Handling.Input.LogFile:=Add EvaluatedTime and
+    reorder columns.Output.LogFile
+  - Custom Error Message for Exception Handling.Input.CustomExceptionConfigFile:=*.Input.CustomExceptionConfigForJiraSLA
+  - Convert Rule Output File Format.Input.InputFile:=Custom Error Message for Exception
+    Handling.Output.OutputFile1
+  - Convert Rule Output File Format.Input.OutputFileFormat:=*.Input.RuleOutputFileFormat
+  - Convert Rule Output File Format.Input.LogFile:=Custom Error Message for Exception
+    Handling.Output.LogFile
+  - '*.Output.CompliancePCT_:=Convert Rule Output File Format.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=Convert Rule Output File Format.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=Convert Rule Output File Format.Output.LogFile'
+  - '*.Output.JiraIssuesSLAReport:=Convert Rule Output File Format.Output.OutputFile'

@@ -1,0 +1,27 @@
+
+[Response]
+
+[Response.RuleSet]
+
+    [Response.RuleSet.AppendColumnCondition]
+
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+
+    IncludeAllInputFields = false
+    
+    [Response.RuleSet.AppendColumn.Fields]
+
+    author = "<<inputfile.commit.author.name>>"
+    author_email = "<<inputfile.commit.author.email>>"
+    time = "<<inputfile.commit.author.date>>"
+    owners = "<<inputfile.owners>>"
+    repo= "<<inputfile.repo>>"
+    branch= "<<inputfile.branch>>"
+    nodeId= "<<inputfile.node_id>>"
+    self = "<<inputfile.html_url>>"
+    commit_name = "<<inputfile.commit.message>>"
+    sha = "<<inputfile.sha>>"
+

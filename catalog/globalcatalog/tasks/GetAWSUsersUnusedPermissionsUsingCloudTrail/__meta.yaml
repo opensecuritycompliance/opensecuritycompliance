@@ -1,0 +1,93 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 13/08/2024
+name: GetAWSUsersUnusedPermissionsUsingCloudTrail
+displayName: GetAWSUsersUnusedPermissionsUsingCloudTrail
+version: '1.0'
+description: GetAWSUsersUnusedPermissionsUsingCloudTrail
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: AWSEventsLogFile # A unique identifier of the task input
+  description: AWSEventsLogFile # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: AWSUserDetailsLogFile # A unique identifier of the task input
+  description: AWSUserDetailsLogFile # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: EventDetails # A unique identifier of the task input
+  description: EventDetails # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: UserDetails # A unique identifier of the task input
+  description: UserDetails # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: UserManagerDetails # A unique identifier of the task input
+  description: UserManagerDetails # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: EventFile # A unique identifier of the task input
+  description: EventFile # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: InactivePermissionsWindow # A unique identifier of the task input
+  description: InactivePermissionsWindow # A concise description of the task input
+  dataType: INT
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: AWSUsersUnsedPermissionListLogFile
+  description: AWSUsersUnsedPermissionListLogFile
+  dataType: FILE
+- name: AWSUsersUnsedPermissionList
+  description: AWSUsersUnsedPermissionList
+  dataType: FILE
+- name: AWSEventsLogFile
+  description: AWSEventsLogFile
+  dataType: FILE
+- name: AWSUserDetailsLogFile
+  description: AWSUserDetailsLogFile
+  dataType: FILE

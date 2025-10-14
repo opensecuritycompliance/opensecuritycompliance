@@ -1,0 +1,11 @@
+
+[Request]
+URL = "https://api.github.com/repos/<<inputfile.org>>/<<inputfile.repo>>/pulls?state=all&base=<<inputfile.branch>>" 
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "BearerToken"
+TimeOut = 30
+Verify = true
+Retries = 3
+RetryOnStatus = [503, 504, 429]

@@ -1,0 +1,28 @@
+[Request]
+URL = "https://api.github.com/graphql"
+Method = "POST"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "JWTBearer"
+TimeOut = 30
+Verify = true
+
+[Request.Retries.RetryOnCondition]
+
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429|403"
+MaxRetries = 110
+TimeInterval = 30
+
+[Request.Headers]
+Cookie = "_octo=GH1.1.854098947.1723007797; logged_in=no"
+Accept = "application/vnd.github+json"
+Authorization = "Bearer <<validationCURLresponse.token>>"
+
+
+[Request.Params]
+
+
+[Request.Data]
+    [Request.Data.Raw]
+    Value='{ "query": "query ($prId: ID!) {\n  node(id: $prId) {\n    ... on PullRequest {\n      commits(last: 10) {\n        nodes {\n          commit {\n            checkSuites(last: 10) {\n              nodes {\n                checkRuns(last: 50) {\n                  nodes {\n                    completedAt\n                    conclusion\n                    id\n                    name\n                    title\n                    url\n                    status\n                    startedAt\n                  }\n                  totalCount\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}","variables":{"prId":"<<inputfile.ResourceID>>"}}'
