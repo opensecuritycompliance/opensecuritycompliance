@@ -1,0 +1,151 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: FetchJiraIssues
+  purpose: FetchJiraIssues
+  description: FetchJiraIssues
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+    framework:
+    - jira
+spec:
+  inputs:
+    ChunksPerIteration: 5
+    CustomExceptionConfigFileForJiraIssues: <<MINIO_FILE_PATH>>
+    JiraJQConfig: <<MINIO_FILE_PATH>>
+    JiraRequestConfig: <<MINIO_FILE_PATH>>
+    JiraResponseConfig: <<MINIO_FILE_PATH>>
+    RuleOutputFileFormatType: PARQUET
+  inputsMeta__:
+  - name: JiraRequestConfig
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JiraResponseConfig
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JiraJQConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CustomExceptionConfigFileForJiraIssues
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ChunksPerIteration
+    dataType: INT
+    repeated: false
+    defaultValue: 5
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RuleOutputFileFormatType
+    dataType: STRING
+    repeated: false
+    defaultValue: PARQUET
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    - YAML
+    - TOML
+    - XLSX
+    showField: true
+    required: true
+  tasks:
+  - name: ExecuteHttpRequestV2
+    alias: Fetch Jira Issues
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      framework:
+      - jira
+    purpose: Fetch Jira Issues
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExtractDataUsingJQV2
+    alias: Extract And Standardize Issue Data
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Extract And Standardize Issue Data
+    description: Extracts data from the InputFile based on the provided JQ filter/expression
+  - name: CustomExceptionHandler
+    alias: Custom Error Message For Exception Handling
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Handles specific exceptions and map generic error messages to user-friendly.
+    description: Handles specific exceptions and map generic error messages to user-friendly,
+      task-specific messages. It ensures that errors encountered during task execution
+      are appropriately managed and presented in a more understandable format.
+  - name: ConvertFileFormatV2
+    alias: Convert Output File Format
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
+      YAML, TOML, and XLSX.'
+  ioMap:
+  - Fetch Jira Issues.Input.RequestConfigFile:=*.Input.JiraRequestConfig
+  - Fetch Jira Issues.Input.ResponseConfigFile:=*.Input.JiraResponseConfig
+  - Extract And Standardize Issue Data.Input.InputFile:=Fetch Jira Issues.Output.OutputFile
+  - Extract And Standardize Issue Data.Input.JQConfigFile:=*.Input.JiraJQConfig
+  - Extract And Standardize Issue Data.Input.ChunksPerIteration:=*.Input.ChunksPerIteration
+  - Extract And Standardize Issue Data.Input.LogFile:=Fetch Jira Issues.Output.LogFile
+  - Custom Error Message For Exception Handling.Input.InputFile1:=Extract And Standardize
+    Issue Data.Output.OutputFile
+  - Custom Error Message For Exception Handling.Input.LogFile:=Extract And Standardize
+    Issue Data.Output.LogFile
+  - Custom Error Message For Exception Handling.Input.CustomExceptionConfigFile:=*.Input.CustomExceptionConfigFileForJiraIssues
+  - Convert Output File Format.Input.InputFile:=Custom Error Message For Exception
+    Handling.Output.OutputFile1
+  - Convert Output File Format.Input.OutputFileFormat:=*.Input.RuleOutputFileFormatType
+  - Convert Output File Format.Input.LogFile:=Custom Error Message For Exception Handling.Output.LogFile
+  - '*.Output.CompliancePCT_:=Custom Error Message For Exception Handling.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=Custom Error Message For Exception Handling.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=Convert Output File Format.Output.LogFile'
+  - '*.Output.JiraIssuesList:=Convert Output File Format.Output.OutputFile'

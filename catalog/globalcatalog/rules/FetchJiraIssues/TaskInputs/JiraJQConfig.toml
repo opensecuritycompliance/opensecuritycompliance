@@ -1,0 +1,27 @@
+[JQConfig]
+JQExpression = '''
+.[].issues[] | {
+    System: "jira",
+    Source: "compliancecow",
+    ResourceID: .id,
+    ResourceName: .key,
+    ResourceType: "Issue",
+    ResourceLocation: "N/A",
+    ResourceTags: [],
+    ResourceURL: "https://[your-domain].atlassian.net/jira/core/projects/\(.fields.project.key)/board?selectedIssue=\(.key)",
+    Project: .fields.project.key,
+    Summary: .fields.summary,
+    Description: ([.fields.description | .. | select(.text? or .attrs.url?) | if .text then .text else .attrs.url end] | join(" ") | if . == "" then "N/A" else . end),
+    Priority: .fields.priority.name,
+    Status: .fields.status.name,
+    CreatedDate: .fields.created,
+    UpdatedDate: .fields.updated,
+    ClosedDate: (.fields.resolutiondate // "N/A"),
+    Creator: (.fields.creator.displayName // "N/A"),
+    Assignee: (.fields.assignee.displayName // "N/A"),
+    Reporter: (.fields.reporter.displayName // "N/A"),
+    IssueLinks: .fields.issuelinks,
+    Labels: .fields.labels,
+}
+'''
+OutputMethod = "ALL"
