@@ -322,7 +322,7 @@ func runE(cmd *cobra.Command) error {
 				if !addAppConfirmation || err != nil {
 					return err
 				}
-				selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the ApplicationType class to add to the task:", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath})
+				selectedAppItem, err := utils.GetApplicationNamesFromCmdPromptInCatalogs("Select the ApplicationType to add to the task:", true, []string{additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypeConfigPath})
 				if err != nil {
 					return err
 				}
@@ -400,7 +400,7 @@ func runE(cmd *cobra.Command) error {
 			}
 		}
 	
-		emoji.Println("Rule creation is now complete :smiling_face_with_sunglasses:! You can start coding!!:person_surfing_tone1:")
+		emoji.Println(" Rule creation is now complete :smiling_face_with_sunglasses:! You can start coding!!:person_surfing_tone1:")
 		additionalInfo.GlobalCatalog = false
 	} else {
 		ruleName = utils.GetFlagValueAndResetFlag(cmd, "name", "")

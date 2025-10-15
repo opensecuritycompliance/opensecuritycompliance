@@ -1,0 +1,27 @@
+# inputfile1 -> JiraIssuesList
+# inputfile2 -> JiraIssueSLAConfig
+
+SQLQuery = '''
+SELECT 
+    inputfile1.System,
+    inputfile1.Source,
+    inputfile1.ResourceID,
+    inputfile1.ResourceName,
+    inputfile1.ResourceType,
+    inputfile1.ResourceTags,
+    inputfile1.ResourceLocation,
+    inputfile1.ResourceURL,
+    inputfile1.Project,
+    inputfile1.Priority,
+    CAST(COALESCE(inputfile2.SLAInDays, 0) AS INT) AS SLAInDays,
+    inputfile1.Status,
+    inputfile1.CreatedDate,
+    inputfile1.UpdatedDate,
+    inputfile1.ClosedDate,
+    inputfile1.Creator,
+    inputfile1.Assignee,
+    inputfile1.Reporter
+FROM inputfile1
+LEFT JOIN inputfile2 ON 
+    inputfile1.Priority = inputfile2.Priority;
+'''

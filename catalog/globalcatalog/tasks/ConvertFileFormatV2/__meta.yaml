@@ -1,0 +1,82 @@
+authors:
+- praveen.kj@continube.com
+- sangavi.l@continube.com
+domain: continube
+createdDate: 23/04/2025
+name: ConvertFileFormatV2
+displayName: ConvertFileFormatV2
+version: '1.0'
+description: "Converts data files between supported formats: JSON, CSV, PARQUET, YAML, TOML, XLSX, and XML. Automatically detects formats, preserves data structure, and ensures compatibility for flexible integration."
+shaToken: ''
+showInCatalog: true
+icon: <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 122"><title>product-replacement</title><path d="M120.19,4.78a2,2,0,0,1,1.25.24,2,2,0,0,1,1.15,1.78l.29,39.55a2,2,0,0,1-.95,1.74L105.82,57.7a1.94,1.94,0,0,1-1.16.38l-.32,0L62.49,53.4a2,2,0,0,1-1.86-1.95V11.23A2,2,0,0,1,61.8,9.41l21-9.25a2,2,0,0,1,1-.14l36.32,4.76Zm-79,65.44L29.74,76.74l13.92,1.77,10.47-6.59-12.91-1.7Zm-14.81,10-.58,16.91-6.27-4.27-6.28,3.55,1.28-17.71L3.91,77.36v36.27l38.16,4.24V82.23l-15.66-2Zm-8.75-5L28.8,68.6l-5.53-.73L9.09,74.1l8.57,1.1ZM46,81.66v35l12.37-7.38L58.09,74,46,81.66Zm-.79,40A2,2,0,0,1,44,122a1.72,1.72,0,0,1-.32,0L1.86,117.33a2,2,0,0,1-1.86-2V75.15a1.94,1.94,0,0,1,1.17-1.82l21-9.25a2,2,0,0,1,1-.14L59.55,68.7a2.21,2.21,0,0,1,2.41,2l.28,39.55A1.93,1.93,0,0,1,61.3,112l-16.11,9.61ZM74.3,109.74l6.31-32.08L87,87.31c13.78-5.54,21.52-14.66,22.67-28.7,11.32,19.79,4.45,37.54-9.9,47.93l6.53,9.84-32-6.64ZM50.71,10.44,44.4,42.51,38,32.87C24.22,38.4,16.48,47.52,15.33,61.57,4,41.77,10.88,24,25.23,13.64L18.7,3.8l32,6.64ZM101.85,6.3,90.38,12.82l13.92,1.77L114.76,8,101.85,6.3Zm-14.8,10-.58,16.92L80.19,29,73.92,32.5,75.2,14.8,64.54,13.44V49.71L102.7,54V18.31l-15.65-2Zm-8.75-5,11.13-6.6L83.91,4,69.73,10.18l8.57,1.09Zm28.31,6.47v35L119,45.32l-.25-35.22-12.12,7.64Z"/></svg>
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: InputFile 
+  description: "Source data file in a supported format (JSON, CSV, YAML, TOML, XLSX, XML, HAR or PARQUET). The task automatically detects the input format and processes the data structure for accurate conversion while preserving data integrity."
+  dataType: FILE 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true 
+- name: OutputFileFormat
+  description: "Target format for the conversion output. Supported options: JSON, CSV, PARQUET, YAML, TOML, HAR or XLSX. The task transforms the input data to match the selected format's structure and requirements."
+  dataType: STRING 
+  repeated: false 
+  allowedValues: [JSON, CSV, PARQUET, YAML, TOML, XLSX, HAR] 
+  defaultValue:  
+  showField: true  
+  required: true
+- name: LogConfigFile 
+  description: "Error management configuration file with custom exception messages, validation error codes, and debugging templates for file conversion. Uses TOML format with dynamic placeholders to provide clear error reporting for conversion failures and parsing issues."
+  dataType: FILE 
+  repeated: false 
+  templateFile: IyBNYWluIGNvbmZpZ3VyYXRpb24gZm9yIENvbnZlcnQgRmlsZSBmZWF0dXJlCltDb252ZXJ0RmlsZUZvcm1hdF0KCiMgVmFsaWRhdGlvbiBlcnJvciBtZXNzYWdlcyBmb3IgdXNlciBpbnB1dHMgYW5kIGZpbGUgZm9ybWF0cwpbQ29udmVydEZpbGVGb3JtYXQuVmFsaWRhdGlvbl0KVXNlcklucHV0cy5taXNzaW5nX2ZpZWxkcyA9ICJUaGUgZm9sbG93aW5nIGlucHV0KHMpIGFyZSBtaXNzaW5nOiB7bWlzc2luZ19maWVsZHN9IgpJbnB1dEZpbGUuaW52YWxpZF9mb3JtYXQgPSAiVGhlIHByb3ZpZGVkIGlucHV0IGZpbGUgZm9ybWF0IGlzIG5vdCBzdXBwb3J0ZWQ6IHtmaWxlX2Zvcm1hdH0iCk91dHB1dEZpbGUuaW52YWxpZF9mb3JtYXQgPSAiVGhlIHByb3ZpZGVkIG91dHB1dCBmb3JtYXQgaXMgbm90IHN1cHBvcnRlZDoge2ZpbGVfZm9ybWF0fSIKCiMgRXhjZXB0aW9uIG1lc3NhZ2VzIGR1cmluZyBmaWxlIG9wZXJhdGlvbnMKW0NvbnZlcnRGaWxlRm9ybWF0LkV4Y2VwdGlvbl0KCiMgTG9nIGZpbGUgcmVsYXRlZCBleGNlcHRpb25zCkxvZ0ZpbGUuZG93bmxvYWRfZmFpbGVkID0gIkFuIGVycm9yIG9jY3VycmVkIHdoaWxlIGRvd25sb2FkaW5nIExvZ0ZpbGUuIFBsZWFzZSBmaW5kIG1vcmUgZGV0YWlsczoge2Vycm9yfSIKCiMgSW5wdXQgZmlsZSBkb3dubG9hZCBhbmQgcGFyc2luZyBleGNlcHRpb25zCklucHV0RmlsZS5kb3dubG9hZF9mYWlsZWQgPSAiQW4gZXJyb3Igb2NjdXJyZWQgd2hpbGUgZG93bmxvYWRpbmcgSW5wdXRGaWxlLiBQbGVhc2UgZmluZCBtb3JlIGRldGFpbHM6IHtlcnJvcn0iCklucHV0RmlsZS5QYXJzZXIuanNvbl9wYXJzaW5nX2Vycm9yID0gIkVycm9yIHBhcnNpbmcgdGhlIEpTT04gZmlsZToge2Vycm9yfSIKSW5wdXRGaWxlLlBhcnNlci55YW1sX3BhcnNpbmdfZXJyb3IgPSAiRXJyb3IgcGFyc2luZyB0aGUgWUFNTCBmaWxlOiB7ZXJyb3J9IgpJbnB1dEZpbGUuUGFyc2VyLnRvbWxfcGFyc2luZ19lcnJvciA9ICJFcnJvciBwYXJzaW5nIHRoZSBUT01MIGZpbGU6IHtlcnJvcn0iCklucHV0RmlsZS5QYXJzZXIueG1sX3BhcnNpbmdfZXJyb3IgPSAiRXJyb3IgcGFyc2luZyB0aGUgWE1MIGZpbGU6IHtlcnJvcn0iCklucHV0RmlsZS5QYXJzZXIuY3N2X3BhcnNpbmdfZXJyb3IgPSAiRXJyb3IgcGFyc2luZyB0aGUgQ1NWIGZpbGU6IHtlcnJvcn0iCklucHV0RmlsZS5QYXJzZXIucGFycXVldF9wYXJzaW5nX2Vycm9yID0gIkVycm9yIHBhcnNpbmcgdGhlIFBhcnF1ZXQgZmlsZToge2Vycm9yfSIKSW5wdXRGaWxlLlBhcnNlci54bHN4X3BhcnNpbmdfZXJyb3IgPSAiRXJyb3IgcGFyc2luZyB0aGUgWExTWCBmaWxlOiB7ZXJyb3J9IgoKIyBJbnB1dCBmaWxlIGNvbnZlcnNpb24gZXhjZXB0aW9ucwpJbnB1dEZpbGUuQ29udmVydGVyLmpzb25fY29udmVyc2lvbl9lcnJvciA9ICJFcnJvciBjb252ZXJ0aW5nIHRvIEpTT04gZm9ybWF0OiB7ZXJyb3J9IgpJbnB1dEZpbGUuQ29udmVydGVyLnlhbWxfY29udmVyc2lvbl9lcnJvciA9ICJFcnJvciBjb252ZXJ0aW5nIHRvIFlBTUwgZm9ybWF0OiB7ZXJyb3J9IgpJbnB1dEZpbGUuQ29udmVydGVyLnRvbWxfY29udmVyc2lvbl9lcnJvciA9ICJFcnJvciBjb252ZXJ0aW5nIHRvIFRPTUwgZm9ybWF0OiB7ZXJyb3J9IgpJbnB1dEZpbGUuQ29udmVydGVyLmNzdl9jb252ZXJzaW9uX2Vycm9yID0gIkVycm9yIGNvbnZlcnRpbmcgdG8gQ1NWIGZvcm1hdDoge2Vycm9yfSIKSW5wdXRGaWxlLkNvbnZlcnRlci5wYXJxdWV0X2NvbnZlcnNpb25fZXJyb3IgPSAiRXJyb3IgY29udmVydGluZyB0byBQYXJxdWV0IGZvcm1hdDoge2Vycm9yfSIKSW5wdXRGaWxlLkNvbnZlcnRlci54bHN4X2NvbnZlcnNpb25fZXJyb3IgPSAiRXJyb3IgY29udmVydGluZyB0byBYTFNYIGZvcm1hdDoge2Vycm9yfSIKCiMgT3V0cHV0IGZpbGUgdXBsb2FkIGV4Y2VwdGlvbnMKT3V0cHV0RmlsZS51cGxvYWRfZmFpbGVkID0gIkFuIGVycm9yIG9jY3VycmVkIHdoaWxlIHVwbG9hZGluZyBPdXRwdXRGaWxlLiBQbGVhc2UgZmluZCBtb3JlIGRldGFpbHM6IHtlcnJvcn0iCg==
+  format: toml
+  allowedValues: [] 
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true 
+  required: false   
+- name: ProceedIfLogExists
+  description: "Controls task execution when log files from previous runs exist. If enabled (default: true), the task performs file conversion and adds the log file to the output. If disabled (false), it skips conversion and returns the existing log file."
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [true,false] 
+  defaultValue: true
+  showField: true 
+  required: false 
+- name: ProceedIfErrorExists
+  description: "Error handling strategy for file conversion. If enabled (default: true), errors are logged and the task finishes with error details. If disabled (false), any error stops execution immediately."
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [true,false] 
+  defaultValue: true
+  showField: true 
+  required: false   
+- name: LogFile
+  description: "JSON log file from previous operations containing error details and execution context. If present, it determines whether the current file conversion runs or skips based on error conditions and the ProceedIfLogExists setting."
+  dataType: FILE
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true 
+  required: false 
+outputs:
+- name: ComplianceStatus_
+  description: Compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: Compliance percentage of the task
+  dataType: INT
+- name: OutputFile
+  description: "Converted data file in the specified target format containing all original data transformed to match the new format's structure and conventions. Maintains data integrity and relationships while adapting to the target format's requirements for seamless integration with downstream systems."
+  dataType: FILE
+- name: LogFile
+  description: "Error log file that captures and stores all error details, format conversion failures, parsing exceptions, and diagnostic information encountered during file transformation operations. Contains detailed error messages for troubleshooting conversion issues and format compatibility problems."
+  dataType: FILE

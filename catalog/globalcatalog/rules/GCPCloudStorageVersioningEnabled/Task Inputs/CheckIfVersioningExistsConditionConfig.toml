@@ -1,0 +1,13 @@
+[[ConditionRules]]
+    ConditionLabel = "check_versioning_contains"
+    Condition = "CONTAINS"
+    ConditionField = "<<inputfile>>"
+    ConditionValue = "versioning"
+
+[[ConditionRules]]
+    ConditionLabel = "check_versioning_not_empty"
+    Condition = "NOT_EMPTY"
+    ConditionField = "<<inputfile.versioning>>"
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_versioning_contains && check_versioning_not_empty"

@@ -1,0 +1,111 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: AWSUsersUnUsedPermissionReportUsingCloudTrail
+  purpose: AWSUsersUnUsedPermissionReportUsingCloudTrail
+  description: AWSUsersUnUsedPermissionReportUsingCloudTrail
+  labels:
+    appType:
+    - aws
+    environment:
+    - logical
+    execlevel:
+    - app
+  annotations:
+    annotateType:
+    - aws
+spec:
+  inputs:
+    Region: []
+    EventFile: <<MINIO_FILE_PATH>>
+    ResourceFile: <<MINIO_FILE_PATH>>
+    UserManagerDetails: <<MINIO_FILE_PATH>>
+    PermissionConfigFile: <<MINIO_FILE_PATH>> 
+    InactivePermissionsWindow: 
+  inputsMeta__:
+  - name: Region
+    dataType: STRING
+    repeated: true
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  - name: EventFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ResourceFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: UserManagerDetails
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PermissionConfigFile
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: InactivePermissionsWindow
+    dataType: INT
+    repeated: false
+    defaultValue: ''
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: FetchAWSUserDetails 
+    alias: t1
+    type: task
+    purpose: FetchAWSUserDetails
+    description: FetchAWSUserDetails
+  - name: AWSCloudTrailEventsofIAMUsers
+    alias: t2
+    type: task
+    purpose: AWSCloudTrailEvents
+    description: AWSCloudTrailEvents
+  - name: GetAWSUsersUnusedPermissionsUsingCloudTrail
+    alias: t3
+    type: task
+    purpose: GetAWSUsersUnusedPermissionsUsingCloudTrail
+    description: GetAWSUsersUnusedPermissionsUsingCloudTrail
+  - name: GenerateUsersUnUsedPermissionList
+    alias: t4
+    type: task
+    purpose: GenerateUsersUnUsedPermissionList
+    description: GenerateUsersUnUsedPermissionList
+  ioMap:
+  - t1.Input.PermissionConfigFile:=*.Input.PermissionConfigFile
+  - t2.Input.Region:=*.Input.Region
+  - t2.Input.EventFile:=*.Input.EventFile
+  - t2.Input.ResourceFile:=*.Input.ResourceFile
+  - t3.Input.AWSUserDetailsLogFile:=t1.Output.LogFile
+  - t3.Input.AWSEventsLogFile:=t2.Output.LogFile
+  - t3.Input.InactivePermissionsWindow:=*.Input.InactivePermissionsWindow
+  - t3.Input.UserManagerDetails:=*.Input.UserManagerDetails
+  - t3.Input.EventDetails:=t2.Output.AWSEventDetails
+  - t3.Input.UserDetails:=t1.Output.AWSUserDetails
+  - t3.Input.EventFile:=*.Input.EventFile
+  - t4.Input.LogFile:=t3.Output.AWSUsersUnsedPermissionListLogFile
+  - t4.Input.UserDetails:=t3.Output.AWSUsersUnsedPermissionList
+  - '*.Output.AWSUserDetails:=t1.Output.AWSUserDetails'
+  - '*.Output.AWSUserDetailsLogFile:=t1.Output.LogFile'
+  - '*.Output.AWSResourceDetails:=t2.Output.AWSResourceDetails' 
+  - '*.Output.AWSEventDetails:=t2.Output.AWSEventDetails'
+  - '*.Output.AWSEventsLogFile:=t2.Output.LogFile'
+  - '*.Output.UsersUnUsedPermissionReport:=t4.Output.UsersUnUsedPermissionReport'
+  - '*.Output.UsersUnUsedPermissionReportLogFile:=t4.Output.LogFile'
+  - '*.Output.CompliancePCT_:=t4.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=t4.Output.ComplianceStatus_'

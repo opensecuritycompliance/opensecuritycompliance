@@ -595,7 +595,7 @@ func PublishApplication(namePointersVO *vo.CowNamePointersVO, additionalInfo *vo
 					taskAppconnectionFolder := filepath.Join(taskFolder, filepath.Base(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath))
 					err = os.MkdirAll(taskAppconnectionFolder, os.ModePerm)
 					if err != nil {
-						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the ApplicationType folder inside task"})
+						errorDetails = append(errorDetails, &vo.ErrorDetailVO{Issue: "cannot create the ApplicationTypes folder inside task"})
 						return errorDetails
 					}
 					opt := copy.Options{

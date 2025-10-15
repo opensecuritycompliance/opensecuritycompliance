@@ -262,9 +262,9 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 								if metaInput.Name == inputName {
 									userInput, _ = utils.GetValueAsStrFromCmdPrompt(labelname, true, func(input string) error {
 										switch metaInput.DataType {
-										case "STRING", "FILE":
+										case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeFILE, constants.DeclarativesDataTypeJQ_EXPRESSION:
 											return validationutils.ValidateStringAndFileURL(input)
-										case "INT":
+										case constants.DeclarativesDataTypeINT:
 											return validationutils.ValidateInt(input)
 										}
 										return nil
@@ -428,7 +428,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 
 	if additionalInfo.PreserveRuleExecutionSetUp {
 		d := color.New(color.BgHiGreen, color.Bold)
-		d.Println("We have saved the configured rule set for you in the 'cowexecutions/rules' folder.")
+		d.Println("We have saved the configured rule set for you in the 'cowexecutions/rules/" + additionalInfo.RuleName + "-" + additionalInfo.ExecutionID + "' folder.")
 	}
 
 	if err == nil {

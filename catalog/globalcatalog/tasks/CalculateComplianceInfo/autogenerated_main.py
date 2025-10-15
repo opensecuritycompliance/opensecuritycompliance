@@ -61,7 +61,6 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
 
                     cl.task_inputs = data
                     output = cl.execute()
-                    print("output :",output)
                     if isinstance(output, dict) and bool(output):
                         with open("task_output.json", "w") as f:
                             f.write(json.dumps({"Outputs": output}))
@@ -76,4 +75,4 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
                     error_message = {"error": "Please review the stack trace in the logs.txt file within the task."}
                     with open("task_output.json", "w") as file:
                         json.dump(error_message, file)
-
+                    raise

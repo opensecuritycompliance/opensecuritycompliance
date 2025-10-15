@@ -1,0 +1,187 @@
+[CheckCondition]
+
+[CheckCondition.Inputs]
+    ############ InputFile EXCEPTIONS ############
+    InputFile.download_error = "Error occurred while downloading InputFile :: {error}"
+    InputFile.missing = "InputFile is missing in user inputs"
+    InputFile.empty_content = "The provided InputFile is empty, please check"
+    
+    CustomInputs.download_error = "Error occurred while downloading CustomInputs file :: {error}"
+    
+    ############ ConditionConfig EXCEPTIONS ############
+    ConditionConfig.download_error = "Error occurred while downloading ConditionConfig file :: {error}"
+    ConditionConfig.missing = "ConditionConfig file is missing in user inputs"
+    ConditionConfig.empty_content = "The provided ConditionConfig file is empty, please check"
+    
+    ############ InputFileValidationConfig EXCEPTIONS ############
+    InputFileValidationConfig.download_error = "Error occurred while downloading InputFileValidationConfig file :: {error}"
+    InputFileValidationConfig.empty_content = "The provided InputFileValidationConfig file is empty, please check"
+    
+    ############ LogFile EXCEPTIONS ############
+    LogFile.download_error = "Error occurred while downloading LogFile :: {error}"
+    
+    
+############ InputFileValidationConfig Validation EXCEPTIONS ############
+[CheckCondition.InputFileValidationConfig.Validation]
+    InputFile.missing_fields = "The following required fields are missing in InputFile :: '{missing_fields}'"
+    CustomInputs.missing_fields = "The following required fields are missing in CustomInputs file :: '{missing_fields}'"
+
+    
+############ ConditionConfig Validation EXCEPTIONS ############
+[CheckCondition.ConditionConfig.Validation]
+    ############ ConditionRules EXCEPTIONS ############
+    ConditionRules.invalid = "ConditionRules is missing or invalid in ConditionConfig file."
+    ConditionRules.missing_fields = "The following fields: '{missing_fields}' are missing for Condition '{condition}' with ConditionLabel '{label}' in 'ConditionRules'"
+
+    # ConditionLabel Exceptions (inside ConditionRules)
+    ConditionRules.ConditionLabel.missing = "ConditionLabel is missing in some of the 'ConditionRules' in ConditionConfig file."
+    ConditionRules.ConditionLabel.duplicate = "The following labels: '{duplicate_labels}' are duplicated in 'ConditionRules' in ConditionConfig file."
+    
+    # Condition field Exceptions (inside ConditionRules)
+    ConditionRules.Condition.unknown = "Unknown Condition: '{condition}' with ConditionLabel: '{label}' in 'ConditionRules' in ConditionConfig file."
+
+    # DateFormat Exceptions (inside ConditionRules)
+    ConditionRules.DateFormat.invalid = "DateFormat is invalid for Condition '{condition}' with ConditionLabel '{label}' in ConditionConfig file"
+
+    ############ ConditionRulesConfig EXCEPTIONS ############
+    ConditionRulesConfig.invalid = "ConditionRulesConfig is missing or invalid in ConditionConfig file."
+    ConditionRulesConfig.ConditionsCriteria.missing = "ConditionRulesConfig.ConditionsCriteria is missing in ConditionConfig file."
+    ConditionRulesConfig.ConditionsCriteria.invalid = "ConditionRulesConfig.ConditionsCriteria must be a string, but got an invalid value in ConditionConfig file."
+        
+    ############ ConditionFieldUpdates EXCEPTIONS ############
+    ConditionFieldUpdates.invalid = "ConditionFieldUpdates is invalid in ConditionConfig file."
+    ConditionFieldUpdates.ConditionsCriteria.missing = "ConditionsCriteria is missing for some 'ConditionFieldUpdates' in ConditionConfig file."
+    ConditionFieldUpdates.pass_and_fail_missing = "Both ConditionFieldUpdates.FAIL and ConditionFieldUpdates.PASS are missing in one of the ConditionFieldUpdates. Atleast one of them is mandatory."
+    
+    
+############ ConditionExecution EXCEPTIONS ############
+[CheckCondition.ConditionExecution]
+    ############ ConditionField EXCEPTIONS ############
+    ConditionField.missing_placeholders = "The following placeholders found in ConditionField does not exist, please check :: {missing_placeholders}"
+    ConditionField.evaluation_error = "Error occurred while evaluating the placeholder found in ConditionField: {placeholder} :: Error: {error}"
+    
+    ############ ConditionValue EXCEPTIONS ############
+    ConditionValue.missing_placeholders = "The following placeholders found in ConditionField does not exist, please check :: {missing_placeholders}"
+    ConditionValue.evaluation_error = "Error occurred while evaluating the placeholder found in ConditionValue: {placeholder} :: Error: {error}"
+    
+    ############ ConditionFieldUpdates EXCEPTIONS ############
+    ConditionFieldUpdates.missing_placeholders = "The following placeholders found in one of the ConditionFieldUpdates does not exist, please check :: {missing_placeholders}"
+    ConditionFieldUpdates.evaluation_error = "Error occurred while evaluating the placeholder found in one of the ConditionFieldUpdates: {placeholder} :: Error: {error}"
+    
+    
+############ ConditionType-specific EXCEPTIONS ############
+[CheckCondition.ConditionExecution.ConditionType]
+    ############ CONTAINS Condition EXCEPTIONS ############
+    CONTAINS.ConditionField.type_error = "Cannot check CONTAINS, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    CONTAINS.ConditionValue.type_error = "Cannot check CONTAINS, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    
+    ############ NOT_CONTAINS Condition EXCEPTIONS ############
+    NOT_CONTAINS.ConditionField.type_error = "Cannot check NOT_CONTAINS, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    NOT_CONTAINS.ConditionValue.type_error = "Cannot check NOT_CONTAINS, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    
+    ############ CONTAINS_ANY Condition EXCEPTIONS ############
+    CONTAINS_ANY.ConditionField.type_error = "Cannot check CONTAINS_ANY, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    CONTAINS_ANY.ConditionValue.type_error = "Cannot check CONTAINS_ANY, as ConditionValue is of an unsupported type :: Expected type: '{expected_types}' :: Actual type: '{actual_type}'"
+    
+    ############ LESSER_THAN, LESSER_THAN_OR_EQUALS, LT, LT_EQ Condition EXCEPTIONS ############
+    LESSER_THAN.type_error = "Please ensure that ConditionValue & ConditionField values in the toml file are either INTEGER or FLOAT types"
+    
+    ############ GREATER_THAN, GREATER_THAN_OR_EQUALS, GT, GT_EQ Condition EXCEPTIONS ############
+    GREATER_THAN.type_error = "Please ensure that ConditionValue & ConditionField values in the toml file are either INTEGER or FLOAT types"
+    
+    ############ REGEX Condition EXCEPTIONS ############
+    REGEX.type_error = "Please ensure that ConditionValue & ConditionField values in the toml file are of STRING type"
+    
+    ############ NUMBER_RANGE Condition EXCEPTIONS ############
+    NUMBER_RANGE.ConditionField.type_error = "Cannot check NUMBER_RANGE, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    NUMBER_RANGE.ConditionValue.type_error = "Cannot check NUMBER_RANGE, as ConditionValue is of an unsupported type :: Expected type: '{expected_types}' :: Actual type: '{actual_type}'"
+    NUMBER_RANGE.ConditionValue.syntax_error = "Cannot check NUMBER_RANGE, because the syntax of ConditionValue is incorrect. Please check."
+    NUMBER_RANGE.ConditionValue.empty_range_values = "Cannot check NUMBER_RANGE, because the range values of ConditionValue is empty, please add valid range values"
+    NUMBER_RANGE.ConditionValue.invalid_range_values = "Cannot check NUMBER_RANGE, because the range values of ConditionValue is incorrect :: Detailed error: {error}"
+    
+    ############ CEL_CONDITION Condition EXCEPTIONS ############
+    CEL_CONDITION.invalid_result = "The provided CEL Expression must return a boolean value. Received this value from the result instead '{result_value}' of type '{result_value_type}'"
+    CEL_CONDITION.evaluation_error = "Please check whether all fields in the expression ('{expression}') are available"
+    CEL_CONDITION.ConditionValue.type_error = "Cannot check CEL_CONDITION, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    CEL_CONDITION.ConditionValue.syntax_error = "Please check the syntax of the CEL expression: {expression}"
+    
+    ############ FROM_DATE Condition EXCEPTIONS ############
+    FROM_DATE.ConditionField.type_error = "Cannot check FROM_DATE, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    FROM_DATE.ConditionField.parse_error = "Cannot check FROM_DATE, as an error occurred while parsing ConditionField date :: {error}"
+    FROM_DATE.ConditionField.DateExpression.syntax_error = "Cannot check FROM_DATE, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    FROM_DATE.ConditionField.DateExpression.unknown_time_unit = "Cannot check FROM_DATE, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    FROM_DATE.ConditionValue.type_error = "Cannot check FROM_DATE, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    FROM_DATE.ConditionValue.parse_error = "Cannot check FROM_DATE, as an error occurred while parsing ConditionValue date :: {error}"
+    FROM_DATE.ConditionValue.DateExpression.syntax_error = "Cannot check FROM_DATE, as in ConditionValue value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    FROM_DATE.ConditionValue.DateExpression.unknown_time_unit = "Cannot check FROM_DATE, as in ConditionValue value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    ############ TO_DATE Condition EXCEPTIONS ############
+    TO_DATE.ConditionField.type_error = "Cannot check TO_DATE, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    TO_DATE.ConditionField.parse_error = "Cannot check TO_DATE, as an error occurred while parsing ConditionField date :: {error}"
+    TO_DATE.ConditionField.DateExpression.syntax_error = "Cannot check TO_DATE, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    TO_DATE.ConditionField.DateExpression.unknown_time_unit = "Cannot check TO_DATE, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    TO_DATE.ConditionValue.type_error = "Cannot check TO_DATE, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    TO_DATE.ConditionValue.parse_error = "Cannot check TO_DATE, as an error occurred while parsing ConditionValue date :: {error}"
+    TO_DATE.ConditionValue.DateExpression.syntax_error = "Cannot check TO_DATE, as in ConditionValue value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    TO_DATE.ConditionValue.DateExpression.unknown_time_unit = "Cannot check TO_DATE, as in ConditionValue value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    ############ DATE_RANGE Condition EXCEPTIONS ############
+    DATE_RANGE.ConditionField.type_error = "Cannot check DATE_RANGE, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    DATE_RANGE.ConditionField.parse_error = "Cannot check DATE_RANGE, as an error occurred while parsing ConditionField date :: {error}"
+    DATE_RANGE.ConditionField.DateExpression.syntax_error = "Cannot check DATE_RANGE, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    DATE_RANGE.ConditionField.DateExpression.unknown_time_unit = "Cannot check DATE_RANGE, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    DATE_RANGE.ConditionValue.type_error = "Cannot check DATE_RANGE, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    DATE_RANGE.ConditionValue.syntax_error = "Cannot check DATE_RANGE, because the syntax of ConditionValue is incorrect. Please check."
+    DATE_RANGE.ConditionValue.empty_range_values = "Cannot check DATE_RANGE, because the range values of ConditionValue is empty, please add valid range values"
+    DATE_RANGE.ConditionValue.invalid_range_values = "Cannot check DATE_RANGE, because the range value provided in ConditionValue is invalid, please check"
+    
+    DATE_RANGE.ConditionValue.StartDate.parse_error = "Cannot check DATE_RANGE, as an error occurred while parsing ConditionValue start date :: {error}"
+    DATE_RANGE.ConditionValue.StartDate.DateExpression.syntax_error = "Cannot check DATE_RANGE, as in ConditionValue value the syntax of 'DeltaString' in start date is invalid in the provided DateExpression"
+    DATE_RANGE.ConditionValue.StartDate.DateExpression.unknown_time_unit = "Cannot check DATE_RANGE, as in ConditionValue value start date, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    DATE_RANGE.ConditionValue.EndDate.parse_error = "Cannot check DATE_RANGE, as an error occurred while parsing ConditionValue end date :: {error}"
+    DATE_RANGE.ConditionValue.EndDate.DateExpression.syntax_error = "Cannot check DATE_RANGE, as in ConditionValue value the syntax of 'DeltaString' in end date is invalid in the provided DateExpression"
+    DATE_RANGE.ConditionValue.EndDate.DateExpression.unknown_time_unit = "Cannot check DATE_RANGE, as in ConditionValue value end date, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    ############ FROM_DATE_OFFSET Condition EXCEPTIONS ############
+    FROM_DATE_OFFSET.ConditionField.type_error = "Cannot check FROM_DATE_OFFSET, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    FROM_DATE_OFFSET.ConditionField.parse_error = "Cannot check FROM_DATE_OFFSET, as an error occurred while parsing ConditionField date :: {error}"
+    FROM_DATE_OFFSET.ConditionField.DateExpression.syntax_error = "Cannot check FROM_DATE_OFFSET, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    FROM_DATE_OFFSET.ConditionField.DateExpression.unknown_time_unit = "Cannot check FROM_DATE_OFFSET, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    FROM_DATE_OFFSET.ConditionValue.type_error = "Cannot check FROM_DATE_OFFSET, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    FROM_DATE_OFFSET.ConditionValue.DateExpression.syntax_error = "Cannot check FROM_DATE_OFFSET, as in ConditionValue value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    FROM_DATE_OFFSET.ConditionValue.DateExpression.unknown_time_unit = "Cannot check FROM_DATE_OFFSET, as in ConditionValue value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    ############ TO_DATE_OFFSET Condition EXCEPTIONS ############
+    TO_DATE_OFFSET.ConditionField.type_error = "Cannot check TO_DATE_OFFSET, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    TO_DATE_OFFSET.ConditionField.parse_error = "Cannot check TO_DATE_OFFSET, as an error occurred while parsing ConditionField date :: {error}"
+    TO_DATE_OFFSET.ConditionField.DateExpression.syntax_error = "Cannot check TO_DATE_OFFSET, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    TO_DATE_OFFSET.ConditionField.DateExpression.unknown_time_unit = "Cannot check TO_DATE_OFFSET, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    TO_DATE_OFFSET.ConditionValue.type_error = "Cannot check TO_DATE_OFFSET, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    TO_DATE_OFFSET.ConditionValue.DateExpression.syntax_error = "Cannot check TO_DATE_OFFSET, as in ConditionValue value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    TO_DATE_OFFSET.ConditionValue.DateExpression.unknown_time_unit = "Cannot check TO_DATE_OFFSET, as in ConditionValue value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    ############ DATE_OFFSET_RANGE Condition EXCEPTIONS ############
+    DATE_OFFSET_RANGE.ConditionField.type_error = "Cannot check DATE_OFFSET_RANGE, as ConditionField value is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    DATE_OFFSET_RANGE.ConditionField.parse_error = "Cannot check DATE_OFFSET_RANGE, as an error occurred while parsing ConditionField date :: {error}"
+    DATE_OFFSET_RANGE.ConditionField.DateExpression.syntax_error = "Cannot check DATE_OFFSET_RANGE, as in ConditionField value the syntax of 'DeltaString' is invalid in the provided DateExpression"
+    DATE_OFFSET_RANGE.ConditionField.DateExpression.unknown_time_unit = "Cannot check DATE_OFFSET_RANGE, as in ConditionField value, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    DATE_OFFSET_RANGE.ConditionValue.type_error = "Cannot check DATE_OFFSET_RANGE, as ConditionValue is of an unsupported type :: Expected types: '{expected_types}' :: Actual type: '{actual_type}'"
+    DATE_OFFSET_RANGE.ConditionValue.syntax_error = "Cannot check DATE_OFFSET_RANGE, because the syntax of ConditionValue is incorrect. Please check."
+    DATE_OFFSET_RANGE.ConditionValue.empty_range_values = "Cannot check DATE_OFFSET_RANGE, because the range values of ConditionValue is empty, please add valid range values"
+    DATE_OFFSET_RANGE.ConditionValue.invalid_range_values = "Cannot check DATE_OFFSET_RANGE, because the range value provided in ConditionValue is invalid, please check"
+    
+    DATE_OFFSET_RANGE.ConditionValue.StartDate.parse_error = "Cannot check DATE_OFFSET_RANGE, as an error occurred while parsing ConditionValue start date :: {error}"
+    DATE_OFFSET_RANGE.ConditionValue.StartDate.DateExpression.syntax_error = "Cannot check DATE_OFFSET_RANGE, as in ConditionValue value the syntax of 'DeltaString' in start date is invalid in the provided DateExpression"
+    DATE_OFFSET_RANGE.ConditionValue.StartDate.DateExpression.unknown_time_unit = "Cannot check DATE_OFFSET_RANGE, as in ConditionValue value start date, an unknown time unit '{unit}' is found in the provided DateExpression"
+    
+    DATE_OFFSET_RANGE.ConditionValue.EndDate.parse_error = "Cannot check DATE_OFFSET_RANGE, as an error occurred while parsing ConditionValue end date :: {error}"
+    DATE_OFFSET_RANGE.ConditionValue.EndDate.DateExpression.syntax_error = "Cannot check DATE_OFFSET_RANGE, as in ConditionValue value the syntax of 'DeltaString' in end date is invalid in the provided DateExpression"
+    DATE_OFFSET_RANGE.ConditionValue.EndDate.DateExpression.unknown_time_unit = "Cannot check DATE_OFFSET_RANGE, as in ConditionValue value end date, an unknown time unit '{unit}' is found in the provided DateExpression"
+    

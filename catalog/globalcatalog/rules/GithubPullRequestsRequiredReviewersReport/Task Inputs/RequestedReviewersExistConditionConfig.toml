@@ -1,0 +1,9 @@
+[[ConditionRules]]
+    ConditionLabel = "check_reviewers_exist"
+    Condition = "CONTAINS_ANY"
+    ConditionField = "<<inputfile.PRReviewers>>"
+    ConditionValue = "<<inputfile.Hierarchy>>" 
+
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_reviewers_exist"
+   

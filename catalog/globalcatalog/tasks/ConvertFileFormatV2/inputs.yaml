@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: # (Supported formats for conversion: JSON, CSV, PARQUET, YAML, TOML, XLSX)
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: # True or False (Default: True)
+  ProceedIfErrorExists: # True or False (Default: True)
+  LogFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-04-23
+toDate: 2025-04-23

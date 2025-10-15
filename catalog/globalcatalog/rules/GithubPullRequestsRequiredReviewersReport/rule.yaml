@@ -1,0 +1,491 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GithubPullRequestsRequiredReviewersReport
+  purpose: To ensure that all open Pull Requests (PRs) in the specified branch and
+    repository meet the required review standards.
+  description: To ensure that all open Pull Requests (PRs) in the specified branch
+    and repository meet the required review standards.
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+spec:
+  inputs:
+    CheckReviewersConditionConfig: <<MINIO_FILE_PATH>>      # ConditionConfig File to check if the Pull Requests are empty
+    ConfigFile: <<MINIO_FILE_PATH>>     # Config File for User Hierarchy    
+    ConvertOutputMethod: FIRST
+    ExtractRequestedReviewersTransformConfigFile: <<MINIO_FILE_PATH>>     # Extract Requested Reviewers from the Pull Request
+    HierarchicalPersonExistTransformConfigFile: <<MINIO_FILE_PATH>>     # Transform Config File for Hierarchical Person Exist
+    HierarchicalPersonNotExistTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform Config File for Hierarchical Person Not Exist
+    HierarchyFile: <<MINIO_FILE_PATH>>      # Hierarchy File for User Hierarchy
+    InputFile: <<MINIO_FILE_PATH>>      # IncludeCriteria file for the rule
+    InsufficientReviewersTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform config file for Insufficient Reviewers
+    JQExpression: '    .[]    | .query    | split("/")    | {org: .[1], repo: .[3],
+      branches: (.[5] | split(","))}   | . as $base   | .branches[]   | {org: $base.org,
+      repo: $base.repo, branch: .} '
+    LengthReviewersConditionConfig: <<MINIO_FILE_PATH>>     # ConditionConfig file to check the length of the requested reviewers
+    MergeType: APPEND
+    OutputFileFormat: JSON
+    OutputMethod: ALL
+    PRNumberJQExpression: map(.PRNumber |= floor)
+    PRRequestConfigFile: <<MINIO_FILE_PATH>>      # Request Config File for Pull Request
+    PRResponseConfigFile: <<MINIO_FILE_PATH>>     # Response Config File for Pull Request
+    RequestedReviewersExistConditionConfig: <<MINIO_FILE_PATH>>     # ConditionConfig file to check if the hierarchical requested reviewers exist
+    ReviewersCountColumnTransformConfigFile: <<MINIO_FILE_PATH>>      # Transform config file to add the count of requested reviewers
+    ReviewersJQExpression: 'map(. + { requested_reviewers_login: (.requested_reviewers
+      | map(.login)) })'
+    Type: Hierarchy
+  inputsMeta__:
+  - name: InputFile
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: JQExpression
+    dataType: STRING
+    repeated: false
+    defaultValue: '    .[]    | .query    | split("/")    | {org: .[1], repo: .[3],
+      branches: (.[5] | split(","))}   | . as $base   | .branches[]   | {org: $base.org,
+      repo: $base.repo, branch: .} '
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputMethod
+    dataType: STRING
+    repeated: false
+    defaultValue: ALL
+    allowedValues:
+    - FIRST
+    - ALL
+    showField: true
+    required: true
+  - name: PRRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ReviewersCountColumnTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CheckReviewersConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PRResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: Type
+    dataType: STRING
+    repeated: false
+    defaultValue: Hierarchy
+    allowedValues: []
+    showField: true
+    required: true
+  - name: HierarchyFile
+    dataType: FILE
+    repeated: false
+    format: csv
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ReviewersJQExpression
+    dataType: STRING
+    repeated: false
+    defaultValue: 'map(. + { requested_reviewers_login: (.requested_reviewers | map(.login))
+      })'
+    allowedValues: []
+    showField: true
+    required: true
+  - name: LengthReviewersConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RequestedReviewersExistConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ExtractRequestedReviewersTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: InsufficientReviewersTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: HierarchicalPersonNotExistTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: HierarchicalPersonExistTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: MergeType
+    dataType: STRING
+    repeated: false
+    defaultValue: APPEND
+    allowedValues:
+    - APPEND
+    - CONCATENATE
+    showField: true
+    required: true
+  - name: PRNumberJQExpression
+    dataType: STRING
+    repeated: false
+    defaultValue: map(.PRNumber |= floor)
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ConvertOutputMethod
+    dataType: STRING
+    repeated: false
+    defaultValue: FIRST
+    allowedValues:
+    - FIRST
+    - ALL
+    showField: true
+    required: true
+  tasks:
+  - name: ExtractDataUsingJQ
+    alias: ExtractRepositoryAndBranch
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Extract the repository and branch separately from the input file
+    description: Extract the repository and branch separately from the input file
+  - name: ExecuteHttpRequest
+    alias: GetPullRequests
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get all the pull requests for the specified repository and branch
+    description: To get all the pull requests for the specified repository and branch
+  - name: CheckCondition
+    alias: FilterPullRequests
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To filter only the pull requests the has values
+    description: To filter only the pull requests the has values
+      provided in the ConditionConfig file
+  - name: ConvertFileFormat
+    alias: ConvertParquetToJson
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert the parquet file to JSON format
+    description: Convert the parquet file to JSON format
+  - name: TransformData
+    alias: AddLengthOfRequestedReviewersColumn
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Add the length of the requested reviewers as a new column
+    description: Add the length of the requested reviewers as a new column
+  - name: GetUserHierarchy
+    alias: GetUser Hierarchy
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get the heirarchy of the users
+    description: To get the heirarchy of the users
+  - name: TransformData
+    alias: ExtractRequestedReviewers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Extract the requested reviewers column from the input file
+    description: Extract the requested reviewers column from the input file
+  - name: CheckCondition
+    alias: CheckLengthOfRequestedReviewers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To check the length of the requested reviewers
+    description: To check the length of the requested reviewers
+  - name: ConvertFileFormat
+    alias: ConvertUsersWithInsufficientReviewers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-9
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert InsufficientReviewers file into JSON format
+    description: Convert InsufficientReviewers file into JSON format
+  - name: CheckCondition
+    alias: CheckHierachicalPersonExist
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-9
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To check if a higher hierarchy person exists
+    description: To check if a higher hierarchy person exists
+  - name: ConvertFileFormat
+    alias: ConvertHierarchicalPersonNotExist
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-10
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert HierarchicalPersonNotExist file into JSON format
+    description: Convert HierarchicalPersonNotExist file into JSON format
+  - name: ConvertFileFormat
+    alias: ConvertHierarchicalPersonExist
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-10
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert HierarchicalPersonExist file into JSON format
+    description: Convert HierarchicalPersonExist file into JSON format
+  - name: TransformData
+    alias: TransformUsersWithInsufficientReviewers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-11
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Transform InsufficientReviewers file into standard schema
+    description: Transform InsufficientReviewers file into standard schema
+  - name: TransformData
+    alias: TransformUsersWithNoHierarchicalPerson
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-11
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Transform UsersWithNoHierarchicalPerson file into standard schema
+    description: Transform UsersWithNoHierarchicalPerson file into standard schema
+  - name: TransformData
+    alias: TransformUsersWithHierarchicalPerson
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-11
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Transform UsersWithHierarchicalPerson file into standard schema
+    description: Transform UsersWithHierarchicalPerson file into standard schema
+  - name: MergeData
+    alias: MergeInsufficientReviewersAndNoHierarchyUsers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To merge the InsufficientReviewers and NoHierarchyUsers files
+    description: To merge the InsufficientReviewers and NoHierarchyUsers files
+  - name: MergeData
+    alias: MergeHierarchyUsersWIthExistingUsers
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To merge the HierarchyUsers and ExistingUsers files
+    description: To merge the HierarchyUsers and ExistingUsers files
+  - name: ExtractDataUsingJQ
+    alias: ConvertFloatToNumber
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Convert the float values to number
+    description: Convert the float values to number
+  ioMap:
+  - ExtractRepositoryAndBranch.Input.InputFile:=*.Input.InputFile
+  - ExtractRepositoryAndBranch.Input.JQExpression:=*.Input.JQExpression
+  - ExtractRepositoryAndBranch.Input.OutputMethod:=*.Input.OutputMethod
+  - GetPullRequests.Input.RequestConfigFile:=*.Input.PRRequestConfigFile
+  - GetPullRequests.Input.ResponseConfigFile:=*.Input.PRResponseConfigFile
+  - GetPullRequests.Input.InputFile:=ExtractRepositoryAndBranch.Output.OutputFile
+  - FilterPullRequests.Input.InputFile:=GetPullRequests.Output.OutputFile
+  - FilterPullRequests.Input.ConditionConfig:=*.Input.CheckReviewersConditionConfig
+  - ConvertParquetToJson.Input.InputFile:=FilterPullRequests.Output.MatchedConditionFile
+  - ConvertParquetToJson.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - AddLengthOfRequestedReviewersColumn.Input.InputFile1:=ConvertParquetToJson.Output.OutputFile
+  - AddLengthOfRequestedReviewersColumn.Input.TransformConfigFile:=*.Input.ReviewersCountColumnTransformConfigFile
+  - GetUser Hierarchy.Input.Type:=*.Input.Type
+  - GetUser Hierarchy.Input.InputFile:=AddLengthOfRequestedReviewersColumn.Output.OutputFile
+  - GetUser Hierarchy.Input.HierarchyFile:=*.Input.HierarchyFile
+  - GetUser Hierarchy.Input.ConfigFile:=*.Input.ConfigFile
+  - ExtractRequestedReviewers.Input.InputFile1:=GetUser Hierarchy.Output.OutputFile
+  - ExtractRequestedReviewers.Input.TransformConfigFile:=*.Input.ExtractRequestedReviewersTransformConfigFile
+  - CheckLengthOfRequestedReviewers.Input.InputFile:=ExtractRequestedReviewers.Output.OutputFile
+  - CheckLengthOfRequestedReviewers.Input.ConditionConfig:=*.Input.LengthReviewersConditionConfig
+  - ConvertUsersWithInsufficientReviewers.Input.InputFile:=CheckLengthOfRequestedReviewers.Output.UnmatchedConditionFile
+  - ConvertUsersWithInsufficientReviewers.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - CheckHierachicalPersonExist.Input.InputFile:=CheckLengthOfRequestedReviewers.Output.MatchedConditionFile
+  - CheckHierachicalPersonExist.Input.ConditionConfig:=*.Input.RequestedReviewersExistConditionConfig
+  - ConvertHierarchicalPersonNotExist.Input.InputFile:=CheckHierachicalPersonExist.Output.UnmatchedConditionFile
+  - ConvertHierarchicalPersonNotExist.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - ConvertHierarchicalPersonExist.Input.InputFile:=CheckHierachicalPersonExist.Output.MatchedConditionFile
+  - ConvertHierarchicalPersonExist.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - TransformUsersWithInsufficientReviewers.Input.InputFile1:=ConvertUsersWithInsufficientReviewers.Output.OutputFile
+  - TransformUsersWithInsufficientReviewers.Input.TransformConfigFile:=*.Input.InsufficientReviewersTransformConfigFile
+  - TransformUsersWithNoHierarchicalPerson.Input.InputFile1:=ConvertHierarchicalPersonNotExist.Output.OutputFile
+  - TransformUsersWithNoHierarchicalPerson.Input.TransformConfigFile:=*.Input.HierarchicalPersonNotExistTransformConfigFile
+  - TransformUsersWithHierarchicalPerson.Input.InputFile1:=ConvertHierarchicalPersonExist.Output.OutputFile
+  - TransformUsersWithHierarchicalPerson.Input.TransformConfigFile:=*.Input.HierarchicalPersonExistTransformConfigFile
+  - MergeInsufficientReviewersAndNoHierarchyUsers.Input.InputFile1:=TransformUsersWithInsufficientReviewers.Output.OutputFile
+  - MergeInsufficientReviewersAndNoHierarchyUsers.Input.InputFile2:=TransformUsersWithNoHierarchicalPerson.Output.OutputFile
+  - MergeInsufficientReviewersAndNoHierarchyUsers.Input.MergeType:=*.Input.MergeType
+  - MergeHierarchyUsersWIthExistingUsers.Input.InputFile1:=MergeInsufficientReviewersAndNoHierarchyUsers.Output.MergedData
+  - MergeHierarchyUsersWIthExistingUsers.Input.InputFile2:=TransformUsersWithHierarchicalPerson.Output.OutputFile
+  - MergeHierarchyUsersWIthExistingUsers.Input.MergeType:=*.Input.MergeType
+  - ConvertFloatToNumber.Input.InputFile:=MergeHierarchyUsersWIthExistingUsers.Output.MergedData
+  - ConvertFloatToNumber.Input.JQExpression:=*.Input.PRNumberJQExpression
+  - ConvertFloatToNumber.Input.OutputMethod:=*.Input.ConvertOutputMethod
+  - '*.Output.CompliancePCT_:=ConvertFloatToNumber.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=ConvertFloatToNumber.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=ConvertFloatToNumber.Output.LogFile'
+  - '*.Output.GithubPRRequiredReviewersReport:=ConvertFloatToNumber.Output.OutputFile'

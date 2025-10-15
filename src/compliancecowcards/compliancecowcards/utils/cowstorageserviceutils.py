@@ -20,7 +20,7 @@ COWStorageServiceURL = "%s://%s:%s" % (COWStorageServiceProtocol,
 def getfile(hashed_filename, header):
     urlPath = cowconstants.COWStorageServiceURL + \
         "/url-hash/download/"+hashed_filename
-    response = requests.get(urlPath, headers=cowwsutils.headerbuilder(header))
+    response = requests.get(urlPath)
     if response.status_code == 200:
         return response.json()
     return {"error": 'File not found'}

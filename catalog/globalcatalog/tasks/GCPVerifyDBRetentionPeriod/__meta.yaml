@@ -1,0 +1,47 @@
+authors:
+- rufus.p@continube.com
+domain: continube
+createdDate: 01/10/2024
+name: GCPVerifyDBRetentionPeriod
+displayName: GCPVerifyDBRetentionPeriod
+version: '1.0'
+description: GCPVerifyDBRetentionPeriod
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: MinimumRequiredRetentionPeriod 
+  description: MinimumRequiredRetentionPeriod
+  dataType: INT 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: false 
+- name: GCPDataBaseInstanceList 
+  description: GCPDataBaseInstanceList
+  dataType: FILE 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true  
+  required: false 
+outputs:
+- name: GCPDBRetentionPeriodReport
+  description: GCPDBRetentionPeriodReport
+  dataType: FILE
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

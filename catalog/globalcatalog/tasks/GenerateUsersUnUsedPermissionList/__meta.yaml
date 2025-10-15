@@ -1,0 +1,47 @@
+authors:
+- mani.m@continube.com
+domain: continube
+createdDate: 14/08/2024
+name: GenerateUsersUnUsedPermissionList
+displayName: GenerateUsersUnUsedPermissionList
+version: '1.0'
+description: GenerateUsersUnUsedPermissionList
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: LogFile # A unique identifier of the task input
+  description: LogFile # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+- name: UserDetails # A unique identifier of the task input
+  description: UserDetails # A concise description of the task input
+  dataType: FILE
+  repeated: false
+  allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
+  defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+  showField: true  # boolean: true | false
+  required: false
+outputs:
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: UsersUnUsedPermissionReport
+  description: UsersUnUsedPermissionReport
+  dataType: FILE

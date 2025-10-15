@@ -1,0 +1,28 @@
+Category,ActivityName,PermissionScope
+UserManagement,Add user,microsoft.directory/users/create
+UserManagement,Delete user,microsoft.directory/users/delete
+UserManagement,Disable user,microsoft.directory/users/disable
+UserManagement,Enable user,microsoft.directory/users/enable
+UserManagement,Invalidate all refresh tokens,microsoft.directory/users/invalidateAllRefreshTokens
+UserManagement,Invite guest,microsoft.directory/users/inviteGuest
+UserManagement,Update user manager,microsoft.directory/users/manager/update
+UserManagement,Update user password,microsoft.directory/users/password/update
+GroupManagement,Create group,microsoft.directory/groups/create
+GroupManagement,Delete group,microsoft.directory/groups/delete
+GroupManagement,Update dynamic membership rule,microsoft.directory/groups/dynamicMembershipRule/update
+GroupManagement,Update group type,microsoft.directory/groups/groupType/update
+GroupManagement,Read hidden members,microsoft.directory/groups/hiddenMembers/read
+GroupManagement,Update group members,microsoft.directory/groups/members/update
+GroupManagement,Update on-prem write back,microsoft.directory/groups/onPremWriteBack/update
+GroupManagement,Update group owners,microsoft.directory/groups/owners/update
+GroupManagement,Reprocess license assignment,microsoft.directory/groups/reprocessLicenseAssignment
+GroupManagement,Restore group,microsoft.directory/groups/restore
+GroupManagement,Update group settings,microsoft.directory/groups/settings/update
+ApplicationManagement,Add application,microsoft.directory/applications/create
+ApplicationManagement,Delete application,microsoft.directory/applications/delete
+ApplicationManagement,Update application,microsoft.directory/applications/update
+ApplicationManagement,Read application,microsoft.directory/applications/read
+ApplicationManagement,Assign application permission,microsoft.directory/applications/assignPermission
+ApplicationManagement,Consent to application,microsoft.directory/applications/consent
+ApplicationManagement,Add delegated permission grant,microsoft.directory/applications/addDelegatedPermissionGrant
+ApplicationManagement,Add service principal,microsoft.directory/applications/addServicePrincipal

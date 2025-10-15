@@ -1,0 +1,23 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>
+  LogFile: <<MINIO_FILE_PATH>>
+  OutputFileName: 
+  ColumnSelectorExpression: 
+  RowDataExpression: 
+fromDate: "2025-01-23T12:48:26Z"
+toDate: "2025-01-23T12:48:26Z"

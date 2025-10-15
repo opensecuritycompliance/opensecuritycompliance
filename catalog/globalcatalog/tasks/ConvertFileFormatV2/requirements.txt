@@ -1,0 +1,8 @@
+PyYAML
+toml
+xmltodict
+fastparquet==2024.11.0
+numpy
+pandas
+pyarrow
+openpyxl

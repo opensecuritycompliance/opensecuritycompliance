@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>
+  JQConfig: <<MINIO_FILE_PATH>>
+  JQExpression: 
+  OutputMethod: FIRST # (AllowedValues: FIRST, ALL) Specifies whether to consider all outputs from the JQ expression, or only the first one
+  ChunksPerIteration: #the number of data chunks processed per iteration (optional). 
+  LogFile: <<MINIO_FILE_PATH>>
+fromDate: 2024-12-05T05:16:08Z
+toDate: 2024-12-05T05:16:08Z

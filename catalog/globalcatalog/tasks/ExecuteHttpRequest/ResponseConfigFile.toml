@@ -16,10 +16,10 @@
     ConditionValue = "200"
 
     [Response.RuleSet.AppendColumn]
-    # If you want to include all columns from the input file in the output, set 'IncludeAllInputFields' to true.
+    # If you want to include all columns from the input file in the output, set 'IncludeAllInputFields' to 'true' otherwise 'false'.
     # This eliminates the need to specify each column individually in 'AppendColumn'.
     # If you want to add only specific fields from the input file, use the 'AppendColumn' section instead.
-    IncludeAllInputFields = true
+    IncludeAllInputFields = false
     
     [Response.RuleSet.AppendColumn.Fields]
     # You can add custom fields to the output.

@@ -96,6 +96,9 @@ var (
 	InputMetaFileType     = "FILE"
 	MinioFilePath         = "<<MINIO_FILE_PATH>>"
 	ReadmeFile            = "readme.md"
+	READMEMDFile          = "README.md"
+	RuleReadMeFile        = "README.md"
+	RuleMCPTag            = "MCP"
 )
 var (
 	PolicyCowConfig *vo.PolicyCowConfig = &vo.PolicyCowConfig{PathConfiguration: &vo.CowPathConfiguration{TasksPath: CowDataTaskPath, RulesPath: CowDataRulesPath, ExecutionPath: CowDataExecutionsPath, RuleGroupPath: CowDataRuleGroupPath}}

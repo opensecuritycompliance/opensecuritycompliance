@@ -98,9 +98,10 @@ class Task(cards.AbstractTask):
             resource_data.append({})
             
         for data in resource_data :
+            record = resource_data.index(data)
             http_request_file_data_copy = copy.deepcopy(http_request_file_data)
             http_response_ , content_type, error = self.process_api_request_and_responce(
-                http_request_file_data_copy ,data , http_response_file_data )
+                http_request_file_data_copy ,data , http_response_file_data, record )
             if error :
                 error_details.append({"Error" : error})
             if isinstance(http_response_ , list) :
@@ -126,13 +127,13 @@ class Task(cards.AbstractTask):
 
 
     def process_api_request_and_responce(self, 
-        http_request_data , data_file,http_response_query ) -> tuple[list, str, list]: 
+        http_request_data , data_file,http_response_query, record=None ) -> tuple[list, str, list]: 
         
         result = []
         error_details = []
         
         response , error = self.process_api_request(
-                http_request_data ,data_file,http_response_query 
+                http_request_data ,data_file,http_response_query, record
                 )
         if error :
             if response == None :
@@ -234,7 +235,7 @@ class Task(cards.AbstractTask):
             if required_pagination_call :
             # Process API request and response
                 http_response, _, error = self.process_api_request_and_responce(
-                    http_request_data, data_file, http_response_query)
+                    http_request_data, data_file, http_response_query )
                 if error:
                     error_details.append({"Error": error})
                     return result, error_details
@@ -455,31 +456,31 @@ class Task(cards.AbstractTask):
                     
                 if f"{parsed_value}" == f"{condition['ConditionValue']}" :
                     proceed_append_column = True
-            else:    
-                proceed_append_column = True
-                
+                    
         if not proceed_append_column :
-            return response_json ,"'AppendColumn' query does not satisfied."
+            return response_json ,"'AppendColumn' query is not satisfied."
         
         append_column = rule_set.get("AppendColumn", {})
-        if append_column["IncludeAllInputFields"] :
-            response_json.update(data_file)
+        if append_column.get("IncludeAllInputFields"):
+            if append_column["IncludeAllInputFields"]:
+                response_json.update(data_file)
         
-        append_column_fields = append_column['Fields']
-        if append_column_fields:
-            append_columns_str = json.dumps(append_column_fields)
-            append_columns_str = self.response_query_replace_placeholders(append_columns_str, context_dict)
+        if append_column.get('Fields'):
+                append_column_fields = append_column['Fields']
+                if append_column_fields:
+                    append_columns_str = json.dumps(append_column_fields)
+                    append_columns_str = self.response_query_replace_placeholders(append_columns_str, context_dict)
 
-            try:
-                updated_append_column_fields = json.loads(append_columns_str)
-            except json.JSONDecodeError:
-                return response_json, "Invalid value provided in one of 'ResponseConfigFile.Response.RuleSet.AppendColumn.Fields'"
+                try:
+                    updated_append_column_fields = json.loads(append_columns_str)
+                except json.JSONDecodeError:
+                    return response_json, "Invalid value provided in one of 'ResponseConfigFile.Response.RuleSet.AppendColumn.Fields'"
 
-            response_json.update(updated_append_column_fields)
+                response_json.update(updated_append_column_fields)
         
         return response_json ,None
     
-    def process_api_request(self, http_request_data, data_file, http_response_query):
+    def process_api_request(self, http_request_data, data_file, http_response_query, record=None):
         request_data = http_request_data.get('Request', {})
         error_details = []
         request_data["Method"] = request_data["Method"].upper()
@@ -493,6 +494,7 @@ class Task(cards.AbstractTask):
         for i in range(2):
             response, error = self.generate_auth_and_make_api_call(request_data, data_file, body)
             if error:
+                error = f"Record {record+1} - " + error
                 if i == 0 and isinstance(error, str) and error.startswith('Unauthorized - ') and self.auth_responses:
                     # Try resetting existing auth_responses, to force creating new one, in case of 'Unauthorized' response
                     self.auth_responses = {}
@@ -1034,17 +1036,26 @@ class Task(cards.AbstractTask):
                     return False, f"Missing '{field}' in 'AppendColumnCondition'"
                 if not isinstance(append_column_condition[field], expected_type):
                     return False, f"Field '{field}' in 'AppendColumnCondition' must be of type {expected_type.__name__}"
-
-        # Validate 'AppendColumn'
-        append_column = rule_set.get("AppendColumn")
-        if append_column:
-            if not isinstance(append_column, dict):
-                return False, "'AppendColumn' must be a dictionary in 'ResponseConfigFile.Response.RuleSet'"
-            if "IncludeAllInputFields" not in append_column or not isinstance(append_column["IncludeAllInputFields"], bool):
-                return False, "'IncludeAllInputFields' must be a boolean in 'AppendColumn'"
-            fields = append_column.get("Fields")
-            if not isinstance(fields, dict):
-                return False, "'Fields' must be a dictionary in 'AppendColumn'"
+            
+            # Validate 'AppendColumn'
+            append_column = rule_set.get("AppendColumn")
+            if append_column:
+                if not isinstance(append_column, dict):
+                    return False, "'AppendColumn' must be a dictionary in 'ResponseConfigFile.Response.RuleSet'"
+                if "IncludeAllInputFields" in append_column:
+                    if not isinstance(append_column.get("IncludeAllInputFields"), bool):
+                        return False, "'IncludeAllInputFields' must be a boolean in 'AppendColumn'"
+                else:
+                    return False, "'IncludeAllInputFields' is a mandatory field"
+                    
+                if "Fields" in append_column:
+                    fields = append_column.get("Fields")
+                    if fields:
+                        if not isinstance(fields, dict):
+                            return False, "'Fields' must be a dictionary in 'AppendColumn'"
+                        
+            else:
+                return False, "There exists no column to append"
 
         # Validate 'PaginationCondition'
         pagination_condition = rule_set.get("PaginationCondition")
@@ -1135,7 +1146,11 @@ class Task(cards.AbstractTask):
                 if len(response.content) > 0:
                     data = response.content 
                 else:
-                    data = response.text 
+                    if response.status_code == http.HTTPStatus.NO_CONTENT and content_type == 'text/html;charset=utf-8':
+                        data = {"Response": "204 No Content"}
+                        content_type = "application/json"
+                    else:
+                        data = response.text 
             except Exception as e:
                 return None, "", f"Error processing api response: {e}"
 
@@ -1342,20 +1357,16 @@ class Task(cards.AbstractTask):
         
         return input_validation_report
     
-    def jq_filter_query(self, query, value_dict) :
+    def jq_filter_query(self, query, value_dict):
+        if not value_dict:
+            return ""
         
-        query = query + " // \"Query not found\""
-        parsed_values = ["Query not found"]
-        # Run the jq query
-        if value_dict :
-            parsed_values = jq.compile(query).input(value_dict).all()
+        parsed_values = jq.compile(query).input(value_dict).all()
 
-        # Check the result
-        if parsed_values and len(parsed_values) == 1 :
-            if parsed_values[0] == "Query not found":
-                return ""
-            else: 
+        if len(parsed_values) == 1:
+            if parsed_values[0] is not None:
                 return parsed_values[0]
+            return ""
         else:
             return parsed_values
     

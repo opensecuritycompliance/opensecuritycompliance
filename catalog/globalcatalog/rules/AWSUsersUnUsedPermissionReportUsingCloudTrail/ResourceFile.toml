@@ -1,0 +1,7 @@
+[Resources]
+"IncludeResourceCriteria"= [
+    "aws/AWS::S3::Bucket/*"
+    ]
+ExcludeResourceCriteria= [
+    "aws/AWS::S3::Bucket/"
+]

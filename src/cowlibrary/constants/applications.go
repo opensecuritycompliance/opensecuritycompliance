@@ -16,11 +16,12 @@ const (
 )
 
 const (
-	DeclarativesDataTypeSTRING      = "STRING"
-	DeclarativesDataTypeINT         = "INT"
-	DeclarativesDataTypeFLOAT       = "FLOAT"
-	DeclarativesDataTypeFILE        = "FILE"
-	DeclarativesDataTypeHTTP_CONFIG = "HTTP_CONFIG"
+	DeclarativesDataTypeSTRING        = "STRING"
+	DeclarativesDataTypeINT           = "INT"
+	DeclarativesDataTypeFLOAT         = "FLOAT"
+	DeclarativesDataTypeFILE          = "FILE"
+	DeclarativesDataTypeHTTP_CONFIG   = "HTTP_CONFIG"
+	DeclarativesDataTypeJQ_EXPRESSION = "JQ_EXPRESSION"
 )
 
 const (

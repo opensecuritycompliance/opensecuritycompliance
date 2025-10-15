@@ -8,6 +8,7 @@ import json
 import yaml
 import uuid
 from datetime import date
+import traceback
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -30,39 +31,48 @@ for py_module in list(filter(lambda x: x.endswith(".py") and x != inspect.getfil
             if obj != cards.AbstractTask and issubclass(obj, cards.AbstractTask):
                 data = None
 
-                if os.path.exists("inputs.yaml"):
-                    # Open and read the YAML file
-                    with open("inputs.yaml", 'r') as yaml_file:
-                        data = yaml.load(
-                            yaml_file, Loader=yaml.FullLoader)
+                try:
+                    if os.path.exists("inputs.yaml"):
+                        # Open and read the YAML file
+                        with open("inputs.yaml", 'r') as yaml_file:
+                            data = yaml.load(
+                                yaml_file, Loader=yaml.FullLoader)
 
-                elif os.path.exists("task_input.json"):
-                    with open("task_input.json") as f:
-                        data = json.loads(f.read())
+                    elif os.path.exists("task_input.json"):
+                        with open("task_input.json") as f:
+                            data = json.loads(f.read())
 
-                data = json.loads(os.path.expandvars(
-                    json.dumps(data, cls=DateEncoder)))
-                        
-                cl = obj()
-                data = cowvo.task_inputs_from_dict(data)
+                    data = json.loads(os.path.expandvars(
+                        json.dumps(data, cls=DateEncoder)))
+                            
+                    cl = obj()
+                    data = cowvo.task_inputs_from_dict(data)
 
-                if not data.system_objects:
-                    try:
-                        default_system_objects = json.loads(os.path.expandvars(
-                            json.dumps(cowconstants.DefaultSystemObjects)))
-                        data.system_objects = cowvo.from_list(
-                            cowvo.ObjectTemplate.from_dict, default_system_objects)
-                        data.meta_data = cowvo.MetaDataTemplate(str(uuid.uuid4()), str(
-                            uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()))
-                    except:
-                        pass
+                    if not data.system_objects:
+                        try:
+                            default_system_objects = json.loads(os.path.expandvars(
+                                json.dumps(cowconstants.DefaultSystemObjects)))
+                            data.system_objects = cowvo.from_list(
+                                cowvo.ObjectTemplate.from_dict, default_system_objects)
+                            data.meta_data = cowvo.MetaDataTemplate(str(uuid.uuid4()), str(
+                                uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()))
+                        except:
+                            pass
 
-                cl.task_inputs = data
-                output = cl.execute()
-                if output and bool(output):
-                    with open("task_output.json", "w") as f:
-                        f.write(json.dumps({"Outputs": output}))
-                print("output :", output)
-                is_task_executed = True
-                break
-
+                    cl.task_inputs = data
+                    output = cl.execute()
+                    if isinstance(output, dict) and bool(output):
+                        with open("task_output.json", "w") as f:
+                            f.write(json.dumps({"Outputs": output}))
+                    else:
+                        with open("task_output.json", "w") as f:
+                            f.write(json.dumps({"error": "not able to retrieve the outputs from the task"}))
+                    is_task_executed = True
+                    break
+                except Exception as error:
+                    with open("logs.txt", "w") as file:
+                        file.write(traceback.format_exc())
+                    error_message = {"error": "Please review the stack trace in the logs.txt file within the task."}
+                    with open("task_output.json", "w") as file:
+                        json.dump(error_message, file)
+                    raise

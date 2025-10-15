@@ -1,0 +1,29 @@
+
+[AddColumn]
+System = "GCP"
+Source = "compliancecow"
+ResourceID = "<<inputfile1.id>>"
+ResourceName = "<<inputfile1.name>>"
+ResourceType = "Storage Bucket"
+ResourceLocation = "<<inputfile1.location>>"
+ResourceTag = []
+ResourceURL = "https://console.cloud.google.com/storage/browser/<<inputfile1.id>>"
+StorageClass = "<<inputfile1.storageClass>>"
+BucketCreationTime = "<<inputfile1.timeCreated>>"
+BucketLastUpdated = "<<inputfile1.updated>>"
+LifecycleRules = "<<inputfile1.lifecycle.rule>>"
+VersioningStatus = "N/A"
+ValidationStatusCode = "BUCK_VER_MSNG"
+ValidationStatusNotes = "The bucket does not have a versioning configuration, preventing validation of versioning status."
+ComplianceStatus = "NON_COMPLIANT"
+ComplianceStatusReason = "Bucket versioning configuration is missing , making version control unverified."
+UserAction = ""
+ActionStatus = "" 
+ActionResponseURL = "" 
+
+[[AddColumn.ByFunction]]
+ColumnName = "EvaluationTime"      
+Function = "CurrentDateTime"       
+
+[ReorderColumn]
+ColumnList = "System, Source, ResourceID, ResourceName, ResourceType, ResourceLocation, ResourceTag, ResourceURL, StorageClass, BucketCreationTime, BucketLastUpdated, LifecycleRules, VersioningStatus, ValidationStatusCode, ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason, EvaluationTime, UserAction, ActionStatus, ActionResponseURL"

@@ -1,0 +1,16 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>  # (MANDATORY) Output file from the previous task containing data to be validated based on conditions.
+  LogFile: <<MINIO_FILE_PATH>>    # (OPTIONAL) Log file from the previous task to track errors and avoid reprocessing failures.
+  LogConfigFile: <<MINIO_FILE_PATH>>  # (MANDATORY) Configuration file defining the conditions and fields for log generation.
+  ProceedIfLogExists:   # (BOOLEAN) Determines whether the next task should execute based on the generated log file. If true, the next task proceeds with both LogFile and OutputFile; otherwise, only LogFile is provided.
+fromDate: 2025-03-05T05:46:59Z
+toDate: 2025-03-05T05:46:59Z
+

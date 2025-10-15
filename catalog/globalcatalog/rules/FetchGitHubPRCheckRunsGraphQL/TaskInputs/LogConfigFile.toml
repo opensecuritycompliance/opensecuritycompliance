@@ -1,0 +1,4 @@
+[[ConditionRules]]
+    Condition = "EMPTY"
+    ConditionField= "<<inputfile.[] | ([.data.node.commits.nodes[].commit.checkSuites.nodes[].checkRuns.totalCount | select(. > 0)] as $nonZero | if ($nonZero | length) == 0 then [] else [{ \"TotalCount\": ($nonZero | length) }] end)>>"
+    ErrorMessage = "The pull request in the repository '<<inputfile.[].repositoryName>>' with PR ID '<<inputfile.[].PRId>>' contains no valid checkruns details."

@@ -1,0 +1,9 @@
+[AddColumn]
+NextFollowUp = ""
+FollowUpType = ""
+STATUS = "SLACK_NOTIFICATION_NOT_SENT"
+REASON = ""
+JIRA_TASK_KEY = "N/A"
+JIRA_TASK_URL = "N/A"
+JIRA_TASK_CREATED_DATE = "N/A"
+JIRA_TASK_STATUS = "N/A"

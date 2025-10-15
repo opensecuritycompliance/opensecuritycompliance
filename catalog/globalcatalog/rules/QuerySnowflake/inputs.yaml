@@ -1,0 +1,70 @@
+userObject:
+  apps:
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: "$SNOWFLAKE_INSTANCE_URL"
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      framework:
+      - snowflake
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: "$VALIDATION_CURL"
+        CredentialJson: "$CREDENTIAL_JSON"
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+userInputs:
+  ColumnSelectorExpression: .data.rowtype
+  ExecuteSnowflakeQueryInputFile: <<MINIO_FILE_PATH>>
+  ExecuteSnowflakeQueryRequestConfigFile: <<MINIO_FILE_PATH>>
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: JSON
+  OutputFileName: 
+  ProceedIfLogExists: false
+  RequiredFields:
+  - statement
+  RowDataExpression: .data.rowset
+  SnowflakeCustomExceptionConfigFile: <<MINIO_FILE_PATH>>
+  TransformConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-05-28T07:36:28Z
+toDate: 2025-05-28T07:36:28Z

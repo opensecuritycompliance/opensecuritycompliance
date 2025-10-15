@@ -1,2 +1,4 @@
 PyYAML
-toml
+tomli
+pandas
+numpy

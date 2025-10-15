@@ -1,0 +1,3 @@
+[JQConfig]
+JQExpression = "map(if .title == null then .compliant_status = \"NOT_COMPLIANT\" else .compliant_status = \"COMPLIANT\" end)" # [MANDATORY] Contains the JQ filter/expression that must be executed on the InputFile data
+OutputMethod = "FIRST" # [OPTIONAL] (AllowedValues: FIRST, ALL) Specifies whether to consider all outputs from the JQ expression, or only the first one

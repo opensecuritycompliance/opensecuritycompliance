@@ -1,0 +1,55 @@
+authors:
+- praveen.kj@continube.com
+domain: continube
+createdDate: 30/09/2024
+name: AzureUnusedPermissionReport
+displayName: AzureUnusedPermissionReport
+version: '1.0'
+description: AzureUnusedPermissionReport
+shaToken: ''
+showInCatalog: true
+icon: fa-solid fa-database
+type: python
+tags:
+- generic
+applicationType: generic
+userObjectJSONInBase64: ''
+systemObjectJSONInBase64: ''
+inputs:
+- name: PermissionConfigFile 
+  description: PermissionConfigFile
+  dataType: FILE 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true 
+- name: UserManagerDetails 
+  description: UserManagerDetails
+  dataType: FILe 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true 
+- name: InactivePermissionsWindow
+  description: InactivePermissionsWindow
+  dataType: int 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: true 
+outputs:
+- name: AzureUnusedPermissionReport
+  description: AzureUnusedPermissionReport
+  dataType: FILE
+- name: LogFile
+  description: LogFile
+  dataType: FILE
+- name: ComplianceStatus_
+  description: compliance status of the task
+  dataType: STRING
+- name: CompliancePCT_
+  description: compliance percentage of the task
+  dataType: INT

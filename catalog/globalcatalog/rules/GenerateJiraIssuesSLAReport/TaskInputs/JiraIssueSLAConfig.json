@@ -1,0 +1,14 @@
+[
+    {
+        "Priority": "Low",
+        "SLAInDays": 10
+    },
+    {
+        "Priority": "Medium",
+        "SLAInDays": 5
+    },
+    {
+        "Priority": "High",
+        "SLAInDays": 3
+    }
+]

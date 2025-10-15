@@ -1,0 +1,17 @@
+[Request]
+URL = "https://[your-domain].atlassian.net/rest/api/3/search/jql"
+Method = "GET"
+ContentType = ""
+Redirect = true
+CredentialType = "BasicAuthentication"
+TimeOut = 30
+Verify = true
+Retries = 3
+RetryOnStatus = [503, 504, 429]
+
+[Request.Headers]
+
+[Request.Params]
+fields="id,key,project,summary,description,priority,status,created,updated,resolutiondate,creator,assignee,reporter,issuelinks,labels"
+jql="created >= <<fromdate>> AND created <= <<todate>>"
+maxResults=5000

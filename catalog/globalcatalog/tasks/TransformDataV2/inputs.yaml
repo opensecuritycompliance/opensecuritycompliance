@@ -1,0 +1,26 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile1: <<MINIO_FILE_PATH>> # InputFile1 for transforming data
+  TransformConfigFile: <<MINIO_FILE_PATH>> # Configuration for transforming data
+  InputFile2: <<MINIO_FILE_PATH>> # InputFile2 for additional data (optional)
+  OutputFileName: 
+  LogFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: # True or False (Default: True)
+  ProceedIfErrorExists: # True or False (Default: True)
+  LogConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-04-22T10:20:48Z
+toDate: 2025-04-22T10:20:48Z

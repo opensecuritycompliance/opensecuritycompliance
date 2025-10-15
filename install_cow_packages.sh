@@ -59,11 +59,11 @@ fi
 set -e  # Exit immediately if a command exits with a non-zero status
 echo "Installing dependencies from requirements files..."
 $PIP_COMMAND install -r ./src/compliancecowcards/requirements.txt
-$PIP_COMMAND install -r ./catalog/appconnections/python/requirements.txt
+$PIP_COMMAND install -r ./catalog/applicationtypes/python/requirements.txt
 
 echo "Installing packages..."
 $PIP_COMMAND install ./src/compliancecowcards
-$PIP_COMMAND install ./catalog/appconnections/python
+$PIP_COMMAND install ./catalog/applicationtypes/python
 
 
 GO_VERSION="1.21.3"

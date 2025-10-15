@@ -1,0 +1,17 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  MergeType: # APPEND or CONCATENATE (Default: APPEND)
+  # APPEND -> Adds records/elements from InputFile2 to InputFile1
+  # CONCATENATE -> Returns data after merging the fields from both InputFile1 and InputFile2 for each record/element
+  InputFile1: <<MINIO_FILE_PATH>>
+  InputFile2: <<MINIO_FILE_PATH>>
+  LogFile: 
+fromDate: 2024-09-19
+toDate: 2024-09-19

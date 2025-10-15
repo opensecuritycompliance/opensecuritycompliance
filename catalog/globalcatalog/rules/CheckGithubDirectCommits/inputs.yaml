@@ -1,0 +1,65 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: "$VALIDATION_CURL"
+        Token: "$GITHUB_ACCESS_TOKEN"
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  BranchCommitRequestConfigFile: <<MINIO_FILE_PATH>>
+  BranchCommitResponseConfigFile: <<MINIO_FILE_PATH>>
+  CommitDetailsTransformConfigFile: <<MINIO_FILE_PATH>>
+  ExtractComplaintStatusJQConfig: <<MINIO_FILE_PATH>>
+  GithubInputFile: <<MINIO_FILE_PATH>>
+  PRWithCommitRequestConfigFile: <<MINIO_FILE_PATH>>
+  PRWithCommitResponseConfigFile: <<MINIO_FILE_PATH>>
+  RepoRequestConfigFile: <<MINIO_FILE_PATH>>
+  RepoResponseConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-04-23T09:55:14Z
+toDate: 2025-04-23T09:55:14Z

@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -1225,7 +1226,7 @@ func GetCredentialYAMLObjectV2(credentials []*vo.UserDefinedCredentialVO) *vo.Cr
 
 func getDefaultValueForType(dataType string) interface{} {
 	switch strings.ToUpper(dataType) {
-	case "STRING":
+	case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeJQ_EXPRESSION:
 		return ""
 	case "INT":
 		return 0
@@ -1588,6 +1589,37 @@ func GetApplicationsV2(additionalInfo *vo.AdditionalInfo, appCriteria *vo.CowApp
 	return filteredApplications, nil
 }
 
+func GetApplicationCredentialsByType(appType string, apps []*vo.UserDefinedApplicationVO) ([]*vo.ApplicationCredentialVO, error) {
+	var result []*vo.ApplicationCredentialVO
+	for _, app := range apps {
+		if types, ok := app.Meta.Labels["appType"]; ok && SliceContains(types, appType) {
+			credNames := make([]string, len(app.Spec.CredentialTypes))
+			for i, ct := range app.Spec.CredentialTypes {
+				credNames[i] = ct.Name
+			}
+			credentials, err := GetCredentialsV2(nil, &vo.CowCredentialCriteriaVO{Name: credNames})
+			if err != nil {
+				return nil, fmt.Errorf("unable to fetch credentials: %w", err)
+			}
+
+			supportedCreds := make([]*vo.CredentialType, len(credentials))
+			for i, cred := range credentials {
+				supportedCreds[i] = &vo.CredentialType{
+					Name:       cred.Meta.Name,
+					Attributes: cred.Spec.Attributes,
+				}
+			}
+
+			result = append(result, &vo.ApplicationCredentialVO{
+				ApplicationName: app.Meta.Name,
+				AppType:         appType,
+				SupportedCreds:  supportedCreds,
+			})
+		}
+	}
+	return result, nil
+}
+
 func addLinkedApplicationDetails(path string, apps []*vo.CowNamePointersVO) {
 	for _, linkedApp := range apps {
 		linkedAppFilePath := filepath.Join(path, linkedApp.Name+".yaml")
@@ -1716,6 +1748,45 @@ func GetRules(cowRulesCriteriaVO *vo.CowRulesCriteriaVO) ([]*vo.RuleYAMLVO, erro
 	return GetRulesV2(nil, cowRulesCriteriaVO)
 }
 
+func UpsertReadMe(upsertReadMeVO *vo.UpsertReadMe) *vo.ErrorResponseVO {
+	additionalInfo, err := GetAdditionalInfoFromEnv()
+	if err != nil {
+		return &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+			Message: "Internal_server_error", Description: "Unable to read config file"}}
+	}
+	if strings.ToLower(upsertReadMeVO.Type) == "rule" {
+		localcatalogPath := additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath
+		pathPrefixs := []string{
+			filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.RulesPath, upsertReadMeVO.RuleName, "rule.yaml")}
+		if !additionalInfo.GlobalCatalog {
+			pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "rules", upsertReadMeVO.RuleName, "rule.yaml"))
+		}
+		var matches []string
+		for _, pattern := range pathPrefixs {
+			pathMatches, _ := filepath.Glob(pattern)
+			matches = append(matches, pathMatches...)
+		}
+		if len(matches) == 0 {
+			return &vo.ErrorResponseVO{StatusCode: http.StatusNotFound, Error: &vo.ErrorVO{
+				Message: "NOT_FOUND", Description: "No rule found for the given input"}}
+		}
+		bytes, err := base64.StdEncoding.DecodeString(upsertReadMeVO.ReadmeContent)
+		if err != nil {
+			return &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+				Message: "Internal_server_error", Description: "Unable to decode read-me data"}}
+		}
+		err = os.WriteFile(filepath.Join(filepath.Dir(matches[0]), constants.RuleReadMeFile), bytes, os.ModePerm)
+		if err != nil {
+			return &vo.ErrorResponseVO{StatusCode: http.StatusInternalServerError, Error: &vo.ErrorVO{
+				Message: "Internal_server_error", Description: "Unable to write read-me data"}}
+		}
+		return nil
+	} else {
+		return &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+			Message: "VALIDATION_ERROR", Description: "Given type is not supported"}}
+	}
+}
+
 func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRulesCriteriaVO) ([]*vo.RuleYAMLVO, error) {
 	if additionalInfo == nil {
 		additionalInfoCopy, err := GetAdditionalInfoFromEnv()
@@ -1816,6 +1887,9 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 						}
 					}
 				}
+				if cowRulesCriteriaVO.IncludeReadMe {
+					rulevo.ReadmeData = GetReadMeFileContentAsBase64EncodedString(filepath.Dir(path))
+				}
 				policyCowDataSet = append(policyCowDataSet, rulevo)
 			}
 		}
@@ -1827,6 +1901,7 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 		if cowRulesCriteriaVO != nil && policyCowData != nil && policyCowData.Meta != nil {
 			if (IsNotEmpty(cowRulesCriteriaVO.StartsWith) && (IsEmpty(policyCowData.Meta.Name) || !strings.Contains(policyCowData.Meta.Name, cowRulesCriteriaVO.StartsWith))) ||
 				(IsNotEmpty(cowRulesCriteriaVO.Like) && (IsEmpty(policyCowData.Meta.Name) || !IsStringContainsAny(policyCowData.Meta.Name, []string{cowRulesCriteriaVO.Like}))) ||
+				(IsNoneEmpty(cowRulesCriteriaVO.Tags) && (IsEmptyArray(policyCowData.Meta.Tags) || !IsAnyValueIntersected(policyCowData.Meta.Tags, cowRulesCriteriaVO.Tags))) ||
 				(IsNoneEmpty(cowRulesCriteriaVO.Name) && (IsEmpty(policyCowData.Meta.Name) || !SliceContains(cowRulesCriteriaVO.Name, policyCowData.Meta.Name))) {
 				continue
 			}
@@ -2324,4 +2399,32 @@ func GetAvailableApplications(pathPrefixs []string) []vo.AppliactionDetailsVO {
 		}
 	}
 	return directories
+}
+
+func IsPythonFlow(taskPath string) bool {
+	if _, err := os.Stat(filepath.Join(taskPath, "task.py")); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func GetReadMeFileContentAsBase64EncodedString(folderPath string) string {
+
+	readMeBase64EncodedString := ``
+
+	readmeFile := filepath.Join(folderPath, constants.ReadmeFile)
+	if IsFileExist(readmeFile) {
+		if bytes, err := os.ReadFile(readmeFile); err == nil {
+			readMeBase64EncodedString = base64.StdEncoding.EncodeToString(bytes)
+		}
+	} else {
+		readmeFile := filepath.Join(folderPath, constants.READMEMDFile)
+		if IsFileExist(readmeFile) {
+			if bytes, err := os.ReadFile(readmeFile); err == nil {
+				readMeBase64EncodedString = base64.StdEncoding.EncodeToString(bytes)
+			}
+		}
+	}
+
+	return readMeBase64EncodedString
 }

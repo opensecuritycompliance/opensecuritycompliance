@@ -1,0 +1,36 @@
+# Main configuration for Convert File feature
+[ConvertFileFormat]
+
+# Validation error messages for user inputs and file formats
+[ConvertFileFormat.Validation]
+UserInputs.missing_fields = "The following input(s) are missing: {missing_fields}"
+InputFile.invalid_format = "The provided input file format is not supported: {file_format}"
+InputFile.unknown_format = "Expected one of JSON, YAML, TOML, CSV, PARQUET, XML, XLSX formats, got an unknown format instead"
+OutputFile.invalid_format = "The provided output format is not supported: {file_format}"
+
+# Exception messages during file operations
+[ConvertFileFormat.Exception]
+
+# Log file related exceptions
+LogFile.download_failed = "An error occurred while downloading LogFile. Please find more details: {error}"
+
+# Input file download and parsing exceptions
+InputFile.download_failed = "An error occurred while downloading InputFile. Please find more details: {error}"
+InputFile.Parser.json_parsing_error = "Error parsing the JSON file: {error}"
+InputFile.Parser.yaml_parsing_error = "Error parsing the YAML file: {error}"
+InputFile.Parser.toml_parsing_error = "Error parsing the TOML file: {error}"
+InputFile.Parser.xml_parsing_error = "Error parsing the XML file: {error}"
+InputFile.Parser.csv_parsing_error = "Error parsing the CSV file: {error}"
+InputFile.Parser.parquet_parsing_error = "Error parsing the Parquet file: {error}"
+InputFile.Parser.xlsx_parsing_error = "Error parsing the XLSX file: {error}"
+
+# Input file conversion exceptions
+InputFile.Converter.json_conversion_error = "Error converting to JSON format: {error}"
+InputFile.Converter.yaml_conversion_error = "Error converting to YAML format: {error}"
+InputFile.Converter.toml_conversion_error = "Error converting to TOML format: {error}"
+InputFile.Converter.csv_conversion_error = "Error converting to CSV format: {error}"
+InputFile.Converter.parquet_conversion_error = "Error converting to Parquet format: {error}"
+InputFile.Converter.xlsx_conversion_error = "Error converting to XLSX format: {error}"
+
+# Output file upload exceptions
+OutputFile.upload_failed = "An error occurred while uploading OutputFile. Please find more details: {error}"

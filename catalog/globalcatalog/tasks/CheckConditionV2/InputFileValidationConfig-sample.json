@@ -1,0 +1,12 @@
+[
+    {
+        "FileName": "InputFile",
+        "RequiredFields": ["Field1", "Field2"],
+        "RemoveDuplicates": true
+    },
+    {
+        "FileName": "CustomInputs",
+        "RequiredFields": ["Field1", "Field2"],
+        "RemoveDuplicates": true
+    }
+]

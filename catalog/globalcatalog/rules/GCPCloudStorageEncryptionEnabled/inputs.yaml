@@ -1,0 +1,54 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: https://admin.google.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      JWTBearer:
+        Algorithm: "$ALGORITHM"
+        PrivateKey: "$PRIVATE_KEY"
+        Payload: "$PAYLOAD"
+        ValidationCURL: "$VALIDATION_CURL"
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      block:
+      - block-4
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  BucketsRequestConfigFile: <<MINIO_FILE_PATH>>                    # Request config file to get the buckets list from GCP Cloud Storage
+  CheckIfEncryptionExistsConditionConfig: <<MINIO_FILE_PATH>>      # Condition config file to check if Encryption exists or not
+  ExtractBucketsJQExpression: .[].items[]                                     
+  OutputFileFormat: JSON                                                           
+  TransformEncryptionConfigFile: <<MINIO_FILE_PATH>>               # Transform config file to standardize the report
+fromDate: 2025-03-25T05:26:09Z
+toDate: 2025-03-25T05:26:09Z

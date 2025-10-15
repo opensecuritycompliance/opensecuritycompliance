@@ -30,15 +30,28 @@ type CredentialSpecVO struct {
 	Attributes []*CredentialAttributesVO `json:"attributes"`
 }
 
+type ApplicationCredentialVO struct {
+	ApplicationName string            `json:"applicationName,omitempty"`
+	AppType         string            `json:"appType,omitempty"`
+	SupportedCreds  []*CredentialType `json:"supportedCreds,omitempty"`
+}
+
+type CredentialType struct {
+	Name       string                    `json:"name,omitempty"`
+	Attributes []*CredentialAttributesVO `json:"attributes,omitempty"`
+}
+
 type CredentialAttributesVO struct {
 	Name          string            `json:"name,omitempty" yaml:"name" binding:"alpha" validate:"alpha"`
 	DisplayName   string            `json:"displayName,omitempty" yaml:"displayName" binding:"omitempty,name" validate:"omitempty,name"`
-	Secret        bool              `json:"secret,omitempty" yaml:"secret" `
+	Description   string            `json:"description,omitempty" yaml:"description"`
+	Secret        bool              `json:"secret,omitempty" yaml:"secret"`
 	Required      bool              `json:"required,omitempty" yaml:"required"`
 	MultiSelect   bool              `json:"multiSelect,omitempty" yaml:"multiSelect"`
 	DataType      AttributeDataType `json:"dataType,omitempty" yaml:"dataType" binding:"required" validate:"required"`
 	AllowedValues []string          `json:"allowedValues,omitempty" yaml:"allowedValues" binding:"omitempty" validate:"omitempty"` // dive,name,unique
 	DefaultValue  string            `json:"defaultValue,omitempty" yaml:"defaultValue" binding:"omitempty" validate:"omitempty"`
+	Explanation   string            `json:"explanation" yaml:"explanation,omitempty"`
 }
 
 type CowDeclarativeVO struct {
@@ -140,7 +153,7 @@ func (dt *AttributeDataType) UnmarshalYAML(unmarshal func(interface{}) error) er
 	switch value := yamlData.(type) {
 	case string:
 		switch value {
-		case "STRING":
+		case "STRING", "JQ_EXPRESSION":
 			*dt = "string"
 		case "INT":
 			*dt = "int"
