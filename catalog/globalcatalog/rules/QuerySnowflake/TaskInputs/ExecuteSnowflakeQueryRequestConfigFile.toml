@@ -1,0 +1,25 @@
+[Request]
+URL = "<<application.AppURL>>/queries/v1/query-request?requestId=<<random_uuid4>>"
+Method = "POST"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "CustomType"
+TimeOut = 30
+Verify = true
+Retries = 3
+RetryOnStatus = [503, 504, 429]
+
+[Request.Headers]
+ContentType = "application/json"
+Authorization = "Snowflake Token=\"<<validationCURLresponse.data.token>>\""
+
+[Request.Data]
+    [Request.Data.Raw]
+    Value = '''
+    {
+        "sqlText": "<<inputfile.statement>>",
+        "asyncExec": false,
+        "sequenceId": 1,
+        "parameters": {},
+        "queryContextDTO": {}
+    }'''
