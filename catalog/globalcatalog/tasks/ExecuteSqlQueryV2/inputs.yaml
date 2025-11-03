@@ -21,5 +21,6 @@ userInputs:
   LogFile: <<MINIO_FILE_PATH>>
   ProceedIfLogExists: # Proceed if log file exists. True or False (Default: True)
   ProceedIfErrorExists: # Proceed if error exists in current task. True or False (Default: True)
+  ValidateFlow: # If True, only validates the input data and does not execute the SQL query. True or False (Default: False)
 fromDate: 2025-04-23T09:11:52Z
 toDate: 2025-04-23T09:11:52Z

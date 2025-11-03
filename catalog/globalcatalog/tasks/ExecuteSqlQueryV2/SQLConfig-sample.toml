@@ -18,3 +18,4 @@ ON
 GROUP BY
     inputfile1.email;
 '''
+OutputFileFormat = "PARQUET"

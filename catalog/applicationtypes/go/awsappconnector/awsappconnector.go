@@ -1,7 +1,6 @@
 package awsappconnector
 
 import (
-	"applicationtypes/compliancecow"
 	"context"
 	"encoding/json"
 	"errors"
@@ -108,10 +107,6 @@ type UserDefinedCredentials struct {
 	AWSIAM  AWSIAM  `json:"aWSIAM" yaml:"AWSIAM"`
 }
 
-type LinkedApplications struct {
-	compliancecow.ComplianceCow `yaml:",inline"`
-}
-
 type AWSAppConnector struct {
 	AppURL                 string                  `json:"appURL" yaml:"appURL"`
 	AppPort                int                     `json:"appPort" yaml:"port"`
@@ -119,7 +114,6 @@ type AWSAppConnector struct {
 	Ipv6Address            string                  `json:"ipv6Address" yaml:"ipv6Address"`
 	UserDefinedCredentials *UserDefinedCredentials `json:"userDefinedCredentials" yaml:"userDefinedCredentials"`
 	Region                 []string                `json:"region" yaml:"Region"`
-	LinkedApplications     *LinkedApplications     `json:"linkedApplications" yaml:"linkedApplications"`
 }
 
 type ErrorVO struct {

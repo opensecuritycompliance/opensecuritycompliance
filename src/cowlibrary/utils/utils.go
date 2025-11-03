@@ -1226,7 +1226,7 @@ func GetCredentialYAMLObjectV2(credentials []*vo.UserDefinedCredentialVO) *vo.Cr
 
 func getDefaultValueForType(dataType string) interface{} {
 	switch strings.ToUpper(dataType) {
-	case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeJQ_EXPRESSION:
+	case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeJQ_EXPRESSION, constants.DeclarativesDataTypeSQL_EXPRESSION:
 		return ""
 	case "INT":
 		return 0

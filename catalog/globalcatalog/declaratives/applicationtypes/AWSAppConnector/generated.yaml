@@ -37,10 +37,10 @@ spec:
     version: 1.1.2
   applicationType: ""
   directAccess: true
-  linkableApplicationClasses:
-  - name: ComplianceCow
+  linkableApplicationClasses: []
   management: false
   allowableChildrenApplicationClasses: []
   type: user
   expectedSystemApplicationClasses: []
+  hasSupportForCURLValidation: false
 isVersionToBeOverride: true

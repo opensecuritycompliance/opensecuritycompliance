@@ -117,6 +117,10 @@ func CommonCommandsList() []*cobra.Command {
 			Short: "Initialize the rule",
 		},
 		{
+			Use:   "init rule-list",
+			Short: "Initialize the rule-list",
+		},
+		{
 			Use:   "init application-type",
 			Short: "Initialize the application-type",
 		},
@@ -139,6 +143,10 @@ func CommonCommandsList() []*cobra.Command {
 		{
 			Use:   "publish application-type",
 			Short: "Publish the application-type in ComplianceCow",
+		},
+		{
+			Use:   "publish rule-list",
+			Short: "Publish the list of rules in ComplianceCow",
 		},
 		{
 			Use:   "exec rule",

@@ -1,10 +1,10 @@
-# The Variables section allows you to define constants that can be used dynamically in the request below.
+# The `Variables` section allows you to define constants that can be used dynamically in the request below.
 # - You can reference these variables anywhere in the request using the <<variable_name>> syntax.
 # - Ensure all values are strings. For non-string values (like objects), convert them to JSON-formatted strings.
 # Example:
 #   - Method = "GET" can be referenced in the [Request] section as <<Method>>.
 #   - Params = "sample data" can be used in the query string or body as <<Params>>.
-[Variables]
+[Variables] # DON'T CHANGE THE SECTION NAME. KEEP AS IT IS
 # Example:
 # Method = "GET"  # HTTP method to use, e.g., GET, POST, PUT, etc.
 # CredentialType = "OAuth"  # Type of credential to use for authentication, e.g., OAuth, APIKey, etc.
@@ -14,7 +14,7 @@
 # The Request section contains the general configuration for making the API request.
 [Request]
 
-# URL Field:
+# URL Field (MANDATORY):
 # - Specify the complete API URL or build it dynamically using application variables.
 # - You can access application-level fields using the syntax <<application.FieldName>>.
 # Example:
@@ -24,39 +24,80 @@
 #   "<<application.AppURL>>/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
 URL = ""  # Specify the API endpoint.
 
-# HTTP Method:
+# HTTP Method (MANDATORY):
 # - Specify the HTTP method to use for the request.
 # - Supported values: 
 #   GET, POST, PUT, DELETE, PATCH.
 Method = ""
 
 
-# Content Type:
+# Content Type (MANDATORY):
 # - Specify the Content-Type header to define the format of the request body.
 # - Supported values: 
 #   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream.
 ContentType = ""
 
-# Follow Redirects:
+# Follow Redirects (MANDATORY):
 # - Set to true if HTTP redirects should be followed automatically.
 # - Set to false if redirects should not be followed.
 Redirect = true
 
-# Credential Type:
+# Credential Type (MANDATORY):
 # Select the credential type for the request. Options include:
-# AWSSignature, BasicAuthentication, BearerToken, CustomType, OAuth, APIKey, JWTBearer, NoAuth
+#
+# === AUTO-GENERATED HEADERS (No need to specify Authorization manually) ===
+#
+# AWSSignature:
+#   - Automatically infers AWS service and region from URL.
+#   - Adds Authorization, x-amz-date, and x-amz-content-sha256 headers.
+#   - Do NOT specify Authorization header manually.
+#
+# BasicAuthentication:
+#   - Automatically adds "Authorization: Basic <base64(username:password)>".
+#   - Do NOT specify Authorization header manually.
+#
+# BearerToken:
+#   - Automatically adds "Authorization: Bearer <token>".
+#   - Do NOT specify Authorization header manually.
+#
+# APIKey:
+#   - Automatically adds "Authorization: <api_key>".
+#   - Do NOT specify Authorization header manually.
+#
+# NoAuth:
+#   - No authentication is applied. No headers required.
+#
+# === MANUAL AUTHORIZATION HEADER REQUIRED (Specify in [Request.Headers]) ===
+#
+# OAuth:
+#   - Must specify Authorization header using <<validationCURLresponse.*>>.
+#   - Example:
+#       Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+#
+# CustomType:
+#   - Must specify Authorization header using <<validationCURLresponse.*>>.
+#   - Example:
+#       Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+#
+# JWTBearer:
+#   - Requires Authorization header.
+#   - Option 1 (auto):  Authorization = "Bearer <<JWTBearer>>" (for JWT generated using Algorithm, PrivateKey, Payload)
+#   - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>" (if using validationCURL)
+#
 CredentialType = ""
 
-# Timeout:
+# Timeout (MANDATORY):
 # - Specify the timeout for the request in seconds.
 TimeOut = 30
 
-# The verify parameter in the requests is used to specify whether SSL certificates should be verified when making an HTTPS request. 
+# SSL Certificate Verification (MANDATORY):
+# The verify parameter in the requests is used to specify whether SSL certificates should be verified when making an HTTPS request.
 # Here's how it works:
 # verify=True: Validates SSL certificates against trusted CA bundles (default). Ensures secure communication.
 # verify=False: Disables SSL certificate validation. Not recommended for production due to security risks.
 Verify = true
 
+# Number of Threads (MANDATORY):
 # Number of threads to use for parallel API requests
 # - Increase for faster parallel processing
 # - Decrease to reduce system load (especially in limited environments like Docker)
@@ -91,27 +132,46 @@ MaxWorkers = 5
 
 # Headers Section:
 # Request Headers Section: You can add custom headers here as needed.
-# The 'Authorization' field is not required for [AWSSignature, BasicAuthentication, BearerToken] as it will be generated internally based on 'CredentialType'.
-# For the following 'CredentialType' [CustomType, OAuth] header is required in 'RequestConfigFile'
-# [CustomType, OAuth] credential types requires a validation curl to generate auth headers, 
-# you can simply give that API CURL in application under 'ValidationCURL'. And access that CURL response.
-# FOR INSTANCE : --------------------------------------------------
-    # 1. Application -> ValidationCURL
-        # For Azure API you need to generate a 'Bearer' token using below CURL. 
-        # curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
-        #     --header 'Content-Type: application/x-www-form-urlencoded' \
-        #     --data-urlencode 'grant_type=client_credentials' \
-        #     --data-urlencode 'client_id=<<CustomType.ClientID>>'\
-        #     --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
-        #     --data-urlencode 'resource=https://servicebus.azure.net'
-    # 2. RequestConfigFile -> Headers
-        # you can access this CURL response body 
-        # [Request.Headers]
-        #  Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
-# -------------------------------------------------------------------
-# -------------------------------------------------------------------
-# - Specify additional HTTP headers as key-value pair in the format: key = value.
-# For example:
+#
+# The 'Authorization' field is NOT required for the following CredentialTypes:
+#   [AWSSignature, BasicAuthentication, BearerToken, APIKey]
+# Because it will be generated automatically based on 'CredentialType'.
+#
+# For the following CredentialTypes, you MUST define the 'Authorization' header manually:
+#   [CustomType, OAuth, JWTBearer]
+#
+# CustomType & OAuth:
+# -------------------
+# These CredentialTypes require a validation CURL (ValidationCURL) in the Application configuration
+# to generate the Authorization token dynamically. 
+# You can simply specify that CURL in the application, and then reference its response here.
+#
+# EXAMPLE (Azure OAuth):
+# --------------------------------------------------
+# 1. Application -> ValidationCURL
+#    For Azure APIs, you can generate a Bearer token using:
+#        curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
+#             --header 'Content-Type: application/x-www-form-urlencoded' \
+#             --data-urlencode 'grant_type=client_credentials' \
+#             --data-urlencode 'client_id=<<CustomType.ClientID>>' \
+#             --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
+#             --data-urlencode 'resource=https://servicebus.azure.net'
+#
+# 2. RequestConfigFile -> Headers
+#    Once the CURL is validated, you can access its response dynamically:
+#        [Request.Headers]
+#        Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+# --------------------------------------------------
+#
+# JWTBearer:
+#   - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>" (uses Algorithm, PrivateKey, Payload)
+#   - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>" (if using validationCURL)
+#
+# NoAuth:
+#   - No Authorization header required.
+#
+# Specify additional HTTP headers as key-value pairs.
+# Example:
 #     Content-Type = "application/json"
 #     Connection = "keep-alive"
 [Request.Headers]

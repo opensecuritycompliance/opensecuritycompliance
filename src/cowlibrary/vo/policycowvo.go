@@ -192,6 +192,7 @@ type RulePublisher struct {
 	Name        string `json:"name,omitempty"`
 	Type        string `json:"type,omitempty"`
 	Description string `json:"description,omitempty"`
+	Readme      string `json:"readme,omitempty"`
 }
 
 type DetailedInput struct {

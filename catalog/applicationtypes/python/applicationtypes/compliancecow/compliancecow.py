@@ -147,6 +147,7 @@ class ComplianceCow:
     )
     LIST_USER_MEDIUM_CONFIGS = '/v1/user-medium-configurations'
     GET_SLACK_HANDLE = "/v5/partner/users/user-mediums"
+    GET_ASSESSMENT_RUNS = "/v1/plan-instances"
     
 
     app_url: str
@@ -2667,3 +2668,112 @@ class ComplianceCow:
                 return "", f"Response is not valid JSON. Raw response: {response.text}"
 
         return "", f"Failed to fetch Slack user ID for {user_email}. Status Code: {response.status_code}, Response: {response.text}"
+    
+
+    def get_assessment_id_by_name(self, assessment_name: str):
+        """
+        Fetches the assessment ID by matching the provided assessment name.
+        """
+        if not assessment_name:
+            return "", "Assessment name is empty."
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
+
+        query_params = {"name": assessment_name}
+
+        api_endpoint_url = self.build_api_url(endpoint=self.GET_PLANS)
+
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+
+        try:
+            response = requests.get(
+                url=api_endpoint_url, headers=headers, params=query_params
+            )
+        except requests.RequestException as e:
+            return "", f"Request failed: {str(e)}"
+
+        if response.ok and response.status_code == http.HTTPStatus.OK:
+            try:
+                data = response.json()
+                items = data.get("items", [])
+
+                if not items:
+                    return "", f"No assessments found in response."
+
+                # Convert to DataFrame
+                df = pd.DataFrame(items)
+
+                # Filter by assessment name
+                matched_row = df[df["name"] == assessment_name]
+
+                if not matched_row.empty:
+                    assessment_id = matched_row.iloc[0]["id"]
+                    return assessment_id, ""
+
+                return "", f"No matching assessment found for name: {assessment_name}"
+
+            except (json.JSONDecodeError, ValueError):
+                return "", f"Response is not valid JSON. Raw response: {response.text}"
+
+        return (
+            "",
+            f"Failed to fetch assessments. Status Code: {response.status_code}, Response: {response.text}",
+        )
+
+    def get_run_id_by_assessment_id_and_run_name(
+        self, assessment_id: str, run_name: str
+    ):
+        """
+        Fetches the run ID by matching the provided run name for a given assessment ID.
+        """
+        if not assessment_id:
+            return "", "Assessment ID is empty."
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
+
+        api_endpoint_url = self.build_api_url(endpoint=self.GET_ASSESSMENT_RUNS)
+
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+
+        query_params = {"plan_id": assessment_id, "fields": "basic"}
+
+        try:
+            response = requests.get(
+                url=api_endpoint_url, headers=headers, params=query_params
+            )
+        except requests.RequestException as e:
+            return "", f"Request failed: {str(e)}"
+
+        if response.ok and response.status_code == http.HTTPStatus.OK:
+            try:
+                data = response.json()
+                runs = data.get("items", [])
+                if run_name:
+                    for run in runs:
+                        if run.get("name") == run_name:
+                            return run.get("id"), ""  # Return the run ID on success
+                    return "", f"No matching run found with name: {run_name}"
+                else:
+                    return runs[0].get("id"), ""
+
+            except (json.JSONDecodeError, ValueError):
+                return "", f"Response is not valid JSON. Raw response: {response.text}"
+
+        return (
+            "",
+            f"Failed to fetch assessment runs. Status Code: {response.status_code}, Response: {response.text}",
+        )
+
+

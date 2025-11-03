@@ -112,23 +112,80 @@ The purpose of this task is to automate API requests. It allows users to make AP
 
     # Credential Type --> MANDATORY
     # Select the credential type for the request. Options include:
-    # AWSSignature, BasicAuthentication, BearerToken, OAuth, CustomType, NoAuth
-    # -> AWSSignature: Doesn't required 'ValidationCurl' it will generate the auth headers internally.
-    # -> BasicAuthentication: Required 'ValidationCurl'
-    # -> BearerToken: Required 'ValidationCurl'
-    # -> OAuth: Required 'ValidationCurl'
-    # -> JWTBearer: Required 'ValidationCurl'
-    # -> NoAuth: Doesn't require 'ValidationCurl'. This type is used when no authentication mechanism is needed. Requests will not include any authentication headers or tokens by default.
-    # -> CustomType: Required 'ValidationCurl'. Using this type you can have userdefined 'key' as well as 'value' . for example azure api requires 'ClientID' , 'ClientSecret' ,TenantID' , 'SubscriptionID' . under 'Application.CustomType' you can mention all the required creddentials. And access them in 'ValidationCurl' (refer '[Request.Headers]' for more information)
-    CredentialType = "<<CredentialType>>"
+    # AWSSignature, BasicAuthentication, BearerToken, APIKey, OAuth, JWTBearer, CustomType, NoAuth
 
-    # For JWTBearer Credential:
-    # -> For the Payload field, you can specify the following placeholders in the following syntax: <<FUNCTION_NAME>>
-    # -> SUPPORTED FUNCTIONS:
-    # -> - CURRENT_TIME - Replaces with the current time in Unix format. 
-    #                   - You can also add/subtract integer values from the resulting value, by mentioning without the square brackets: <<CURRENT_TIME [ + or - ] [seconds-to-add]>>
-    # -> - CURRENT_DATE - Replaces with the current date in ISO format
-    # -> EXAMPLE: {"iss": "test@some-project.iam.gserviceaccount.com", "sub": "test@some-project.iam.gserviceaccount.com", "aud": "https://oauth2.googleapis.com/token", "scope": "https://www.googleapis.com/auth/logging.read", "iat": <<CURRENT_TIME>>, "exp": <<CURRENT_TIME + 3600>>}
+    # === AUTO-GENERATED HEADERS (No need to specify Authorization manually) ===
+
+    # -> AWSSignature:
+    #    - Automatically infers AWS service and region from URL
+    #    - Adds Authorization, x-amz-date, and x-amz-content-sha256 headers
+    #    - Do NOT specify Authorization header manually
+    #    - Does NOT require 'ValidationCurl'
+
+    # -> BasicAuthentication:
+    #    - Automatically adds "Authorization: Basic <base64(username:password)>"
+    #    - Do NOT specify Authorization header manually
+    #    - Requires 'ValidationCurl'
+
+    # -> BearerToken:
+    #    - Automatically adds "Authorization: Bearer <token>"
+    #    - Do NOT specify Authorization header manually
+    #    - Requires 'ValidationCurl'
+
+    # -> APIKey:
+    #    - Automatically adds "Authorization: <api_key>"
+    #    - Do NOT specify Authorization header manually
+    #    - Requires 'ValidationCurl'
+
+    # -> NoAuth:
+    #    - No authentication is applied. No headers required
+    #    - Does NOT require 'ValidationCurl'
+    #    - This type is used when no authentication mechanism is needed
+
+    # === MANUAL AUTHORIZATION HEADER REQUIRED (Specify in [Request.Headers]) ===
+
+    # -> OAuth:
+    #    - Must specify Authorization header using <<validationCURLresponse.*>>
+    #    - Requires 'ValidationCurl'
+    #    - Example:
+    #      Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+
+    # -> CustomType:
+    #    - Must specify Authorization header using <<validationCURLresponse.*>>
+    #    - Requires 'ValidationCurl'
+    #    - Using this type you can have user-defined 'key' as well as 'value'
+    #    - For example, Azure API requires 'ClientID', 'ClientSecret', 'TenantID', 'SubscriptionID'
+    #    - Under 'Application.CustomType' you can mention all the required credentials
+    #    - Access them in 'ValidationCurl' (refer '[Request.Headers]' for more information)
+    #    - Example:
+    #      Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+
+    # -> JWTBearer:
+    #    - Requires Authorization header
+    #    - Requires 'ValidationCurl'
+    #    - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>"
+    #      (for JWT generated using Algorithm, PrivateKey, Payload)
+    #    - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>"
+    #      (if using validationCURL)
+    #    
+    #    For the Payload field, you can specify the following placeholders in the syntax: <<FUNCTION_NAME>>
+    #    
+    #    SUPPORTED FUNCTIONS:
+    #    - CURRENT_TIME: Replaces with the current time in Unix format
+    #                    You can also add/subtract integer values: <<CURRENT_TIME + 3600>> or <<CURRENT_TIME - 1800>>
+    #    - CURRENT_DATE: Replaces with the current date in ISO format
+    #    
+    #    EXAMPLE Payload:
+    #    {
+    #      "iss": "test@some-project.iam.gserviceaccount.com",
+    #      "sub": "test@some-project.iam.gserviceaccount.com",
+    #      "aud": "https://oauth2.googleapis.com/token",
+    #      "scope": "https://www.googleapis.com/auth/logging.read",
+    #      "iat": <<CURRENT_TIME>>,
+    #      "exp": <<CURRENT_TIME + 3600>>
+    #    }
+
+    CredentialType = "<<CredentialType>>"
 
     # TimeOut --> OPTIONAL
     # - Specify the timeout for the request in seconds.
@@ -167,33 +224,60 @@ The purpose of this task is to automate API requests. It allows users to make AP
 
 
     # Request Headers Section: You can add custom headers here as needed.
-    # The 'Authorization' field is not required for [AWSSignature, BasicAuthentication, BearerToken] as it will be generated internally based on 'CredentialType'.
-    # For the following 'CredentialType' [CustomType, OAuth] header is required in 'RequestConfigFile'
-    # [CustomType, OAuth] credential types requires a validation curl to generate auth headers, 
-    # you can simply give that API CURL in application under 'ValidationCURL'. And access that CURL response.
-    # FOR INSTANCE : --------------------------------------------------
-
-        # 1. Application -> ValidationCURL
-            # For Azure API you need to generate a 'Bearer' token using below CURL. 
-
-            # curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
-            #     --header 'Content-Type: application/x-www-form-urlencoded' \
-            #     --data-urlencode 'grant_type=client_credentials' \
-            #     --data-urlencode 'client_id=<<CustomType.ClientID>>'\
-            #     --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
-            #     --data-urlencode 'resource=https://servicebus.azure.net'
-
-        # 2. RequestConfigFile -> Headers
-            # you can access this CURL response body 
-            # Headers =  '{"Authorization": "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"}'
-
-    # -------------------------------------------------------------------
-    # - Specify additional HTTP headers as key-value pair in the format: key = value.
-    # For example:
-    #     Content-Type = "application/json"
-    #     Connection = "keep-alive"
+    #
+    # The 'Authorization' field is NOT required for the following CredentialTypes:
+    #   [AWSSignature, BasicAuthentication, BearerToken, APIKey]
+    # Because it will be generated automatically based on 'CredentialType'.
+    #
+    # For the following CredentialTypes, you MUST define the 'Authorization' header manually:
+    #   [CustomType, OAuth, JWTBearer]
+    #
+    # === CustomType & OAuth ===
+    # These CredentialTypes require a validation CURL (ValidationCURL) in the Application configuration
+    # to generate the Authorization token dynamically.
+    # You can specify that CURL in the application, and then reference its response here.
+    #
+    # EXAMPLE (Azure OAuth):
+    # --------------------------------------------------
+    # 1. Application -> ValidationCURL
+    #    For Azure APIs, you can generate a Bearer token using:
+    #
+    #    curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
+    #         --header 'Content-Type: application/x-www-form-urlencoded' \
+    #         --data-urlencode 'grant_type=client_credentials' \
+    #         --data-urlencode 'client_id=<<CustomType.ClientID>>' \
+    #         --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
+    #         --data-urlencode 'resource=https://servicebus.azure.net'
+    #
+    # 2. RequestConfigFile -> [Request.Headers]
+    #    Once the CURL is validated, you can access its response dynamically:
+    #
+    #    Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+    #
+    # === JWTBearer ===
+    # - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>"
+    #                    (uses Algorithm, PrivateKey, Payload defined in Application)
+    # - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>"
+    #                      (if using validationCURL)
+    #
+    # === NoAuth ===
+    # - No Authorization header required.
+    #
     [Request.Headers]
-        Headers = '{"Authorization": "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"}'  
+        # === For OAuth/CustomType: Uncomment and use one of these ===
+        # Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+        # Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+        
+        # === For JWTBearer (auto-generated): Uncomment if needed ===
+        # Authorization = "Bearer <<JWTBearer>>"
+        
+        # === For JWTBearer (manual with validationCURL): Uncomment if needed ===
+        # Authorization = "<<validationCURLresponse.token>>"
+        
+        # Specify additional HTTP headers as key-value pair in the format: key = value.
+        # Example:
+        # Content-Type = "application/json"
+        # Connection = "keep-alive"  
 
     # Query Parameters:
     # - Define query parameters for GET requests or additional parameters for other request types.

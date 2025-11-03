@@ -126,6 +126,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 				pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "rulegroups", "*", constants.RuleGroupYAMLFileName))
 				pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "*", "rulegroups", "*", constants.RuleGroupYAMLFileName))
 			}
+			// pathPrefix := strings.Join(pathPrefixs, "|")
 			name, err := utils.GetValueAsFolderNameFromCmdPromptInCatalogs("Select a rulegroup :", true, pathPrefixs, utils.ValidateString, additionalInfo)
 			if err != nil {
 				return err
@@ -149,6 +150,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 				pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "*", "rules", "*", "rule.json"))
 				pathPrefixs = append(pathPrefixs, filepath.Join(localcatalogPath, "*", "rules", "*", "rule.yaml"))
 			}
+			// pathPrefix := strings.Join(pathPrefixs, "|")
 
 			name, err := utils.GetValueAsFolderNameFromCmdPromptInCatalogs("Select a rule :", true, pathPrefixs, utils.ValidateString, additionalInfo)
 
@@ -262,7 +264,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 								if metaInput.Name == inputName {
 									userInput, _ = utils.GetValueAsStrFromCmdPrompt(labelname, true, func(input string) error {
 										switch metaInput.DataType {
-										case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeFILE, constants.DeclarativesDataTypeJQ_EXPRESSION:
+										case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeFILE, constants.DeclarativesDataTypeJQ_EXPRESSION, constants.DeclarativesDataTypeSQL_EXPRESSION:
 											return validationutils.ValidateStringAndFileURL(input)
 										case constants.DeclarativesDataTypeINT:
 											return validationutils.ValidateInt(input)

@@ -13,5 +13,6 @@ userInputs:
   ProceedIfLogExists: # True or False (Default: True)
   ProceedIfErrorExists: # True or False (Default: True)
   LogFile: <<MINIO_FILE_PATH>>
+  ValidateFlow: # If True, only validates the input data and does not execute. True or False (Default: False)
 fromDate: 2025-04-23
 toDate: 2025-04-23

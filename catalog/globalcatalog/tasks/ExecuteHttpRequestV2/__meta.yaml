@@ -16,6 +16,8 @@ icon: '<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:
 type: python
 tags:
 - generic
+- primitive
+- MCP
 applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
@@ -94,7 +96,7 @@ inputs:
   required: false
 outputs:
 - name: OutputFile
-  description: "File containing structured API response data from all executed requests. For multiple InputFile entries, responses are aggregated into a single organized output. Includes original content plus any additional fields from ResponseConfigFile, formatted according to the content type (JSON, CSV, XML, etc.)."
+  description: "File containing structured API response data from all executed requests. The OutputFile always returns data in an array of objects format [{}, {}], even if the API returns a single object. Single object responses are automatically wrapped in an array [{}] for consistency. For multiple InputFile entries, responses are aggregated into a single organized output. Includes original content plus any additional fields from ResponseConfigFile, formatted according to the content type (JSON, CSV, XML, etc.)."
   dataType: FILE
 - name: LogFile
   description: "Error log file recording all errors, exceptions, and failures during API requests. Includes error messages from LogConfigFile with dynamic placeholders, providing detailed diagnostic information for troubleshooting and debugging."

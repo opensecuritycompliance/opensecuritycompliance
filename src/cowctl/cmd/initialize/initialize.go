@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"cowctl/cmd/initialize/rule"
+	ruleList "cowctl/cmd/initialize/rule-list"
 	"cowctl/cmd/initialize/task"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,7 @@ func NewCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(rule.NewCommand())
+	cmd.AddCommand(ruleList.NewCommand())
 	cmd.AddCommand(task.NewCommand())
 	cmd.AddCommand(credential.NewCommand())
 	cmd.AddCommand(application.NewCommand())

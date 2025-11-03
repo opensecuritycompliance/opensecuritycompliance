@@ -16,6 +16,7 @@ from posixpath import join as urljoin
 from typing_extensions import deprecated
 import io
 import pyarrow
+import pyarrow.parquet as pq
 import jmespath
 
 # We'll give the compliancecow data library to user to connect with the endpoints in
@@ -72,14 +73,13 @@ class AbstractTask(object):
         return absolute_file_path, error
     
     def convert_and_upload_df_to_minio(
-            self, 
-            df: pd.DataFrame = None,
-            convertion_func = None,
-            file_name: str = None,
-            extension: str = None,
-            content_type: str = None
-        ) -> Tuple[str, dict]:
-
+        self,
+        df: pd.DataFrame = None,
+        convertion_func=None,
+        file_name: str = None,
+        extension: str = None,
+        content_type: str = None
+    ) -> Tuple[str, dict]:
         """
         Uploads the result after applying the convertion_func function on a DataFrame to MinIO.
         
@@ -106,7 +106,8 @@ class AbstractTask(object):
         
         try:
             file_content, error = convertion_func(df)
-            if error: return None, error
+            if error:
+                return None, error
         except (ValueError, TypeError) as e:
             return None, {"error": str(e)}
 
@@ -154,9 +155,8 @@ class AbstractTask(object):
             extension="json",
             content_type="application/json"
         )
-    
+
     def upload_df_as_csv_file_to_minio(self, df: pd.DataFrame = None, file_name: str = None) -> Tuple[str, dict]:
-        
         """
         Uploads a DataFrame as a CSV file to MinIO.
         ### Parameters:
@@ -174,9 +174,8 @@ class AbstractTask(object):
             extension="csv",
             content_type="application/csv"
         )
-    
+
     def upload_df_as_ndjson_file_to_minio(self, df: pd.DataFrame = None, file_name: str = None) -> Tuple[str, dict]:
-        
         """
         Uploads a DataFrame as a NDJSON file to MinIO.
         ### Parameters:
@@ -196,11 +195,10 @@ class AbstractTask(object):
         )
 
     def upload_iterable_as_json_file_to_minio(
-            self, 
-            data: List[dict] | dict = None,
-            file_name: str = None
-        ) -> Tuple[str, dict]:
-
+        self,
+        data: List[dict] | dict = None,
+        file_name: str = None
+    ) -> Tuple[str, dict]:
         """
         Uploads a Dict or a List[dict] as a JSON file to MinIO.
         ### Parameters:
@@ -213,12 +211,12 @@ class AbstractTask(object):
 
         if not file_name:
             return None, {"error": "File name cannot be empty. Please provide a valid file name for uploading."}
-        
+
         if not isinstance(data, (list, dict)):
             return None, {'error': f"Data must be a dictionary or list of dictionaries, got '{type(data).__name__}' instead"}
-        
+
         file_name, _ = os.path.splitext(file_name)
-        
+
         try:
             file_content = json.dumps(data)
         except TypeError as e:
@@ -228,13 +226,12 @@ class AbstractTask(object):
             file_name=f'{file_name}-{str(uuid.uuid4())}.json',
             file_content=file_content,
             content_type="application/json")
-    
-    def upload_dict_as_toml_file_to_minio(
-            self, 
-            data: dict = None,
-            file_name: str = None
-        ) -> Tuple[str, dict]:
 
+    def upload_dict_as_toml_file_to_minio(
+        self,
+        data: dict = None,
+        file_name: str = None
+    ) -> Tuple[str, dict]:
         """
         Uploads a dict as a TOML file to MinIO.
         ### Parameters:
@@ -262,16 +259,15 @@ class AbstractTask(object):
             file_name=f'{file_name}-{str(uuid.uuid4())}.toml',
             file_content=file_content,
             content_type="application/toml")
-        
+
     def set_log_file_name(self, log_file_name: str) -> None:
-        
         """
         Sets default value for the `log_file_name` parameter of `upload_log_file_to_minio` and `upload_log_file_panic` methods. The value: 'LogFile' is set to this variable while initialization. Do NOT modify this variable, unless you explicitly want to change LogFile's name, such as in an action/workflow task.
         ### Parameters:
         - log_file_name (str): The name of the log file to be uploaded, when calling any one of `upload_log_file_to_minio` or `upload_log_file_panic` methods
         ### Returns:
         - None
-        
+
         #### Note for `upload_log_file_to_minio` and `upload_log_file_panic` methods:
         - When `log_file_name` is "Error":
             - The function will stop execution and return an error
@@ -284,10 +280,10 @@ class AbstractTask(object):
             - Example return might look like: `{"Errors": [<value of 'error_data', appended to 'self.prev_log_data'>]}`
         - You can use any of the above methods to stop task/rule execution.
         """
-        
+
         if log_file_name:
             self._log_file_name = log_file_name
-            
+
     def set_prev_log_data(self, existing_log_data: list[dict[str, Any]]):
         """
         Sets default value for existing error data. In `upload_log_file_to_minio` and `upload_log_file_panic` methods, `error_data`will be appended to `prev_log_data` parameter value before uploading to MinIO.
@@ -296,7 +292,7 @@ class AbstractTask(object):
         ### Returns:
         - None
         """
-        
+
         self.prev_log_data = existing_log_data
 
     def upload_log_file_to_minio(
@@ -305,7 +301,6 @@ class AbstractTask(object):
         logger: Optional['Logger'] = None,
         log_file_name: Optional[str] = ''
     ) -> tuple[str, dict | None]:
-
         """
         Uploads Dict or a List[dict] as LogFile to MinIO.
         ### Parameters:
@@ -315,7 +310,7 @@ class AbstractTask(object):
         ### Returns:
         - str: The absolute file path of the uploaded LogFile.
         - dict: Dictionary containing error information if any, otherwise None.
-        
+
         ### Note:
         - When `log_file_name` is "Error":
             - The function will stop execution and return an error
@@ -339,7 +334,7 @@ class AbstractTask(object):
             error_data = [error_data]
             
         self.prev_log_data.extend(error_data)
-            
+
         if log_file_name == 'Errors':
             return '', {'Errors': self.prev_log_data}
 
@@ -351,8 +346,9 @@ class AbstractTask(object):
             return '', {'error': f"Error while uploading {log_file_name} :: {error}"}
             
         if logger:
-            logger.log_data({"event": "errors_logged", "errors": json.dumps(error_data)})  # Optional logging
-        
+            logger.log_data({"event": "errors_logged",
+                            "errors": json.dumps(error_data)})
+
         return file_url, None
     
     def upload_log_file_panic(
@@ -404,8 +400,9 @@ class AbstractTask(object):
 
         if isinstance(error_data, str):
             error_data = [{'Error': error_data}]
-            
-        file_url, error = self.upload_log_file_to_minio(error_data, logger, log_file_name)
+
+        file_url, error = self.upload_log_file_to_minio(
+            error_data, logger, log_file_name)
         if error:
             return error
         return { log_file_name: file_url }
@@ -425,16 +422,16 @@ class AbstractTask(object):
             file_url=file_url)
         if error:
             return None, error
-        
+
         try:
             buffer = io.BytesIO(parquet_bytes)
-            df = pd.read_parquet(buffer, engine='fastparquet')
-        except TypeError:
-            buffer = io.BytesIO(parquet_bytes)
-            df = pd.read_parquet(buffer)
+            table = pq.read_table(buffer)
+            data = table.to_pylist()
+            df = pd.DataFrame(data)
+
         except (pyarrow.ArrowInvalid, OSError):
-            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
-        
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
+
         return df, None
     
     def download_json_file_from_minio_as_dict(self, file_url=None) -> Tuple[dict, dict]:
@@ -452,15 +449,15 @@ class AbstractTask(object):
             file_url=file_url)
         if error:
             return None, error
-        
+
         try:
             json_string = json_bytes.decode("utf-8")
             json_data = json.loads(json_string)
         except (json.JSONDecodeError, UnicodeDecodeError):
-            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
-        
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
+
         return json_data, None
-    
+
     def download_json_file_from_minio_as_iterable(self, file_url=None) -> Tuple[List[dict] | dict, dict]:
         """
         Downloads a JSON file from MinIO as a Python Iterable.
@@ -472,9 +469,8 @@ class AbstractTask(object):
         """
 
         return self.download_json_file_from_minio_as_dict(file_url)
-    
+
     def download_toml_file_from_minio_as_dict(self, file_url=None) -> Tuple[dict, dict]:
-        
         """
         Downloads a TOML file from MinIO as a Python Dictionary.
         ### Parameters:
@@ -488,17 +484,16 @@ class AbstractTask(object):
             file_url=file_url)
         if error:
             return None, error
-        
+
         try:
             toml_string = toml_bytes.decode("utf-8")
             toml_data = tomli.loads(toml_string)
         except (UnicodeDecodeError, tomli.TOMLDecodeError):
-            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
-        
-        return toml_data, None
-    
-    def download_json_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
 
+        return toml_data, None
+
+    def download_json_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
         """
         Downloads a JSON file from MinIO as a DataFrame.
         ### Parameters:
@@ -511,10 +506,10 @@ class AbstractTask(object):
         json_dict, error = self.download_json_file_from_minio_as_dict(file_url)
         if error:
             return None, error
-        
+
         if isinstance(json_dict, dict):
             json_dict = [json_dict]
-        
+
         try:
             df = pd.DataFrame(json_dict)
         except AttributeError:
@@ -523,7 +518,6 @@ class AbstractTask(object):
         return df, None
 
     def download_ndjson_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
-
         """
         Downloads a NDJSON file from MinIO as a DataFrame.
         ### Parameters:
@@ -536,7 +530,7 @@ class AbstractTask(object):
         file_bytes, error = self.download_file_from_minio(file_url)
         if error:
             return None, error
-        
+
         try:
             data = io.StringIO(file_bytes.decode('utf-8'))
             df = pd.read_json(
@@ -546,12 +540,11 @@ class AbstractTask(object):
                 dtype=False
             )
         except ValueError:
-            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
-        
-        return df, None
-    
-    def download_csv_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
 
+        return df, None
+
+    def download_csv_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
         """
         Downloads a CSV file from MinIO as a DataFrame.
         ### Parameters:
@@ -564,13 +557,13 @@ class AbstractTask(object):
         file_bytes, error = self.download_file_from_minio(file_url)
         if error:
             return None, error
-        
+
         try:
             data = io.StringIO(file_bytes.decode('utf-8'))
             df = pd.read_csv(data)
         except (pd.errors.ParserError, UnicodeDecodeError):
-            return None, { "error": "Invalid file format: The provided file does not adhere to any recognized format." }
-        
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
+
         return df, None
 
     def download_file_from_minio_as_df(self, file_url: str) -> tuple[pd.DataFrame, dict | None]:
@@ -608,14 +601,15 @@ class AbstractTask(object):
 
         if file_url.startswith("file://"):
             file_name = os.path.basename(file_url)
-            userdata_file_path = os.path.join(os.getenv("LOCAL_FOLDER"), file_name)
+            userdata_file_path = os.path.join(
+                os.getenv("LOCAL_FOLDER"), file_name)
             if os.path.exists(userdata_file_path):
                 with open(userdata_file_path, 'rb') as file:
                     file_content = file.read()
                     return file_content, None
             else:
                 return None, {"error": "cannot download the file"}
-            
+
         """
         Downloads a file from a MinIO object storage server.
 
@@ -680,7 +674,6 @@ class AbstractTask(object):
         pass
 
     def check_inputs(self, required_user_inputs: List[str]) -> str:
-
         """
         Checks whether the provided string fields are available in the task inputs
         ### Parameters:
@@ -699,10 +692,10 @@ class AbstractTask(object):
             or user_object.app.user_defined_credentials is None
         ):
             return 'User defined credentials are missing"'
-        
+
         if self.task_inputs.user_inputs is None:
             return 'User inputs are missing'
-        
+
         missing_inputs = []
         for input in required_user_inputs:
             if not cowdictutils.is_valid_key(self.task_inputs.user_inputs, input) or self.task_inputs.user_inputs[input] == '<<MINIO_FILE_PATH>>':
@@ -715,7 +708,7 @@ class Logger(object):
     def __init__(self, log_file="TaskLogs.ndjson"):
         self.log_file = log_file
 
-    def log_data(self, data):        
+    def log_data(self, data):
         if not isinstance(data, dict):
             raise TypeError("Expected data to be a dictionary")
 
@@ -726,7 +719,8 @@ class Logger(object):
 
         with open(self.log_file, 'a') as file:
             file.write(json.dumps(log_entry) + '\n')
-            
+
+
 class LogConfigManager:
     """
     This class is used to manage custom log messages for each error that is returned from the task, so that it can easily be configured by the end user.
@@ -746,11 +740,12 @@ class LogConfigManager:
 
     @staticmethod
     def from_minio_file_url(
-        log_config_url: str|None = None,
-        toml_download_func: Callable[[str], Tuple[Optional[dict], Optional[dict]]] | None = None,
+        log_config_url: str | None = None,
+        toml_download_func: Callable[[
+            str], Tuple[Optional[dict], Optional[dict]]] | None = None,
         default_log_config_filepath: str | None = None,
         default_context_data: dict | None = None
-    ) -> tuple['LogConfigManager', str|dict]:
+    ) -> tuple['LogConfigManager', str | dict]:
         """
         Creates an instance of `LogConfigManager` using MinIO file URL for log_config, and absolute filepath of default_log_config
         ### Parameters:
@@ -761,18 +756,18 @@ class LogConfigManager:
         ### Returns:
         - LogConfigManager : Instance of LogConfigManager class
         - str : String containing error information if any, otherwise None.
-        
+
         ### Sample Usage:
         ```python
         class Task(cards.AbstractTask):
 
             def execute(self) -> dict:
-                
+
                 # It's important to get the filepath exactly in this way in your task.py file
                 default_log_config_filepath = str(pathlib.Path(__file__).parent.joinpath('LogConfig_default.toml').resolve())
-                
+
                 custom_log_config_url = self.task_inputs.user_inputs.get('LogConfig')
-                
+
                 log_manager, error = LogConfigManager.from_minio_file_url(
                     log_config_url=custom_log_config_url,
                     toml_download_func=self.download_toml_file_from_minio_as_dict,
@@ -785,18 +780,20 @@ class LogConfigManager:
         ```
         """
 
-        log_manager = LogConfigManager(default_context_data=default_context_data)
-        
+        log_manager = LogConfigManager(
+            default_context_data=default_context_data)
+
         if log_config_url and not toml_download_func:
-            return log_manager, 'LogConfig file URL is provided, but toml_download_func is not provided.'        
-        
+            return log_manager, 'LogConfig file URL is provided, but toml_download_func is not provided.'
+
         if log_config_url and toml_download_func:
             log_manager.log_config, error = toml_download_func(log_config_url)
             if error:
                 return log_manager, error
 
         if default_log_config_filepath:
-            error = log_manager.set_default_log_config_from_filepath(default_log_config_filepath)
+            error = log_manager.set_default_log_config_from_filepath(
+                default_log_config_filepath)
             if error:
                 return log_manager, error
 
@@ -821,17 +818,17 @@ class LogConfigManager:
         ### Returns:
         - LogConfigManager : Instance of LogConfigManager class
         - str : String containing error information if any, otherwise None.
-        
+
         ### Sample Usage:
         ```python
         class Task(cards.AbstractTask):
 
             def execute(self) -> dict:
-                
+
                 # It's important to get the filepath exactly in this way in your task.py file
                 default_log_config_filepath = str(pathlib.Path(__file__).parent.joinpath('LogConfig_default.toml').resolve())
                 custom_log_config_filepath = str(pathlib.Path(__file__).parent.joinpath('LogConfig_custom.toml').resolve())
-                
+
                 log_manager, error = LogConfigManager.from_absolute_filepath(
                     log_config_filepath=custom_log_config_filepath,
                     default_log_config_filepath=default_log_config_filepath
@@ -842,25 +839,28 @@ class LogConfigManager:
                 # Other task code
         ```
         """
-    
-        log_manager = LogConfigManager(default_context_data=default_context_data)
-        
+
+        log_manager = LogConfigManager(
+            default_context_data=default_context_data)
+
         if log_config_filepath:
-            log_manager.log_config, error = LogConfigManager.__load_toml_file(log_config_filepath)
+            log_manager.log_config, error = LogConfigManager.__load_toml_file(
+                log_config_filepath)
             if error:
                 return log_manager, error
 
         if default_log_config_filepath:
-            error = log_manager.set_default_log_config_from_filepath(default_log_config_filepath)
+            error = log_manager.set_default_log_config_from_filepath(
+                default_log_config_filepath)
             if error:
                 return log_manager, error
-                
+
         if not log_manager.log_config and not log_manager.default_log_config:
             return log_manager, 'Both LogConfig and DefaultLogConfig are empty'
 
         return log_manager, ''
-        
-    def get_error_message(self, error_type: str, context_data: Optional[dict] = None, strict = True) -> str:
+
+    def get_error_message(self, error_type: str, context_data: Optional[dict] = None, strict=True) -> str:
         """
         Get error message from log_config for the given error_type.
         If an error message for the given error_type is not found in log_config, then default_log_config will be used as a fallback.
@@ -870,18 +870,18 @@ class LogConfigManager:
         - strict (bool): Specifies whether the placeholders must be validated or not. Default: True
         ### Returns:
         - str : String containing the error message or error information
-        
+
         ### Sample Usage:
         ```python
         class Task(cards.AbstractTask):
 
             def execute(self) -> dict:
-                
+
                 # It's important to get the filepath exactly in this way in your task.py file
                 default_log_config_filepath = str(pathlib.Path(__file__).parent.joinpath('LogConfig_default.toml').resolve())
-                
+
                 custom_log_config_url = self.task_inputs.user_inputs.get('LogConfig')
-                
+
                 log_manager, error = LogConfigManager.from_minio_file_url(
                     log_config_url=custom_log_config_url,
                     toml_download_func=self.download_toml_file_from_minio_as_dict,
@@ -889,7 +889,7 @@ class LogConfigManager:
                 )
                 if error:
                     return {'Error': error}
-                    
+
                 str_input = self.task_inputs.user_inputs.get('StringInput')
                 if not str_input or not isinstance(str_input, str):
                     return self.upload_log_file_panic({'Error': log_manager.get_error_message('UserInputs.StringInput.invalid')})
@@ -908,7 +908,7 @@ class LogConfigManager:
                     })
         ```
         """
-        
+
         error_message = jmespath.search(f'custom.{error_type} || default.{error_type}', {
             'custom': self.log_config,
             'default': self.default_log_config
@@ -931,8 +931,8 @@ class LogConfigManager:
             return error
 
         self.default_log_config = toml_data
-        
-    def _parse_error_message(self, error_message: str, error_type: str, context_data: Optional[dict] = None, strict = True) -> str:
+
+    def _parse_error_message(self, error_message: str, error_type: str, context_data: Optional[dict] = None, strict=True) -> str:
         """
         Parses error message by validating and replacing the placeholders.
         ### Parameters:
@@ -943,23 +943,23 @@ class LogConfigManager:
         ### Returns:
         - str : String containing the parsed error message or error information
         """
-        
+
         # Find placeholders and return error if there is no context_data
         if re.match(r'{.+?}', error_message) and not context_data and not self.default_context_data and strict:
             return f"The ErrorType: '{error_type}' provides no placeholder data, but placeholders are found in the error message."
-        
+
         full_context_data = context_data
         if self.default_context_data:
             full_context_data = self.default_context_data.copy()
             if context_data:
                 full_context_data.update(context_data)
-            
+
         if full_context_data:
             try:
                 error_message = str(error_message).format(**full_context_data)
             except KeyError as e:
                 return f"Found invalid placeholder in error message for following ErrorType: '{error_type}' in LogConfig file :: {e}"
-                
+
         return error_message
 
     @staticmethod
