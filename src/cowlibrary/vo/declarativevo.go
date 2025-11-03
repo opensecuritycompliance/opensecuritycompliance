@@ -117,7 +117,7 @@ type RuleGroupYAMLVO struct {
 type RuleUserInputVO struct {
 	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`
-	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'BOOLEAN' 'FLOAT' 'FILE'  'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'BOOLEAN' 'HTTP_CONFIG' 'JQ_EXPRESSION'"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'BOOLEAN' 'FLOAT' 'FILE'  'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION' 'SQL_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'BOOLEAN' 'HTTP_CONFIG' 'JQ_EXPRESSION' 'SQL_EXPRESSION'"`
 	Repeated      bool          `json:"repeated" yaml:"repeated"`
 	Format        string        `json:"format,omitempty" yaml:"format,omitempty" binding:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego' 'xml'" validate:"omitempty,oneof='csv' 'parquet' 'ndjson' 'json' 'xlsx' 'yaml' 'har' 'toml' 'rego' 'xml'"`
 	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty" binding:"required" validate:"required"`
@@ -129,7 +129,7 @@ type RuleUserInputVO struct {
 
 type RuleUserInputVOV2 struct {
 	Name          string        `json:"name,omitempty" yaml:"name,omitempty"`
-	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION'"`
+	DataType      string        `json:"dataType" yaml:"dataType,omitempty" binding:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION' 'SQL_EXPRESSION'" validate:"required,oneof='STRING' 'INT' 'FLOAT' 'FILE' 'JSON' 'HTTP_CONFIG' 'JQ_EXPRESSION' 'SQL_EXPRESSION'"`
 	Repeated      bool          `json:"repeated" yaml:"repeated"`
 	Format        string        `json:"format,omitempty" yaml:"format,omitempty"`
 	DefaultValue  interface{}   `json:"defaultValue,omitempty" yaml:"defaultValue,omitempty"`

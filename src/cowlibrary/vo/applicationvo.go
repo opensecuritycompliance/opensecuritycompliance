@@ -153,7 +153,7 @@ func (dt *AttributeDataType) UnmarshalYAML(unmarshal func(interface{}) error) er
 	switch value := yamlData.(type) {
 	case string:
 		switch value {
-		case "STRING", "JQ_EXPRESSION":
+		case "STRING", "JQ_EXPRESSION", "SQL_EXPRESSION":
 			*dt = "string"
 		case "INT":
 			*dt = "int"

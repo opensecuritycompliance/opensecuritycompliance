@@ -13,6 +13,7 @@ import jira
 import jmespath
 from typing import Tuple, Optional, Dict, Any
 import base64
+import time
 
 
 class BasicAuthentication:
@@ -167,6 +168,87 @@ class JiraCloud:
             "Invalid Credentials: " + ", ".join(emptyAttrs) + " is empty"
             if emptyAttrs
             else ""
+        )
+
+    # Centralized retryable API request with exponential backoff
+    def make_api_request_with_retry(
+        self,
+        method: str,
+        url: str,
+        headers: dict = None,
+        auth: tuple = None,
+        params: dict = None,
+        json: dict = None,
+        data: dict = None,
+        files: dict = None,
+        max_retries: int = 5,
+        backoff_intervals: list = [5, 10, 30, 60, 90],
+    ) -> Tuple[Optional[requests.Response], Optional[str]]:
+        """
+        Handles HTTP 429, 5xx, timeout, and connection errors with exponential backoff retries.
+        """
+        session = requests.Session()
+
+        for attempt in range(max_retries):
+            try:
+                response = session.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    auth=auth,
+                    params=params,
+                    json=json,
+                    data=data,
+                    files=files,
+                    timeout=60,
+                )
+
+                # Handle rate limiting
+                if response.status_code == 429:
+                    retry_after = response.headers.get("Retry-After")
+                    wait_time = (
+                        int(retry_after)
+                        if retry_after
+                        else backoff_intervals[min(attempt, len(backoff_intervals) - 1)]
+                    )
+                    logging.warning(
+                        f"Rate-limited (429). Retrying after {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+
+                # Handle transient 5xx errors
+                if 500 <= response.status_code < 600:
+                    wait_time = backoff_intervals[
+                        min(attempt, len(backoff_intervals) - 1)
+                    ]
+                    logging.warning(
+                        f"Server error {response.status_code}. Retrying after {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+
+                # Success
+                return response, None
+
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                MaxRetryError,
+            ) as e:
+                wait_time = backoff_intervals[min(attempt, len(backoff_intervals) - 1)]
+                logging.warning(
+                    f"Connection/Timeout error: {e}. Retrying in {wait_time}s..."
+                )
+                time.sleep(wait_time)
+                continue
+
+            except Exception as e:
+                return None, f"Unhandled exception during API call: {str(e)}"
+
+        return (
+            None,
+            f"Failed after {max_retries} retries. Possibly rate-limited or server error.",
         )
 
     def audit_logs(self):
@@ -352,7 +434,7 @@ class JiraCloud:
                 if users:
                     issueConfig["assignee"] = {"id": users[0].accountId}
                 else:
-                    return (None, f"User '{assignee}' not found in Jira.")
+                    issueConfig["assignee"] = {}
 
             issue = client.create_issue(fields=issueConfig)
             return issue, None
@@ -471,26 +553,21 @@ class JiraCloud:
     def get_issue_details(
         self, issue_key: str
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """
-        Fetch detailed Jira issue information using REST API.
 
-        Args:
-            issue_key (str): The Jira issue key (e.g., "ABC-88").
-
-        Returns:
-            Tuple containing:
-                - issue_data (dict or None): The parsed issue JSON if successful.
-                - error_message (str or None): An error message if the request fails.
-        """
         if not issue_key:
             return None, "Issue key is empty. Cannot fetch details."
 
         try:
             base_url, auth = self.get_jira_base_url_and_auth()
-            url = f"{base_url}/rest/api/2/issue/{issue_key}"
+            url = f"{base_url}/rest/api/3/issue/{issue_key}"
             headers = {"Accept": "application/json"}
 
-            response = requests.get(url, auth=auth, headers=headers)
+            response, error = self.make_api_request_with_retry(
+                method="GET", url=url, headers=headers, auth=auth
+            )
+
+            if error:
+                return None, f"Error fetching issue details: {error}"
 
             if response.status_code != 200:
                 return (
@@ -541,7 +618,7 @@ class JiraCloud:
     def upload_attachment(
         self, issue_key: str, files: list
     ) -> Tuple[Optional[Any], Optional[str]]:
-        app_url = self.build_api_url(f"/rest/api/2/issue/{issue_key}/attachments")
+        app_url = self.build_api_url(f"/rest/api/3/issue/{issue_key}/attachments")
         username = self.user_defined_credentials.basic_authentication.user_name
         password = self.user_defined_credentials.basic_authentication.password
         credentials = f"{username}:{password}"
@@ -554,8 +631,8 @@ class JiraCloud:
             "X-Atlassian-Token": "no-check",
         }
 
-        response, error = self.make_api_request(
-            url=app_url, headers=headers, method="POST", files=files
+        response, error = self.make_api_request_with_retry(
+            method="POST", url=app_url, headers=headers, files=files
         )
 
         if error:
@@ -568,31 +645,43 @@ class JiraCloud:
                 None,
                 f"Unable to upload the attachment to issue {issue_key}. Status Code: {response.status_code}. Message: {response.text}",
             )
+        
+    def link_issues(
+        self, inward_issue_key: str, outward_issue_key: str, link_type: str
+    ) -> Tuple[Optional[Any], Optional[str]]:
+        app_url = self.build_api_url("/rest/api/3/issueLink")
+        username = self.user_defined_credentials.basic_authentication.user_name
+        password = self.user_defined_credentials.basic_authentication.password
+        credentials = f"{username}:{password}"
+        encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode(
+            "utf-8"
+        )
 
-    def make_api_request(
-        self, url, headers, method="GET", json=None, data=None, files=None
-    ):
-        try:
-            if method.upper() == "GET":
-                response = requests.get(url, headers=headers)
-            elif method.upper() == "POST":
-                response = requests.post(
-                    url, headers=headers, json=json, data=data, files=files
-                )
-            elif method.upper() == "PATCH":
-                response = requests.patch(url, headers=headers, json=json)
+        headers = {
+            "Authorization": f"Basic {encoded_credentials}",
+            "Content-Type": "application/json",
+        }
 
-            if not response:
-                return None, f"{response.text}"
+        payload = {
+            "type": {"name": link_type},
+            "inwardIssue": {"key": inward_issue_key},
+            "outwardIssue": {"key": outward_issue_key},
+        }
 
-            return response, None
+        response, error = self.make_api_request_with_retry(
+            url=app_url, headers=headers, method="POST", json=payload
+        )
 
-        except requests.exceptions.ConnectionError as e:
-            return None, f"Connection error: {e}"
-        except requests.exceptions.Timeout as e:
-            return None, f"Request timed out: {e}"
-        except requests.exceptions.RequestException as e:
-            return None, f"Other request exception: {e}"
+        if error:
+            return None, error
+
+        if response.status_code in (http.HTTPStatus.OK, http.HTTPStatus.CREATED):
+            return response.content, None
+        else:
+            return (
+                None,
+                f"Unable to link issues {inward_issue_key} and {outward_issue_key}. Status Code: {response.status_code}. Message: {response.text}",
+            )
 
     def build_api_url(self, endpoint):
         return f'{self.app_url.rstrip("/")}{endpoint}'

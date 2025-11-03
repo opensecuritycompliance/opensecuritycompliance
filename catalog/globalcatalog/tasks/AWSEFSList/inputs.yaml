@@ -1,35 +1,26 @@
 userObject:
   app:
-    name: Kubernetes 
-    appURL: "$INSTANCE_LOGIN_URL"
+    name: AWSAppConnector
+    appURL: https://aws.amazon.com
     appPort: "0"
     appTags:
       appType:
-      - kubernetes
+      - aws
       environment:
       - logical
       execlevel:
       - app
     userDefinedCredentials:
-      Jumphost:
-        SshPrivateKey: "$INSTANCE_SSH_PRIVATE_KEY"
-        UserID: "$INSTANCE_USER_NAME"
-    linkedApplications:
-      AWSAppConnector:
-      - name: AWSAppConnector
-        appURL: https://aws.amazon.com
-        appPort: "0"
-        userDefinedCredentials:
-          AWSRole:
-            AccessKey: "$AWS_ROLE_ACCESS_KEY"
-            SecretKey: "$AWS_ROLE_SECRET_KEY"
-            RoleARN: "$AWS_ROLE_ARN"
-          AWSIAM:
-            AccessKey: "$AWS_ACCESS_KEY"
-            SecretKey: "$AWS_SECRET_KEY"
+      AWSRole:
+        AccessKey: "$AWS_ROLE_ACCESS_KEY"
+        SecretKey: "$AWS_ROLE_SECRET_KEY"
+        RoleARN: "$AWS_ROLE_ARN"
+      AWSIAM:
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
 userInputs:
   KubernetesPVList: <<MINIO_FILE_PATH>>
   KubernetesPVListLogFile: <<MINIO_FILE_PATH>>
   Region: []
-fromDate: 2024-06-26T06:03:00Z
-toDate: 2024-06-26T06:03:00Z
+fromDate: 2025-04-15T08:46:29Z
+toDate: 2025-04-15T08:46:29Z

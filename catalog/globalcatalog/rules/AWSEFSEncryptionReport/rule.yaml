@@ -59,7 +59,7 @@ spec:
     type: task
     appTags:
       appType:
-      - kubernetes
+      - aws
       environment:
       - logical
       execlevel:
@@ -71,7 +71,7 @@ spec:
     type: task
     appTags:
       appType:
-      - kubernetes
+      - aws
       environment:
       - logical
       execlevel:

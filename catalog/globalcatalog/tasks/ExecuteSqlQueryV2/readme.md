@@ -84,6 +84,7 @@ The purpose of this task is to execute the provided SQL query on the given input
     - 'SQLConfig' is a TOML file that contains the SQLQuery to be executed.
     - The following tables will be created with the respective data: inputfile1, inputfile2.
     - If only InputFile1 is provided, then only 'inputfile1' table will be created.
+    - The output file format can be specified as JSON, CSV, or PARQUET (default is PARQUET if not specified).
 
     **SQLConfig Structure:**
     ```toml
@@ -107,6 +108,9 @@ The purpose of this task is to execute the provided SQL query on the given input
         GROUP BY
             inputfile1.email;
     '''
+    # Output file format (Optional - defaults to PARQUET)
+    # Supported values: "JSON", "CSV", "PARQUET"
+    OutputFileFormat = "PARQUET"
     ```
 
 4. LogConfigFile **(Optional)**

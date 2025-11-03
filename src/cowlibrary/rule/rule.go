@@ -155,6 +155,7 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			input.Required = true
 		}
 		rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.InputsMeta__
+		rule.Spec.OutputsMeta__ = additionalInfo.RuleYAMLVO.Spec.OutputsMeta__
 		// commenting rule input not mapped filter for nocode auto save
 		// ruleIoMapInfo, _ := utils.GetRuleIOMapInfo(rule.Spec.IoMap)
 		// inputs := make(map[string]bool)
@@ -3354,7 +3355,7 @@ func ExportRule(filePath string, additionalInfo *vo.AdditionalInfo) (exportedDat
 
 }
 
-func PublishRule(filePath string, additionalInfo *vo.AdditionalInfo) error {
+func PublishRule(filePath string, additionalInfo *vo.AdditionalInfo, opts ...bool) error {
 
 	exportedData, err := ExportRule(filePath, additionalInfo)
 	if err != nil {
@@ -3439,6 +3440,18 @@ func PublishRule(filePath string, additionalInfo *vo.AdditionalInfo) error {
 		})
 	}
 
+	readmeFilePath := filepath.Join(filePath, constants.ReadmeFile)
+	if utils.IsFileExist(readmeFilePath) {
+		request = request.SetFile("readme", readmeFilePath)
+
+	} else {
+		readmeFilePath = filepath.Join(filePath, constants.READMEMDFile)
+		if utils.IsFileExist(readmeFilePath) {
+			request = request.SetFile("readme", readmeFilePath)
+
+		}
+	}
+
 	resp, err := request.SetResult(resultData).SetError(&errorData).Post(url)
 
 	s.Stop()
@@ -3457,9 +3470,15 @@ func PublishRule(filePath string, additionalInfo *vo.AdditionalInfo) error {
 
 	emoji.Println(":megaphone: Rule has been published!!! :party_popper::partying_face::party_popper:")
 
-	rulesCatalogURL := fmt.Sprintf("%s/ui/rules-workflow", utils.GetCowDomain(additionalInfo))
+	showCatalogMsg := true
+	if len(opts) > 0 {
+		showCatalogMsg = opts[0]
+	}
 
-	fmt.Println(utils.ColorLink("You can view the published rule in the rules catalog.", rulesCatalogURL, "italic green"))
+	if showCatalogMsg {
+		rulesCatalogURL := fmt.Sprintf("%s/ui/rules-workflow", utils.GetCowDomain(additionalInfo))
+		fmt.Println(utils.ColorLink("You can view the published rule in the rules catalog.", rulesCatalogURL, "italic green"))
+	}
 
 	return nil
 }

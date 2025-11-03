@@ -13,6 +13,8 @@ icon: <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" v
 type: python
 tags:
 - generic
+- primitive
+- MCP
 applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''

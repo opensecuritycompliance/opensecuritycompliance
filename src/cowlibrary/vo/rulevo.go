@@ -507,3 +507,24 @@ type DesignNotesResponseVO struct {
 	FileName           string `json:"fileName,omitempty"`
 	DesignNotesContent string `json:"designNotesContent,omitempty"`
 }
+
+type RuleEntry struct {
+	Name    string `yaml:"name"`
+	Catalog string `yaml:"catalog"`
+}
+type RuleListSpec struct {
+	RuleOverrideEnabled            bool        `yaml:"ruleOverrideEnabled"`
+	PublishApplicationTypeEnabled  bool        `yaml:"publishApplicationTypeEnabled"`
+	ApplicationTypeLanguage        string      `yaml:"applicationTypeLanguage,omitempty"`
+	ApplicationTypeOverrideEnabled bool        `yaml:"applicationTypeOverrideEnabled,omitempty"`
+	Rules                          []RuleEntry `yaml:"rules"`
+}
+type RuleListMetadata struct {
+	Name    string `yaml:"name"`
+	Purpose string `yaml:"purpose"`
+}
+type RuleListYAML struct {
+	Kind     string           `yaml:"kind"`
+	Metadata RuleListMetadata `yaml:"metadata"`
+	Spec     RuleListSpec     `yaml:"spec"`
+}

@@ -22,6 +22,7 @@ const (
 	DeclarativesDataTypeFILE          = "FILE"
 	DeclarativesDataTypeHTTP_CONFIG   = "HTTP_CONFIG"
 	DeclarativesDataTypeJQ_EXPRESSION = "JQ_EXPRESSION"
+	DeclarativesDataTypeSQL_EXPRESSION = "SQL_EXPRESSION"
 )
 
 const (

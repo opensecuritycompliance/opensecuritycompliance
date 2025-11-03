@@ -1,7 +1,7 @@
 from typing import overload 
 from compliancecowcards.structs import cards
 #As per the selected app, we're importing the app package 
-from applicationtypes.kubernetes import kubernetes
+from applicationtypes.awsappconnector import awsappconnector
 from compliancecowcards.utils import cowdictutils
 from datetime import datetime, timezone
 import urllib.parse
@@ -43,10 +43,10 @@ class Task(cards.AbstractTask):
         
         region = self.task_inputs.user_inputs.get("Region")
         
-        aws_connector = kubernetes.awsappconnector.AWSAppConnector(
-            user_defined_credentials=kubernetes.awsappconnector.UserDefinedCredentials.from_dict(
-                self.task_inputs.user_object.app.linked_applications.get('AWSAppConnector')[0]['userDefinedCredentials']
-            ),
+        aws_connector = awsappconnector.AWSAppConnector(
+            user_defined_credentials=awsappconnector.UserDefinedCredentials.from_dict(
+                self.task_inputs.user_object.app.user_defined_credentials
+                ),
             region=region
         )
 
@@ -85,7 +85,7 @@ class Task(cards.AbstractTask):
                 resource_id = efs.get('FileSystemId', '')
                 # generate resource url
                 resource_info = {
-                                'resource_type'  : kubernetes.awsappconnector.ELASTIC_FILE_SYSTEM,
+                                'resource_type'  : awsappconnector.ELASTIC_FILE_SYSTEM,
                                 'Resource'       : resource_id,
                                 'Region'         : efs.get('Region', '')
                                 }
@@ -175,15 +175,8 @@ class Task(cards.AbstractTask):
         error_list = []
 
         user_object = task_inputs.user_object
-        if not user_object or not user_object.app or not user_object.app.linked_applications:
-            error_list.append("Linked Application is missing")
-        else:
-            linked_application = user_object.app.linked_applications
-            if not cowdictutils.is_valid_key(linked_application, 'AWSAppConnector'):
-                error_list.append("Linked Application 'AWSAppConnector' is missing")
-            else:
-                if not linked_application.get('AWSAppConnector')[0]['userDefinedCredentials']:
-                    error_list.append("Linked Application 'AWSAppConnector' user defined credentials is missing")
+        if not user_object or not user_object.app or not user_object.app.user_defined_credentials:
+            error_list.append("User credentials are missing")
 
         empty_inputs = []
         invalid_inputs = []

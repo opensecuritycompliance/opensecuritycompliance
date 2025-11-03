@@ -2,15 +2,17 @@ from typing import Dict, List, Optional, Tuple, Any
 import json
 import uuid
 from compliancecowcards.structs import cards
+from compliancecowcards.utils import cowdfutils
 import numpy as np
 import pandas as pd
 import toml
 import yaml
 import xmltodict
 from io import BytesIO
-import pyarrow.parquet as pq
 from abc import ABC, abstractmethod
 from pathlib import Path
+import pyarrow
+import pyarrow.parquet as pq
 
 logger = cards.Logger()
 
@@ -100,17 +102,29 @@ class CSVParser(FileParser):
 
 
 class ParquetParser(FileParser):
+
     def parse(
         self, file_bytes: bytes
     ) -> Tuple[Any, Optional[str], Optional[Dict[str, Any]]]:
         try:
-            df = pd.read_parquet(BytesIO(file_bytes), engine="fastparquet")
-            return df.to_dict(orient="records"), None, None
-        except OSError as e:
+            buffer = BytesIO(file_bytes)
+            table = pq.read_table(buffer)
+            records = table.to_pylist()
+            
+            return records, None, None
+
+        except (pyarrow.ArrowInvalid, OSError, ValueError) as e:
             return (
                 None,
                 "ConvertFileFormat.Exception.InputFile.Parser.parquet_parsing_error",
-                {"error": f"{str(e)}"},
+                {"error": f"Invalid file format: {str(e)}"},
+            )
+
+        except Exception as e:
+            return (
+                None,
+                "ConvertFileFormat.Exception.InputFile.Parser.parquet_parsing_error",
+                {"error": f"Error parsing Parquet file: {str(e)}"},
             )
 
 
@@ -146,7 +160,25 @@ class JSONConverter(FileConverter):
         self, data: Any
     ) -> Tuple[bytes, Optional[str], Optional[Dict[str, Any]]]:
         try:
-            return json.dumps(data, indent=4).encode("utf-8"), None, None
+            # Option 1: If it's tabular data (list of dicts), use pandas for efficiency
+            if isinstance(data, list) and data and isinstance(data[0], dict):
+                df = pd.DataFrame(data)
+                json_str = df.to_json(orient='records', indent=4)
+                return json_str.encode("utf-8"), None, None
+
+            # Option 2: For other data types, clean NaN recursively
+            def clean_nan(obj):
+                if isinstance(obj, list):
+                    return [clean_nan(item) for item in obj]
+                elif isinstance(obj, dict):
+                    return {k: clean_nan(v) for k, v in obj.items()}
+                elif isinstance(obj, float) and (np.isnan(obj) or pd.isna(obj)):
+                    return None
+                else:
+                    return obj
+
+            cleaned_data = clean_nan(data)
+            return json.dumps(cleaned_data, indent=4).encode("utf-8"), None, None
         except Exception as e:
             return (
                 None,
@@ -320,12 +352,14 @@ class Task(cards.AbstractTask):
             else True
         )
 
-        self.set_log_file_name("LogFile" if self.proceed_if_error_exists else "Errors")
+        self.set_log_file_name(
+            "LogFile" if self.proceed_if_error_exists else "Errors")
 
         default_log_config_filepath = str(
             Path(__file__).parent.joinpath("LogConfig_default.toml").resolve()
         )
-        custom_log_config_url = self.task_inputs.user_inputs.get("LogConfigFile")
+        custom_log_config_url = self.task_inputs.user_inputs.get(
+            "LogConfigFile")
 
         log_manager, error = cards.LogConfigManager.from_minio_file_url(
             (
@@ -354,6 +388,8 @@ class Task(cards.AbstractTask):
         elif not self.proceed_if_log_exists and log_file_url:
             return {"LogFile": log_file_url}
 
+        validate_flow = user_inputs.get("ValidateFlow", False)
+
         validation_error_info = self.check_inputs()
         if validation_error_info:
             return self.upload_log_file_panic(
@@ -377,7 +413,8 @@ class Task(cards.AbstractTask):
 
         input_format, extension = self.detect_input_format(input_file_url)
         if not input_format:
-            input_format, extension = self.detect_input_format_from_bytes(file_bytes)
+            input_format, extension = self.detect_input_format_from_bytes(
+                file_bytes)
         if not input_format or input_format not in self.FORMAT_PARSERS:
             return self.upload_log_file_panic(
                 error_data=log_manager.get_error_message(
@@ -390,7 +427,8 @@ class Task(cards.AbstractTask):
         data, error_type, error_info = parser.parse(file_bytes)
         if error_info:
             return self.upload_log_file_panic(
-                error_data=log_manager.get_error_message(error_type, error_info)
+                error_data=log_manager.get_error_message(
+                    error_type, error_info)
             )
 
         if output_file_format not in self.FORMAT_CONVERTERS:
@@ -401,11 +439,15 @@ class Task(cards.AbstractTask):
                 )
             )
 
+        if validate_flow:
+            return {"ValidationStatus": "Input data validated successfully"}
+
         converter = self.FORMAT_CONVERTERS[output_file_format]
         output_data, error_type, error_info = converter.convert(data)
         if error_info:
             return self.upload_log_file_panic(
-                error_data=log_manager.get_error_message(error_type, error_info)
+                error_data=log_manager.get_error_message(
+                    error_type, error_info)
             )
 
         output_file_url, error = self.upload_output_file(
@@ -492,7 +534,7 @@ class Task(cards.AbstractTask):
         # Get lowercase extension and look up in mapping
         extension = Path(file_name).suffix.lower()
         return format_mapping.get(extension), extension.lstrip(".")
-        
+
     def detect_input_format_from_bytes(self, file_bytes: bytes) -> tuple[Optional[str], Optional[str]]:
         """Detect input file format by trying to parse file bytes."""
         try:

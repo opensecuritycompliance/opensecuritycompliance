@@ -17,6 +17,7 @@ import logging
 from requests.exceptions import RequestException
 import base64
 import xml.etree.ElementTree as ET
+import io
 
 SUPPORT_MSG = "Please contact support and review logs for further details"
 USER_REG_ERR_MSG = "Failed to fetch user registration details"
@@ -2277,4 +2278,45 @@ class AzureAppConnector:
         except ET.ParseError:
             return "ParseError", "Failed to parse error response XML"
 
+    def replace_file_content(self, url, updated_df):
+        token, err = self.get_access_token(scope='https://graph.microsoft.com/.default')
+        if err:
+            return "", f'Error while fetching access token :: {err}'
 
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        response = requests.get(
+            url=f"https://graph.microsoft.com/v1.0/shares/{self.encode_share_url(url)}/driveItem",
+            headers=headers
+        )
+        if not response.ok:
+            return None, f"{response.text}"
+        
+        fileMetaData = response.json()
+        drive_id = ""
+        item_id = ""
+
+        if cowdictutils.is_valid_key(fileMetaData, 'parentReference') and cowdictutils.is_valid_key(fileMetaData['parentReference'], 'driveId'):
+            drive_id = fileMetaData['parentReference']['driveId'] 
+        if cowdictutils.is_valid_key(fileMetaData, 'id'):
+            item_id = fileMetaData['id']
+
+        csv_bytes = updated_df.to_csv(index=False).encode('utf-8')
+
+        upload_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}/content"
+        upload_headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'text/csv'
+        }
+
+        upload_response = requests.put(upload_url, headers=upload_headers, data=csv_bytes)
+        if not upload_response.ok:
+            return None, f"{upload_response.text}"
+
+        return {
+            "FileName": fileMetaData.get("name", ""),
+            "FileType": fileMetaData.get("file", {}).get("mimeType", ""),
+            "UploadStatus": "Success"
+        }, None
