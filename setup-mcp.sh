@@ -232,11 +232,22 @@ check_anthropic_key() {
     fi
     
     # Save to environment file if not already there
-    if [ -f "etc/userconfig.env" ] && ! grep -q "ANTHROPIC_API_KEY" etc/userconfig.env; then
-        echo "" >> etc/userconfig.env
-        echo "# Anthropic API Key for MCP/Goose integration" >> etc/userconfig.env
-        echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> etc/userconfig.env
+    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
+    if [ ! -f "$ENV_FILE" ]; then
+        log_info "Creating etc/userconfig.env file..."
+        mkdir -p "$(dirname "$ENV_FILE")"
+        touch "$ENV_FILE"
+    fi
+
+    if ! grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
+        echo "" >> "$ENV_FILE"
+        echo "# Anthropic API Key for MCP/Goose integration" >> "$ENV_FILE"
+        echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$ENV_FILE"
         log_success "API key saved to etc/userconfig.env"
+    else
+        # Update existing key
+        sed -i.bak "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY|" "$ENV_FILE"
+        log_success "API key updated in etc/userconfig.env"
     fi
     
     export ANTHROPIC_API_KEY
