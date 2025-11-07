@@ -1,0 +1,21 @@
+[FilterDataWithJQ]
+    ############ INPUT_FILE EXCEPTIONS ############
+    InputFile.missing = "InputFile is missing in user inputs."
+    InputFile.type_error = "InputFile must be a JSON file, got file with '{extension}' extension instead"
+    InputFile.download_error = "Error while downloading InputFile :: {error}"
+    InputFile.empty = "The input file is empty. Please verify that the file contains valid data before proceeding."
+    
+    ############ JQ EXCEPTIONS ############
+    JQExpression.no_result = "The JQ expression returned no results. Please check the query and ensure the input data matches the expected structure."
+    
+    ############ OUTPUT METHOD EXCEPTIONS ############
+    OutputMethod.invalid = "Invalid output method. Please choose either 'ALL' or 'FIRST'."
+
+    ############ OUTPUT_FILE EXCEPTIONS ############
+    OutputFile.upload_error = "An error occurred while uploading the result: {error}. Please check the error details and try again"
+    
+    ############ LOG_FILE EXCEPTIONS ############
+    LogFile.download_error = "Error while downloading LogFile :: {error}"
+    
+    ############ JQ_CONFIG_FILE EXCEPTIONS ############
+    JQConfig.missing = "'JQConfig' file is missing. Please ensure the configuration file is present. Please refer to the provided JQConfig-sample.toml file."

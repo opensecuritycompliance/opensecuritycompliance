@@ -12,7 +12,6 @@ NC='\033[0m' # No Color
 
 # Script constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# REQUIRED_SERVICES=("oscmcpservice" "oscgoose" "oscgooseservice" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 REQUIRED_SERVICES=("oscmcpservice" "oscgoose" "oscgooseservice" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 CERT_PATHS=("src/oscreverseproxy/certs" "${HOME}/continube/certs")
 GOOSE_SESSION_DIR="${SCRIPT_DIR}/goose-sessions/sessions"
@@ -53,7 +52,7 @@ print_banner() {
     echo -e "${CYAN}"
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║                                                           ║"
-    echo "║         PolicyCow MCP + No-Code UI Setup Script           ║"
+    echo "║   Open Security Compliance MCP + No-Code UI Setup         ║"
     echo "║                   (WITH SUDO SUPPORT)                     ║"
     echo "║                                                           ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
@@ -141,7 +140,7 @@ check_system_requirements() {
     if command -v free &> /dev/null; then
         TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
         if [ "$TOTAL_MEM" -lt 8 ]; then
-            log_warning "System has less than 8GB RAM. MCP setup requires 8GB+ for optimal performance"
+            log_warning "System has less than 8GB RAM. Open Security Compliance setup requires 8GB+ for optimal performance"
             echo ""
             read -p "Continue anyway? (y/N): " -n 1 -r
             echo
@@ -154,103 +153,192 @@ check_system_requirements() {
         fi
     fi
     
-    # Check available disk space
-    AVAILABLE_SPACE=$(df -BG "$SCRIPT_DIR" | awk 'NR==2 {print $4}' | sed 's/G//')
-    if [ "$AVAILABLE_SPACE" -lt 30 ]; then
-        log_warning "Less than 30GB free disk space available. Recommended: 30GB+ for MCP setup"
+    # Check available disk space (cross-platform)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        AVAILABLE_SPACE=$(df -g "$SCRIPT_DIR" | awk 'NR==2 {print $4}')
     else
-        log_success "Sufficient disk space available (${AVAILABLE_SPACE}GB)"
+        # Linux
+        AVAILABLE_SPACE=$(df -BG "$SCRIPT_DIR" | awk 'NR==2 {print $4}' | sed 's/G//')
     fi
     
-    log_warning "MCP setup requires a beefy machine or remote hosting:"
+    if [ -n "$AVAILABLE_SPACE" ] && [ "$AVAILABLE_SPACE" -lt 30 ]; then
+        log_warning "Less than 30GB free disk space available. Recommended: 30GB+ for Open Security Compliance setup"
+    elif [ -n "$AVAILABLE_SPACE" ]; then
+        log_success "Sufficient disk space available (${AVAILABLE_SPACE}GB)"
+    else
+        log_warning "Could not determine available disk space"
+    fi
+    
+    log_warning "Open Security Compliance setup requires a beefy machine or remote hosting:"
     echo "  - Recommended: 8GB+ RAM, 4+ CPU cores, 30GB+ disk"
-    echo "  - 6+ services will be running simultaneously"
+    echo "  - 7 services will be running simultaneously"
 }
 
 # Validate Anthropic API key
 check_anthropic_key() {
     log_info "Checking Anthropic API key..."
     
+    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
+    
     # Check if key is already in environment
     if [ -z "$ANTHROPIC_API_KEY" ]; then
         # Check in userconfig.env
-        if [ -f "etc/userconfig.env" ] && grep -q "ANTHROPIC_API_KEY" etc/userconfig.env; then
-            source etc/userconfig.env
+        if [ -f "$ENV_FILE" ] && grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
+            source "$ENV_FILE"
         fi
     fi
     
-    if [ -z "$ANTHROPIC_API_KEY" ]; then
-        log_warning "Anthropic API key not found in environment"
-        echo ""
-        echo "MCP setup requires an Anthropic API key for Goose integration."
-        echo "Get your API key from: https://console.anthropic.com/"
-        echo ""
-        read -p "Enter your Anthropic API key: " -r ANTHROPIC_API_KEY
-        echo ""
+    # Function to remove invalid key from env file
+    remove_api_key_from_env() {
+        if [ -f "$ENV_FILE" ]; then
+            # Remove the API key line and the comment above it
+            sed -i.bak '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+            sed -i.bak '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+            # Remove any empty lines at the end
+            sed -i.bak -e :a -e '/^\s*$/d;N;ba' "$ENV_FILE"
+            log_info "Removed invalid API key from etc/userconfig.env"
+        fi
+        unset ANTHROPIC_API_KEY
+    }
+    
+    # Function to validate API key and check Claude Sonnet 4 access
+    validate_api_key() {
+        local api_key=$1
         
-        if [ -z "$ANTHROPIC_API_KEY" ]; then
-            log_error "Anthropic API key is required for MCP setup"
-            exit 1
+        # Validate the API key format
+        if [[ ! "$api_key" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
+            log_error "Invalid API key format. Expected format: sk-ant-..."
+            return 1
         fi
-    fi
-    
-    # Validate the API key format
-    if [[ ! "$ANTHROPIC_API_KEY" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
-        log_warning "API key format looks unusual. Expected format: sk-ant-..."
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log_error "Setup cancelled. Please verify your API key."
-            exit 1
+        
+        # Test the API key by making a simple request
+        log_info "Validating Anthropic API key..."
+        local temp_file=$(mktemp)
+        local http_code=$(curl -s -w "%{http_code}" -o "$temp_file" \
+            -H "x-api-key: $api_key" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            https://api.anthropic.com/v1/models)
+        
+        local http_body=$(cat "$temp_file")
+        rm -f "$temp_file"
+        
+        if [ "$http_code" != "200" ]; then
+            log_error "Anthropic API key validation failed (HTTP $http_code)"
+            if [ "$http_code" == "401" ]; then
+                echo "  - API key is invalid or expired"
+            elif [ "$http_code" == "403" ]; then
+                echo "  - API key does not have required permissions"
+            elif [ "$http_code" == "429" ]; then
+                echo "  - API rate limit exceeded, please try again later"
+            else
+                echo "  - Network connectivity issues or API error"
+            fi
+            return 1
         fi
-    fi
-    
-    # Test the API key by making a simple request
-    log_info "Validating Anthropic API key..."
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-        -H "x-api-key: $ANTHROPIC_API_KEY" \
-        -H "anthropic-version: 2023-06-01" \
-        -H "content-type: application/json" \
-        https://api.anthropic.com/v1/models)
-    
-    if [ "$HTTP_CODE" == "400" ] || [ "$HTTP_CODE" == "200" ]; then
+        
         log_success "Anthropic API key is valid"
-    else
-        log_error "Anthropic API key validation failed (HTTP $HTTP_CODE)"
-        echo ""
-        echo "Common issues:"
-        echo "  - Invalid or expired API key"
-        echo "  - Network connectivity issues"
-        echo "  - API rate limits"
-        echo ""
-        read -p "Continue with setup anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log_error "Setup cancelled. Please verify your API key and network connection."
-            exit 1
+        
+        # Check if Claude Sonnet 4 is available
+        log_info "Checking access to Claude Sonnet 4 (claude-sonnet-4-20250514)..."
+        local test_temp_file=$(mktemp)
+        local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
+            -X POST \
+            -H "x-api-key: $api_key" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d '{
+                "model": "claude-sonnet-4-20250514",
+                "max_tokens": 10,
+                "messages": [{"role": "user", "content": "Hi"}]
+            }' \
+            https://api.anthropic.com/v1/messages)
+        
+        local test_body=$(cat "$test_temp_file")
+        rm -f "$test_temp_file"
+        
+        if [ "$test_code" == "200" ]; then
+            log_success "Claude Sonnet 4 access confirmed"
+            return 0
+        elif [ "$test_code" == "404" ]; then
+            log_error "Claude Sonnet 4 model not found or not accessible with this API key"
+            echo "  - Your API key may not have access to Claude Sonnet 4"
+            echo "  - This platform requires Claude Sonnet 4 (claude-sonnet-4-20250514)"
+            return 1
+        elif [ "$test_code" == "403" ]; then
+            log_error "Access denied to Claude Sonnet 4"
+            echo "  - Your API key does not have permission to use Claude Sonnet 4"
+            echo "  - Please check your Anthropic account tier and model access"
+            return 1
+        else
+            log_warning "Could not verify Claude Sonnet 4 access (HTTP $test_code)"
+            echo "  - API key is valid but model access verification failed"
+            echo "  - You may encounter issues when using the platform"
+            read -p "Continue anyway? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                return 1
+            fi
+            return 0
         fi
-    fi
+    }
     
-    # Save to environment file if not already there
-    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
-    if [ ! -f "$ENV_FILE" ]; then
-        log_info "Creating etc/userconfig.env file..."
-        mkdir -p "$(dirname "$ENV_FILE")"
-        touch "$ENV_FILE"
-    fi
+    # Main validation loop
+    while true; do
+        if [ -z "$ANTHROPIC_API_KEY" ]; then
+            log_warning "Anthropic API key not found in environment"
+            echo ""
+            echo "Open Security Compliance MCP integration requires an Anthropic API key for Goose."
+            echo "Get your API key from: https://console.anthropic.com/"
+            echo ""
+            read -p "Enter your Anthropic API key: " -r ANTHROPIC_API_KEY
+            echo ""
+            
+            if [ -z "$ANTHROPIC_API_KEY" ]; then
+                log_error "Anthropic API key is required for MCP setup"
+                exit 1
+            fi
+        fi
+        
+        # Validate the key
+        if validate_api_key "$ANTHROPIC_API_KEY"; then
+            # Valid key - save it
+            if [ ! -f "$ENV_FILE" ]; then
+                log_info "Creating etc/userconfig.env file..."
+                mkdir -p "$(dirname "$ENV_FILE")"
+                touch "$ENV_FILE"
+            fi
 
-    if ! grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
-        echo "" >> "$ENV_FILE"
-        echo "# Anthropic API Key for MCP/Goose integration" >> "$ENV_FILE"
-        echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$ENV_FILE"
-        log_success "API key saved to etc/userconfig.env"
-    else
-        # Update existing key
-        sed -i.bak "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY|" "$ENV_FILE"
-        log_success "API key updated in etc/userconfig.env"
-    fi
-    
-    export ANTHROPIC_API_KEY
+            # Remove old key if exists
+            if grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
+                sed -i.bak '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+                sed -i.bak '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+            fi
+            
+            # Add new key
+            echo "" >> "$ENV_FILE"
+            echo "# Anthropic API Key for MCP/Goose integration" >> "$ENV_FILE"
+            echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$ENV_FILE"
+            log_success "API key saved to etc/userconfig.env"
+            
+            export ANTHROPIC_API_KEY
+            break
+        else
+            # Invalid key - remove from env and ask again
+            remove_api_key_from_env
+            log_error "API key validation failed"
+            echo ""
+            read -p "Would you like to try another API key? (Y/n): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Nn]$ ]]; then
+                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4 access is required."
+                exit 1
+            fi
+            # Clear the key to prompt for a new one
+            ANTHROPIC_API_KEY=""
+        fi
+    done
 }
 
 # Validate SSL certificates
@@ -352,7 +440,7 @@ cleanup_docker() {
         $DOCKER_CMD rmi $DANGLING_IMAGES 2>/dev/null || true
     fi
     
-    # Clean up unused networks (except policycow networks)
+    # Clean up unused networks (except Open Security Compliance networks)
     log_info "Pruning unused networks..."
     $DOCKER_CMD network prune -f 2>/dev/null || true
     
@@ -377,7 +465,7 @@ create_directories() {
 build_services() {
     log_info "Building Docker images (this may take several minutes)..."
     
-    if $COMPOSE_CMD -f docker-compose.yaml build oscwebserver oscreverseproxy oscapiservice cowstorage oscgoose oscgooseservice oscmcpservice; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml build oscwebserver oscreverseproxy oscapiservice cowstorage oscgoose oscgooseservice oscmcpservice; then
         log_success "Docker images built successfully"
     else
         log_error "Failed to build Docker images"
@@ -386,10 +474,10 @@ build_services() {
 }
 
 start_services() {
-    log_info "Starting all MCP services..."
+    log_info "Starting all services..."
     
     # Start storage first
-    if $COMPOSE_CMD -f docker-compose.yaml up -d cowstorage; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml up -d cowstorage; then
         log_success "Storage service started"
         sleep 5
     else
@@ -399,7 +487,7 @@ start_services() {
     
     # Start MCP service first (before oscgoose)
     log_info "Starting MCP service..."
-    if $COMPOSE_CMD -f docker-compose.yaml up -d oscmcpservice; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscmcpservice; then
         log_success "MCP service started"
     else
         log_error "Failed to start MCP service"
@@ -407,8 +495,8 @@ start_services() {
     fi
     
     # Wait for MCP service to settle
-    log_info "Waiting 20 seconds for MCP service to settle..."
-    for i in {20..1}; do
+    log_info "Waiting 5 seconds for MCP service to settle..."
+    for i in {5..1}; do
         echo -ne "\rTime remaining: ${i} seconds "
         sleep 1
     done
@@ -416,7 +504,7 @@ start_services() {
     
     # Now start remaining services including oscgoose
     log_info "Starting remaining services..."
-    if $COMPOSE_CMD -f docker-compose.yaml up -d oscapiservice oscwebserver oscreverseproxy oscgoose oscgooseservice; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscapiservice oscwebserver oscreverseproxy oscgoose oscgooseservice; then
         log_success "All services started successfully"
     else
         log_error "Failed to start services"
@@ -477,21 +565,28 @@ show_service_status() {
 show_mcp_info() {
     echo ""
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║            MCP Setup Completed Successfully!              ║${NC}"
+    echo -e "${CYAN}║      Open Security Compliance Setup Completed!            ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Access URLs:"
-    echo "  - Web UI: https://localhost:443"
-    echo "  - Web UI (HTTP): http://localhost:8080"
+    echo "  - Web UI (HTTPS): https://localhost:443"
+    echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
+    echo "  - Goose Service: http://localhost:8095"
     echo "  - Goose Web: http://localhost:8976"
     echo "  - MCP Service: http://localhost:45678"
     echo ""
-    log_info "MCP Configuration:"
+    log_info "AI Model Configuration:"
     echo "  - Provider: Anthropic only"
+    echo "  - Maximum Model: Claude Sonnet 4"
     echo "  - Goose Sessions: $GOOSE_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
+    echo ""
+    log_info "Rule Creation Methods:"
+    echo "  1. Manual UI: Web UI → Reverse Proxy → API Service"
+    echo "  2. MCP UI Mode: Web UI → Reverse Proxy → Goose → MCP"
+    echo "  3. External MCP: Goose/Claude → MCP (port 45678)"
     echo ""
     log_info "Useful Commands:"
     echo "  - View all logs: $COMPOSE_CMD logs -f"
@@ -503,7 +598,7 @@ show_mcp_info() {
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
-    echo "  ⚠️  Only Anthropic provider is supported"
+    echo "  ⚠️  Only Anthropic Claude is supported (max: Sonnet 4)"
     echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
     echo "  ⚠️  Goose sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
@@ -516,7 +611,7 @@ show_mcp_info() {
 main() {
     print_banner
     
-    log_info "Starting PolicyCow MCP + No-Code UI Setup..."
+    log_info "Starting Open Security Compliance MCP + No-Code UI Setup..."
     echo ""
     
     # Pre-flight checks
@@ -534,7 +629,7 @@ main() {
     
     # Display summary
     echo -e "${CYAN}Setup Summary:${NC}"
-    echo "  Services to be deployed: 6"
+    echo "  Services to be deployed: 7"
     echo "    1. Web UI (oscwebserver)"
     echo "    2. Reverse Proxy (oscreverseproxy)"
     echo "    3. API Service (oscapiservice)"
@@ -545,7 +640,7 @@ main() {
     echo ""
     
     # Confirm before proceeding
-    read -p "Proceed with MCP setup? (Y/n): " -n 1 -r
+    read -p "Proceed with Open Security Compliance setup? (Y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]; then
         log_info "Setup cancelled by user"
@@ -563,12 +658,13 @@ main() {
     show_service_status
     show_mcp_info
     
-    log_success "MCP setup completed successfully!"
+    log_success "Open Security Compliance setup completed successfully!"
     echo ""
     log_info "Next steps:"
     echo "  1. Access the Web UI at https://localhost:443"
-    echo "  2. Configure your Goose integration at http://localhost:8976"
-    echo "  3. Test MCP service at http://localhost:45678"
+    echo "  2. Create rules manually or using MCP mode"
+    echo "  3. Configure external MCP clients (Goose/Claude) at http://localhost:45678"
+    echo "  4. Check the README for detailed usage instructions"
 }
 
 # Trap errors
