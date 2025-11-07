@@ -24,6 +24,21 @@
    3. [Passing large data between tasks](#passing-large-data-between-tasks)
    4. [Adding a task to an existing rule](#adding-a-task-to-an-existing-rule)
 
+## 🚀 Deployment Options
+
+For deploying Open Security Compliance with the complete web UI, MCP integration, and all services, see:
+
+**[📘 Full Deployment Guide](MCP-DEPLOYMENT.md)** - Complete setup with:
+- No-Code Web UI
+- MCP Integration (Goose AI Assistant)
+- REST API Service
+- MinIO Storage
+- Reverse Proxy with HTTPS
+- External MCP Client Support (Goose Desktop/CLI, Claude Desktop/Code)
+
+The deployment guide covers production-ready setup with Docker Compose, including all 7 services and both manual and AI-assisted rule creation workflows.
+
+
 # Introduction
 
 **Open Security Compliance** is a standalone rules engine framework that allows customers to automate and orchestrate security rules. Rules can be deployed in a standalone mode in docker and can be executed through a CLI called `cowctl`. This user-friendly CLI can be used to perform useful utility functions such as initializing and scaffolding, allowing developers to develop, unit test rules for automating, and running them standalone in your docker
