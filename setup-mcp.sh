@@ -495,8 +495,8 @@ start_services() {
     fi
     
     # Wait for MCP service to settle
-    log_info "Waiting 5 seconds for MCP service to settle..."
-    for i in {5..1}; do
+    log_info "Waiting 20 seconds for MCP service to settle..."
+    for i in {20..1}; do
         echo -ne "\rTime remaining: ${i} seconds "
         sleep 1
     done
