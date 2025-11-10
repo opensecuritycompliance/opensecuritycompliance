@@ -1,0 +1,21 @@
+GOOSE_PROVIDER: anthropic
+CLAUDE_CODE_COMMAND: claude
+OPENAI_HOST: https://api.openai.com
+GOOSE_MODEL: claude-sonnet-4-0
+GOOSE_MODE: approve
+claude-code_configured: true
+ANTHROPIC_HOST: https://api.anthropic.com
+GOOSE_ROUTER_TOOL_SELECTION_STRATEGY: default
+extensions:
+  compliancecow:
+    enabled: true
+    type: streamable_http
+    name: compliancecow
+    description: Connect CC via Streamable HTTP
+    uri: http://oscmcpservice:8080/mcp
+    envs: {}
+    env_keys: []
+    headers: {}
+    timeout: 300
+    bundled: null
+    available_tools: []

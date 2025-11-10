@@ -1,0 +1,55 @@
+{
+    "name": "custom_anthropic_custom",
+    "engine": "anthropic",
+    "display_name": "Anthropic Custom",
+    "description": "Custom Anthropic Custom provider",
+    "api_key_env": "CUSTOM_ANTHROPIC_CUSTOM_API_KEY",
+    "base_url": "https://api.anthropic.com",
+    "models": [
+        {
+            "name": "claude-haiku-4-5-20251001",
+            "context_limit": 128000,
+            "input_token_cost": null,
+            "output_token_cost": null,
+            "currency": null,
+            "supports_cache_control": null
+        },
+        {
+            "name": "claude-sonnet-4-5-20250929",
+            "context_limit": 3000000,
+            "input_token_cost": null,
+            "output_token_cost": null,
+            "currency": null,
+            "supports_cache_control": null
+        },
+        {
+            "name": "claude-opus-4-1-20250805",
+            "context_limit": 128000,
+            "input_token_cost": null,
+            "output_token_cost": null,
+            "currency": null,
+            "supports_cache_control": null
+        },
+        {
+            "name": "claude-opus-4-20250514",
+            "context_limit": 128000,
+            "input_token_cost": null,
+            "output_token_cost": null,
+            "currency": null,
+            "supports_cache_control": null
+        },
+        {
+            "name": "claude-sonnet-4-20250514",
+            "context_limit": 128000,
+            "input_token_cost": null,
+            "output_token_cost": null,
+            "currency": null,
+            "supports_cache_control": null
+        }
+    ],
+    "headers": {
+        "anthropic-beta": "context-1m-2025-08-07"
+    },
+    "timeout_seconds": null,
+    "supports_streaming": true
+}
