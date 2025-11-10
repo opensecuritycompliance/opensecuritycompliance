@@ -20,6 +20,9 @@ GOOSE_SESSION_DIR="${SCRIPT_DIR}/goose-sessions/sessions"
 DOCKER_CMD="sudo docker"
 USE_SUDO=true
 
+# Global variables for detected model
+DETECTED_MODEL=""
+DETECTED_MODEL_NAME=""
 
 # Source environment variables
 if [ -f "${SCRIPT_DIR}/etc/userconfig.env" ]; then
@@ -57,6 +60,41 @@ print_banner() {
     echo "║                                                           ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
+}
+
+# Helper function to update env variable in-place
+update_env_variable() {
+    local env_file=$1
+    local var_name=$2
+    local var_value=$3
+    local comment=$4
+    
+    if [ ! -f "$env_file" ]; then
+        mkdir -p "$(dirname "$env_file")"
+        touch "$env_file"
+    fi
+    
+    # Check if variable exists
+    if grep -q "^${var_name}=" "$env_file"; then
+        # Update existing variable in-place
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' "s|^${var_name}=.*|${var_name}=${var_value}|" "$env_file"
+        else
+            # Linux
+            sed -i "s|^${var_name}=.*|${var_name}=${var_value}|" "$env_file"
+        fi
+    else
+        # Add new variable with comment if it doesn't exist
+        if [ -n "$comment" ]; then
+            # Check if comment already exists
+            if ! grep -q "^${comment}" "$env_file"; then
+                echo "" >> "$env_file"
+                echo "$comment" >> "$env_file"
+            fi
+        fi
+        echo "${var_name}=${var_value}" >> "$env_file"
+    fi
 }
 
 # Check if running with sufficient privileges
@@ -192,17 +230,26 @@ check_anthropic_key() {
     # Function to remove invalid key from env file
     remove_api_key_from_env() {
         if [ -f "$ENV_FILE" ]; then
-            # Remove the API key line and the comment above it
-            sed -i.bak '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
-            sed -i.bak '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
-            # Remove any empty lines at the end
-            sed -i.bak -e :a -e '/^\s*$/d;N;ba' "$ENV_FILE"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                # macOS
+                sed -i '' '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+                sed -i '' '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+                sed -i '' '/# Detected Claude Model/d' "$ENV_FILE"
+                sed -i '' '/^GOOSE_MODEL=/d' "$ENV_FILE"
+            else
+                # Linux
+                sed -i '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+                sed -i '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+                sed -i '/# Detected Claude Model/d' "$ENV_FILE"
+                sed -i '/^GOOSE_MODEL=/d' "$ENV_FILE"
+            fi
             log_info "Removed invalid API key from etc/userconfig.env"
         fi
         unset ANTHROPIC_API_KEY
+        unset GOOSE_MODEL
     }
     
-    # Function to validate API key and check Claude Sonnet 4 access
+    # Function to validate API key and detect best available Claude model
     validate_api_key() {
         local api_key=$1
         
@@ -240,48 +287,59 @@ check_anthropic_key() {
         
         log_success "Anthropic API key is valid"
         
-        # Check if Claude Sonnet 4 is available
-        log_info "Checking access to Claude Sonnet 4 (claude-sonnet-4-20250514)..."
-        local test_temp_file=$(mktemp)
-        local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
-            -X POST \
-            -H "x-api-key: $api_key" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d '{
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 10,
-                "messages": [{"role": "user", "content": "Hi"}]
-            }' \
-            https://api.anthropic.com/v1/messages)
+        # Array of models to check in order of preference (best to minimum required)
+        local models=(
+            "claude-sonnet-4-5-20250929:Claude Sonnet 4.5"
+            "claude-sonnet-4-20250514:Claude Sonnet 4"
+        )
         
-        local test_body=$(cat "$test_temp_file")
-        rm -f "$test_temp_file"
+        DETECTED_MODEL=""
+        DETECTED_MODEL_NAME=""
         
-        if [ "$test_code" == "200" ]; then
-            log_success "Claude Sonnet 4 access confirmed"
-            return 0
-        elif [ "$test_code" == "404" ]; then
-            log_error "Claude Sonnet 4 model not found or not accessible with this API key"
-            echo "  - Your API key may not have access to Claude Sonnet 4"
-            echo "  - This platform requires Claude Sonnet 4 (claude-sonnet-4-20250514)"
-            return 1
-        elif [ "$test_code" == "403" ]; then
-            log_error "Access denied to Claude Sonnet 4"
-            echo "  - Your API key does not have permission to use Claude Sonnet 4"
-            echo "  - Please check your Anthropic account tier and model access"
-            return 1
-        else
-            log_warning "Could not verify Claude Sonnet 4 access (HTTP $test_code)"
-            echo "  - API key is valid but model access verification failed"
-            echo "  - You may encounter issues when using the platform"
-            read -p "Continue anyway? (y/N): " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                return 1
+        log_info "Detecting best available Claude model..."
+        
+        for model_entry in "${models[@]}"; do
+            local model_id="${model_entry%%:*}"
+            local model_name="${model_entry##*:}"
+            
+            log_info "Testing access to $model_name ($model_id)..."
+            local test_temp_file=$(mktemp)
+            local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
+                -X POST \
+                -H "x-api-key: $api_key" \
+                -H "anthropic-version: 2023-06-01" \
+                -H "content-type: application/json" \
+                -d "{
+                    \"model\": \"$model_id\",
+                    \"max_tokens\": 10,
+                    \"messages\": [{\"role\": \"user\", \"content\": \"Hi\"}]
+                }" \
+                https://api.anthropic.com/v1/messages)
+            
+            rm -f "$test_temp_file"
+            
+            if [ "$test_code" == "200" ]; then
+                log_success "$model_name access confirmed"
+                DETECTED_MODEL="$model_id"
+                DETECTED_MODEL_NAME="$model_name"
+                break
+            elif [ "$test_code" == "404" ] || [ "$test_code" == "403" ]; then
+                log_warning "$model_name not accessible with this API key"
+            else
+                log_warning "Could not verify $model_name access (HTTP $test_code)"
             fi
-            return 0
+        done
+        
+        # Check if we found at least the minimum required model
+        if [ -z "$DETECTED_MODEL" ]; then
+            log_error "No compatible Claude model found"
+            echo "  - This platform requires at least Claude Sonnet 4 (claude-sonnet-4-20250514)"
+            echo "  - Your API key does not have access to any supported models"
+            return 1
         fi
+        
+        log_success "Best available model: $DETECTED_MODEL_NAME ($DETECTED_MODEL)"
+        return 0
     }
     
     # Main validation loop
@@ -310,19 +368,17 @@ check_anthropic_key() {
                 touch "$ENV_FILE"
             fi
 
-            # Remove old key if exists
-            if grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
-                sed -i.bak '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
-                sed -i.bak '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
-            fi
+            # Update API key in-place
+            update_env_variable "$ENV_FILE" "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "# Anthropic API Key for MCP/Goose integration"
             
-            # Add new key
-            echo "" >> "$ENV_FILE"
-            echo "# Anthropic API Key for MCP/Goose integration" >> "$ENV_FILE"
-            echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$ENV_FILE"
+            # Update GOOSE_MODEL in-place with detected model
+            update_env_variable "$ENV_FILE" "GOOSE_MODEL" "$DETECTED_MODEL" "# Detected Claude Model"
+            
             log_success "API key saved to etc/userconfig.env"
+            log_success "GOOSE_MODEL set to: $DETECTED_MODEL_NAME"
             
             export ANTHROPIC_API_KEY
+            export GOOSE_MODEL="$DETECTED_MODEL"
             break
         else
             # Invalid key - remove from env and ask again
@@ -332,12 +388,129 @@ check_anthropic_key() {
             read -p "Would you like to try another API key? (Y/n): " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Nn]$ ]]; then
-                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4 access is required."
+                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4+ access is required."
                 exit 1
             fi
             # Clear the key to prompt for a new one
             ANTHROPIC_API_KEY=""
         fi
+    done
+}
+
+# Validate MinIO credentials
+check_minio_credentials() {
+    log_info "Checking MinIO credentials..."
+    
+    ENV_FILE="${SCRIPT_DIR}/etc/policycow.env"
+    
+    # Load environment variables if file exists
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        source "$ENV_FILE"
+        set +a
+    fi
+    
+    # Check if credentials are set
+    MINIO_USER_MISSING=false
+    MINIO_PASS_MISSING=false
+    
+    if [ -z "$MINIO_ROOT_USER" ]; then
+        MINIO_USER_MISSING=true
+    fi
+    
+    if [ -z "$MINIO_ROOT_PASSWORD" ]; then
+        MINIO_PASS_MISSING=true
+    fi
+    
+    # Validation loop
+    while true; do
+        # Prompt for username if missing
+        if [ "$MINIO_USER_MISSING" = true ] || [ -z "$MINIO_ROOT_USER" ]; then
+            log_warning "MinIO root username not found in environment"
+            echo ""
+            echo "MinIO requires a root username for authentication."
+            echo "Requirements: Minimum 3 characters"
+            echo ""
+            read -p "Enter MinIO root username: " -r MINIO_ROOT_USER
+            echo ""
+        fi
+        
+        # Validate username
+        if [ ${#MINIO_ROOT_USER} -lt 3 ]; then
+            log_error "MinIO username must be at least 3 characters long"
+            MINIO_ROOT_USER=""
+            continue
+        fi
+        
+        # Check for invalid characters in username (spaces, special chars that could cause issues)
+        if [[ "$MINIO_ROOT_USER" =~ [[:space:]] ]]; then
+            log_error "MinIO username cannot contain spaces"
+            MINIO_ROOT_USER=""
+            continue
+        fi
+        
+        # Prompt for password if missing
+        if [ "$MINIO_PASS_MISSING" = true ] || [ -z "$MINIO_ROOT_PASSWORD" ]; then
+            log_warning "MinIO root password not found in environment"
+            echo ""
+            echo "MinIO requires a root password for authentication."
+            echo "Requirements: Minimum 8 characters"
+            echo ""
+            read -s -p "Enter MinIO root password: " MINIO_ROOT_PASSWORD
+            echo ""
+            read -s -p "Confirm MinIO root password: " MINIO_ROOT_PASSWORD_CONFIRM
+            echo ""
+            echo ""
+            
+            if [ "$MINIO_ROOT_PASSWORD" != "$MINIO_ROOT_PASSWORD_CONFIRM" ]; then
+                log_error "Passwords do not match"
+                MINIO_ROOT_PASSWORD=""
+                MINIO_ROOT_PASSWORD_CONFIRM=""
+                continue
+            fi
+        fi
+        
+        # Validate password length
+        if [ ${#MINIO_ROOT_PASSWORD} -lt 8 ]; then
+            log_error "MinIO password must be at least 8 characters long"
+            MINIO_ROOT_PASSWORD=""
+            MINIO_ROOT_PASSWORD_CONFIRM=""
+            MINIO_PASS_MISSING=true
+            continue
+        fi
+        
+        # Check for spaces in password
+        if [[ "$MINIO_ROOT_PASSWORD" =~ [[:space:]] ]]; then
+            log_error "MinIO password cannot contain spaces"
+            MINIO_ROOT_PASSWORD=""
+            MINIO_ROOT_PASSWORD_CONFIRM=""
+            MINIO_PASS_MISSING=true
+            continue
+        fi
+        
+        # All validations passed
+        log_success "MinIO credentials validated successfully"
+        log_info "Username: $MINIO_ROOT_USER (${#MINIO_ROOT_USER} characters)"
+        log_info "Password: ******** (${#MINIO_ROOT_PASSWORD} characters)"
+        
+        # Save credentials to env file
+        if [ ! -f "$ENV_FILE" ]; then
+            log_info "Creating etc/policycow.env file..."
+            mkdir -p "$(dirname "$ENV_FILE")"
+            touch "$ENV_FILE"
+        fi
+        
+        # Update credentials in-place
+        update_env_variable "$ENV_FILE" "MINIO_ROOT_USER" "$MINIO_ROOT_USER" "# MinIO Root Credentials"
+        update_env_variable "$ENV_FILE" "MINIO_ROOT_PASSWORD" "$MINIO_ROOT_PASSWORD" ""
+        
+        log_success "MinIO credentials saved to etc/policycow.env"
+        
+        # Export for current session
+        export MINIO_ROOT_USER
+        export MINIO_ROOT_PASSWORD
+        
+        break
     done
 }
 
@@ -579,7 +752,8 @@ show_mcp_info() {
     echo ""
     log_info "AI Model Configuration:"
     echo "  - Provider: Anthropic only"
-    echo "  - Maximum Model: Claude Sonnet 4"
+    echo "  - Detected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4}"
+    echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-20250514}"
     echo "  - Goose Sessions: $GOOSE_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
     echo ""
@@ -598,7 +772,7 @@ show_mcp_info() {
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
-    echo "  ⚠️  Only Anthropic Claude is supported (max: Sonnet 4)"
+    echo "  ⚠️  Only Anthropic Claude is supported (detected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4})"
     echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
     echo "  ⚠️  Goose sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
@@ -620,6 +794,7 @@ main() {
     check_docker_compose
     check_system_requirements
     check_anthropic_key
+    check_minio_credentials
     check_ssl_certificates
     check_env_files
     
