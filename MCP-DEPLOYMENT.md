@@ -787,7 +787,11 @@ mcp:
       name: grc-rule-creator
       description: Open Security Compliance Rule Creator
       uri: http://localhost:45678/mcp
-      envs: {}
+      envs: {
+        "ENABLE_CCOW_API_TOOLS": false,
+        "MCP_TOOLS_TO_BE_INCLUDED": "rules",
+        "OSC_GOOSE": true
+      }
       env_keys: []
       headers: {}
       timeout: 300
@@ -912,7 +916,11 @@ mcp:
       name: grc-rule-creator
       description: Open Security Compliance Rule Creator
       uri: http://localhost:45678/mcp
-      envs: {}
+      envs: {
+        "ENABLE_CCOW_API_TOOLS": false,
+        "MCP_TOOLS_TO_BE_INCLUDED": "rules",
+        "OSC_GOOSE":true
+      }
       env_keys: []
       headers: {}
       timeout: 300

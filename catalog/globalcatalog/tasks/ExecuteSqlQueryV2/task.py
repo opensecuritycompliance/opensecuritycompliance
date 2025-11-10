@@ -31,7 +31,6 @@ class Task(cards.AbstractTask):
         """
 
         self.prev_task_log_data: List = []
-        response: List = {}
         self.proceed_if_log_exists: bool = True
         self.proceed_if_error_exists: bool = True
 
@@ -39,13 +38,12 @@ class Task(cards.AbstractTask):
         prev_log_file = user_inputs.get("LogFile", "")
         file1_url = user_inputs.get("InputFile1", "")
         file2_url = user_inputs.get("InputFile2", "")
+        output_file_format = user_inputs.get("OutputFileFormat") or "PARQUET"
 
         default_log_config_filepath = str(
-            pathlib.Path(__file__).parent.joinpath(
-                "LogConfig_default.toml").resolve()
+            pathlib.Path(__file__).parent.joinpath("LogConfig_default.toml").resolve()
         )
-        custom_log_config_url = self.task_inputs.user_inputs.get(
-            "LogConfigFile")
+        custom_log_config_url = self.task_inputs.user_inputs.get("LogConfigFile")
 
         self.proceed_if_log_exists = user_inputs.get("ProceedIfLogExists")
         self.proceed_if_log_exists = (
@@ -78,14 +76,12 @@ class Task(cards.AbstractTask):
         if error:
             return self.upload_log_file({"Error": error})
 
-        log_data, self.prev_task_log_data, error = self.validate_log(
-            prev_log_file)
+        log_data, self.prev_task_log_data, error = self.validate_log(prev_log_file)
         if log_data:
             return log_data
         elif error:
             error_info = log_config_manager.get_error_message(
-                "ExcecuteSQLQuery.Validation.LogFile.download_failed", {
-                    "error": error}
+                "ExcecuteSQLQuery.Validation.LogFile.download_failed", {"error": error}
             )
             return self.upload_log_file({"Error": error_info})
 
@@ -99,15 +95,20 @@ class Task(cards.AbstractTask):
             )
             return self.upload_log_file({"Error": error_info})
 
-        config, error = self.download_toml_file_from_minio_as_dict(
-            self.task_inputs.user_inputs["SQLConfig"]
-        )
-        if error:
-            error_info = log_config_manager.get_error_message(
-                "ExcecuteSQLQuery.Validation.SQLConfig.download_failed",
-                {"error": error},
-            )
-            return self.upload_log_file({"Error": error_info})
+        sql_config_file = user_inputs.get("SQLConfig", "")
+        sql_query = user_inputs.get("SQLQuery", "")
+
+        # If both SQLConfig and SQLQuery are provided, SQLConfig takes precedence
+        if sql_config_file != MINIO_PLACEHOLDER and sql_config_file:
+            config, error = self.download_toml_file_from_minio_as_dict(sql_config_file)
+            if error:
+                error_info = log_config_manager.get_error_message(
+                    "ExcecuteSQLQuery.Validation.SQLConfig.download_failed",
+                    {"error": error},
+                )
+                return self.upload_log_file({"Error": error_info})
+        elif sql_query:
+            config = {"SQLQuery": sql_query}
 
         sql_config_errors = self.validate_sql_config(config)
         if sql_config_errors:
@@ -118,7 +119,6 @@ class Task(cards.AbstractTask):
             return self.upload_log_file({"Error": error_info})
 
         sql_query = config["SQLQuery"]
-        output_file_format = config.get("OutputFileFormat", "PARQUET")
 
         # Validate SQL query to mitigate injection
         if not self.is_safe_sql_query(sql_query):
@@ -133,8 +133,7 @@ class Task(cards.AbstractTask):
         file1_df, error = self.load_file(file1_url)
         if error:
             error_info = log_config_manager.get_error_message(
-                "ExcecuteSQLQuery.Validation.InputFile1.load_failed", {
-                    "error": error}
+                "ExcecuteSQLQuery.Validation.InputFile1.load_failed", {"error": error}
             )
             return self.upload_log_file({"Error": error_info})
 
@@ -152,8 +151,7 @@ class Task(cards.AbstractTask):
 
         try:
             with sqlite3.connect(":memory:") as conn:
-                file1_df.to_sql("inputfile1", conn,
-                                if_exists="replace", index=False)
+                file1_df.to_sql("inputfile1", conn, if_exists="replace", index=False)
                 if not file2_df.empty:
                     file2_df.to_sql(
                         "inputfile2", conn, if_exists="replace", index=False
@@ -198,20 +196,21 @@ class Task(cards.AbstractTask):
             return {"Error": "User credentials are missing"}
 
         errors = []
-        for key in ["InputFile1", "SQLConfig"]:
-            if not cowdictutils.is_valid_key(self.task_inputs.user_inputs, key):
-                errors.append(key)
+        if not cowdictutils.is_valid_key(self.task_inputs.user_inputs, "InputFile1"):
+            errors.append("InputFile1")
+
+        if not cowdictutils.is_valid_key(self.task_inputs.user_inputs, "SQLConfig"):
+            if not cowdictutils.is_valid_key(self.task_inputs.user_inputs, "SQLQuery"):
+                errors.append("SQLConfig or SQLQuery")
         return (
-            {"Error": "The following input(s): " +
-             ", ".join(errors) + " is/are empty"}
+            {"Error": "The following input(s): " + ", ".join(errors) + " is/are empty"}
             if errors
             else {}
         )
 
     def load_prior_errors(self, log_file: str) -> List[Dict[str, str]]:
         """Load prior errors from a log file."""
-        log_data, error = self.download_json_file_from_minio_as_iterable(
-            log_file)
+        log_data, error = self.download_json_file_from_minio_as_iterable(log_file)
         return (
             log_data
             if not error
@@ -255,8 +254,7 @@ class Task(cards.AbstractTask):
     def stringify_complex_types(self, value: any) -> Union[str, any]:
         """Convert complex types to JSON strings for SQLite compatibility."""
         if isinstance(
-            value, (int, float, str, bool, datetime,
-                    pd.Timedelta, bytes, complex)
+            value, (int, float, str, bool, datetime, pd.Timedelta, bytes, complex)
         ):
             return value
         try:
@@ -281,7 +279,9 @@ class Task(cards.AbstractTask):
             df=output_df, file_name=f"{name}.parquet"
         )
 
-    def handle_output_file_upload(self, result_df: pd.DataFrame, output_file_format: str, log_config_manager) -> Dict:
+    def handle_output_file_upload(
+        self, result_df: pd.DataFrame, output_file_format: str, log_config_manager
+    ) -> Dict:
         """
         Handle uploading result DataFrame in the specified format (JSON, CSV, or PARQUET).
 
@@ -299,7 +299,7 @@ class Task(cards.AbstractTask):
 
             if output_file_format.upper() == "JSON":
                 # Convert DataFrame to JSON string
-                result_json = result_df.to_json(orient='records')
+                result_json = result_df.to_json(orient="records")
                 file_path, error = self.upload_iterable_as_json_file_to_minio(
                     json.loads(result_json), "OutputFile"
                 )
@@ -309,19 +309,17 @@ class Task(cards.AbstractTask):
                 # Convert DataFrame to CSV and upload
                 csv_buffer = io.StringIO()
                 result_df.to_csv(csv_buffer, index=False)
-                csv_content = csv_buffer.getvalue().encode('utf-8')
+                csv_content = csv_buffer.getvalue().encode("utf-8")
 
                 file_path, error = self.upload_file_to_minio(
                     file_name=f"{file_name}.csv",
                     file_content=csv_content,
-                    content_type="text/csv"
+                    content_type="text/csv",
                 )
 
             else:
                 # Default to PARQUET if format not recognized
-                file_path, error = self.upload_df_as_parquet(
-                    result_df, "OutputFile"
-                )
+                file_path, error = self.upload_df_as_parquet(result_df, "OutputFile")
 
             if error:
                 error_info = log_config_manager.get_error_message(
@@ -335,8 +333,7 @@ class Task(cards.AbstractTask):
 
         else:
             # Handle empty result
-            output_path, error = self.upload_empty_output_by_format(
-                output_file_format)
+            output_path, error = self.upload_empty_output_by_format(output_file_format)
             if error:
                 error_info = log_config_manager.get_error_message(
                     "ExcecuteSQLQuery.Validation.OutputFile.upload_failed",
@@ -361,7 +358,9 @@ class Task(cards.AbstractTask):
 
         return response
 
-    def upload_empty_output_by_format(self, output_file_format: str) -> Tuple[str, Optional[str]]:
+    def upload_empty_output_by_format(
+        self, output_file_format: str
+    ) -> Tuple[str, Optional[str]]:
         """
         Upload an empty file in the specified format.
 
@@ -381,11 +380,11 @@ class Task(cards.AbstractTask):
             )
 
         elif output_file_format.upper() == "CSV":
-            empty_csv = "\n".encode('utf-8')
+            empty_csv = "\n".encode("utf-8")
             return self.upload_file_to_minio(
                 file_name=f"{file_name}.csv",
                 file_content=empty_csv,
-                content_type="text/csv"
+                content_type="text/csv",
             )
 
         else:  # Default to PARQUET
@@ -399,7 +398,7 @@ class Task(cards.AbstractTask):
             return self.upload_file_to_minio(
                 file_name=f"{file_name}.parquet",
                 file_content=buffer.read(),
-                content_type="application/parquet"
+                content_type="application/parquet",
             )
 
     def validate_log(
@@ -430,8 +429,7 @@ class Task(cards.AbstractTask):
             error_data.extend(self.prev_task_log_data)
 
         if self.proceed_if_error_exists:
-            file_path, error_info = self.upload_log_file_to_minio(
-                error_data=error_data)
+            file_path, error_info = self.upload_log_file_to_minio(error_data=error_data)
             if error_info:
                 logger.log_data(
                     {
