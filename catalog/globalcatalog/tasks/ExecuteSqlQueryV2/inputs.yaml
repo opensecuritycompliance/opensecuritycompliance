@@ -16,7 +16,9 @@ userObject:
 userInputs:
   InputFile1: <<MINIO_FILE_PATH>>
   InputFile2: <<MINIO_FILE_PATH>>
-  SQLConfig: <<MINIO_FILE_PATH>>
+  SQLConfig: <<MINIO_FILE_PATH>> # SQL configuration file in TOML format. sample provided in SQLConfig-sample.toml
+  SQLQuery: "" # SQL query to be executed on input files. If both SQLConfig and SQLQuery are provided, SQLConfig takes precedence.
+  OutputFileFormat: "" # Output file format. Options are JSON, CSV or Parquet (Default: Parquet)
   LogConfigFile: <<MINIO_FILE_PATH>>
   LogFile: <<MINIO_FILE_PATH>>
   ProceedIfLogExists: # Proceed if log file exists. True or False (Default: True)

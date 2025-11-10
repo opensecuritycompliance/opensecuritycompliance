@@ -1774,6 +1774,11 @@ class Task(cards.AbstractTask):
                     content_type = "application/json"
                 except Exception as e:
                     return None, "", f"Error parsing api response XML: {e}"
+            elif "html" in content_type and http.HTTPStatus.NO_CONTENT:
+                data = {"Response": "Response has no content"}
+                content_type = "application/json"
+            elif "csv" in content_type:
+                data = response._content
             else:
                 data = {"data": response.text}
         else:
@@ -1787,7 +1792,9 @@ class Task(cards.AbstractTask):
             except Exception as e:
                 return None, "", f"Error processing api response: {e}"
                 
-        if not data: data = {"Response": "Response has no content"}
+        if not data: 
+            data = {"Response": "Response has no content"}
+            content_type = "application/json"
 
         return data, content_type, None
 
@@ -1804,8 +1811,15 @@ class Task(cards.AbstractTask):
 
         elif "text/csv" in content_type or "application/csv" in content_type:
             try:
-                bytes_io = io.BytesIO(response)
-                return pd.read_csv(bytes_io), "csv", None
+                csv_df = pd.DataFrame()
+                if isinstance(response, (bytes, str)):
+                    bytes_io = io.BytesIO(response if isinstance(response, bytes) else response.encode())
+                    csv_df = pd.read_csv(bytes_io)
+                else:
+                    for resp in response:
+                        bytes_io = io.BytesIO(resp if isinstance(resp, bytes) else resp.encode())
+                        csv_df = pd.concat([csv_df, pd.read_csv(bytes_io)], ignore_index=True)
+                return csv_df, "csv", None
             except Exception as e:
                 return (
                     None,
@@ -1952,6 +1966,10 @@ class Task(cards.AbstractTask):
         elif content_type == "application/json":
             if "Raw" in body_info:
                 body_info_ = body_info["Raw"].get("Value", "")
+                # Replace InputFile placeholders
+                body_info_, error = self.http_connector.replace_placeholder(
+                    body_info_, "inputfile.", data_file
+                )
             parsed_content, error = self.http_connector.parse_content(body_info_)
             if not error:
                 body = (
