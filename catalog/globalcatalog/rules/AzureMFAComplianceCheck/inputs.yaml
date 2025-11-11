@@ -48,12 +48,10 @@ userInputs:
     "MFA_DSBL" end),   ValidationStatusNotes: (     if .isMfaRegistered
     then        "Active MFA protection with " + (.methodsRegistered | length |
     tostring) + " method(s): " + (.methodsRegistered | join(", "))    
-    else        "Critical: No MFA protection detected - account at high
-    risk"     end   ),   ComplianceStatus: (if .isMfaRegistered then
+    else        "Critical: No MFA protection detected - account at high risk"     end   ),   ComplianceStatus: (if .isMfaRegistered then
     "COMPLIANT" else "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
-    .isMfaRegistered then        "Compliant - MFA properly configured and
-    enforced"     else        "Non-compliant - MFA must be enabled to meet
-    security policy requirements"     end   ),   EvaluatedTime: (now |
+    .isMfaRegistered then        "MFA properly configured and enforced"     
+    else   "MFA must be enabled to meet security policy requirements"     end   ),   EvaluatedTime: (now |
     strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
     ActionResponseURL: "" }
   AzureRequestConfigFile: <<MINIO_FILE_PATH>>
