@@ -646,6 +646,52 @@ build_services() {
     fi
 }
 
+# Health check function for MCP service
+wait_for_mcp_health() {
+    local max_attempts=60
+    local attempt=0
+    local mcp_port=45678
+    local mcp_health_endpoint="http://localhost:${mcp_port}/health"
+    
+    log_info "Waiting for MCP service to be ready..."
+    log_info "Health check endpoint: ${mcp_health_endpoint}"
+    
+    while [ $attempt -lt $max_attempts ]; do
+        # Check if container is running first
+        if ! $DOCKER_CMD ps --filter "name=oscmcpservice" --filter "status=running" | grep -q oscmcpservice; then
+            log_warning "MCP service container not running yet (attempt $((attempt + 1))/$max_attempts)"
+            attempt=$((attempt + 1))
+            sleep 2
+            continue
+        fi
+        
+        # Try to hit the health endpoint
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" "${mcp_health_endpoint}" 2>/dev/null || echo "000")
+        
+        if [ "$http_code" = "200" ] || [ "$http_code" = "404" ]; then
+            if [ "$http_code" = "200" ]; then
+                log_success "MCP service is healthy and responding (HTTP 200)"
+            else
+                log_success "MCP service is up and responding (HTTP 404 - server is running)"
+            fi
+            return 0
+        elif [ "$http_code" = "000" ]; then
+            echo -ne "\r${BLUE}[INFO]${NC} Waiting for MCP service... (attempt $((attempt + 1))/$max_attempts) - Connection refused"
+        else
+            echo -ne "\r${BLUE}[INFO]${NC} Waiting for MCP service... (attempt $((attempt + 1))/$max_attempts) - HTTP $http_code"
+        fi
+        
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    echo ""
+    log_error "MCP service health check timed out after $((max_attempts * 2)) seconds"
+    log_info "Checking MCP service logs..."
+    $COMPOSE_CMD -f docker-compose-osc.yaml logs --tail=20 oscmcpservice
+    return 1
+}
+
 start_services() {
     log_info "Starting all services..."
     
@@ -661,19 +707,24 @@ start_services() {
     # Start MCP service first (before oscgoose)
     log_info "Starting MCP service..."
     if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscmcpservice; then
-        log_success "MCP service started"
+        log_success "MCP service container started"
     else
         log_error "Failed to start MCP service"
         exit 1
     fi
     
-    # Wait for MCP service to settle
-    log_info "Waiting 20 seconds for MCP service to settle..."
-    for i in {20..1}; do
-        echo -ne "\rTime remaining: ${i} seconds "
-        sleep 1
-    done
-    echo -e "\r${GREEN}✓${NC} MCP service settled"
+    # Wait for MCP service to be healthy
+    if ! wait_for_mcp_health; then
+        log_error "MCP service failed to become healthy"
+        echo ""
+        read -p "Continue with remaining services anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_error "Setup cancelled. Please check MCP service configuration."
+            exit 1
+        fi
+        log_warning "Continuing despite MCP service issues..."
+    fi
     
     # Now start remaining services including oscgoose
     log_info "Starting remaining services..."
@@ -749,6 +800,7 @@ show_mcp_info() {
     echo "  - Goose Service: http://localhost:8095"
     echo "  - Goose Web: http://localhost:8976"
     echo "  - MCP Service: http://localhost:45678"
+    echo "  - MCP Health Check: http://localhost:45678/health"
     echo ""
     log_info "AI Model Configuration:"
     echo "  - Provider: Anthropic only"
@@ -767,6 +819,7 @@ show_mcp_info() {
     echo "  - View Goose logs: $COMPOSE_CMD logs -f oscgoose"
     echo "  - View Goose Service logs: $COMPOSE_CMD logs -f oscgooseservice"
     echo "  - View MCP logs: $COMPOSE_CMD logs -f oscmcpservice"
+    echo "  - Check MCP health: curl http://localhost:45678/health"
     echo "  - Stop services: $COMPOSE_CMD down"
     echo "  - Restart services: $COMPOSE_CMD restart"
     echo "  - Check status: $DOCKER_CMD ps"
