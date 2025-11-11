@@ -94,6 +94,14 @@ inputs:
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
   required: false
+- name: ValidateFlow
+  description: "Only validates the input data and does not execute. True or False"
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
+  showField: true 
+  required: false 
 outputs:
 - name: OutputFile
   description: "File containing structured API response data from all executed requests. The OutputFile always returns data in an array of objects format [{}, {}], even if the API returns a single object. Single object responses are automatically wrapped in an array [{}] for consistency. For multiple InputFile entries, responses are aggregated into a single organized output. Includes original content plus any additional fields from ResponseConfigFile, formatted according to the content type (JSON, CSV, XML, etc.)."

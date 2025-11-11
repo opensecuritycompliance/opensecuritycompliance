@@ -69,6 +69,14 @@ inputs:
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true 
   required: false 
+- name: ValidateFlow
+  description: "Only validates the input data and does not execute. True or False"
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
+  showField: true 
+  required: false 
 outputs:
 - name: ComplianceStatus_
   description: Compliance status of the task

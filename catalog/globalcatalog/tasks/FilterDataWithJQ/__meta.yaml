@@ -38,10 +38,63 @@ inputs:
   defaultValue: ""
   showField: true
   required: true
+- name: OutputMethod
+  description: "Specifies whether to return all results from the JQ expression or only the first result."
+  dataType: STRING
+  repeated: false
+  allowedValues: [ALL, FIRST]
+  defaultValue: "FIRST"
+  showField: true
+  required: true  
+- name: LogConfigFile
+  description: "Error management file with custom exception messages, error codes, and debugging templates. Uses TOML with dynamic placeholders to provide clear error reporting for JQ failures and data processing issues."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  templateFile: 
+  format: toml
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
+- name: LogFile
+  description: "Log file from previous tasks with error details and execution context. Determines whether the current JQ task runs or skips based on existing errors and ProceedIfLogExists."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false  
+- name: ProceedIfLogExists
+  description: "Controls execution when previous log files exist. If enabled (default: true), JQ processing runs and includes the log. If disabled (false), execution is skipped and the existing log is returned."
+  dataType: BOOLEAN
+  repeated: false
+  allowedValues: []
+  defaultValue: true
+  showField: true
+  required: false
+- name: ProceedIfErrorExists
+  description: "Error handling strategy for JQ extraction. If enabled (default: true), errors are logged and processing continues. If disabled (false), any error stops execution immediately."
+  dataType: BOOLEAN
+  repeated: false
+  allowedValues: []
+  defaultValue: true
+  showField: true
+  required: false  
+- name: ValidateFlow
+  description: "Only validates the input data and does not execute. True or False"
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
+  showField: true 
+  required: false 
 outputs:
 - name: FilteredFile
   description: "JSON file containing only the records from InputFile that matched the JQ filter expression (evaluated to true). Records that don't match the filter are excluded from the output. Always returned as an array of objects [{}, {}]."
   dataType: FILE
+- name: LogFile
+  description: "Error log file recording errors, JQ failures, processing exceptions, and diagnostic details. Provides messages for troubleshooting and debugging."
+  dataType: FILE  
 - name: ComplianceStatus_
   description: Compliance status of the task
   dataType: STRING

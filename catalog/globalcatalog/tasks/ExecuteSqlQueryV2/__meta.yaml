@@ -39,7 +39,7 @@ inputs:
   dataType: FILE
   repeated: false
   allowedValues: []
-  templateFile: U1FMUXVlcnkgPSAnJycKU0VMRUNUCiAgICBpbnB1dGZpbGUxLiosCiAgICBDQVNFIAogICAgICAgIFdIRU4gQ09VTlQoaW5wdXRmaWxlMi50aW1lc3RhbXApID0gMCBUSEVOIE5VTEwKICAgICAgICBFTFNFIGpzb25fZ3JvdXBfYXJyYXkoCiAgICAgICAgICAgIGpzb25fb2JqZWN0KAogICAgICAgICAgICAgICAgJ3RpbWVzdGFtcCcsIGlucHV0ZmlsZTIudGltZXN0YW1wCiAgICAgICAgICAgICkKICAgICAgICApCiAgICBFTkQgQVMgVXNhZ2VMb2dUaW1lc3RhbXBzCkZST00KICAgIGlucHV0ZmlsZTEKTEVGVCBKT0lOCiAgICBpbnB1dGZpbGUyCk9OCiAgICBpbnB1dGZpbGUxLmVtYWlsID0gaW5wdXRmaWxlMi5gcmVzb3VyY2UubGFiZWxzLmVtYWlsX2lkYApHUk9VUCBCWQogICAgaW5wdXRmaWxlMS5lbWFpbDsKJycn
+  templateFile: U1FMUXVlcnkgPSAnJycKU0VMRUNUCiAgICBpbnB1dGZpbGUxLiosCiAgICBDQVNFIAogICAgICAgIFdIRU4gQ09VTlQoaW5wdXRmaWxlMi50aW1lc3RhbXApID0gMCBUSEVOIE5VTEwKICAgICAgICBFTFNFIGpzb25fZ3JvdXBfYXJyYXkoCiAgICAgICAgICAgIGpzb25fb2JqZWN0KAogICAgICAgICAgICAgICAgJ3RpbWVzdGFtcCcsIGlucHV0ZmlsZTIudGltZXN0YW1wCiAgICAgICAgICAgICkKICAgICAgICApCiAgICBFTkQgQVMgVXNhZ2VMb2dUaW1lc3RhbXBzCkZST00KICAgIGlucHV0ZmlsZTEKTEVGVCBKT0lOCiAgICBpbnB1dGZpbGUyCk9OCiAgICBpbnB1dGZpbGUxLmVtYWlsID0gaW5wdXRmaWxlMi5gcmVzb3VyY2UubGFiZWxzLmVtYWlsX2lkYApHUk9VUCBCWQogICAgaW5wdXRmaWxlMS5lbWFpbDsKJycnCk91dHB1dEZpbGVGb3JtYXQgPSAiUEFSUVVFVCI=
   format: toml
   defaultValue:  
   showField: true
@@ -81,6 +81,7 @@ inputs:
   required: false
 - name: ProceedIfLogExists
   description: "Controls task execution when previous log files exist. If enabled (default: true), the SQL query runs and the log is included in output. If disabled (false), execution is skipped and the existing log file is returned."
+  dataType: BOOLEAN
   repeated: false 
   allowedValues: [] 
   defaultValue: True
@@ -94,6 +95,14 @@ inputs:
   defaultValue: True
   showField: true 
   required: false
+- name: ValidateFlow
+  description: "only validates the input data and does not execute. True or False"
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
+  showField: true 
+  required: false 
 outputs:
 - name: ComplianceStatus_
   description: Compliance status of the task

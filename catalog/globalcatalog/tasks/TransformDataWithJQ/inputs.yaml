@@ -16,7 +16,6 @@ userObject:
 userInputs:
   InputFile: <<MINIO_FILE_PATH>>     # vulnerabilities.json
   JQTransform:    # JQ filter to apply on the input JSON data
-  JQDescription:    #Description of the JQ filter
   OutputMethod: FIRST  # FIRST or ALL (Default: FIRST)
   LogConfigFile: <<MINIO_FILE_PATH>>
   LogFile: <<MINIO_FILE_PATH>>

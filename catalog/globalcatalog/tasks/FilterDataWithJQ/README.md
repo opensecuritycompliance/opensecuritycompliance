@@ -6,11 +6,16 @@ Transform and modify data records using JQ expressions. Add new columns, rename 
 
 - **InputFile**: JSON/CSV/Parquet file with records to transform
 - **JQFilter**: JQ expression for data transformation
-- **JQDescription**: Plain English explanation of what the JQ transformation does (optional)
+- **OutputMethod**: (AllowedValues: ALL, FIRST) Specifies whether to return all results from the JQ expression or only the first result.
+- **LogConfigFile**: This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context. (optional)
+- **LogFile**: Map the LogFile from the previous task, to handle errors. (optional)
+- **ProceedIfLogExists**: If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true. (optional, default: true)
+- **ProceedIfErrorExists**: If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true. (optional, default: true)
 
 ## Output
 
 - **FilteredFile**: JSON file with transformed data
+- **LogFile**: File that contains information about errors that have occurred while executing the task.
 
 ## JQ Filter Examples
 
@@ -58,14 +63,6 @@ map(select(.cvssScore > 5.0) | . + {filtered: true})
 3. If validation passes, applies transformation to InputFile
 4. Outputs single transformed file
 5. Uses the description for documentation and logging purposes
-
-## JQ Description Field
-
-The **JQDescription** field is optional but highly recommended for:
-- **Documentation**: Helps team members understand what the transformation does
-- **Maintenance**: Makes it easier to modify or debug transformations later
-- **Compliance**: Provides audit trail of data processing logic
-- **Training**: Helps new users learn JQ syntax by seeing examples with explanations
 
 ## Use Cases
 

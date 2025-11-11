@@ -1,12 +1,11 @@
-import pathlib
-import re
-from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Dict
 
 import pandas as pd
-
+from pathlib import Path
 from compliancecowcards.structs import cards
-from compliancecowcards.utils import cowdfutils, cowdictutils, cowjqutils
+from compliancecowcards.utils import cowdictutils, cowjqutils
+import pathlib
+import re
 
 MINIO_PLACEHOLDER = "<<MINIO_FILE_PATH>>"
 logger = cards.Logger()
@@ -16,7 +15,7 @@ class Task(cards.AbstractTask):
     def __init__(self) -> None:
         """Initialize the Task with empty log data."""
         super().__init__()
-        self.prev_log_data: List[dict[str, Any]] = []
+        self.prev_log_data: List[Dict[str, Any]] = []
 
     def execute(self) -> dict:
         user_inputs = self.task_inputs.user_inputs
@@ -28,7 +27,6 @@ class Task(cards.AbstractTask):
         jq_filter: str | None = user_inputs.get("JQFilter")
 
         validate_flow: bool = user_inputs.get("ValidateFlow", False)
-        jq_description: str | None = user_inputs.get("JQDescription")
 
         # Determine whether to proceed if errors exist
         self.proceed_if_error_exists = self.task_inputs.user_inputs.get(
@@ -130,10 +128,6 @@ class Task(cards.AbstractTask):
                 }
             )
 
-        # JQDescription is optional, but we can log it for debugging/documentation purposes
-        if jq_description:
-            self._log_jq_description(jq_description)
-
         # Download and parse input file
         input_data, error = self._download_json(str(input_file_url))
         if error:
@@ -158,7 +152,14 @@ class Task(cards.AbstractTask):
         # Validate JQ filter syntax
         validation_error = self._validate_jq_filter(jq_filter, input_data)
         if validation_error:
-            return {"Error": validation_error}
+            return self.upload_log_file_panic(
+                {
+                    "Error": self.log_manager.get_error_message(
+                        "FilterDataWithJQ.JQExpression.syntax_error",
+                        {"error": validation_error}
+                    )
+                }
+            )
 
         if validate_flow:
             return {"ValidationStatus": "Input data validated successfully"}
@@ -292,10 +293,6 @@ class Task(cards.AbstractTask):
             True if file has JSON extension, False otherwise
         """
         return file_path.lower().endswith(".json")
-
-    def _log_jq_description(self, description: str) -> None:
-        """Log the JQ query description for documentation purposes"""
-        logger.log_data({'JQ_Description': description})
 
     def _download_json(self, file_url: str):
         """Download JSON file from MinIO"""
