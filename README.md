@@ -565,7 +565,7 @@ To accept file as a rule input and test the same locally, simply upload a file i
 ```yaml
 ....
 userInputs:
-    EmployeesFilePath: "http://localhost:9001/buckets/logs/browse/Q2hlY2tHaXRIdWJCcmFuY2hlc1Byb3RlY3Rpb24vMDQ2YTA1YWItNzM2OS0xMWVlLTkyNDgtMDI0MmFjMTMwMDAzLw=="
+    EmployeesFilePath: "http://localhost:9001/buckets/rule_inputs/input_file.json"
 ```
 
 ## Control period as a rule input
