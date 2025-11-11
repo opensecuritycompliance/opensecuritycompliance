@@ -7,6 +7,7 @@ import logging
 import urllib.parse
 from requests.auth import HTTPBasicAuth
 from compliancecowcards.utils import cowdictutils
+from urllib.parse import urlparse
 
 
 class SNOW:
@@ -388,3 +389,95 @@ class ServiceNowConnector:
             cowdictutils.is_valid_key(user_defined_credentials, 'Password')):
             return user_defined_credentials.get('UserName'), user_defined_credentials.get('Password'), ''
         return "", "", "'UserName' or 'Password' is empty"
+    
+    def upload_record(self, table_name, record_data):
+        """
+        Uploads a record to the specified ServiceNow table using the Table API.
+
+        Args:
+            table_name (str): The name of the ServiceNow table.
+            record_data (dict): Dictionary containing the record fields and values.
+
+        Returns:
+            tuple: (record_response, error_message)
+        """
+
+        # Input Validation
+        if not table_name or not isinstance(table_name, str):
+            return None, "Table name is required and must be a string."
+        if not record_data or not isinstance(record_data, dict):
+            return None, "Record data must be a non-empty dictionary."
+
+        # Get auth credentials
+        user_name, password, err = self.get_auth_credentials()
+        if err:
+            return None, err
+
+        # Construct API URL
+        url = f"{self.app_url}/api/now/table/{table_name}"
+
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
+        # Make POST request to create a new record
+        response_data, err_msg = self.make_api_call(
+            url=url,
+            method="POST",
+            user_name=user_name,
+            password=password,
+            json=record_data,
+            headers=headers,
+        )
+
+        if err_msg:
+            return None, err_msg
+
+        # Return the result
+        if cowdictutils.is_valid_key(response_data, "result"):
+            return response_data.get("result"), ""
+
+        return (
+            None,
+            f'Failed to upload record to table "{table_name}". Please contact support.',
+        )
+
+
+    def update_cmdb_table(self,url,payload):
+        username, password, err = self.get_auth_credentials()
+        if err:
+            return None, err
+
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        response = requests.post(url, headers=headers, auth=HTTPBasicAuth(username, password), json=payload)
+
+        if response.status_code not in [200, 201]:
+            if response.status_code == 401:
+                return None, {"error": "Invalid UserName or Password"}
+            else:
+                error = response.json().get("error", {"message": "Unknown error"})
+                return None, error
+
+        result = response.json()
+        sys_id = result.get("result", {}).get("sys_id")
+        tag_url = self.build_tag_url(url)
+        tag_payload = {
+            "table" : "cmdb_ci",
+            "sys_id" : sys_id,
+            "tags" : ["pci"]
+        }
+
+        tag_response = requests.post(tag_url, headers=headers, auth=HTTPBasicAuth(username, password), json=tag_payload)
+        if tag_response.status_code not in [200, 201]:
+                return None, {"error": "Tag update failed", "details": tag_response.text}
+
+        return result, None
+
+    def build_tag_url(self, cmdb_url: str) -> str:
+        """
+        Given a ServiceNow table API URL, build the tag API URL.
+        """
+        parsed = urlparse(cmdb_url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        return f"{base_url}/api/ntni/add_sys_tag_for_record"

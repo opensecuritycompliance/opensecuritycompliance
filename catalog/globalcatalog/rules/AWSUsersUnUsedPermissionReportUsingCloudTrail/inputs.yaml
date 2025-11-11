@@ -11,15 +11,6 @@ userObject:
         AccessKey: "$AWS_ACCESS_KEY"
         RoleARN: "$AWS_ROLE_ARN"
         SecretKey: "$AWS_SECRET_KEY"
-    linkedApplications:
-      ComplianceCow:
-      - name: ComplianceCow
-        appurl: "$CC_LOGIN_URL"
-        appPort: "0"
-        userDefinedCredentials:
-          OAuth:
-            ClientID: "$CC_CLIENT_ID"
-            ClientSecret: "$CC_CLIENT_SECRET"
 userInputs:
   Region: []
   EventFile: <<MINIO_FILE_PATH>>

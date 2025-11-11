@@ -1,0 +1,44 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      OAuth:
+        ValidationCURL: |-
+            curl --location '<<application.AppURL>>/oauth_token.do' \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=client_credentials' \
+            --data-urlencode 'client_id=<<OAuth.ClientID>>' \
+            --data-urlencode 'client_secret=<<OAuth.ClientSecret>>'
+        ClientID: ""
+        ClientSecret: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  ServiceNowTableRequestConfig: <<MINIO_FILE_PATH>>
+  ServiceNowTableResponseConfig: <<MINIO_FILE_PATH>>
+  ServiceNowTableConfig: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: false
+  ProceedIfErrorExists: false
+  ServiceNowInputFileValidationConfig: <<MINIO_FILE_PATH>>
+fromDate: 2025-10-21T11:28:15Z
+toDate: 2025-10-21T11:28:15Z

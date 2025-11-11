@@ -23,6 +23,11 @@ import time
 import random
 from compliancecowcards.structs import cards
 
+from botocore.awsrequest import AWSRequest
+from botocore.auth import SigV4Auth
+from botocore.credentials import Credentials, ReadOnlyCredentials
+from botocore.exceptions import BotoCoreError, NoCredentialsError
+
 logger = cards.Logger()
 
 
@@ -1149,89 +1154,50 @@ class HttpRequest:
 
     def generate_aws_iam_signature(
         self,
-        auth_header,
-        service,
         region,
-        api_url,
-        request_body,
-        request_parameters,
+        service,
         method,
-    ):
-
-        aws_services = [
-            "ec2",
-            "s3",
-            "lambda",
-            "rds",
-            "dynamodb",
-            "monitoring",
-            "sns",
-            "sqs",
-            "route53",
-            "cloudfront",
-            "elasticbeanstalk",
-            "iam",
-            "elasticloadbalancing",
-            "kinesis",
-            "redshift",
-            "execute-api",
-            "config",
-            "iot",
-            "glue",
-            "codecommit",
-            "codebuild",
-            "cloudformation",
-            "cloudtrail",
-            "auditmanager",
-            "ce",
-            "states",
-            "secretsmanager",
-            "ssm",
-            "elasticache",
-            "guardduty",
-            "waf",
-            "xray",
-            "transfer",
-            "eks",
-            "ecr",
-            "appsync",
-            "organizations",
-            "chime",
-            "sagemaker",
-            "amplify",
-            "databrew",
-            "ecs",
-            "batch",
-            "codepipeline",
-            "securityhub",
-        ]
-
-        if service not in aws_services:
-            return None, f"Invalid aws service '{service}'."
-
+        url,
+        params=None,
+        body=None,
+        headers=None
+        ):
         access_key = self.user_defined_credentials.aws_signature.access_key
         secret_key = self.user_defined_credentials.aws_signature.secret_key
 
-        host, canonical_uri = self.get_aws_base_url(api_url)
+        try:
+            if params:
+                if not isinstance(params, dict):
+                    raise TypeError("params must be a dictionary")
+                url = f"{url}?{urlencode(params, doseq=True)}"
 
-        if canonical_uri == "":
-            canonical_uri = "/"
-        canonical_headers = auth_header
+            if body and not isinstance(body, (str, bytes)):
+                raise TypeError("body must be str or bytes")
 
-        signature_headers = self.generate_signature(
-            method=method,
-            service=service,
-            host=host,
-            region=region,
-            canonical_uri=canonical_uri,
-            canonical_headers=canonical_headers,
-            request_parameters=request_parameters,
-            request_body=request_body,
-            access_key=access_key,
-            secret_key=secret_key,
-        )
+            body_bytes = body.encode("utf-8") if isinstance(body, str) else (body or b"")
 
-        return signature_headers, None
+            content_hash = hashlib.sha256(body_bytes).hexdigest()
+
+            headers = headers.copy() if headers else {}
+            headers["X-Amz-Content-Sha256"] = content_hash
+
+            request = AWSRequest(
+                method=method.upper(),
+                url=url,
+                data=body_bytes,
+                headers=headers
+            )
+
+            if not access_key or not secret_key:
+                raise NoCredentialsError()
+
+            credentials = Credentials(access_key, secret_key)
+            SigV4Auth(credentials, service, region).add_auth(request)
+
+            return dict(request.headers), None
+
+        except (BotoCoreError, NoCredentialsError, TypeError) as e:
+            return None, str(e)
 
     def generate_jwt_token(
         self, algorithm: str, private_key: str, payload_str: str
@@ -1397,111 +1363,6 @@ class HttpRequest:
                     'Error while reading "CredentialJson" data, Invalid JSON data.',
                 )
         return credentials_json, None
-
-    def sign(self, key, msg):
-        return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
-
-    def get_signature_key(self, key, date_stamp, region_name, service_name):
-        k_date = self.sign(("AWS4" + key).encode("utf-8"), date_stamp)
-        k_region = self.sign(k_date, region_name)
-        k_service = self.sign(k_region, service_name)
-        k_signing = self.sign(k_service, "aws4_request")
-        return k_signing
-
-    def generate_signature(
-        self,
-        method,
-        service,
-        host,
-        region,
-        canonical_uri,
-        canonical_headers,
-        request_parameters,
-        request_body,
-        access_key,
-        secret_key,
-    ):
-
-        no_region_services = ["iam", "route53", "cloudfront", "cognito-idp", "dynamodb"]
-
-        if (not service) or (not region) or (service in no_region_services):
-            region = "us-east-1"
-
-        current_time = datetime.datetime.now(datetime.timezone.utc)
-        amz_date = current_time.strftime("%Y%m%dT%H%M%SZ")
-        date_stamp = current_time.strftime("%Y%m%d")
-
-        canonical_headers["host"] = host
-        canonical_headers["x-amz-date"] = amz_date
-
-        canonical_headers = self.sort_dict_lexicographically(canonical_headers)
-
-        canonical_headers_ = ""
-        signed_headers = ""
-        for key, value in canonical_headers.items():
-            canonical_headers_ += f"{key}:{value}\n"
-            signed_headers += f"{key};"
-        signed_headers = signed_headers[: len(signed_headers) - 1]
-
-        if isinstance(request_body, str):
-            body = request_body.encode("utf-8")
-        elif isinstance(request_body, dict):
-            body = urlencode(request_body).encode("utf-8")
-        else:
-            body = b""
-
-        payload_hash = hashlib.sha256(body).hexdigest()
-
-        canonical_request = (
-            f"{method}\n"
-            f"{canonical_uri}\n"
-            f"{request_parameters}\n"
-            f"{canonical_headers_}\n"
-            f"{signed_headers}\n"
-            f"{payload_hash}"
-        )
-
-        algorithm = "AWS4-HMAC-SHA256"
-        credential_scope = f"{date_stamp}/{region}/{service}/aws4_request"
-        string_to_sign = (
-            f"{algorithm}\n"
-            f"{amz_date}\n"
-            f"{credential_scope}\n"
-            f"{hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()}"
-        )
-
-        signing_key = self.get_signature_key(secret_key, date_stamp, region, service)
-        signature = hmac.new(
-            signing_key, string_to_sign.encode("utf-8"), hashlib.sha256
-        ).hexdigest()
-
-        authorization_header = (
-            f"{algorithm} Credential={access_key}/{credential_scope}, "
-            f"SignedHeaders={signed_headers}, "
-            f"Signature={signature}"
-        )
-
-        headers = {
-            "x-amz-date": amz_date,
-            "x-amz-content-sha256": payload_hash,
-            "Authorization": authorization_header,
-        }
-
-        for key, value in canonical_headers.items():
-            if key not in ["host", "x-amz-date", "x-amz-content-sha256"]:
-                headers[key] = value
-
-        return headers
-
-    def sort_dict_lexicographically(self, input_dict):
-
-        sorted_keys = sorted(input_dict.keys(), key=str.lower)
-        return {key.lower(): input_dict[key] for key in sorted_keys}
-
-    def get_aws_base_url(self, api_url):
-
-        parsed_url = urlparse(api_url)
-        return parsed_url.hostname, parsed_url.path
 
     def extract_service_and_region_from_arn(self, role_arn):
 

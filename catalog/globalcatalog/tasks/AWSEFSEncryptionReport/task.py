@@ -196,16 +196,9 @@ class Task(cards.AbstractTask):
         error_list = []
 
         user_object = task_inputs.user_object
-        if not user_object or not user_object.app or not user_object.app.linked_applications:
-            error_list.append("Linked Application is missing")
-        else:
-            linked_application = user_object.app.linked_applications
-            if not cowdictutils.is_valid_key(linked_application, 'AWSAppConnector'):
-                error_list.append("Linked Application 'AWSAppConnector' is missing")
-            else:
-                if not linked_application.get('AWSAppConnector')[0]['userDefinedCredentials']:
-                    error_list.append("Linked Application 'AWSAppConnector' user defined credential is missing")
-
+        if not user_object or not user_object.app or not user_object.app.user_defined_credentials:
+            error_list.append("User credentials are missing")
+            
         empty_inputs = []
         invalid_inputs = []
 

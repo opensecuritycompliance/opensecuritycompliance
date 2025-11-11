@@ -90,6 +90,7 @@ var (
 	TaskInputs__YAMLFile  = "inputs__.yaml"
 	RuleGroupFile         = "rules_dependency.json"
 	RuleGroupYAMLFileName = "rulegroup.yaml"
+	RuleListYAMLFileName  = "rulelist.yaml"
 	TaskMetaYAMLFileName  = "__meta.yaml"
 	LogsFileName          = "logs.txt"
 	LocalFolder           = getEnv("LOCAL_FOLDER", "userdata")

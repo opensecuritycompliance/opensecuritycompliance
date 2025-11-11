@@ -1,0 +1,10 @@
+[
+    {
+        "FileName": "InputFile",
+        "RequiredFields": [
+            "TableName",
+            "SysParmLimit"
+        ],
+        "RemoveDuplicates": true
+    }
+]

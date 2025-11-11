@@ -1,0 +1,7 @@
+[
+    {
+        "TableName": "sn_si_incident",
+        "SysParmLimit": 10000,
+        "SysParmQuery": ""
+    }
+]

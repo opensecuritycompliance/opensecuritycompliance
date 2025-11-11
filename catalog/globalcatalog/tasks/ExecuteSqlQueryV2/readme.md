@@ -1,14 +1,17 @@
-The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file) as inputs. It produces the resulting data as a JSON file in the output.
+The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file or in the SQLExpression) as inputs. It produces the resulting data as a Parquet file in the output as default.
 
 ### **InputsAndOutputsStructure:**
 - Inputs :
     - **InputFile1**                : [MANDATORY] The primary JSON file containing an array of records on which the SQL query must be executed.
     - **InputFile2**                : [OPTIONAL] An optional secondary JSON file containing additional records to be included in the SQL query.
-    - **SQLConfig**                 : [MANDATORY] A TOML file containing the SQL query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
+    - **SQLConfig**                 : [OPTIONAL] A TOML file containing the SQL query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
+    - **SQLQuery**                  : [OPTIONAL] The SQL statements to be executed. If only InputFile1 is provided, queries run against `inputfile1`. If both InputFile1 and InputFile2 are provided, tables `inputfile1` and `inputfile2` will be available for querying, including joins, filtering, and aggregations. Must always contain a valid SQL query.
+    - **OutputFileFormat**          : [OPTIONAL] Target format for conversion of output file (supported formats JSON, CSV, PARQUET).
     - **LogConfigFile**             : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
     - **ProceedIfLogExists**        : [OPTIONAL]  If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
     - **ProceedIfErrorExists**      : [OPTIONAL]  If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
     - **LogFile**                   : [OPTIONAL]  Map the LogFile from the previous task, to handle errors.
+
 - Outputs :
     - **OutputFile**                : File that contains the result of the SQL Query.
     - **LogFile**                   : File that contains information about errors that have occurred while executing the task.
@@ -79,7 +82,7 @@ The purpose of this task is to execute the provided SQL query on the given input
     ]
     ```
 
-3. SQLConfig: **(MANDATORY)**
+3. SQLConfig: **(OPTIONAL)**
 
     - 'SQLConfig' is a TOML file that contains the SQLQuery to be executed.
     - The following tables will be created with the respective data: inputfile1, inputfile2.
@@ -109,7 +112,20 @@ The purpose of this task is to execute the provided SQL query on the given input
     '''
     ```
 
-4. LogConfigFile **(Optional)**
+4. SQLQuery **(OPTIONAL)**
+    - The SQLQuery section defines the SQL statements that will be executed directly against the data loaded from the input file(s).
+    - If only InputFile1 is provided, the queries will run against the `inputfile1` table.
+    - If both InputFile1 and InputFile2 are provided, queries can reference and join both tables (`inputfile1`, `inputfile2`).
+    - The queries must be written in standard SQL syntax and should return the desired results, such as filtering, aggregations, or joins.
+    - This field is optional and must always contain valid SQL query.
+    - Either a valid SQL query must be provided or an SQL config file must be provided.
+
+5. OutputFileFormat **(OPTIONAL)**
+    - Specifies the output file format for conversion.
+    - Allowed values: JSON, CSV, PARQUET.
+    - **Default:** PARQUET
+
+6. LogConfigFile **(Optional)**
     - This file defines exception messages and error-handling logic for the current task.
     - It is a TOML file containing predefined fields with placeholders that are dynamically replaced at runtime based on the task’s context.
     - If a placeholder in the TOML file cannot be resolved at runtime, an error will be raised.
@@ -149,17 +165,17 @@ The purpose of this task is to execute the provided SQL query on the given input
 
     We can also include the from and to dates in the error message for better clarity using the {fromdate} and {todate} placeholders.
 
-5. ProceedIfLogExists **(Optional)**
+7. ProceedIfLogExists **(Optional)**
    - This field is optional, and the default value of ProceedIfLogExists is true.
    - If ProceedIfLogExists is set to true, the task will continue its execution and return the LogFile at the end.
    - If it is set to false and a log file is already present, the task will skip further execution and simply return the existing LogFile.
 
-6. ProceedIfErrorExists **(Optional)**
+8. ProceedIfErrorExists **(Optional)**
    - This field is optional, and the default value of ProceedIfErrorExists is true.
    - If ProceedIfErrorExists is set to true, the task will return the error details as part of the LogFile and continue to the next task.
    - If it is set to false, the error details will be returned, and the entire rule execution will be stopped.
 
-7. LogFile **(Optional)**
+9. LogFile **(Optional)**
     - This field is required only when this task is not the first one in the rule.
     - LogFile from the previous task must be mapped to this to handle errors.
     - If mapped correctly, when the previous task returns a 'LogFile', it will pass it to this task and this task won't be executed.Otherwise if there is no 'LogFile from the previous task, this task will execute as expected.

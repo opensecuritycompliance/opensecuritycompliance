@@ -3,6 +3,13 @@ userObject:
     name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSRole:
         AccessKey: "$AWS_ROLE_ACCESS_KEY"
@@ -15,5 +22,5 @@ userInputs:
   Region:  []
   EventFile: <<MINIO_FILE_PATH>>
   ResourceFile: <<MINIO_FILE_PATH>>
-fromDate: 2024-06-01
-toDate: 2024-07-15
+fromDate: 2025-04-15T07:07:59Z
+toDate: 2025-04-15T07:07:59Z

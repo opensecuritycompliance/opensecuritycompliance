@@ -1,0 +1,206 @@
+version: "3.8"
+services:
+  cowstorage:
+    image: minio/minio:RELEASE.2024-07-04T14-25-45Z
+    container_name: cowstorage
+    hostname: cowstorage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - etc/policycow.env
+    volumes:
+      - ${HOME}/tmp/cowctl/minio:/data
+    command: server /data --address :9000 --console-address :9001
+    # command: server /data
+    networks:
+      internal:
+        aliases:
+          - cowstorage
+      default:
+        aliases:
+          - cowstorage
+  oscmcpservice:
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscmcpservice:latest-20251111134938
+    container_name: oscmcpservice
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+    ports:
+      - "45678:8080"
+    volumes:
+      - ./mcp-server:/home/cow-mcp
+    networks:
+      - internal
+      - default
+  oscgoose:
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/alpine/Dockerfile.oscgoose
+      args:
+        buildno: 1
+    image: oscgoose:1.1
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    env_file:
+      - ./etc/userconfig.env
+      - ./etc/policycow.env
+    hostname: oscgoose
+    container_name: oscgoose
+    restart: always
+    ports:
+      - 8976:8080/tcp
+    volumes:
+      - ./goose-config:/root/.config/goose
+      - ./goose-sessions:/home/goose/.local/share/goose
+      - ./goose-state:/home/goose/.local/state/goose
+    depends_on:
+      - oscmcpservice
+    networks:
+      internal:
+        aliases:
+          - oscgoose
+      default:
+        aliases:
+          - oscgoose
+  oscgooseservice:
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscgooseservice:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    env_file:
+      - ./etc/userconfig.env
+      - ./etc/policycow.env
+    environment:
+      - GIN_MODE=release
+    hostname: oscgooseservice
+    container_name: oscgooseservice
+    restart: always
+    ports:
+      - 8095:8080/tcp
+    volumes:
+      - ./goose-config:/root/.config/goose
+      - ./goose-sessions:/home/goose/.local/share/goose
+    depends_on:
+      - oscgoose
+    networks:
+      internal:
+        aliases:
+          - oscgooseservice
+      default:
+        aliases:
+          - oscgooseservice
+  oscwebserver:
+    platform: linux/x86_64
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscwebserver:1.1-20251111164226
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+    hostname: oscwebserver
+    container_name: oscwebserver
+    restart: always
+    ports:
+      - 3001:80
+    networks:
+      internal:
+        aliases:
+          - oscwebserver
+      default:
+        aliases:
+          - oscwebserver
+  oscreverseproxy:
+    platform: linux/x86_64
+    container_name: oscreverseproxy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscreverseproxy:latest-20251106112639
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+    ports:
+      - 443:443
+      - 80:80
+    environment:
+      - etc/userconfig.env
+      - etc/policycow.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
+    depends_on:
+      - oscapiservice
+    networks:
+      internal:
+        aliases:
+          - oscreverseproxy
+      default:
+        aliases:
+          - oscreverseproxy
+    volumes:
+      - "./src/oscreverseproxy/certs:/etc/continube/certs"
+    hostname: oscreverseproxy
+    restart: always
+  oscapiservice:
+    platform: linux/x86_64
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscapiservice:1.1-20251111070647
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    env_file:
+      - etc/userconfig.env
+      - etc/policycow.env
+    environment:
+      - GIN_MODE=release
+    volumes:
+      - ./catalog/globalcatalog/dashboards:/policycow/catalog/globalcatalog/dashboards
+      - ./catalog/globalcatalog/rules:/policycow/catalog/globalcatalog/rules
+      - ./catalog/applicationtypes:/policycow/catalog/applicationtypes
+      - ./catalog/applicationscope:/policycow/catalog/applicationscope
+      - ./catalog/globalcatalog/methods:/policycow/catalog/globalcatalog/methods
+      - ./catalog/globalcatalog/rulegroups:/policycow/catalog/globalcatalog/rulegroups
+      - ./catalog/globalcatalog/tasks:/policycow/catalog/globalcatalog/tasks
+      - ./catalog/localcatalog/:/policycow/catalog/localcatalog/
+      - ./etc/cowconfig.yaml:/policycow/etc/cowconfig.yaml
+      - ./exported-data:/policycow/exported-data
+      - ./catalog/globalcatalog/declaratives/applicationtypes:/policycow/catalog/globalcatalog/declaratives/applicationtypes
+      - ./catalog/globalcatalog/declaratives/credentialtypes:/policycow/catalog/globalcatalog/declaratives/credentialtypes
+      - ./catalog/globalcatalog/yamlfiles/applicationtypes:/policycow/catalog/globalcatalog/yamlfiles/applicationtypes
+      - ./catalog/globalcatalog/yamlfiles/credentialtypes:/policycow/catalog/globalcatalog/yamlfiles/credentialtypes
+      - ./cowexecutions:/policycow/cowexecutions
+      - ./goose-sessions:/home/goose/.local/share/goose
+    hostname: oscapiservice
+    container_name: oscapiservice
+    depends_on:
+      - cowstorage
+    restart: always
+    ports:
+      - 9080:80
+    networks:
+      internal:
+        aliases:
+          - oscapiservice
+      default:
+        aliases:
+          - oscapiservice
+networks:
+  default:
+    name: osc_default
+  internal:
+    name: osc_internal

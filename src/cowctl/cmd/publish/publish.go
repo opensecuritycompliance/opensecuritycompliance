@@ -7,6 +7,7 @@ import (
 
 	"cowctl/cmd/publish/appconfig"
 	"cowctl/cmd/publish/rule"
+	ruleList "cowctl/cmd/publish/rule-list"
 )
 
 func NewCommand() *cobra.Command {
@@ -26,6 +27,7 @@ func NewCommand() *cobra.Command {
 	}
 	cmd.AddCommand(rule.NewCommand())
 	cmd.AddCommand(appconfig.NewCommand())
+	cmd.AddCommand(ruleList.NewCommand())
 
 	return cmd
 }

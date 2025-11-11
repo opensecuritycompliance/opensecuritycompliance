@@ -28,6 +28,7 @@ from concurrent.futures import ThreadPoolExecutor, thread, as_completed
 import threading
 from enum import Enum
 from itertools import chain
+import xmltodict
 
 logger = cards.Logger()
 
@@ -120,6 +121,8 @@ class Task(cards.AbstractTask):
                     )
                 )
 
+        validate_flow = user_inputs.get("ValidateFlow", False)
+
         error = self.validate_inputs()
         if error:
             return self.upload_log_file_panic(error)
@@ -210,6 +213,9 @@ class Task(cards.AbstractTask):
         if not is_valid_res:
             error_details.append(error)
             return self.upload_log_file(error_details)
+    
+        if validate_flow:
+            return {"ValidationStatus": "Input data validated successfully"}
 
         output = [None] * len(resource_data)
         if not resource_data:
@@ -690,7 +696,7 @@ class Task(cards.AbstractTask):
         append_column = rule_set.get("AppendColumn", {})
         if append_column.get("IncludeAllInputFields"):
             if append_column["IncludeAllInputFields"]:
-                response_json.update(data_file)
+                self.update_response_data(response_json, data_file)
 
         if append_column.get("Fields"):
             append_column_fields = append_column["Fields"]
@@ -710,7 +716,7 @@ class Task(cards.AbstractTask):
                     "Invalid value provided in one of 'ResponseConfigFile.Response.RuleSet.AppendColumn.Fields'",
                 )
 
-            response_json.update(updated_append_column_fields)
+            self.update_response_data(response_json, updated_append_column_fields)
 
         return response_json, None
 
@@ -1195,21 +1201,17 @@ class Task(cards.AbstractTask):
                         error_details,
                     )
 
-            query_string = ""
-            if parsed_params:
-                query_string = urllib.parse.urlencode(parsed_params)
-            auth_header_, error = self.http_connector.generate_aws_iam_signature(
-                auth_header,
-                service_name,
-                region,
-                url_endpoint,
-                body,
-                query_string,
-                request_data["Method"],
+            auth_header,error = self.http_connector.generate_aws_iam_signature(
+                region=region,
+                service=service_name,
+                method=request_data["Method"],
+                url=url_endpoint,
+                params=parsed_params,
+                body=body,
+                headers=auth_header
             )
             if error:
                 error_details.append({"Error": error})
-            auth_header = auth_header_ | auth_header
         else:
             error_details.append(
                 {
@@ -1753,19 +1755,32 @@ class Task(cards.AbstractTask):
         # Handle empty response
         if content_type == "":
             data = {}
-        # Handle JSON response
+        # Handle JSON/XML response
         elif (
             "application/" in content_type or "text/" in content_type
-        ) and "json" in content_type:
-            try:
-                data = response.json()
-                if not data:
+        ):
+            if "json" in content_type:
+                try:
+                    data = response.json()
+                    if not data:
+                        data = {"data": response.text}
+                except requests.exceptions.JSONDecodeError:
                     data = {"data": response.text}
-            except requests.exceptions.JSONDecodeError:
+                except ValueError as e:
+                    return None, "", f"Error parsing api response JSON: {e}"
+            elif "xml" in content_type:
+                try:
+                    data = xmltodict.parse(response.text)
+                    content_type = "application/json"
+                except Exception as e:
+                    return None, "", f"Error parsing api response XML: {e}"
+            elif "html" in content_type and http.HTTPStatus.NO_CONTENT:
+                data = {"Response": "Response has no content"}
+                content_type = "application/json"
+            elif "csv" in content_type:
+                data = response._content
+            else:
                 data = {"data": response.text}
-            except ValueError as e:
-                return None, "", f"Error parsing api response JSON: {e}"
-
         else:
             try:
                 if response.content:
@@ -1777,7 +1792,9 @@ class Task(cards.AbstractTask):
             except Exception as e:
                 return None, "", f"Error processing api response: {e}"
                 
-        if not data: data = {"Response": "Response has no content"}
+        if not data: 
+            data = {"Response": "Response has no content"}
+            content_type = "application/json"
 
         return data, content_type, None
 
@@ -1794,8 +1811,15 @@ class Task(cards.AbstractTask):
 
         elif "text/csv" in content_type or "application/csv" in content_type:
             try:
-                bytes_io = io.BytesIO(response)
-                return pd.read_csv(bytes_io), "csv", None
+                csv_df = pd.DataFrame()
+                if isinstance(response, (bytes, str)):
+                    bytes_io = io.BytesIO(response if isinstance(response, bytes) else response.encode())
+                    csv_df = pd.read_csv(bytes_io)
+                else:
+                    for resp in response:
+                        bytes_io = io.BytesIO(resp if isinstance(resp, bytes) else resp.encode())
+                        csv_df = pd.concat([csv_df, pd.read_csv(bytes_io)], ignore_index=True)
+                return csv_df, "csv", None
             except Exception as e:
                 return (
                     None,
@@ -1942,6 +1966,10 @@ class Task(cards.AbstractTask):
         elif content_type == "application/json":
             if "Raw" in body_info:
                 body_info_ = body_info["Raw"].get("Value", "")
+                # Replace InputFile placeholders
+                body_info_, error = self.http_connector.replace_placeholder(
+                    body_info_, "inputfile.", data_file
+                )
             parsed_content, error = self.http_connector.parse_content(body_info_)
             if not error:
                 body = (
@@ -2045,6 +2073,15 @@ class Task(cards.AbstractTask):
             return ""
         else:
             return parsed_values
+            
+    def update_response_data(self, response_json: list | dict, data_to_update: dict):
+        if isinstance(response_json, list):
+            for index, item in enumerate(response_json):
+                if isinstance(item, dict):
+                    item.update(data_to_update)
+                    response_json[index] = item
+        elif isinstance(response_json, dict):
+            response_json.update(data_to_update)
 
     def upload_output_file(
         self, file_content: Any = None, file_name: str = None, content_type: str = None

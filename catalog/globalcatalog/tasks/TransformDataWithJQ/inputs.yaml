@@ -1,0 +1,26 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile: <<MINIO_FILE_PATH>>     # vulnerabilities.json
+  JQTransform:    # JQ filter to apply on the input JSON data
+  OutputMethod: FIRST  # FIRST or ALL (Default: FIRST)
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  LogFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: # True or False (Default: True)
+  ProceedIfErrorExists:  # True or False (Default: True)
+  ValidateFlow:  # If True, only validates the input data and does not execute the JQ transformation. True or False (Default: False)
+fromDate: 2025-04-22T07:15:39Z
+toDate: 2025-04-22T07:15:39Z

@@ -89,7 +89,7 @@ services:
       default:
         aliases:
           - cowctl
-networks:
+  networks:
   default:
     name: policycow_default
   internal:

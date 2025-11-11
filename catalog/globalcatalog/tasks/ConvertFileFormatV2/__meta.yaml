@@ -13,6 +13,8 @@ icon: <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" v
 type: python
 tags:
 - generic
+- primitive
+- MCP
 applicationType: generic
 userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
@@ -65,6 +67,14 @@ inputs:
   repeated: false 
   allowedValues: [] 
   defaultValue: <<MINIO_FILE_PATH>>
+  showField: true 
+  required: false 
+- name: ValidateFlow
+  description: "Only validates the input data and does not execute. True or False"
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
   showField: true 
   required: false 
 outputs:

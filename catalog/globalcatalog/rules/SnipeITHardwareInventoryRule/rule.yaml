@@ -1,0 +1,156 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: SnipeITHardwareInventoryRule
+  purpose: List and track hardware assets from SnipeIT inventory management system for compliance monitoring.
+  description: Comprehensive rule that fetches hardware inventory data from SnipeIT API, transforms it into ComplianceCow standard format for compliance tracking.
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  app: HttpRequest
+  tags:
+    - MCP
+spec:
+  inputs:
+    ListHardwaresRequestConfig: <<MINIO_FILE_PATH>>
+    ProceedIfLogExists: false
+    ProceedIfErrorExists: false
+    JQExpressionToTransformHardwares: >-
+      .[].rows | map({   System: "snipeit",   Source: "compliancecow",  
+      ResourceID: (.id | tostring),   ResourceName: .name,   ResourceType:
+      .category.name,   ResourceLocation: (.location.name // "Unknown"),  
+      ResourceTags: .asset_tag,   Owner: .created_by.name,   SerialNumber:
+      .serial,   ModelName: .model.name,   ModelNumber: .model_number,  
+      Manufacturer: .manufacturer.name,   CreatedAt: .created_at.datetime,  
+      UpdatedAt: .updated_at.datetime,   Status: .status_label.name,  
+      AssignedTo: (.assigned_to.name // "Unassigned"),   PurchaseDate:
+      .purchase_date.formatted,   WarrantyExpires: (.warranty_expires.formatted
+      // "N/A"),   EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),  
+      UserAction: "",   ActionStatus: "",   ActionResponseURL: "" })
+    OutputFileFormat: JSON
+  inputsMeta__:
+    - name: ListHardwaresRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ProceedIfLogExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ProceedIfErrorExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: JQExpressionToTransformHardwares
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        .[].rows | map({   System: "snipeit",   Source: "compliancecow",  
+        ResourceID: (.id | tostring),   ResourceName: .name,   ResourceType:
+        .category.name,   ResourceLocation: (.location.name // "Unknown"),  
+        ResourceTags: .asset_tag,   Owner: .created_by.name,   SerialNumber:
+        .serial,   ModelName: .model.name,   ModelNumber: .model_number,  
+        Manufacturer: .manufacturer.name,   CreatedAt: .created_at.datetime,  
+        UpdatedAt: .updated_at.datetime,   Status: .status_label.name,  
+        AssignedTo: (.assigned_to.name // "Unassigned"),   PurchaseDate:
+        .purchase_date.formatted,   WarrantyExpires:
+        (.warranty_expires.formatted // "N/A"),   EvaluatedTime: (now |
+        strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
+        ActionResponseURL: "" })
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: OutputFileFormat
+      dataType: STRING
+      defaultValue: JSON
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+        - YAML
+        - TOML
+        - XLSX
+        - HAR
+      repeated: false
+      explanation: ''
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: fetch_hardware
+      type: task
+      purpose: ExecuteHttpRequestV2
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: transform_to_standard
+      type: task
+      purpose: Transform Data With JQ
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ConvertFileFormatV2
+      alias: convert_asset_data_to_json_format
+      type: task
+      purpose: ConvertFileFormatV2
+      description: >-
+        Converts data files between supported formats: JSON, CSV, PARQUET, YAML,
+        TOML, XLSX, and XML. Automatically detects formats, preserves data
+        structure, and ensures compatibility for flexible integration.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - fetch_hardware.Input.RequestConfigFile:=*.Input.ListHardwaresRequestConfig
+    - fetch_hardware.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
+    - fetch_hardware.Input.ProceedIfErrorExists:=*.Input.ProceedIfErrorExists
+    - transform_to_standard.Input.InputFile:=fetch_hardware.Output.OutputFile
+    - >-
+      transform_to_standard.Input.JQTransform:=*.Input.JQExpressionToTransformHardwares
+    - >-
+      convert_asset_data_to_json_format.Input.InputFile:=transform_to_standard.Output.TransformedFile
+    - >-
+      convert_asset_data_to_json_format.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      *.Output.CompliancePCT_:=convert_asset_data_to_json_format.Output.CompliancePCT_
+    - >-
+      *.Output.ComplianceStatus_:=convert_asset_data_to_json_format.Output.ComplianceStatus_
+    - '*.Output.LogFile:=convert_asset_data_to_json_format.Output.LogFile'
+    - >-
+      *.Output.SnipeITHardwares:=convert_asset_data_to_json_format.Output.OutputFile

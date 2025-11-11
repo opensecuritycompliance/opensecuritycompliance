@@ -342,7 +342,7 @@ func GetValueAsFolderNameFromCmdPromptInCatalogs(labelName string, isMandatory b
 				}
 			}
 			name := filepath.Base(filepath.Dir(path))
-			if filepath.Ext(path) == ".yaml" && filepath.Base(path) != "rule.yaml" && filepath.Base(path) != constants.RuleGroupYAMLFileName {
+			if filepath.Ext(path) == ".yaml" && filepath.Base(path) != "rule.yaml" && filepath.Base(path) != constants.RuleGroupYAMLFileName && filepath.Base(path) != constants.RuleListYAMLFileName {
 				name = filepath.Base(path)
 			}
 			directories = append(directories, dropdownutils.Item{Name: name, Descr: description, Global: isGlobal})
