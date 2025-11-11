@@ -47,9 +47,7 @@
             "supports_cache_control": null
         }
     ],
-    "headers": {
-        "anthropic-beta": "context-1m-2025-08-07"
-    },
+    "headers": {},
     "timeout_seconds": null,
     "supports_streaming": true
 }
