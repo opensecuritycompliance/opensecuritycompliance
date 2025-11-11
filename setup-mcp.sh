@@ -177,8 +177,8 @@ check_system_requirements() {
     # Check available memory
     if command -v free &> /dev/null; then
         TOTAL_MEM=$(free -g | awk '/^Mem:/{print $2}')
-        if [ "$TOTAL_MEM" -lt 8 ]; then
-            log_warning "System has less than 8GB RAM. Open Security Compliance setup requires 8GB+ for optimal performance"
+        if [ "$TOTAL_MEM" -lt 16 ]; then
+            log_warning "System has less than 16GB RAM. Open Security Compliance setup requires 16GB+ for optimal performance"
             echo ""
             read -p "Continue anyway? (y/N): " -n 1 -r
             echo
@@ -209,7 +209,7 @@ check_system_requirements() {
     fi
     
     log_warning "Open Security Compliance setup requires a beefy machine or remote hosting:"
-    echo "  - Recommended: 8GB+ RAM, 4+ CPU cores, 30GB+ disk"
+    echo "  - Recommended: 16GB+ RAM, 8+ CPU cores, 30GB+ disk"
     echo "  - 7 services will be running simultaneously"
 }
 
@@ -830,7 +830,7 @@ show_mcp_info() {
     echo "  ⚠️  Goose sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
     echo "  ⚠️  Not tested at scale - for development/testing only"
-    echo "  ⚠️  Ensure you have a beefy machine (8GB+ RAM, 4+ cores)"
+    echo "  ⚠️  Ensure you have a beefy machine (16GB+ RAM, 8+ cores)"
     echo ""
 }
 
