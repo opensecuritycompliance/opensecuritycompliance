@@ -1,0 +1,78 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: "$AWS_ACCESS_KEY"
+        SecretKey: "$AWS_SECRET_KEY"
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  JQFilter: .[].ListUsersResponse.ListUsersResult.Users.member[] | select(.PasswordLastUsed
+    == null or ((now - (.PasswordLastUsed | fromdateiso8601)) / 86400) > 90)
+  JQTransform: 'map(  . as $user |  ($user.PasswordLastUsed // null) as $lastUsed
+    |  (if $lastUsed == null then null else (now - ($lastUsed | fromdateiso8601))
+    / 86400 | floor end) as $daysSince |  {    System: "aws",    Source: "compliancecow",     ResourceID:
+    $user.Arn,    ResourceName: $user.UserName,    ResourceType: "User",    ResourceLocation:
+    ($user.Arn | split(":")[3]),    ResourceTags: ($user.Tags // []),    UserName:
+    $user.UserName,    PasswordLastUsed: $lastUsed,    DaysSinceLastUsed: $daysSince,    IsStale:
+    ($lastUsed == null or $daysSince > 90),    ValidationStatusCode: (if ($lastUsed
+    == null or $daysSince > 90) then "PASS_ACCT_STALE" else "FAIL_ACCT_ACTV" end),    ValidationStatusNotes:
+    (if $lastUsed == null then "User has never used password - considered stale" elif
+    $daysSince > 90 then "Password last used \($daysSince) days ago - exceeds 90 day
+    threshold" else "Password used within 90 days - account active" end),    ComplianceStatus:
+    (if ($lastUsed == null or $daysSince > 90) then "NON_COMPLIANT" else "COMPLIANT"
+    end),    ComplianceStatusReason: (if ($lastUsed == null or $daysSince > 90) then
+    "Stale user account detected - password not used in over 90 days" else "Active
+    user account - password used within compliance period" end),    EvaluatedTime:
+    (now | strftime("%Y-%m-%dT%H:%M:%SZ")),    UserAction: "",    ActionStatus: "",    ActionResponseURL:
+    ""  })|.[]'
+  OutputFileFormat: CSV
+  OutputMethod: ALL
+  RequestConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-11-11T14:09:25Z
+toDate: 2025-11-11T14:09:25Z

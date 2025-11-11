@@ -1,0 +1,61 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      OAuth:
+        ValidationCURL: |-
+            curl --location 'https://login.microsoftonline.com/<<TenantID>>/oauth2/v2.0/token' \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'client_id=<<ClientID>>' \
+            --data-urlencode 'client_secret=<<ClientSecret>>' \
+            --data-urlencode 'scope=https://graph.microsoft.com/.default' \
+            --data-urlencode 'grant_type=client_credentials'
+        ClientID: ""
+        ClientSecret: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  ProceedIfLogExists: false
+  ProceedIfErrorExists: false
+  JQTransform: >-
+    .[] | {   System: "azure",   Source: "compliancecow",   ResourceID: .id,  
+    ResourceName: .userDisplayName,   ResourceType: "User",  
+    ResourceLocation: "N/A",   ResourceTags: [],   ResourceURL:
+    ("https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/"
+    + .id),   UserPrincipalName: .userPrincipalName,   AccountEnabled: true,  
+    MFAMethods: (.methodsRegistered // []),   MFAEnabled: (.isMfaRegistered //
+    false),   ValidationStatusCode: (if .isMfaRegistered then "MFA_ENBL" else
+    "MFA_DSBL" end),   ValidationStatusNotes: (     if .isMfaRegistered
+    then        "Active MFA protection with " + (.methodsRegistered | length |
+    tostring) + " method(s): " + (.methodsRegistered | join(", "))    
+    else        "Critical: No MFA protection detected - account at high risk"     end   ),   ComplianceStatus: (if .isMfaRegistered then
+    "COMPLIANT" else "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
+    .isMfaRegistered then        "MFA properly configured and enforced"     
+    else   "MFA must be enabled to meet security policy requirements"     end   ),   EvaluatedTime: (now |
+    strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
+    ActionResponseURL: "" }
+  AzureRequestConfigFile: <<MINIO_FILE_PATH>>
+  AzureResponseConfigFile: <<MINIO_FILE_PATH>>
+  OutputMethod: ALL
+fromDate: 2025-11-11T13:51:16Z
+toDate: 2025-11-11T13:51:16Z
