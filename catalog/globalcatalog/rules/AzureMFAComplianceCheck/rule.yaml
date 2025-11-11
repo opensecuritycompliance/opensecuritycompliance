@@ -63,23 +63,20 @@ spec:
     - name: JQTransform
       dataType: JQ_EXPRESSION
       defaultValue: >-
-        .[] | {   System: "azure",   Source: "compliancecow",   ResourceID:
-        .id,   ResourceName: .userDisplayName,   ResourceType: "User",  
+        .[] | {   System: "azure",   Source: "compliancecow",   ResourceID: .id,  
+        ResourceName: .userDisplayName,   ResourceType: "User",  
         ResourceLocation: "N/A",   ResourceTags: [],   ResourceURL:
         ("https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/"
-        + .id),   UserPrincipalName: .userPrincipalName,   AccountEnabled:
-        true,   MFAMethods: (.methodsRegistered // []),   MFAEnabled:
-        (.isMfaRegistered // false),   ValidationStatusCode: (if
-        .isMfaRegistered then "MFA_ENBL" else "MFA_DSBL" end),  
-        ValidationStatusNotes: (     if .isMfaRegistered then        "Active MFA
-        protection with " + (.methodsRegistered | length | tostring) + "
-        method(s): " + (.methodsRegistered | join(", "))     else       
-        "Critical: No MFA protection detected - account at high risk"     end  
-        ),   ComplianceStatus: (if .isMfaRegistered then "COMPLIANT" else
-        "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
-        .isMfaRegistered then        "Compliant - MFA properly configured and
-        enforced"     else        "Non-compliant - MFA must be enabled to meet
-        security policy requirements"     end   ),   EvaluatedTime: (now |
+        + .id),   UserPrincipalName: .userPrincipalName,   AccountEnabled: true,  
+        MFAMethods: (.methodsRegistered // []),   MFAEnabled: (.isMfaRegistered //
+        false),   ValidationStatusCode: (if .isMfaRegistered then "MFA_ENBL" else
+        "MFA_DSBL" end),   ValidationStatusNotes: (     if .isMfaRegistered
+        then        "Active MFA protection with " + (.methodsRegistered | length |
+        tostring) + " method(s): " + (.methodsRegistered | join(", "))    
+        else        "Critical: No MFA protection detected - account at high risk"     end   ),   ComplianceStatus: (if .isMfaRegistered then
+        "COMPLIANT" else "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
+        .isMfaRegistered then        "MFA properly configured and enforced"     
+        else   "MFA must be enabled to meet security policy requirements"     end   ),   EvaluatedTime: (now |
         strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
         ActionResponseURL: "" }
       showField: true

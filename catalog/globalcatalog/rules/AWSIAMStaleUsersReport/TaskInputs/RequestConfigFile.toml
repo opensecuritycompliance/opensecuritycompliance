@@ -1,0 +1,27 @@
+[Variables]
+Method = "POST"
+CredentialType = "AWSSignature"
+Action = "ListUsers"
+Version = "2010-05-08"
+
+[Request]
+URL = "https://iam.amazonaws.com/"
+Method = "<<Method>>"
+ContentType = "application/x-www-form-urlencoded"
+Redirect = false
+CredentialType = "<<CredentialType>>"
+TimeOut = 60
+Verify = true
+MaxWorkers = 5
+
+[Request.Params]
+Action = "<<Action>>"
+Version = "<<Version>>"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "500|502|503|504|429"
+TimeInterval = 5
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
