@@ -1,0 +1,71 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: "$VALIDATION_CURL"
+        Token: "$GITHUB_ACCESS_TOKEN"
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  ApprovedReviewersRequestConfigFile: <<MINIO_FILE_PATH>>
+  ApprovedReviewersResponseConfigFile: <<MINIO_FILE_PATH>>
+  CheckCodeOwnerSQLConfig: <<MINIO_FILE_PATH>>
+  CodeOwnerContentJQConfigFile: <<MINIO_FILE_PATH>>
+  CodeOwnerRequestConfigFile: <<MINIO_FILE_PATH>>
+  CodeOwnerResponseConfigFile: <<MINIO_FILE_PATH>>
+  FilterRepoOutputFileFormat: JSON
+  FormatApprovedReviewsJQConfigFile: <<MINIO_FILE_PATH>>
+  FormatPRListJQConfigFile: <<MINIO_FILE_PATH>>
+  OrgCustomInputs: <<MINIO_FILE_PATH>>
+  PRRequestConfigFile: <<MINIO_FILE_PATH>>
+  PRResponseConfigFile: <<MINIO_FILE_PATH>>
+  RepoFilterConditionConfig: <<MINIO_FILE_PATH>>
+  RepoListRequestConfigFile: <<MINIO_FILE_PATH>>
+  StandardizeTransformConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-03-14T09:55:47Z
+toDate: 2025-03-14T09:55:47Z

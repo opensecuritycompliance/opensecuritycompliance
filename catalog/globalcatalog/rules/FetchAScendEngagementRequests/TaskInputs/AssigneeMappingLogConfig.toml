@@ -1,0 +1,4 @@
+[ExcecuteSQLQuery]
+
+[ExcecuteSQLQuery.Validation]
+SQLConfig.query_no_output = "No assignee was found for any of the open requests."

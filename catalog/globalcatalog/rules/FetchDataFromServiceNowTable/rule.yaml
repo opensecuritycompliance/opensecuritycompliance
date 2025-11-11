@@ -1,0 +1,116 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: FetchDataFromServiceNowTable
+  purpose: >-
+    Fetches data from the specified ServiceNow table based on provided table
+    name and query parameters
+  description: >-
+    Fetches data from the specified ServiceNow table based on provided table
+    name and query parameters
+  labels:
+    appName:
+      - servicenow
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  tags:
+    - MCP    
+  app: HttpRequest
+  annotations: {}
+spec:
+  inputs:
+    ServiceNowTableRequestConfig: <<MINIO_FILE_PATH>>
+    ServiceNowTableResponseConfig: <<MINIO_FILE_PATH>>
+    ServiceNowTableConfig: <<MINIO_FILE_PATH>>
+    ProceedIfLogExists: false
+    ProceedIfErrorExists: false
+    ServiceNowInputFileValidationConfig: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+    - name: ServiceNowTableRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: ServiceNowTableResponseConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: ServiceNowTableConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: json
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: ProceedIfLogExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: ProceedIfErrorExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: ServiceNowInputFileValidationConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: json
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: Get ServiceNow Table Data
+      type: task
+      purpose: Retrieves records from a specified ServiceNow table
+      description: Retrieves records from a specified ServiceNow table
+      appTags:
+        appName:
+          - servicenow
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      Get ServiceNow Table
+      Data.Input.RequestConfigFile:=*.Input.ServiceNowTableRequestConfig
+    - >-
+      Get ServiceNow Table
+      Data.Input.ResponseConfigFile:=*.Input.ServiceNowTableResponseConfig
+    - Get ServiceNow Table Data.Input.InputFile:=*.Input.ServiceNowTableConfig
+    - >-
+      Get ServiceNow Table
+      Data.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
+    - >-
+      Get ServiceNow Table
+      Data.Input.ProceedIfErrorExists:=*.Input.ProceedIfErrorExists
+    - >-
+      Get ServiceNow Table
+      Data.Input.InputFileValidationConfig:=*.Input.ServiceNowInputFileValidationConfig
+    - '*.Output.CompliancePCT_:=Get ServiceNow Table Data.Output.CompliancePCT_'
+    - >-
+      *.Output.ComplianceStatus_:=Get ServiceNow Table
+      Data.Output.ComplianceStatus_
+    - '*.Output.LogFile:=Get ServiceNow Table Data.Output.LogFile'
+    - '*.Output.ServiceNowRecords:=Get ServiceNow Table Data.Output.OutputFile'

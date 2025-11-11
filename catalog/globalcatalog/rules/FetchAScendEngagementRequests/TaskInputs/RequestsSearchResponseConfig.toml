@@ -1,0 +1,31 @@
+# Configuration for processing requests search API response with pagination
+[Response]
+
+[Response.Filter]
+# Extract requests from the records array
+JQExpression = '.records[]'
+OutputMethod = "ALL"
+
+[Response.RuleSet]
+
+[Response.RuleSet.AppendColumnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "200"
+
+[Response.RuleSet.AppendColumn]
+IncludeAllInputFields = false
+
+[Response.RuleSet.AppendColumn.Fields]
+
+[Response.RuleSet.PaginationCondition]
+# Stop pagination when count is 0 (as specified in your requirements)
+ConditionField = "<<response.body.count>>"
+ConditionValue = "0"
+
+[Response.RuleSet.Pagination]
+
+[Response.RuleSet.Pagination.Header]
+
+[Response.RuleSet.Pagination.Params]
+# Increment page number for next request
+page = "<<response.body.page>> + 1"

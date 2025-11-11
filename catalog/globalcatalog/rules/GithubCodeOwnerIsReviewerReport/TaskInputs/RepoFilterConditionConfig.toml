@@ -1,0 +1,10 @@
+# CONDITION CONFIG STRUCTURE
+
+[[ConditionRules]]
+    ConditionLabel = "check_patchable"
+    Condition = "EQUALS" 
+    ConditionField = "<<data.owner.login>>"
+    ConditionValue = "<<custominputs.Owner>>" 
+    
+[ConditionRulesConfig]
+    ConditionsCriteria = "check_patchable"
