@@ -6,11 +6,16 @@ Transform and modify data records using JQ expressions. Add new columns, rename 
 
 - **InputFile**: JSON/CSV/Parquet file with records to transform
 - **JQTransform**: JQ expression for data transformation
-- **JQDescription**: Plain English explanation of the transformation (optional)
+- **OutputMethod**: (AllowedValues: ALL, FIRST) Specifies whether to return all results from the JQ expression or only the first result.
+- **LogConfigFile**: This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context. (optional)
+- **LogFile**: Map the LogFile from the previous task, to handle errors. (optional)
+- **ProceedIfLogExists**: If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true. (optional, default: true)
+- **ProceedIfErrorExists**: If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true. (optional, default: true)
 
 ## Output
 
 - **TransformedFile**: JSON file with transformed data
+- **LogFile**: File that contains information about errors that have occurred while executing the task.
 
 ## Key Transformation Types
 

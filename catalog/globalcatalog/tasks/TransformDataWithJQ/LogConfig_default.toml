@@ -7,10 +7,11 @@
     
     ############ JQ EXCEPTIONS ############
     JQExpression.no_result = "The JQ expression returned no results. Please check the query and ensure the input data matches the expected structure."
+    JQExpression.syntax_error = "The JQ expression is invalid. Details: {error}"
     
     ############ OUTPUT METHOD EXCEPTIONS ############
     OutputMethod.invalid = "Invalid output method. Please choose either 'ALL' or 'FIRST'."
-
+ 
     ############ OUTPUT_FILE EXCEPTIONS ############
     OutputFile.upload_error = "An error occurred while uploading the result: {error}. Please check the error details and try again"
     
