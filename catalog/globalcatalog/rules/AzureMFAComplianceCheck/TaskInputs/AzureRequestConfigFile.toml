@@ -1,0 +1,20 @@
+[Request]
+URL = "https://graph.microsoft.com/v1.0/reports/authenticationMethods/userRegistrationDetails"
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "OAuth"
+TimeOut = 60
+Verify = true
+MaxWorkers = 5
+
+[Request.Headers]
+Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60

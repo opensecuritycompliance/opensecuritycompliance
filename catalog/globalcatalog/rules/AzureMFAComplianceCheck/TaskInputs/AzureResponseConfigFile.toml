@@ -1,0 +1,16 @@
+[Response.Filter]
+JQExpression = ".value[]"
+OutputMethod = "ALL"
+
+[Response.RuleSet.AppendColumnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "200"
+
+[Response.RuleSet.AppendColumn]
+IncludeAllInputFields = false
+
+[Response.RuleSet.AppendColumn.Fields]
+
+[Response.RuleSet.Pagination.Header]
+
+[Response.RuleSet.Pagination.Params]

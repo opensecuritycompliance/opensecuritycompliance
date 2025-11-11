@@ -1,4 +1,0 @@
-[JQConfig]
-JQExpression = '.[].content |= (gsub("\\n"; "") | @base64d? | gsub("\\n"; "") |split(" ")[1:] | map(gsub("@"; "")) | map(select(. != ""))) | map({name,Org,Repo,content:.content[]})'
-OutputMethod = "FIRST" 
-

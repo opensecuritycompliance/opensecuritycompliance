@@ -1,8 +1,0 @@
-[
-    {
-        "InputFile1 is missing in user inputs.": "JiraIssuesList File could not be found."
-    },
-    {
-        "An error occurred while handling 'Query' :: Execution failed on sql 'SELECT \n    inputfile1.System,\n    inputfile1.Source,\n    inputfile1.ResourceID,\n    inputfile1.ResourceName,\n    inputfile1.ResourceType,\n    inputfile1.ResourceTags,\n    inputfile1.ResourceLocation,\n    inputfile1.ResourceURL,\n    inputfile1.Project,\n    inputfile1.Priority,\n    CAST(COALESCE(inputfile2.SLAInDays, 0) AS INT) AS SLAInDays,\n    inputfile1.Status,\n    inputfile1.CreatedDate,\n    inputfile1.UpdatedDate,\n    inputfile1.ClosedDate,\n    inputfile1.Creator,\n    inputfile1.Assignee,\n    inputfile1.Reporter\nFROM inputfile1\nLEFT JOIN inputfile2 ON \n    inputfile1.Priority = inputfile2.Priority;\n': no such table: inputfile2": "JiraIssueSLAConfig File could not be found"
-    }
-]

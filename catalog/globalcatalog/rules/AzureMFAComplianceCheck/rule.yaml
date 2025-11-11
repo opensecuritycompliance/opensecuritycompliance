@@ -1,0 +1,179 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: AzureMFAComplianceCheck
+  purpose: >-
+    Check Azure Active Directory users for MFA enablement compliance
+  description: >-
+    Fetches Azure users, verifies MFA status, and classifies as COMPLIANT (MFA enabled) or NON_COMPLIANT (disabled) for compliance reporting
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    ProceedIfLogExists: false
+    ProceedIfErrorExists: false
+    JQTransform: >-
+      .[] | {   System: "azure",   Source: "compliancecow",   ResourceID: .id,  
+      ResourceName: .userDisplayName,   ResourceType: "User",  
+      ResourceLocation: "N/A",   ResourceTags: [],   ResourceURL:
+      ("https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/"
+      + .id),   UserPrincipalName: .userPrincipalName,   AccountEnabled: true,  
+      MFAMethods: (.methodsRegistered // []),   MFAEnabled: (.isMfaRegistered //
+      false),   ValidationStatusCode: (if .isMfaRegistered then "MFA_ENBL" else
+      "MFA_DSBL" end),   ValidationStatusNotes: (     if .isMfaRegistered
+      then        "Active MFA protection with " + (.methodsRegistered | length |
+      tostring) + " method(s): " + (.methodsRegistered | join(", "))    
+      else        "Critical: No MFA protection detected - account at high
+      risk"     end   ),   ComplianceStatus: (if .isMfaRegistered then
+      "COMPLIANT" else "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
+      .isMfaRegistered then        "Compliant - MFA properly configured and
+      enforced"     else        "Non-compliant - MFA must be enabled to meet
+      security policy requirements"     end   ),   EvaluatedTime: (now |
+      strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
+      ActionResponseURL: "" }
+    AzureRequestConfigFile: <<MINIO_FILE_PATH>>
+    AzureResponseConfigFile: <<MINIO_FILE_PATH>>
+    OutputMethod: ALL
+  inputsMeta__:
+    - name: ProceedIfLogExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ProceedIfErrorExists
+      dataType: BOOLEAN
+      defaultValue: false
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: JQTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        .[] | {   System: "azure",   Source: "compliancecow",   ResourceID:
+        .id,   ResourceName: .userDisplayName,   ResourceType: "User",  
+        ResourceLocation: "N/A",   ResourceTags: [],   ResourceURL:
+        ("https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/overview/userId/"
+        + .id),   UserPrincipalName: .userPrincipalName,   AccountEnabled:
+        true,   MFAMethods: (.methodsRegistered // []),   MFAEnabled:
+        (.isMfaRegistered // false),   ValidationStatusCode: (if
+        .isMfaRegistered then "MFA_ENBL" else "MFA_DSBL" end),  
+        ValidationStatusNotes: (     if .isMfaRegistered then        "Active MFA
+        protection with " + (.methodsRegistered | length | tostring) + "
+        method(s): " + (.methodsRegistered | join(", "))     else       
+        "Critical: No MFA protection detected - account at high risk"     end  
+        ),   ComplianceStatus: (if .isMfaRegistered then "COMPLIANT" else
+        "NON_COMPLIANT" end),   ComplianceStatusReason: (     if
+        .isMfaRegistered then        "Compliant - MFA properly configured and
+        enforced"     else        "Non-compliant - MFA must be enabled to meet
+        security policy requirements"     end   ),   EvaluatedTime: (now |
+        strftime("%Y-%m-%dT%H:%M:%SZ")),   UserAction: "",   ActionStatus: "",  
+        ActionResponseURL: "" }
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: AzureRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: AzureResponseConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+    - name: OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues:
+        - ALL
+        - FIRST
+      repeated: false
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Azure Users MFA Report
+      type: task
+      purpose: ExecuteHttpRequestV2
+      description: Fetch Azure Users MFA Report
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: Generate Azure User MFA Compliance Report
+      type: task
+      purpose: Transform Data With JQ
+      description: Generate Azure User MFA Compliance Report
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      Fetch Azure Users MFA
+      Report.Input.RequestConfigFile:=*.Input.AzureRequestConfigFile
+    - >-
+      Fetch Azure Users MFA
+      Report.Input.ResponseConfigFile:=*.Input.AzureResponseConfigFile
+    - >-
+      Fetch Azure Users MFA
+      Report.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
+    - >-
+      Fetch Azure Users MFA
+      Report.Input.ProceedIfErrorExists:=*.Input.ProceedIfErrorExists
+    - >-
+      Generate Azure User MFA Compliance Report.Input.InputFile:=Fetch Azure
+      Users MFA Report.Output.OutputFile
+    - >-
+      Generate Azure User MFA Compliance
+      Report.Input.JQTransform:=*.Input.JQTransform
+    - >-
+      Generate Azure User MFA Compliance
+      Report.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Generate Azure User MFA Compliance
+      Report.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
+    - >-
+      Generate Azure User MFA Compliance
+      Report.Input.ProceedIfErrorExists:=*.Input.ProceedIfErrorExists
+    - >-
+      *.Output.CompliancePCT_:=Generate Azure User MFA Compliance
+      Report.Output.CompliancePCT_
+    - >-
+      *.Output.ComplianceStatus_:=Generate Azure User MFA Compliance
+      Report.Output.ComplianceStatus_
+    - '*.Output.LogFile:=Generate Azure User MFA Compliance Report.Output.LogFile'
+    - >-
+      *.Output.AzureMFAComplianceReport:=Generate Azure User MFA Compliance
+      Report.Output.TransformedFile
