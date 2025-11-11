@@ -1,0 +1,34 @@
+[JQConfig]
+JQExpression = '''
+map({
+  System: "ascend",
+  Source: "compliancecow",
+  ResourceID: "\(.id)",
+  ResourceName: (.name // "N/A" | if isnan or . == "" then "N/A" else . end),
+  ResourceType: "Request",
+  ResourceLocation: .location,
+  ResourceURL: "https://a-scend2.com/a-scend/compliance/request-management?engagementProjectId=\(.engagementID)",
+  EngagementID: "\(.engagementID)",
+  SampleID: .sampleID,
+  ConsultantAdvice: .consultantAdvice,
+  DueDate: .newDueDate,
+  NextFollowUp: "",
+  Description: .description,
+  Status: .status,
+  Category: .category,
+  Class: .class,
+  Type: .type,
+  ReferenceIdentifier: .referenceIdentifier,
+  Assignee: .assignee,
+  DoesUserUnderstandRequest: "",
+  IsMeetingRequired: "",
+  IsAttachmentUploaded: "No",
+  Attachments: "",
+  FailedAttachments: "",
+  NotificationStatus: "",
+  Notes: "",
+  WorkflowStatus: "",
+  EvaluatedTime: now | todate
+})
+'''
+OutputMethod = "FIRST"

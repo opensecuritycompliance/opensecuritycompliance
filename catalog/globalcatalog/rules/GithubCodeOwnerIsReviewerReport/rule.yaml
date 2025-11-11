@@ -1,0 +1,328 @@
+apiVersion: v1alpha1
+kind: rule
+meta:
+  name: GithubCodeOwnerIsReviewerReport
+  purpose: To check whether the code owner is present in reviewer list
+  description: This rule checks whether the code owner is present in reviewer list
+  labels:
+    appType:
+    - httprequest
+    environment:
+    - logical
+    execlevel:
+    - app
+  tags:
+    - MCP  
+spec:
+  inputs:
+    ApprovedReviewersRequestConfigFile: <<MINIO_FILE_PATH>>
+    ApprovedReviewersResponseConfigFile: <<MINIO_FILE_PATH>>
+    CheckCodeOwnerSQLConfig: <<MINIO_FILE_PATH>>
+    CodeOwnerContentJQConfigFile: <<MINIO_FILE_PATH>>
+    CodeOwnerRequestConfigFile: <<MINIO_FILE_PATH>>
+    CodeOwnerResponseConfigFile: <<MINIO_FILE_PATH>>
+    FilterRepoOutputFileFormat: JSON
+    FormatApprovedReviewsJQConfigFile: <<MINIO_FILE_PATH>>
+    FormatPRListJQConfigFile: <<MINIO_FILE_PATH>>
+    OrgCustomInputs: <<MINIO_FILE_PATH>>
+    PRRequestConfigFile: <<MINIO_FILE_PATH>>
+    PRResponseConfigFile: <<MINIO_FILE_PATH>>
+    RepoFilterConditionConfig: <<MINIO_FILE_PATH>>
+    RepoListRequestConfigFile: <<MINIO_FILE_PATH>>
+    StandardizeTransformConfigFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+  - name: RepoListRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: RepoFilterConditionConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: OrgCustomInputs
+    dataType: FILE
+    repeated: false
+    format: json
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: FilterRepoOutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CodeOwnerRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PRResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: PRRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CodeOwnerResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CheckCodeOwnerSQLConfig
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: StandardizeTransformConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: CodeOwnerContentJQConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ApprovedReviewersRequestConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: ApprovedReviewersResponseConfigFile
+    dataType: HTTP_CONFIG
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: FormatPRListJQConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  - name: FormatApprovedReviewsJQConfigFile
+    dataType: FILE
+    repeated: false
+    format: toml
+    defaultValue: <<MINIO_FILE_PATH>>
+    allowedValues: []
+    showField: true
+    required: true
+  tasks:
+  - name: ExecuteHttpRequest
+    alias: GetGithubRepoList
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get Guthub repository list
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: CheckCondition
+    alias: FilterRepoListByOrg
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To filter repo list by organiztion
+    description: Checks whether the records in the InputFile matches the conditions
+      provided in the ConditionConfig file
+  - name: ConvertFileFormat
+    alias: RepoListConvertFileFormat
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To convert parquet file from CheckCondition into json file
+    description: Convert files between the supported formats - (JSON, CSV, YAML, TOML,
+      PARQUET)
+  - name: ExecuteHttpRequest
+    alias: GetGithubRepoCodeOwners
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get Github repository code owners
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExtractDataUsingJQV2
+    alias: ExtractCodeOwnerContent
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: Purpose of the task
+    description: Extract and transform JSON data using JQ expressions. Supports batch
+      processing with configurable chunk sizes and error handling for reliable processing.
+  - name: ExecuteHttpRequest
+    alias: GetGithubPullRequest
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To flatten the code owner data
+    description: Automate API requests by processing inputs and outputting responses
+      in a structured JSON format.
+  - name: ExtractDataUsingJQV2
+    alias: Format PR list
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To
+    description: Extract and transform JSON data using JQ expressions. Supports batch
+      processing with configurable chunk sizes and error handling for reliable processing.
+  - name: ExecuteHttpRequestV2
+    alias: Get approved reviewers for the pull request
+    type: task
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To get approved reviewers for the pull request
+    description: Executes HTTP API requests with configurable authentication, data
+      handling, and response processing. Supports batch requests, flexible response
+      transformation, and error management for reliable API integration and data collection.
+  - name: ExtractDataUsingJQV2
+    alias: Format PR approved reviews list
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To format the approved reviews list
+    description: Extract and transform JSON data using JQ expressions. Supports batch
+      processing with configurable chunk sizes and error handling for reliable processing.
+  - name: ExecuteSqlQuery
+    alias: CheckCodeOwnersIsReviewer
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To check code owner is a required reviewer
+    description: This task executes the provided SQL query in the provided InputFile(s).
+  - name: TransformData
+    alias: StandardizeData
+    type: task
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    purpose: To standardize the data
+    description: TransformData allows you to perform a variety of column transformations
+      on your InputFile1
+  ioMap:
+  - GetGithubRepoList.Input.RequestConfigFile:=*.Input.RepoListRequestConfigFile
+  - FilterRepoListByOrg.Input.InputFile:=GetGithubRepoList.Output.OutputFile
+  - FilterRepoListByOrg.Input.ConditionConfig:=*.Input.RepoFilterConditionConfig
+  - FilterRepoListByOrg.Input.CustomInputs:=*.Input.OrgCustomInputs
+  - RepoListConvertFileFormat.Input.InputFile:=FilterRepoListByOrg.Output.MatchedConditionFile
+  - RepoListConvertFileFormat.Input.OutputFileFormat:=*.Input.FilterRepoOutputFileFormat
+  - GetGithubRepoCodeOwners.Input.RequestConfigFile:=*.Input.CodeOwnerRequestConfigFile
+  - GetGithubRepoCodeOwners.Input.ResponseConfigFile:=*.Input.CodeOwnerResponseConfigFile
+  - GetGithubRepoCodeOwners.Input.InputFile:=RepoListConvertFileFormat.Output.OutputFile
+  - ExtractCodeOwnerContent.Input.InputFile:=GetGithubRepoCodeOwners.Output.OutputFile
+  - ExtractCodeOwnerContent.Input.JQConfigFile:=*.Input.CodeOwnerContentJQConfigFile
+  - GetGithubPullRequest.Input.RequestConfigFile:=*.Input.PRRequestConfigFile
+  - GetGithubPullRequest.Input.ResponseConfigFile:=*.Input.PRResponseConfigFile
+  - GetGithubPullRequest.Input.InputFile:=RepoListConvertFileFormat.Output.OutputFile
+  - Format PR list.Input.InputFile:=GetGithubPullRequest.Output.OutputFile
+  - Format PR list.Input.JQConfigFile:=*.Input.FormatPRListJQConfigFile
+  - Get approved reviewers for the pull request.Input.RequestConfigFile:=*.Input.ApprovedReviewersRequestConfigFile
+  - Get approved reviewers for the pull request.Input.ResponseConfigFile:=*.Input.ApprovedReviewersResponseConfigFile
+  - Get approved reviewers for the pull request.Input.InputFile:=Format PR list.Output.OutputFile
+  - Format PR approved reviews list.Input.InputFile:=Get approved reviewers for the
+    pull request.Output.OutputFile
+  - Format PR approved reviews list.Input.JQConfigFile:=*.Input.FormatApprovedReviewsJQConfigFile
+  - CheckCodeOwnersIsReviewer.Input.InputFile1:=Format PR approved reviews list.Output.OutputFile
+  - CheckCodeOwnersIsReviewer.Input.InputFile2:=ExtractCodeOwnerContent.Output.OutputFile
+  - CheckCodeOwnersIsReviewer.Input.SQLConfig:=*.Input.CheckCodeOwnerSQLConfig
+  - StandardizeData.Input.InputFile1:=CheckCodeOwnersIsReviewer.Output.OutputFile
+  - StandardizeData.Input.TransformConfigFile:=*.Input.StandardizeTransformConfigFile
+  - '*.Output.CompliancePCT_:=StandardizeData.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=StandardizeData.Output.ComplianceStatus_'
+  - '*.Output.LogFile:=StandardizeData.Output.LogFile'
+  - '*.Output.GithubCodeOwnerIsReviewerReport:=StandardizeData.Output.OutputFile'

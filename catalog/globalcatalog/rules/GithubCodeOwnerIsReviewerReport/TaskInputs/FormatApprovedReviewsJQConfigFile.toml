@@ -1,0 +1,25 @@
+[JQConfig]
+JQExpression = '''
+  group_by(.ResourceUrl)
+  | map({
+      ResourceUrl: .[0].ResourceUrl,
+      Branch: .[0].Branch,
+      Number: .[0].Number,
+      Data: .[0].Data,
+      Title: .[0].Title,
+      Org: .[0].Org,
+      Repo: .[0].Repo,
+      Created: .[0].Created,
+      Updated: .[0].Updated,
+      State: .[0].State,
+      Self: .[0].Self,
+      PRReviewers: (
+        (
+          (map(.user?.login) | map(select(. != null))) +  
+          (map(.PRReviewers // []) | add)                  
+        ) | unique
+      )
+    })
+''' 
+OutputMethod = "FIRST" 
+

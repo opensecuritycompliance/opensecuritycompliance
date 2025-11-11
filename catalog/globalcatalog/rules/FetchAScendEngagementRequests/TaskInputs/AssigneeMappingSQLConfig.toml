@@ -1,0 +1,14 @@
+SQLQuery = """
+SELECT * from (
+    SELECT
+        r.*,
+        COALESCE(a4.assigneeId, a3.assigneeId, a2.assigneeId, a1.assigneeId) as assignee,
+        COALESCE(a4.dueDate, a3.dueDate, a2.dueDate, a1.dueDate) as newDueDate
+    FROM
+        inputfile1 r
+    LEFT JOIN inputfile2 a1 ON r.category = a1.value AND a1.type = 'category'
+    LEFT JOIN inputfile2 a2 ON r.class = a2.value AND a2.type = 'class'
+    LEFT JOIN inputfile2 a3 ON r.type = a3.value AND a3.type = 'type'
+    LEFT JOIN inputfile2 a4 ON r.referenceIdentifier = a4.value AND a4.type = 'request'
+) t WHERE t.assignee IS NOT NULL;
+"""

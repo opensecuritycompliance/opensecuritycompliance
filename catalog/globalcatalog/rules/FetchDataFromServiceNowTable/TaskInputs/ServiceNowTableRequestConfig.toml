@@ -1,0 +1,59 @@
+[Variables]
+# No variables needed for basic setup
+
+[Request]
+
+# ServiceNow Table API URL - dynamically constructed
+URL = "<<application.AppURL>>/api/now/table/<<inputfile.TableName>>"
+
+# HTTP Method - GET for fetching data
+Method = "GET"
+
+# Content Type - JSON response from ServiceNow
+ContentType = "application/json"
+
+# Follow Redirects
+Redirect = true
+
+# Credential Type - OAuth (requires manual Authorization header)
+CredentialType = "OAuth"
+
+# Timeout in seconds
+TimeOut = 30
+
+# SSL Certificate Verification
+Verify = true
+
+# Number of parallel threads
+MaxWorkers = 5
+
+    [Request.Retries.RetryOnCondition]
+    # Retry on ServiceNow rate limiting and server errors
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "429|500|502|503|504"
+    TimeInterval = 2
+    MaxRetries = 3
+    RetryBaseDelay = 2
+    RetryMaxDelay = 60
+
+[Request.Headers]
+# OAuth requires manual Authorization header using validation CURL response
+Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+Accept = "application/json"
+
+[Request.Params]
+sysparm_limit = "<<inputfile.SysParmLimit>>"
+sysparm_query = "<<inputfile.SysParmQuery>>"
+
+[Request.Data]
+    [Request.Data.FormData]
+    # Not used for GET requests
+
+    [Request.Data.URLEncoded]
+    # Not used for GET requests
+
+    [Request.Data.Raw]
+    # Not used for GET requests
+
+    [Request.Data.Binary]
+    # Not used for GET requests

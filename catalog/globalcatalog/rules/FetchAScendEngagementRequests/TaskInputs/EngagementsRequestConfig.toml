@@ -1,0 +1,28 @@
+# Configuration for fetching engagements from A-SCEND API
+[Request]
+URL = "<<application.AppURL>>/integrations/v1/engagements/search"
+Method = "GET"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "OAuth"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Headers]
+accept = "application/json"
+Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+
+[Request.Params]
+name = "<<inputfile.EngagementName>>"
+
+[Request.Data]
+# No request body needed for GET request

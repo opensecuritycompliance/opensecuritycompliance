@@ -1,0 +1,41 @@
+SQLQuery = '''
+SELECT
+    inputfile1.Self AS ResourceUrl,
+    inputfile1.Branch,
+    inputfile1.Number,
+    inputfile1.Title,
+    inputfile1.State,
+    inputfile1.PRReviewers,
+    inputfile1.Org,
+    inputfile1.Repo,
+    inputfile1.Created,
+    inputfile1.Updated,
+    CASE
+        WHEN EXISTS (
+            SELECT 1
+            FROM inputfile2
+            WHERE inputfile2.Repo = inputfile1.Repo
+            AND inputfile1.PRReviewers LIKE '%' || inputfile2.content || '%'
+        ) THEN TRUE
+        ELSE FALSE
+    END AS CompliantStatus
+FROM
+    inputfile1
+LEFT JOIN
+    inputfile2
+ON
+    inputfile1.Repo = inputfile2.Repo
+WHERE
+    inputfile1.Number IS NOT NULL
+GROUP BY
+    inputfile1.ResourceUrl,
+    inputfile1.Branch,
+    inputfile1.Number,
+    inputfile1.Title,
+    inputfile1.State,
+    inputfile1.PRReviewers,
+    inputfile1.Org,
+    inputfile1.Repo,
+    inputfile1.Created,
+    inputfile1.Updated
+'''

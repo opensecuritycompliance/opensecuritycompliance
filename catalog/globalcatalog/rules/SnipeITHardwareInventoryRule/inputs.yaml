@@ -1,0 +1,23 @@
+userObject:
+  apps:
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  ListHardwaresRequestConfig: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: false
+  ProceedIfErrorExists: false
+  JQExpressionToTransformHardwares: # Refer JQ expression in rule.yaml
+  OutputFileFormat: JSON
+fromDate: 2025-10-14T06:42:43Z
+toDate: 2025-10-14T06:42:43Z

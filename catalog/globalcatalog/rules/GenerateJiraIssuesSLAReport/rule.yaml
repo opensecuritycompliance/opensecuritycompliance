@@ -11,6 +11,8 @@ meta:
     - logical
     execlevel:
     - app
+  tags:
+    - MCP  
 spec:
   inputs:
     ConvertFileFormat: JSON

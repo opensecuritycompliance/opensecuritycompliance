@@ -1,0 +1,24 @@
+[Variables]
+[Request]
+URL = "https://api.github.com/repos/<<inputfile.owner.login>>/<<inputfile.name>>/pulls"
+
+Method = "GET"
+
+ContentType = ""
+
+Redirect = true
+
+CredentialType = "BearerToken"
+
+TimeOut = 30
+
+Verify = true
+
+Retries = 3
+
+RetryOnStatus = [503, 504, 429]
+
+[Request.Headers]
+Accept = "application/vnd.github+json"
+
+XGitHubApiVersion = "2022-11-28"

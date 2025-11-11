@@ -1,0 +1,68 @@
+# Response configuration for ServiceNow Table API
+# Handles pagination using Link headers and appends response data to output
+
+[Response]
+
+[Response.Filter]
+    JQExpression = ""  
+    # Optional: Use JQ to filter response body if needed
+    # Example for ServiceNow: .result[] to get all records from the result array
+    
+    OutputMethod = "FIRST"
+    # Default output method
+
+
+# RuleSet defines conditions and actions for processing the response
+[Response.RuleSet]
+
+    # Condition for appending columns - only process successful responses
+    [Response.RuleSet.AppendColumnCondition]
+    ConditionField = "<<response.status_code>>"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+    # Include all input fields from ServiceNowTableConfig.json
+    IncludeAllInputFields = false
+    
+    [Response.RuleSet.AppendColumn.Fields]
+    # Add custom fields to output
+    
+    # ============================================================================
+    # Pagination Logic for ServiceNow Table API
+    # ============================================================================
+    # 1. PaginationCondition: Checks if <<response.links.next>> exists in the 
+    #    Link header from ServiceNow response
+    # 2. Pagination stops: When response.links.next is empty/null (no more pages)
+    # 3. Next page URL: Automatically extracted from <<response.links.next.url>>
+    # 4. ServiceNow provides pagination info via Link header with rel="next"
+    # ============================================================================
+
+    [Response.RuleSet.PaginationCondition]
+    # Pagination stops when there's no 'next' link in the response
+    ConditionField = "<<response.links.next>>"
+    ConditionValue = ""
+
+    [Response.RuleSet.Pagination]
+        # Use the next page URL from Link header
+        URL = "<<response.links.next.url>>"
+        
+        [Response.RuleSet.Pagination.Header]
+        # No additional headers needed for pagination
+        # Authorization is handled by the request config
+
+        [Response.RuleSet.Pagination.Params]
+        # Query params are already in the URL from Link header
+        # No need to specify them separately
+
+        [Response.RuleSet.Pagination.Data.URLEncoded]
+        # Not used for GET requests
+
+        [Response.RuleSet.Pagination.Data.FormData]
+        # Not used for GET requests
+
+        [Response.RuleSet.Pagination.Data.Raw]
+        # Not used for GET requests
+
+        [Response.RuleSet.Pagination.Data.Binary]
+        # Not used for GET requests
+
