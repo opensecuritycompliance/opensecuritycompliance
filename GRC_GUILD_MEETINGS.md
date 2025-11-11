@@ -38,7 +38,7 @@ The Guild defines its core goals as being:
 ## Schedule
 
 ### 2025 Upcoming Meetings:
-* Wednesday: October 28th, 11am – Central Time (CST)
+* Wednesday: November 12th, 11am – Central Time (CST)
 
 ## Contact Us!
 
