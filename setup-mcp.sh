@@ -834,10 +834,6 @@ show_mcp_info() {
     echo ""
 }
 
-folder_setup(){
-    mkdir -p catalog/localcatalog/rules
-}
-
 # Main execution
 main() {
     print_banner
@@ -854,8 +850,7 @@ main() {
     check_minio_credentials
     check_ssl_certificates
     check_env_files
-    folder_setup
-    
+
     echo ""
     log_info "All pre-flight checks passed!"
     echo ""
