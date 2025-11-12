@@ -877,7 +877,7 @@ main() {
     
     # Setup process
     cleanup_docker
-    create_directories
+    # create_directories
     build_services
     start_services
     wait_for_services
