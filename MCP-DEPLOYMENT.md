@@ -4,7 +4,55 @@ Complete setup documentation for deploying Open Security Compliance Rule Engine 
 
 ---
 
+## Table of Contents (Detailed Documentation)
+
+For more detailed information, see the following sections:
+
+- [Overview](#overview)
+- [Quick Start Guide](#quick-start-guide)
+- [Appendix](#appendix)
+
+---
+
+## Overview
+
+Open Security Compliance is a comprehensive rule engine platform that provides:
+- **No-Code UI**: Visual interface for creating and managing compliance rules
+- **MCP Integration**: Model Context Protocol integration with Goose AI assistant
+- **Dual Rule Creation**: Create rules manually via UI or conversationally via MCP
+- **Rule Engine**: Powerful execution engine for compliance automation
+- **Storage**: MinIO-based object storage for data persistence
+- **API Service**: RESTful API for programmatic access
+
+### What You Can Do
+
+✅ Create compliance rules without coding (UI or MCP)  
+✅ Execute automated compliance checks  
+✅ Store and manage compliance data  
+
+### AI Model Support
+
+This platform **automatically detects and uses the best available Claude model** from your Anthropic API key:
+- **Provider**: Anthropic Claude only
+- **Supported Models**: Claude Sonnet 4.5, Claude Sonnet 4
+- **Auto-Detection**: Setup script tests your API key and configures the highest available model
+- **Note**: Other providers (OpenAI, etc.) are not supported at this time
+
+
+---
+
 ## Quick Start Guide
+
+### Pre-requisites:
+
+ - Docker (Steps to install can be found in the [Appendix](#1-docker-installation) below)
+ - Anthropic key (Steps to procure one can be found in the [Appendix](#2-anthropic-api-key-procurement) below)
+ - System Requirements
+   - CPU: 8+ cores
+   - RAM: 16GB+
+   - Disk: 30GB+ SSD
+   - Docker: 20.10+
+   - Docker Compose: 2.0+
 
 ### Step 1: Clone the Repository
 
@@ -25,6 +73,10 @@ The setup script will guide you through the entire installation process, includi
 - ✅ Configuring MinIO storage credentials
 - ✅ Setting up all 7 required services
 - ✅ Starting the platform
+More details can be found in the Appendix below.
+
+For troubleshooting any issues you may encounter while running the script below, please refer to the **“Common Setup Issues and Solutions”** section in the Appendix.
+
 
 ```bash
 # Make the setup script executable
@@ -37,51 +89,9 @@ sudo ./setup-mcp.sh
 **That's it!** The setup script will handle everything else automatically.
 
 ---
+## Appendix
 
-## What You'll Need Before Starting
-
-### 1. Anthropic API Key (Required)
-
-You'll need an Anthropic API key for AI-assisted features. The setup script will automatically detect and configure the best available Claude model from your key.
-
-**How to get your API key:**
-
-1. Visit [console.anthropic.com](https://console.anthropic.com/)
-2. Sign up or log in to your account
-3. Navigate to "API Keys" in the left sidebar
-4. Click "Create Key" button
-5. Give your key a name (e.g., "Open Security Compliance")
-6. **Copy the key immediately** (it won't be shown again)
-
-Your API key will look like: `sk-ant-api03-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...`
-
-**Note:** The setup script will validate your key and automatically detect the best Claude model you have access to (Claude Sonnet 4.5 or Claude Sonnet 4).
-
-### 2. MinIO Storage Credentials (Recommended)
-
-You'll be prompted to set up storage credentials during installation if the credentials are invalid/empty. Requirements:
-- **Username**: Minimum 3 characters, no spaces
-- **Password**: Minimum 8 characters, no spaces
-
-The setup script will validate these and prompt you if they don't meet requirements.
-
-### 3. System Requirements
-
-| Component | Requirement |
-|-----------|-------------|
-| **CPU** | 8+ cores |
-| **RAM** | 16GB+ |
-| **Disk** | 30GB+ SSD |
-| **Docker** | 20.10+ |
-| **Docker Compose** | 2.0+ |
-
-**Note:** The setup script will check your system and warn you if requirements aren't met.
-
----
-
-## Installation Instructions
-
-### Prerequisites Check
+### 1. Docker installation
 
 Before running the setup script, ensure Docker is installed:
 
@@ -119,20 +129,30 @@ docker --version
 docker compose version
 ```
 
-### Running the Setup Script
+---
 
-```bash
-# 1. Navigate to the project directory
-cd opensecuritycompliance
+### 2. Anthropic API Key Procurement
 
-# 2. Make setup script executable
-chmod +x setup-mcp.sh
+You'll need an Anthropic API key for AI-assisted features. The setup script will automatically detect and configure the best available Claude model from your key.
 
-# 3. Run setup (the script will handle sudo automatically if needed)
-./setup-mcp.sh
-```
+**How to get your API key:**
 
-### What the Setup Script Does
+1. Visit [console.anthropic.com](https://console.anthropic.com/)
+2. Sign up or log in to your account
+3. Navigate to "API Keys" in the left sidebar
+4. Click "Create Key" button
+5. Give your key a name (e.g., "Open Security Compliance")
+6. **Copy the key immediately** (it won't be shown again)
+
+Your API key will look like: `sk-ant-api03-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...`
+
+**Note:** The setup script will validate your key and automatically detect the best Claude model you have access to (Claude Sonnet 4.5 or Claude Sonnet 4).
+
+**Note:** The setup script will check your system and warn you if requirements aren't met.
+
+---
+
+### 3. What the Setup Script (setup-mcp.sh) does
 
 The script will automatically:
 
@@ -151,7 +171,7 @@ The script will automatically:
 13. ✅ Wait for services to be healthy
 14. ✅ Display access URLs and next steps
 
-### Expected Output
+#### Expected Output
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
@@ -191,9 +211,9 @@ AI Model Configuration:
 
 ---
 
-## Common Setup Issues and Solutions
+### 4. Common Setup Issues and Solutions
 
-### Issue 1: Docker "credsStore" Error (macOS with older Docker versions)
+#### 4.1. Docker "credsStore" Error (macOS with older Docker versions)
 
 **Error Message:**
 ```
@@ -224,7 +244,7 @@ nano ~/.docker/config.json
 
 **Note:** You may have to restart Docker after making this change.
 
-### Issue 2: Permission Denied When Running Docker
+#### 4.2. Permission Denied When Running Docker
 
 **Error Message:**
 ```
@@ -244,7 +264,7 @@ sudo usermod -aG docker $USER
 docker ps
 ```
 
-### Issue 3: Invalid API Key
+#### 4.3. Invalid API Key
 
 **Error Message:**
 ```
@@ -258,7 +278,7 @@ The setup script will prompt you to re-enter your API key. Make sure:
 2. The key is active (not expired or revoked)
 3. Your key has access to at least Claude Sonnet 4
 
-### Issue 4: MinIO Credential Requirements Not Met
+#### 4.4. MinIO Credential Requirements Not Met
 
 **Error Message:**
 ```
@@ -273,7 +293,7 @@ The setup script will prompt you again. Ensure:
 - Password: At least 8 characters, no spaces
 - Password confirmation matches
 
-### Issue 5: Insufficient System Resources
+#### 4.5. Insufficient System Resources
 
 **Warning Message:**
 ```
@@ -289,9 +309,9 @@ You can continue, but performance may be degraded. For production use:
 
 ---
 
-## Next Steps After Installation
+### 5. Next Steps After Installation
 
-### 1. Access the Web UI
+#### 5.1. Access the Web UI
 
 Open your browser and navigate to:
 ```
@@ -300,7 +320,7 @@ https://localhost:443
 
 **Note:** You may see a security warning for the self-signed certificate. Click "Advanced" and "Proceed to localhost (unsafe)" to continue.
 
-### 2. Choose Your Rule Creation Method
+#### 5.2. Choose Your Rule Creation Method
 
 The platform offers three ways to create compliance rules:
 
@@ -322,7 +342,7 @@ The platform offers three ways to create compliance rules:
 
 **Recommendation for beginners:** Start with Option B (AI-Assisted via Web UI) - it's the easiest way to create rules!
 
-### 3. Verify Services Are Running
+#### 5.3. Verify Services Are Running
 
 ```bash
 # Check service status
@@ -338,7 +358,7 @@ docker compose ps
 # - oscmcpservice (MCP Service)
 ```
 
-### 4. Check Your Configuration
+#### 5.4. Check Your Configuration
 
 ```bash
 # View your detected Claude model
@@ -350,7 +370,7 @@ cat etc/policycow.env | grep MINIO_ROOT
 
 ---
 
-## Managing Your Installation
+## 6. Managing Your Installation
 
 ### Viewing Logs
 
@@ -392,26 +412,12 @@ docker compose build --no-cache
 ./setup-mcp.sh
 ```
 
----
-
-## Table of Contents (Detailed Documentation)
-
-For more detailed information, see the following sections:
-
-- [Architecture Overview](#architecture-overview)
-- [Services Overview](#services-overview)
-- [Configuration Details](#configuration-details)
-- [Troubleshooting Guide](#troubleshooting-guide)
-- [Appendix A: External MCP Clients Setup](#appendix-a-external-mcp-clients-setup-optional)
-- [Appendix B: Custom SSL Certificates](#appendix-b-custom-ssl-certificates-optional)
-- [Appendix C: Advanced Configuration](#appendix-c-advanced-configuration)
-- [FAQ](#faq)
 
 ---
 
-## Architecture Overview
+### 7. Architecture Overview
 
-### Unified Platform Architecture
+#### Unified Platform Architecture
 
 ```
                         ┌──────────────┐
@@ -476,73 +482,48 @@ For more detailed information, see the following sections:
                   └─────────────────┘
 ```
 
-### Rule Creation Flows
+#### Rule Creation Flows
 
-#### Flow 1: Manual UI Rule Creation
+##### Flow 1: Manual UI Rule Creation
 ```
 User → Web UI (Manual Mode) → Reverse Proxy → API Service → Storage
 ```
 
-#### Flow 2: AI-Assisted Rule Creation via UI (MCP Mode)
+##### Flow 2: AI-Assisted Rule Creation via UI (MCP Mode)
 ```
 User → Web UI (MCP Mode) → Reverse Proxy → Goose Service → Goose → MCP Service → API Service → Storage
 ```
 
-#### Flow 3: External MCP Clients (Optional)
+##### Flow 3: External MCP Clients (Optional)
 ```
 External MCP Clients (Goose/Claude) → MCP Service (port 45678) → API Service → Storage
 ```
 
 ---
 
-## Services Overview
+### 8. Services Overview
 
 The platform consists of 7 interconnected services:
 
-### 1. cowstorage (MinIO)
-**Purpose**: Object storage for rules, data, and artifacts  
-**Ports**: 9000 (API), 9001 (Console)  
-**Credentials**: Configured during setup (validated)
-
-### 2. oscapiservice
-**Purpose**: REST API for rule management and execution  
-**Port**: 9080  
-**Responsibilities**: Rule CRUD, task management, rule execution
-
-### 3. oscwebserver
-**Purpose**: React-based web interface  
-**Port**: 3001  
-**Features**: Visual rule builder, AI-assisted creation, execution dashboard
-
-### 4. oscreverseproxy
-**Purpose**: HTTPS termination and routing  
-**Ports**: 443 (HTTPS), 80 (HTTP)  
-**SSL**: Localhost certificates included by default
-
-### 5. oscgooseservice
-**Purpose**: MCP orchestration layer  
-**Port**: 8095  
-**Features**: Bridges UI requests to MCP infrastructure
-
-### 6. oscgoose
-**Purpose**: Goose AI assistant integration  
-**Port**: 8976  
-**Provider**: Anthropic Claude (auto-detected model)
-
-### 7. oscmcpservice
-**Purpose**: Model Context Protocol server  
-**Port**: 45678  
-**Features**: MCP protocol implementation, external client connections
+| Service | Purpose | Ports | Notes |
+|-----------|-------------|-----------|-------------|
+| cowstorage (MinIO) | Object storage for rules, data, and artifacts | 9000 (API), 9001 (Console) | Credentials: Configured during setup (validated) |
+| oscapiservice | REST API for rule management and execution  | 9080 | Responsibilities: Rule CRUD, task management, rule execution |
+| oscwebserver | React-based web interface | 3001 | Features: Visual rule builder, AI-assisted creation, execution dashboard |
+| oscreverseproxy | HTTPS termination and routing | 443 (HTTPS), 80 (HTTP) | SSL: Localhost certificates included by default
+| oscgooseservice | MCP orchestration layer | 8095 | Features: Bridges UI requests to MCP infrastructure |
+| oscgoose | Goose AI assistant integration | 8976 | Provider: Anthropic Claude (auto-detected model) |
+| oscmcpservice | Model Context Protocol server | 45678 | Features: MCP protocol implementation, external client connections |
 
 ---
 
-## Configuration Details
+### 9. Configuration Details
 
-### Environment Variables
+#### Environment Variables
 
 The platform uses two main configuration files:
 
-#### `etc/userconfig.env` (User Settings)
+##### `etc/userconfig.env` (User Settings)
 ```bash
 
 # Anthropic API Key (set during setup)
@@ -552,7 +533,7 @@ ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 GOOSE_MODEL=claude-sonnet-4-5-20250929
 ```
 
-#### `etc/policycow.env` (Platform Settings)
+##### `etc/policycow.env` (Platform Settings)
 ```bash
 # MinIO Credentials (set during setup)
 MINIO_ROOT_USER=minioadmin
@@ -567,7 +548,7 @@ APP_ENV=production
 LOG_LEVEL=info
 ```
 
-### Directory Structure
+#### Directory Structure
 
 After setup, your directory structure will look like this:
 
@@ -596,9 +577,9 @@ opensecuritycompliance/
 
 ---
 
-## Troubleshooting Guide
+### 10. Troubleshooting Guide
 
-### Service Won't Start
+#### Service Won't Start
 
 ```bash
 # Check logs
@@ -612,7 +593,7 @@ cat etc/policycow.env
 docker compose restart <service-name>
 ```
 
-### MCP Connection Issues
+#### MCP Connection Issues
 
 ```bash
 # Verify MCP service is running
@@ -627,7 +608,7 @@ sleep 20  # Wait for settle time
 docker compose restart oscgoose oscgooseservice
 ```
 
-### API Key or Model Issues
+#### API Key or Model Issues
 
 ```bash
 # Check current configuration
@@ -638,7 +619,7 @@ cat etc/userconfig.env | grep GOOSE_MODEL
 ./setup-mcp.sh
 ```
 
-### MinIO Credential Issues
+#### MinIO Credential Issues
 
 ```bash
 # Check current credentials
@@ -656,11 +637,11 @@ docker compose restart cowstorage
 
 ---
 
-## Appendix A: External MCP Clients Setup (Optional)
+## 11. External MCP Clients Setup (Optional)
 
 **⚠️ Note:** This section is completely optional. The Web UI provides full AI-assisted functionality without external clients.
 
-### Installing Goose (Optional)
+#### Installing Goose (Optional)
 
 For detailed installation instructions, visit the official guide:
 **🔗 [Goose Installation Guide](https://block.github.io/goose/docs/getting-started/installation)**
@@ -684,9 +665,9 @@ pipx install goose-ai
 goose --version
 ```
 
-### Configuring Goose Desktop (Optional)
+#### Configuring Goose Desktop (Optional)
 
-#### Step 1: Locate Configuration Directory
+##### Step 1: Locate Configuration Directory
 
 ```bash
 # macOS/Linux
@@ -696,7 +677,7 @@ goose --version
 %USERPROFILE%\.config\goose\
 ```
 
-#### Step 2: Create Configuration File
+##### Step 2: Create Configuration File
 
 ```bash
 # macOS/Linux
@@ -708,7 +689,7 @@ mkdir -Force $env:USERPROFILE\.config\goose
 notepad $env:USERPROFILE\.config\goose\config.yaml
 ```
 
-#### Step 3: Add Configuration
+##### Step 3: Add Configuration
 
 ```yaml
 # Goose Configuration for Open Security Compliance
@@ -736,7 +717,7 @@ provider: anthropic
 model: claude-sonnet-4-5-20250929  # Update to match your detected model
 ```
 
-#### Step 4: Verify Your Model
+##### Step 4: Verify Your Model
 
 ```bash
 # Check your detected model
@@ -746,7 +727,7 @@ cat etc/userconfig.env | grep GOOSE_MODEL
 nano ~/.config/goose/config.yaml
 ```
 
-#### Step 5: Set API Key
+##### Step 5: Set API Key
 
 ```bash
 # macOS/Linux (add to ~/.bashrc or ~/.zshrc)
@@ -756,14 +737,14 @@ export ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 $env:ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxxx"
 ```
 
-#### Step 6: Test Connection
+##### Step 6: Test Connection
 
 1. Start the Open Security Compliance platform
 2. Launch Goose Desktop
 3. Type: `What MCP tools are available?`
 4. You should see compliance-related tools listed
 
-### Configuring Goose CLI (Optional)
+#### Configuring Goose CLI (Optional)
 
 Follow the same steps as Goose Desktop, then:
 
@@ -775,18 +756,18 @@ goose session start
 goose run "List all available compliance tasks"
 ```
 
-### Configuring Claude Desktop/Code (Optional)
+#### Configuring Claude Desktop/Code (Optional)
 
 **Note:** Claude Desktop and Claude Code require file-based MCP configuration. For detailed setup instructions, please refer to:
 **🔗 [Anthropic MCP Documentation](https://docs.anthropic.com/claude/docs/mcp)**
 
 ---
 
-## Appendix B: Custom SSL Certificates (Optional)
+### 12. Custom SSL Certificates (Optional)
 
 **✅ Default:** The repository includes localhost certificates. This section is only needed for custom domains.
 
-### Certificate Locations
+#### Certificate Locations
 
 Place your certificates in one of these locations:
 
@@ -804,7 +785,7 @@ ${HOME}/continube/certs/
 └── privkey.pem
 ```
 
-### Getting Certificates from Let's Encrypt
+#### Getting Certificates from Let's Encrypt
 
 ```bash
 # Install Certbot
@@ -826,7 +807,7 @@ sudo chmod 600 src/oscreverseproxy/certs/privkey.pem
 docker compose restart oscreverseproxy
 ```
 
-### Certificate Renewal
+#### Certificate Renewal
 
 ```bash
 # Test renewal
@@ -839,9 +820,9 @@ sudo systemctl start certbot-renew.timer
 
 ---
 
-## Appendix C: Advanced Configuration
+### 13. Advanced Configuration
 
-### Port Configuration
+#### Port Configuration
 
 Default ports can be changed in `docker-compose-osc.yaml`:
 
@@ -861,7 +842,7 @@ services:
       - "9080:80"  # API service port
 ```
 
-### Data Backup
+#### Data Backup
 
 ```bash
 # Create backup directory
@@ -886,7 +867,7 @@ cp etc/policycow.env \
 
 ---
 
-## FAQ
+### 14. FAQ
 
 **Q: Do I need to be technical to use this platform?**  
 A: No! The setup script handles all technical details automatically. Just follow the Quick Start Guide.
@@ -918,7 +899,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 
 ---
 
-## Quick Reference Card
+### 15. Quick Reference Card
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
