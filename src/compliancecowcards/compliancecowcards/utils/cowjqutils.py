@@ -44,18 +44,15 @@ def evaluate_jq_filter(
         return jq_result, None
 
     except ValueError as e:
-        # Log detailed error information
-        error_message = f"Error while executing JQExpression :: {str(e)}"
         return (
             None,
-            "Got an error while executing JQExpression, ensure whether the JQExpression that you entered is correct. Please check the RuleLogs for more information.",
+            f"Got an error while executing JQExpression, ensure whether the JQExpression that you entered is correct :: {str(e)}",
         )
     except Exception as e:
         # Catch broader exceptions for more robust error handling
-        error_message = f"Unexpected error while executing JQExpression :: {str(e)}"
         return (
             None,
-            "An unexpected error occurred while executing JQExpression. Please check the RuleLogs for more information.",
+            f"An unexpected error occurred while executing JQExpression :: {str(e)}",
         )
 
 
