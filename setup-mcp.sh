@@ -850,7 +850,7 @@ main() {
     check_minio_credentials
     check_ssl_certificates
     check_env_files
-    
+
     echo ""
     log_info "All pre-flight checks passed!"
     echo ""
