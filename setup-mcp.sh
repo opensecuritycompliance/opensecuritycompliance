@@ -626,7 +626,7 @@ create_directories() {
     
     mkdir -p "${HOME}/tmp/cowctl/minio"
     mkdir -p exported-data
-    mkdir -p catalog/localcatalog
+    # mkdir -p catalog/localcatalog
     mkdir -p goose-config
     mkdir -p "$GOOSE_SESSION_DIR"
     
