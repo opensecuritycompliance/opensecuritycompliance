@@ -176,6 +176,7 @@ services:
       - ./catalog/globalcatalog/methods:/policycow/catalog/globalcatalog/methods
       - ./catalog/globalcatalog/rulegroups:/policycow/catalog/globalcatalog/rulegroups
       - ./catalog/globalcatalog/tasks:/policycow/catalog/globalcatalog/tasks
+      - ./catalog/localcatalog/rules:/policycow/catalog/localcatalog/rules
       - ./catalog/localcatalog/:/policycow/catalog/localcatalog/
       - ./etc/cowconfig.yaml:/policycow/etc/cowconfig.yaml
       - ./exported-data:/policycow/exported-data
