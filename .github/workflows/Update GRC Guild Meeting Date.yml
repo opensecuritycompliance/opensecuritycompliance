@@ -1,0 +1,78 @@
+name: Update GRC Guild Meeting Date
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # Runs daily at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update-meeting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update second Wednesday date and year
+        run: |
+          python << 'EOF'
+          from datetime import date, timedelta
+          import calendar
+          import re
+
+          FILE = "GRC_GUILD_MEETINGS.md"
+
+          today = date.today()
+          year = today.year
+          month = today.month
+
+          def second_wednesday(y, m):
+              first = date(y, m, 1)
+              first_wed = first + timedelta(
+                  days=(calendar.WEDNESDAY - first.weekday()) % 7
+              )
+              return first_wed + timedelta(days=7)
+
+          second_wed = second_wednesday(year, month)
+
+          # If already passed, move to next month
+          if second_wed < today:
+              if month == 12:
+                  year += 1
+                  month = 1
+              else:
+                  month += 1
+              second_wed = second_wednesday(year, month)
+
+          # Format date (December 10th)
+          d = second_wed.day
+          suffix = "th" if 11 <= d <= 13 else {1:"st",2:"nd",3:"rd"}.get(d % 10, "th")
+          formatted_date = second_wed.strftime("%B ") + str(d) + suffix
+          meeting_year = str(second_wed.year)
+
+          with open(FILE, "r") as f:
+              content = f.read()
+
+          # Update header year
+          content = re.sub(
+              r"### \d{4} Upcoming Meetings:",
+              f"### {meeting_year} Upcoming Meetings:",
+              content
+          )
+
+          # Update Wednesday date
+          content = re.sub(
+              r"\* Wednesday: [A-Za-z]+ \d{1,2}(st|nd|rd|th)",
+              f"* Wednesday: {formatted_date}",
+              content
+          )
+
+          with open(FILE, "w") as f:
+              f.write(content)
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "Auto-update GRC Guild second Wednesday meeting" || exit 0
+          git push
