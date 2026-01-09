@@ -18,10 +18,10 @@ The Guild defines its core goals as being:
 | 📝 **Ongoing meeting doc** | [Google Doc](https://docs.google.com/document/d/10ROCE-liapf3RbE-0TXZNgSDHqeaQ6UCnafJLOQsw4U/edit?tab=t.0) |
 | **Join our Slack group!** | [ComplianceCow Slack](https://compliancecow.slack.com/archives/C09LMP7PJP6) |
 | 🎥 **Meeting Recordings** | [TO COME] |
-| ⏰ **Meeting Time** | Second Wednesday of the month, 11:00 am CST |
+| ⏰ **Meeting Time** | Third Wednesday of the month, 12:00 pm CST |
 | 📆 **Calendar invite** | [Download .ics file](https://us06web.zoom.us/meeting/tZ0qc-uqqT4oE9CEhZRzkFkTLl1XlAKm0nha/ics?icsToken=DKQQIG3dugAQsf2Y4…) |
 
-> **NOTE:** If you are using Outlook for Mac, you may have trouble adding the invite to your calendar. In order to avoid issues, follow the steps below:
+> **NOTE:** If you are using Outlook for Mac, you may have trouble adding the invite to your calendar. To avoid issues, follow the steps below:
 > 1. Download the .ics file
 > 2. Open Outlook for the web
 > 3. Drag and drop the .ics file onto your calendar
@@ -37,8 +37,8 @@ The Guild defines its core goals as being:
 
 ## Schedule
 
-### 2025 Upcoming Meetings:
-* Wednesday: December 10th, 11 am – Central Time (CST)
+### 2026 Upcoming Meetings:
+* Wednesday: January 14th, 12 pm – Central Time (CST)
 
 ## Contact Us!
 
