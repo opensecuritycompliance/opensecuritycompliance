@@ -94,6 +94,22 @@ inputs:
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
   required: false
+- name: UseSyntheticData
+  description: "Set this to `true` if you don't want to make API calls, but instead want to use synthetic data through the SyntheticDataFile input. If this is not set or set to false, the task executes normally."
+  dataType: BOOLEAN
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: false
+  showField: true 
+  required: false 
+- name: SyntheticDataFile
+  description: "This file will be sent as output if UseSyntheticData is set to `true`. Otherwise this input has no effect on the task."
+  dataType: FILE
+  repeated: false
+  allowedValues: []
+  defaultValue: <<MINIO_FILE_PATH>>
+  showField: true
+  required: false
 - name: ValidateFlow
   description: "Only validates the input data and does not execute. True or False"
   dataType: BOOLEAN
