@@ -47,6 +47,8 @@ userInputs:
   InputFileValidationConfig: <<MINIO_FILE_PATH>>
   LogConfigFile: <<MINIO_FILE_PATH>>
   LogFile: <<MINIO_FILE_PATH>> 
+  UseSyntheticData: true # True or False (Default: False)
+  SyntheticDataFile: <<MINIO_FILE_PATH>>
   ValidateFlow: # If True, only validates the input data and does not execute. True or False (Default: False)
 fromDate: 2024-09-05
 toDate: 2024-09-05
