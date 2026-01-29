@@ -38,7 +38,7 @@ The Guild defines its core goals as being:
 ## Schedule
 
 ### 2026 Upcoming Meetings:
-* Wednesday: January 14th, 11 am – Central Time (CST)
+* Wednesday: February 11th, 11 am – Central Time (CST)
 
 ## Contact Us!
 
