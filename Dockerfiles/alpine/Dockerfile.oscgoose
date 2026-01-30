@@ -1,4 +1,5 @@
-FROM ghcr.io/opensecuritycompliance/goose:ccbase51125
+# FROM ghcr.io/opensecuritycompliance/goose:ccbase51125
+FROM ghcr.io/opensecuritycompliance/opensecuritycompliance/oscgoose:1.1-cf70c900
 
 LABEL MAINTAINER=arul.g@continube.com
 
