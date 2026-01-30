@@ -4,7 +4,7 @@ from compliancecowcards.structs import cards
 from applicationtypes.httprequest import httprequest
 from applicationtypes.nocredapp import nocredapp
 import http
-from compliancecowcards.utils import cowdictutils, cowjqutils
+from compliancecowcards.utils import cowdictutils, cowjqutils, cowutils
 from typing import List, Dict, Tuple, Optional, Any, Union
 import json
 import uuid
@@ -121,7 +121,7 @@ class Task(cards.AbstractTask):
                     )
                 )
 
-        validate_flow = user_inputs.get("ValidateFlow", False)
+        validate_flow = cowutils.str_to_bool(user_inputs.get("ValidateFlow", False))
 
         error = self.validate_inputs()
         if error:
@@ -160,6 +160,14 @@ class Task(cards.AbstractTask):
                     "ExecuteHttpRequest.InputFile.download_failed", error
                 )
             )
+        
+        if self._get_boolean_value_from_input("UseSyntheticData", False):
+            synthetic_data_file = self.task_inputs.user_inputs.get("SyntheticDataFile") 
+            if synthetic_data_file == None or synthetic_data_file == "" or synthetic_data_file == MINIO_PLACEHOLDER:
+                return self.upload_log_file_panic(
+                    self.log_manager.get_error_message("ExecuteHttpRequest.UseSyntheticData.SyntheticDataFile.empty")
+                )
+            return {"OutputFile": synthetic_data_file}
 
         if config_data:
             config_data_resource, error = self.download_resource_data(config_data)
@@ -1970,6 +1978,8 @@ class Task(cards.AbstractTask):
                 body_info_, error = self.http_connector.replace_placeholder(
                     body_info_, "inputfile.", data_file
                 )
+                if error:
+                    return body, error
             parsed_content, error = self.http_connector.parse_content(body_info_)
             if not error:
                 body = (
@@ -2124,3 +2134,14 @@ class Task(cards.AbstractTask):
             return None, None
         content, error = self.download_json_file_from_minio_as_iterable(path)
         return (content, None) if not error else (None, {"error": error.get("error")})
+        
+    def _get_boolean_value_from_input(self, input_name: str, default_value: bool) -> bool:
+        value = self.task_inputs.user_inputs.get(input_name) 
+        
+        if isinstance(value, str):
+            return value.lower() == 'true' or (value == '' and default_value)
+            
+        if isinstance(value, bool):
+            return value
+        
+        return bool(value) or default_value

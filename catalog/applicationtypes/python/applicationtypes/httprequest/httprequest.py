@@ -1415,10 +1415,16 @@ class HttpRequest:
                 query = f".{placeholder_key.strip()}"
             parsed_value = self.jq_filter_query(query, value_dict)
             if parsed_value is not None:
-                target_str = target_str.replace(
-                    f"<<{placeholder_prefix}{placeholder_key}>>",
-                    str(parsed_value).strip(),
-                )
+                if isinstance(parsed_value, str):
+                    target_str = target_str.replace(
+                        f"<<{placeholder_prefix}{placeholder_key}>>",
+                        str(parsed_value).strip(),
+                    )
+                else:
+                    target_str = target_str.replace(
+                        f"<<{placeholder_prefix}{placeholder_key}>>",
+                        json.dumps(parsed_value)
+                    )
             else:
                 file_type = placeholder_prefix[:-1]
                 if file_type == "inputfile":
@@ -1568,7 +1574,7 @@ class HttpRequest:
         # Check the result
         if parsed_values and len(parsed_values) == 1:
             if parsed_values[0] == "Query not found":
-                return ""
+                return None
             else:
                 return parsed_values[0]
         else:
