@@ -353,8 +353,8 @@ docker compose ps
 # - oscreverseproxy (Reverse Proxy)
 # - oscapiservice (API Service)
 # - cowstorage (MinIO Storage)
-# - oscgoose (Goose Integration)
-# - oscgooseservice (Goose Service)
+# - ccowmcpclient (MCP Client Integration)
+# - ccowmcpbridge (MCP Bridge Service)
 # - oscmcpservice (MCP Service)
 ```
 
@@ -362,7 +362,7 @@ docker compose ps
 
 ```bash
 # View your detected Claude model
-cat etc/userconfig.env | grep GOOSE_MODEL
+cat etc/userconfig.env | grep MCP_MODEL
 
 # View MinIO credentials (for console access)
 cat etc/policycow.env | grep MINIO_ROOT
@@ -445,15 +445,15 @@ docker compose build --no-cache
              │                             │
              │                             ▼
              │                    ┌──────────────────┐
-             │                    │  Goose Service   │
-             │                    │  oscgooseservice │
+             │                    │  MCP Bridge      │
+             │                    │  ccowmcpbridge   │
              │                    │  Port: 8095      │
              │                    └────────┬─────────┘
              │                             │
              │                             ▼
              │                    ┌──────────────────┐
-             │                    │  Goose           │
-             │                    │  oscgoose        │
+             │                    │  MCP Client      │
+             │                    │  ccowmcpclient   │
              │                    │  Port: 8976      │
              │                    └────────┬─────────┘
              │                             │
@@ -491,7 +491,7 @@ User → Web UI (Manual Mode) → Reverse Proxy → API Service → Storage
 
 ##### Flow 2: AI-Assisted Rule Creation via UI (MCP Mode)
 ```
-User → Web UI (MCP Mode) → Reverse Proxy → Goose Service → Goose → MCP Service → API Service → Storage
+User → Web UI (MCP Mode) → Reverse Proxy → MCP Bridge → MCP Client → MCP Service → API Service → Storage
 ```
 
 ##### Flow 3: External MCP Clients (Optional)
@@ -511,8 +511,8 @@ The platform consists of 7 interconnected services:
 | oscapiservice | REST API for rule management and execution  | 9080 | Responsibilities: Rule CRUD, task management, rule execution |
 | oscwebserver | React-based web interface | 3001 | Features: Visual rule builder, AI-assisted creation, execution dashboard |
 | oscreverseproxy | HTTPS termination and routing | 443 (HTTPS), 80 (HTTP) | SSL: Localhost certificates included by default
-| oscgooseservice | MCP orchestration layer | 8095 | Features: Bridges UI requests to MCP infrastructure |
-| oscgoose | Goose AI assistant integration | 8976 | Provider: Anthropic Claude (auto-detected model) |
+| ccowmcpbridge | MCP orchestration layer | 8095 | Features: Bridges UI requests to MCP infrastructure |
+| ccowmcpclient | MCP client integration | 8976 | Provider: Anthropic Claude (auto-detected model) |
 | oscmcpservice | Model Context Protocol server | 45678 | Features: MCP protocol implementation, external client connections |
 
 ---
@@ -530,7 +530,7 @@ The platform uses two main configuration files:
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 
 # Auto-detected Claude Model (set by setup script)
-GOOSE_MODEL=claude-sonnet-4-5-20250929
+MCP_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ##### `etc/policycow.env` (Platform Settings)
@@ -571,8 +571,8 @@ opensecuritycompliance/
 │
 ├── catalog/                        # Rule catalog
 ├── exported-data/                  # Exported compliance data
-├── goose-config/                   # Goose configuration
-└── goose-sessions/                 # Goose session data
+├── mcp-config/                   # mcp configuration
+└── mcp-sessions/                 # mcp session data
 ```
 
 ---
@@ -605,7 +605,7 @@ docker compose logs oscmcpservice
 # Restart MCP stack
 docker compose restart oscmcpservice
 sleep 20  # Wait for settle time
-docker compose restart oscgoose oscgooseservice
+docker compose restart ccowmcpclient ccowmcpbridge
 ```
 
 #### API Key or Model Issues
@@ -613,7 +613,7 @@ docker compose restart oscgoose oscgooseservice
 ```bash
 # Check current configuration
 cat etc/userconfig.env | grep ANTHROPIC_API_KEY
-cat etc/userconfig.env | grep GOOSE_MODEL
+cat etc/userconfig.env | grep MCP_MODEL
 
 # Re-run setup to re-detect model
 ./setup-mcp.sh
@@ -705,7 +705,7 @@ mcp:
       envs: {
         "ENABLE_CCOW_API_TOOLS": false,
         "MCP_TOOLS_TO_BE_INCLUDED": "rules",
-        "OSC_GOOSE": true
+        "IS_OSC_CCOW_MCP_CLIENT": true
       }
       env_keys: []
       headers: {}
@@ -853,8 +853,8 @@ cp -r ${HOME}/tmp/cowctl/minio \
    ${HOME}/policycow-backups/$(date +%Y%m%d)/minio
 
 # Backup Goose sessions
-cp -r goose-sessions \
-   ${HOME}/policycow-backups/$(date +%Y%m%d)/goose-sessions
+cp -r mcp-sessions \
+   ${HOME}/policycow-backups/$(date +%Y%m%d)/mcp-sessions
 
 # Backup catalogs
 cp -r catalog \
@@ -919,7 +919,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 │ AI Configuration:                                           │
 │  Provider: Anthropic only                                   │
 │  Models: Auto-detected (Sonnet 4.5 or 4)                    │
-│  Config: etc/userconfig.env (GOOSE_MODEL)                   │
+│  Config: etc/userconfig.env (MCP_MODEL)                     │
 │                                                             │
 │ Useful Commands:                                            │
 │  docker compose logs -f              - View all logs        │
@@ -928,7 +928,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 │  docker compose restart              - Restart all          │
 │                                                             │
 │ Check Configuration:                                        │
-│  cat etc/userconfig.env | grep GOOSE_MODEL                  │
+│  cat etc/userconfig.env | grep MCP_MODEL                    │
 │  cat etc/policycow.env | grep MINIO_ROOT                    │
 │                                                             │
 │ Important Notes:                                            │
