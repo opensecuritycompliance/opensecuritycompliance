@@ -852,7 +852,7 @@ mkdir -p ${HOME}/policycow-backups/$(date +%Y%m%d)
 cp -r ${HOME}/tmp/cowctl/minio \
    ${HOME}/policycow-backups/$(date +%Y%m%d)/minio
 
-# Backup Goose sessions
+# Backup CCowMCPClient sessions
 cp -r mcp-sessions \
    ${HOME}/policycow-backups/$(date +%Y%m%d)/mcp-sessions
 
