@@ -33,13 +33,13 @@ services:
     networks:
       - internal
       - default
-  oscgoose:
+  ccowmcpclient:
     build:
       context: .
-      dockerfile: ./Dockerfiles/alpine/Dockerfile.oscgoose
+      dockerfile: ./Dockerfiles/alpine/Dockerfile.ccowmcpclient
       args:
         buildno: 1
-    image: oscgoose:1.1
+    image: ccowmcpclient:1.1
     logging:
       driver: "json-file"
       options:
@@ -48,26 +48,25 @@ services:
     env_file:
       - ./etc/userconfig.env
       - ./etc/policycow.env
-    hostname: oscgoose
-    container_name: oscgoose
+    hostname: ccowmcpclient
+    container_name: ccowmcpclient
     restart: always
     ports:
       - 8976:8080/tcp
     volumes:
-      - ./goose-config:/root/.config/goose
-      - ./goose-sessions:/home/goose/.local/share/goose
-      - ./goose-state:/home/goose/.local/state/goose
+      - ./mcp-sessions:/home/ccowclient/.local/share/ccowmcp/data/sessions
+      - ./mcp-state:/home/ccowclient/.local/share/ccowmcp/state
     depends_on:
       - oscmcpservice
     networks:
       internal:
         aliases:
-          - oscgoose
+          - ccowmcpclient
       default:
         aliases:
-          - oscgoose
-  oscgooseservice:
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscgooseservice:latest
+          - ccowmcpclient
+  ccowmcpbridge:
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/ccowmcpbridge:1.1-20260207035035
     logging:
       driver: "json-file"
       options:
@@ -78,23 +77,23 @@ services:
       - ./etc/policycow.env
     environment:
       - GIN_MODE=release
-    hostname: oscgooseservice
-    container_name: oscgooseservice
+    hostname: ccowmcpbridge
+    container_name: ccowmcpbridge
     restart: always
     ports:
       - 8095:8080/tcp
     volumes:
-      - ./goose-config:/root/.config/goose
-      - ./goose-sessions:/home/goose/.local/share/goose
+      - ./mcp-config:/home/ccowclient/.local/share/ccowmcp/config
+      - ./mcp-sessions:/home/ccowclient/.local/share/ccowmcp/data/sessions
     depends_on:
-      - oscgoose
+      - ccowmcpclient
     networks:
       internal:
         aliases:
-          - oscgooseservice
+          - ccowmcpbridge
       default:
         aliases:
-          - oscgooseservice
+          - ccowmcpbridge
   oscwebserver:
     platform: linux/x86_64
     dns:
@@ -127,7 +126,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscreverseproxy:latest-20251106112639
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscreverseproxy:latest-cf70c900
     env_file:
       - etc/userconfig.env
       - etc/policycow.env
@@ -185,7 +184,7 @@ services:
       - ./catalog/globalcatalog/yamlfiles/applicationtypes:/policycow/catalog/globalcatalog/yamlfiles/applicationtypes
       - ./catalog/globalcatalog/yamlfiles/credentialtypes:/policycow/catalog/globalcatalog/yamlfiles/credentialtypes
       - ./cowexecutions:/policycow/cowexecutions
-      - ./goose-sessions:/home/goose/.local/share/goose
+      - ./mcp-sessions:/home/ccowclient/.local/share/ccowmcp/data/sessions
     hostname: oscapiservice
     container_name: oscapiservice
     depends_on:

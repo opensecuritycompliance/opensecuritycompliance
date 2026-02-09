@@ -12,9 +12,9 @@ NC='\033[0m' # No Color
 
 # Script constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REQUIRED_SERVICES=("oscmcpservice" "oscgoose" "oscgooseservice" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
+REQUIRED_SERVICES=("oscmcpservice" "ccowmcpclient" "ccowmcpbridge" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 CERT_PATHS=("src/oscreverseproxy/certs" "${HOME}/continube/certs")
-GOOSE_SESSION_DIR="${SCRIPT_DIR}/goose-sessions/sessions"
+MCP_SESSION_DIR="${SCRIPT_DIR}/mcp-sessions/sessions"
 
 # Docker command with sudo
 DOCKER_CMD="sudo docker"
@@ -23,6 +23,16 @@ USE_SUDO=true
 # Global variables for detected model
 DETECTED_MODEL=""
 DETECTED_MODEL_NAME=""
+
+cleanup_temp_env() {
+    local env_file="${SCRIPT_DIR}/etc/userconfig.env"
+    if [ -f "$env_file" ]; then
+        log_info "Cleaning up temporary environment variables..."
+        # Removes GOOSE_MODEL from the env file
+        sed -i '/^GOOSE_MODEL=/d' "$env_file"
+    fi
+    unset GOOSE_MODEL
+}
 
 # Source environment variables
 if [ -f "${SCRIPT_DIR}/etc/userconfig.env" ]; then
@@ -232,21 +242,21 @@ check_anthropic_key() {
         if [ -f "$ENV_FILE" ]; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 # macOS
-                sed -i '' '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+                sed -i '' '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
                 sed -i '' '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
                 sed -i '' '/# Detected Claude Model/d' "$ENV_FILE"
-                sed -i '' '/^GOOSE_MODEL=/d' "$ENV_FILE"
+                sed -i '' '/^MCP_MODEL=/d' "$ENV_FILE"
             else
                 # Linux
-                sed -i '/# Anthropic API Key for MCP\/Goose integration/d' "$ENV_FILE"
+                sed -i '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
                 sed -i '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
                 sed -i '/# Detected Claude Model/d' "$ENV_FILE"
-                sed -i '/^GOOSE_MODEL=/d' "$ENV_FILE"
+                sed -i '/^MCP_MODEL=/d' "$ENV_FILE"
             fi
             log_info "Removed invalid API key from etc/userconfig.env"
         fi
         unset ANTHROPIC_API_KEY
-        unset GOOSE_MODEL
+        unset MCP_MODEL
     }
     
     # Function to validate API key and detect best available Claude model
@@ -347,7 +357,7 @@ check_anthropic_key() {
         if [ -z "$ANTHROPIC_API_KEY" ]; then
             log_warning "Anthropic API key not found in environment"
             echo ""
-            echo "Open Security Compliance MCP integration requires an Anthropic API key for Goose."
+            echo "Open Security Compliance MCP integration requires an Anthropic API key."
             echo "Get your API key from: https://console.anthropic.com/"
             echo ""
             read -p "Enter your Anthropic API key: " -r ANTHROPIC_API_KEY
@@ -369,16 +379,16 @@ check_anthropic_key() {
             fi
 
             # Update API key in-place
-            update_env_variable "$ENV_FILE" "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "# Anthropic API Key for MCP/Goose integration"
+            update_env_variable "$ENV_FILE" "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "# Anthropic API Key for MCP integration"
             
-            # Update GOOSE_MODEL in-place with detected model
-            update_env_variable "$ENV_FILE" "GOOSE_MODEL" "$DETECTED_MODEL" "# Detected Claude Model"
+            # Update MCP_MODEL in-place with detected model
+            update_env_variable "$ENV_FILE" "MCP_MODEL" "$DETECTED_MODEL" "# Detected Claude Model"
             
             log_success "API key saved to etc/userconfig.env"
-            log_success "GOOSE_MODEL set to: $DETECTED_MODEL_NAME"
+            log_success "MCP_MODEL set to: $DETECTED_MODEL_NAME"
             
             export ANTHROPIC_API_KEY
-            export GOOSE_MODEL="$DETECTED_MODEL"
+            export MCP_MODEL="$DETECTED_MODEL"
             break
         else
             # Invalid key - remove from env and ask again
@@ -627,18 +637,18 @@ create_directories() {
     mkdir -p "${HOME}/tmp/cowctl/minio" && chown -R "$(id -un)":"$(id -gn)" "${HOME}/tmp/cowctl/minio"
     mkdir -p exported-data && chown -R "$(id -un)":"$(id -gn)" exported-data
     mkdir -p catalog/localcatalog && chown -R "$(id -un)":"$(id -gn)" catalog/localcatalog
-    mkdir -p goose-config && chown -R "$(id -un)":"$(id -gn)" goose-config
-    mkdir -p "$GOOSE_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn)" "$GOOSE_SESSION_DIR"
+    mkdir -p mcp-config && chown -R "$(id -un)":"$(id -gn)" mcp-config
+    mkdir -p "$MCP_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn)" "$MCP_SESSION_DIR"
     
     log_success "Directories created"
-    log_info "Goose sessions will persist in: $GOOSE_SESSION_DIR"
+    log_info "MCP sessions will persist in: $MCP_SESSION_DIR"
 }
 
 # Build and start services
 build_services() {
     log_info "Building Docker images (this may take several minutes)..."
     
-    if $COMPOSE_CMD -f docker-compose-osc.yaml build oscwebserver oscreverseproxy oscapiservice cowstorage oscgoose oscgooseservice oscmcpservice; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml build oscwebserver oscreverseproxy oscapiservice cowstorage ccowmcpclient ccowmcpbridge oscmcpservice; then
         log_success "Docker images built successfully"
     else
         log_error "Failed to build Docker images"
@@ -704,7 +714,7 @@ start_services() {
         exit 1
     fi
     
-    # Start MCP service first (before oscgoose)
+    # Start MCP service first (before ccowmcpclient)
     log_info "Starting MCP service..."
     if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscmcpservice; then
         log_success "MCP service container started"
@@ -726,9 +736,9 @@ start_services() {
         log_warning "Continuing despite MCP service issues..."
     fi
     
-    # Now start remaining services including oscgoose
+    # Now start remaining services including ccowmcpclient
     log_info "Starting remaining services..."
-    if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscapiservice oscwebserver oscreverseproxy oscgoose oscgooseservice; then
+    if $COMPOSE_CMD -f docker-compose-osc.yaml up -d oscapiservice oscwebserver oscreverseproxy ccowmcpclient ccowmcpbridge; then
         log_success "All services started successfully"
     else
         log_error "Failed to start services"
@@ -751,11 +761,11 @@ wait_for_services() {
             ((services_ready++))
         fi
         
-        if $DOCKER_CMD ps --filter "name=oscgoose" --filter "status=running" | grep -q oscgoose; then
+        if $DOCKER_CMD ps --filter "name=ccowmcpclient" --filter "status=running" | grep -q ccowmcpclient; then
             ((services_ready++))
         fi
 
-        if $DOCKER_CMD ps --filter "name=oscgooseservice" --filter "status=running" | grep -q oscgooseservice; then
+        if $DOCKER_CMD ps --filter "name=ccowmcpbridge" --filter "status=running" | grep -q ccowmcpbridge; then
             ((services_ready++))
         fi
         
@@ -797,8 +807,8 @@ show_mcp_info() {
     echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
-    echo "  - Goose Service: http://localhost:8095"
-    echo "  - Goose Web: http://localhost:8976"
+    echo "  - MCP Bridge: http://localhost:8095"
+    echo "  - MCP Client Web: http://localhost:8976"
     echo "  - MCP Service: http://localhost:45678"
     echo "  - MCP Health Check: http://localhost:45678/health"
     echo ""
@@ -806,18 +816,18 @@ show_mcp_info() {
     echo "  - Provider: Anthropic only"
     echo "  - Detected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4}"
     echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-20250514}"
-    echo "  - Goose Sessions: $GOOSE_SESSION_DIR"
+    echo "  - MCP Sessions: $MCP_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
     echo ""
     log_info "Rule Creation Methods:"
     echo "  1. Manual UI: Web UI → Reverse Proxy → API Service"
-    echo "  2. MCP UI Mode: Web UI → Reverse Proxy → Goose → MCP"
+    echo "  2. MCP UI Mode: Web UI → Reverse Proxy → MCP Bridge → MCP Client → MCP Service"
     echo "  3. External MCP: Goose/Claude → MCP (port 45678)"
     echo ""
     log_info "Useful Commands:"
     echo "  - View all logs: $COMPOSE_CMD logs -f"
-    echo "  - View Goose logs: $COMPOSE_CMD logs -f oscgoose"
-    echo "  - View Goose Service logs: $COMPOSE_CMD logs -f oscgooseservice"
+    echo "  - View MCP Client logs: $COMPOSE_CMD logs -f ccowmcpclient"
+    echo "  - View MCP Bridge logs: $COMPOSE_CMD logs -f ccowmcpbridge"
     echo "  - View MCP logs: $COMPOSE_CMD logs -f oscmcpservice"
     echo "  - Check MCP health: curl http://localhost:45678/health"
     echo "  - Stop services: $COMPOSE_CMD down"
@@ -827,7 +837,7 @@ show_mcp_info() {
     log_warning "Important Notes:"
     echo "  ⚠️  Only Anthropic Claude is supported (detected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4})"
     echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
-    echo "  ⚠️  Goose sessions persist across restarts"
+    echo "  ⚠️  MCP sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
     echo "  ⚠️  Not tested at scale - for development/testing only"
     echo "  ⚠️  Ensure you have a beefy machine (16GB+ RAM, 8+ cores)"
@@ -862,8 +872,8 @@ main() {
     echo "    2. Reverse Proxy (oscreverseproxy)"
     echo "    3. API Service (oscapiservice)"
     echo "    4. Storage Service (cowstorage/MinIO)"
-    echo "    5. Goose Integration (oscgoose)"
-    echo "    6. Goose Service (oscgooseservice)"
+    echo "    5. MCP Client Integration (ccowmcpclient)"
+    echo "    6. MCP Bridge Service (ccowmcpbridge)"
     echo "    7. MCP Service (oscmcpservice)"
     echo ""
     
