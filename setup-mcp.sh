@@ -24,15 +24,6 @@ USE_SUDO=true
 DETECTED_MODEL=""
 DETECTED_MODEL_NAME=""
 
-cleanup_temp_env() {
-    local env_file="${SCRIPT_DIR}/etc/userconfig.env"
-    if [ -f "$env_file" ]; then
-        log_info "Cleaning up temporary environment variables..."
-        # Removes GOOSE_MODEL from the env file
-        sed -i '/^GOOSE_MODEL=/d' "$env_file"
-    fi
-    unset GOOSE_MODEL
-}
 
 # Source environment variables
 if [ -f "${SCRIPT_DIR}/etc/userconfig.env" ]; then
