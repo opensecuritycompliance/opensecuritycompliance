@@ -26,43 +26,24 @@ userObject:
       framework:
       - github
     userDefinedCredentials:
-      AWSSignature:
-        ValidationCURL: ""
-        AccessKey: ""
-        SecretKey: ""
-      BearerToken:
-        ValidationCURL: ""
-        Token: ""
-      BasicAuthentication:
-        ValidationCURL: ""
-        UserName: ""
-        Password: ""
-      OAuth:
-        ValidationCURL: ""
-        ClientID: ""
-        ClientSecret: ""
-      CustomType:
-        ValidationCURL: ""
-        CredentialJson: null
-      APIKey:
-        ValidationCURL: ""
-        APIKey: ""
-      NoAuth: {}
       JWTBearer:
-        Algorithm: ""
-        PrivateKey: null
-        Payload: ""
-        ValidationCURL: ""
+        Algorithm: "RS256"
+        PrivateKey: # GitHub application's private key file
+        Payload: '{"iat": <<CURRENT_TIME>>, "exp": <<CURRENT_TIME + 600>>, "iss": [github-app-id]}'
+        ValidationCURL: |
+          curl --location --request POST 'https://api.github.com/app/installations/[github-app-installation-id]/access_tokens' \
+            --header 'Authorization: Bearer <<JWTBearer>>>>' \
+            --header 'Accept: application/vnd.github+json'
 userInputs:
   CustomExceptionConfigFileForPR: <<MINIO_FILE_PATH>>
   InScopeRepos: <<MINIO_FILE_PATH>>
-  LogConfigFile: <<MINIO_FILE_PATH>>
   PR-JQConfig: <<MINIO_FILE_PATH>>
   PRRequestConfig: <<MINIO_FILE_PATH>>
   PRResponseConfig: <<MINIO_FILE_PATH>>
-  ProceedIfLogExists: false
   RequiredFields:
   - RepositoryName
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: true
   RuleOutputFileFormat: PARQUET
-fromDate: 2025-05-27T11:09:18Z
-toDate: 2025-05-27T11:09:18Z
+fromDate: 2025-02-13T09:12:12Z
+toDate: 2025-02-13T09:12:12Z

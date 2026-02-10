@@ -95,10 +95,9 @@ class Task(cards.AbstractTask):
         resourceGroups, resourceGroupsType = "", ""
 
         parts = id.split("/")
-        resourceGroupsType = "/".join(parts[len(parts)-3:len(parts)-1] )
+        resourceGroupsType = parts[-2][:1].upper() + parts[-2][1:]
 
-        if len(parts) > 3 :
-            resourceGroups = parts[4]
+        resourceGroups = parts[4] if len(parts) > 3 else id
 
         return resourceGroups, resourceGroupsType
     

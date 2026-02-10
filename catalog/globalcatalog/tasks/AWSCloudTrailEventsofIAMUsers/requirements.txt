@@ -1,3 +1,3 @@
-PyYAML
-boto3==1.34.134
-toml
+PyYAML==6.0.3
+boto3==1.42.30
+toml==0.10.2

@@ -15,7 +15,11 @@
 - LogFile              : [OPTIONAL] This field is required only when this task is not acting as Task1 in the rule. Generally, when the previous task has a 'LogFile,' we will map that logfile to this input in the NoCode UI. If the 'LogFile' is empty, the 'TransformData' task will be processed. Otherwise, it will simply pass the previous task's 'LogFile' to the 'TransformData' task's 'LogFile.
 
 - LogConfigFile        : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
-        
+
+- OutputFileFormat          : [OPTIONAL] Target format for conversion of output file (supported formats JSON, CSV, PARQUET).
+
+- OutputFileName            : [OPTIONAL] This name will be used for the output file.
+
 - ProceedIfLogExists   : [OPTIONAL] If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
 
 - ProceedIfErrorExists : [OPTIONAL] If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
@@ -70,6 +74,13 @@
 
     We can also include the from and to dates in the error message for better clarity using the {fromdate} and {todate} placeholders.
 
+### **OutputFileFormat** (OPTIONAL)
+    - Specifies the output file format for conversion.
+    - Allowed values: JSON, CSV, PARQUET.
+    - **Default:** PARQUET
+
+### **OutputFileName** (OPTIONAL)
+    - If OutputFileName is specified, the output file will use that name; otherwise, it defaults to `OutputFile`.
 
 ### **ProceedIfLogExists** (OPTIONAL)
     - This field is optional, and the default value of ProceedIfLogExists is true.

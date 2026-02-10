@@ -84,7 +84,7 @@ class Task(cards.AbstractTask):
         try:
             compliance = finding['Compliance']
             resources = finding['Resources'][0] if finding['Resources'] else None
-
+            
             compliance_status = compliance.get('Status')
             validation_status_code = compliance['StatusReasons'][0][
                 'ReasonCode'] if 'StatusReasons' in compliance and compliance['StatusReasons'] else None
@@ -119,7 +119,7 @@ class Task(cards.AbstractTask):
 
             resource_url = ''
             # fecting resource details to fetch the resource url     
-            resource_info = self.get_resource_info(resources, mapping_dict)
+            resource_info = self.get_resource_info(resources, mapping_dict, aws_connector)
             resource_id = resource_info.get('resource_id', None)
             resource_name = resource_info.get('resource_name', None)
             resource_type = resource_info.get('resource_type', None)
@@ -162,7 +162,7 @@ class Task(cards.AbstractTask):
                 'ResourceType': resource_type,
                 'ResourceLocation': resource_location,
                 'ResourceTags': resources['Tags'] if resources and 'Tags' in resources else None,
-                'ResourceUrl' : resource_url,
+                'ResourceURL' : resource_url,
                 'ValidationStatusCode': validation_status_code,
                 'ValidationStatusNotes': validation_status_notes,
                 'ComplianceStatus': compliance_status,
@@ -178,19 +178,34 @@ class Task(cards.AbstractTask):
             return response        
 
     
-    def get_resource_info(self, resources, mapping_dict):
+    def get_resource_info(self, resources, mapping_dict, aws_connector):
 
         resource_info = {}
 
         try:
 
             resource_id = resources.get('Id')
-            resource_info['resource_id'] = resource_id
-            resource_name = resource_id.split('/')[-1] if resource_id else None
+            resource_name_ = resource_id.split('/')
+
+            resource_name = None
+            if len(resource_name_) > 1 :
+                resource_name = resource_name_[-1]
+
+            if not resource_name:
+                resource_name_ = resource_id.split(":")
+                if len(resource_name_) > 1:
+                    resource_name = resource_name_[-1]
+            
+            if not resource_name:
+                resource_name = resource_id
+
             resource_info['resource_name'] = resource_name
+            resource_info['resource_id'] = resource_name
+
 
             resource_type = resources.get('Type')
-            resource_info['resource_type'] = resource_type
+            resource_type_ = aws_connector.get_aws_security_hub_resource_type(resource_type)
+            resource_info['resource_type'] = resource_type_
 
             resource_location = resources.get('Region') if resources else None
             resource_location = resource_location if resource_location not in ('', 'global') else 'us-east-1'
@@ -227,6 +242,9 @@ class Task(cards.AbstractTask):
 
         return absolute_file_path, None
     
+    
+    
+
     def upload_audit_file(self, errors_list):
         log_file_path, error = self.upload_file_to_minio(file_content=json.dumps(errors_list).encode('utf-8'), 
                                                          file_name=f'LogFile-{str(uuid.uuid4())}.json', content_type='application/json')

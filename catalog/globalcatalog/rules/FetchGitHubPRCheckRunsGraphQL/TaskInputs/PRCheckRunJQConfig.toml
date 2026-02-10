@@ -1,10 +1,6 @@
 [JQConfig]
 JQExpression = '''
-[
-  .[] as $pr |
-  $pr.data["no"+"de"].commits.nodes[]?.commit.checkSuites["nodes"][]? |
-  .checkRuns["nodes"][]? |
-  {
+[.[].data.search.nodes[] as $pr | $pr.commits.nodes[].commit.checkSuites.nodes[].checkRuns.nodes[] | {
     "System": "github",
     "Source": "compliancecow",
     "ResourceID": .id,
@@ -13,14 +9,13 @@ JQExpression = '''
     "ResourceLocation": "N/A",
     "ResourceTags": [],
     "ResourceURL": .url,
-    "RepositoryName": $pr.PRHeadRepo,
-    "PullRequestID": $pr.ResourceID,
-    "PullRequestTitle": $pr.ResourceName,
-    "PullRequestNumber": $pr.PRNumber,
+    "RepositoryName": $pr.headRepository.nameWithOwner,
+    "PullRequestID": $pr.id,
+    "PullRequestTitle": $pr.title,
+    "PullRequestNumber": $pr.number,
     "RunStatus": .status,
     "RunConclusion": .conclusion,
     "RunStartedDate": .startedAt,
     "RunCompletedDate": .completedAt
-  }
-]
+}]
 '''

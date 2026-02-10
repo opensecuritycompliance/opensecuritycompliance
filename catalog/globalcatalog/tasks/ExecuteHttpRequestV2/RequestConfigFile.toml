@@ -177,6 +177,9 @@ MaxWorkers = 5
 [Request.Headers]
 # Example:
 # Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+# NOTE : Add "<<validationCURLresponse>>" to include the full validation cURL response.
+#        This means that if the validation cURL returns an Auth token or a Bearer token in plain/text,
+#        the entire response will be directly used as the value of the `Authorization` header.
 
 # Query Parameters:
 # - Define query parameters for GET requests or additional parameters for other request types.

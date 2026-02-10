@@ -58,7 +58,10 @@ spec:
     dataType: STRING
     repeated: false
     defaultValue: JSON
-    allowedValues: []
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
     showField: true
     required: true
   - name: GitHubDependabotTransformConfig
@@ -70,7 +73,7 @@ spec:
     showField: true
     required: true
   tasks:
-  - name: ExecuteHttpRequest
+  - name: ExecuteHttpRequestV2
     alias: FetchGitHubDependabotAlerts
     type: task
     appTags:
@@ -84,7 +87,7 @@ spec:
       - github
     purpose: List the details of Dependabot alerts for a GitHub repository
     description: List the details of Dependabot alerts for a GitHub repository
-  - name: CheckCondition
+  - name: CheckConditionV2
     alias: FilterDependabotAlerts
     type: task
     appTags:
@@ -98,21 +101,7 @@ spec:
       dismissed, auto_dismissed) and severity (low, medium, high, critical)
     description: Filter GitHub Dependabot alerts by vulnerability state (open, fixed,
       dismissed, auto_dismissed) and severity (low, medium, high, critical)
-  - name: ConvertFileFormat
-    alias: ConvertJsonFromParquet
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Convert files between the supported formats - (JSON, CSV, YAML, TOML,
-      PARQUET)
-    description: Convert files between the supported formats - (JSON, CSV, YAML, TOML,
-      PARQUET)
-  - name: TransformData
+  - name: TransformDataV2
     alias: CreateCCowStandardFormat
     type: task
     appTags:
@@ -132,13 +121,12 @@ spec:
   - FetchGitHubDependabotAlerts.Input.InputFile:=*.Input.GitHubDependabotInputFile
   - FilterDependabotAlerts.Input.InputFile:=FetchGitHubDependabotAlerts.Output.OutputFile
   - FilterDependabotAlerts.Input.ConditionConfig:=*.Input.GitHubDependabotConditionConfig
+  - FilterDependabotAlerts.Input.OutputFileFormat:=*.Input.OutputFileFormat
   - FilterDependabotAlerts.Input.LogFile:=FetchGitHubDependabotAlerts.Output.LogFile
-  - ConvertJsonFromParquet.Input.InputFile:=FilterDependabotAlerts.Output.MatchedConditionFile
-  - ConvertJsonFromParquet.Input.OutputFileFormat:=*.Input.OutputFileFormat
-  - ConvertJsonFromParquet.Input.LogFile:=FilterDependabotAlerts.Output.LogFile
-  - CreateCCowStandardFormat.Input.InputFile1:=ConvertJsonFromParquet.Output.OutputFile
+  - CreateCCowStandardFormat.Input.InputFile1:=FilterDependabotAlerts.Output.MatchedConditionFile
   - CreateCCowStandardFormat.Input.TransformConfigFile:=*.Input.GitHubDependabotTransformConfig
-  - CreateCCowStandardFormat.Input.LogFile:=ConvertJsonFromParquet.Output.LogFile
+  - CreateCCowStandardFormat.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - CreateCCowStandardFormat.Input.LogFile:=FilterDependabotAlerts.Output.LogFile
   - '*.Output.CompliancePCT_:=CreateCCowStandardFormat.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=CreateCCowStandardFormat.Output.ComplianceStatus_'
   - '*.Output.LogFile:=CreateCCowStandardFormat.Output.LogFile'

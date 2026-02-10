@@ -3,7 +3,7 @@ from typing import Any, List, Dict
 import pandas as pd
 from pathlib import Path
 from compliancecowcards.structs import cards
-from compliancecowcards.utils import cowdictutils, cowjqutils
+from compliancecowcards.utils import cowdictutils, cowjqutils, cowutils
 import pathlib
 import re
 
@@ -26,7 +26,7 @@ class Task(cards.AbstractTask):
         input_file_url: str | None = user_inputs.get("InputFile")
         jq_transform: str | None = user_inputs.get("JQTransform")
 
-        validate_flow: bool = user_inputs.get("ValidateFlow", False)
+        validate_flow: bool = cowutils.str_to_bool(user_inputs.get("ValidateFlow", False))
 
         # Determine whether to proceed if errors exist
         self.proceed_if_error_exists = self.task_inputs.user_inputs.get(
@@ -64,7 +64,7 @@ class Task(cards.AbstractTask):
 
         # Check for previous log file if specified
         if cowdictutils.is_valid_key(self.task_inputs.user_inputs, "LogFile"):
-            prev_log_file_url = self._sanitize_url(
+            prev_log_file_url = self.sanitize_url(
                 self.task_inputs.user_inputs["LogFile"]
             )
 
@@ -197,6 +197,9 @@ class Task(cards.AbstractTask):
             response_data.extend(
                     [transformed_data] if isinstance(transformed_data, dict) else transformed_data
                 )
+            
+            if len(response_data) == 1 and isinstance(response_data[0], list):
+                response_data = response_data[0]
 
             transformed_file_url, error = self.upload_iterable_as_json_file_to_minio(
                 data=response_data,
@@ -252,23 +255,6 @@ class Task(cards.AbstractTask):
     def _is_valid_file_input(self, input_url: str | Any = "") -> bool:
         """Check if file input URL is valid"""
         return bool(input_url and input_url != MINIO_PLACEHOLDER)
-
-    def _sanitize_url(self, url: str) -> str:
-        """
-        Sanitize a URL input to prevent path traversal attacks.
-
-        Args:
-            url: URL to sanitize
-
-        Returns:
-            Sanitized URL
-        """
-        if not isinstance(url, str):
-            return str(url)
-
-        # Remove any path traversal attempts
-        sanitized = re.sub(r"\.\./", "", url)
-        return sanitized
 
     def _is_valid_json_file(self, file_path: str) -> bool:
         """

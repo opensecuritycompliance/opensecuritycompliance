@@ -42,6 +42,12 @@ class Task(cards.AbstractTask):
         df = pd.DataFrame(rows, columns=['Category', 'ActivityName', 'PermissionScope'])
 
         inactive_window = self.task_inputs.user_inputs.get("InactivePermissionsWindow")
+        
+        if not inactive_window:
+            log_file_url, error = self.upload_log_file({ 'Error': 'The inactive permission window is empty. Please specific "inactive permission window" below 30 days, as Azure audit logs are only retained for that period.'})
+            if error:
+                return { 'Error': error }
+            return { "LogFile": log_file_url } 
 
         if inactive_window > 30:
             log_file_url, error = self.upload_log_file({ 'Error': 'The inactive permission window exceeds 30 days. Please specific "inactive permission window" below 30 days, as Azure audit logs are only retained for that period.'})

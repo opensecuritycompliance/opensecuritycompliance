@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import json
 import uuid
 from compliancecowcards.structs import cards
-from compliancecowcards.utils import cowdfutils
+from compliancecowcards.utils import cowdfutils, cowutils
 import numpy as np
 import pandas as pd
 import toml
@@ -388,7 +388,7 @@ class Task(cards.AbstractTask):
         elif not self.proceed_if_log_exists and log_file_url:
             return {"LogFile": log_file_url}
 
-        validate_flow = user_inputs.get("ValidateFlow", False)
+        validate_flow = cowutils.str_to_bool(user_inputs.get("ValidateFlow", False))
 
         validation_error_info = self.check_inputs()
         if validation_error_info:
@@ -450,8 +450,12 @@ class Task(cards.AbstractTask):
                     error_type, error_info)
             )
 
+        output_file_name=f'OutputFile-{str(uuid.uuid4())}'  
+        if self.task_inputs.user_inputs.get("OutputFileName",""):
+            output_file_name = self.task_inputs.user_inputs.get("OutputFileName","")
+
         output_file_url, error = self.upload_output_file(
-            "OutputFile", output_data, output_file_format
+            output_file_name, output_data, output_file_format
         )
         if error:
             return self.upload_log_file_panic(
@@ -504,7 +508,7 @@ class Task(cards.AbstractTask):
         self, file_name: str, data: bytes, format_to_convert: str
     ) -> Tuple[str, Optional[str]]:
         """Upload converted output file to MinIO."""
-        file_name = f"{file_name}-{str(uuid.uuid4())}.{format_to_convert}"
+        file_name = f"{file_name}.{format_to_convert}"
         content_type = self.CONTENT_TYPES.get(format_to_convert, "text/plain")
 
         absolute_file_path, error = self.upload_file_to_minio(

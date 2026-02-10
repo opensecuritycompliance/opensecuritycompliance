@@ -1,4 +1,4 @@
-PyYAML
-PyGithub
-toml
-pandas
+PyYAML==6.0.3
+PyGithub==2.8.1
+toml==0.10.2
+pandas==2.3.3

@@ -1,4 +1,4 @@
-PyYAML
-tomli
-pandas
-numpy
+PyYAML==6.0.3
+tomli==2.3.0
+pandas==2.3.3
+numpy==2.3.5

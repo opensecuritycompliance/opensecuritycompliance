@@ -5,7 +5,7 @@ meta:
   purpose: Fetch AWS IAM users using ListUsers API and identify stale users who haven't
     used their password in more than 90 days
   description: 'This rule fetches AWS IAM users via REST API, filters for users with
-    password last used date older than 90 days, transforms the data to ComplianceCow'
+    password last used date older than 90 days, transforms the data to ComplianceCow '
   labels:
     appType:
     - httprequest
@@ -16,8 +16,6 @@ meta:
   annotations:
     annotateType:
     - httprequest
-  tags:
-    - MCP
 spec:
   inputs:
     JQFilter: .[].ListUsersResponse.ListUsersResult.Users.member[] | select(.PasswordLastUsed
@@ -25,7 +23,7 @@ spec:
     JQTransform: 'map(  . as $user |  ($user.PasswordLastUsed // null) as $lastUsed
       |  (if $lastUsed == null then null else (now - ($lastUsed | fromdateiso8601))
       / 86400 | floor end) as $daysSince |  {    System: "aws",    Source: "compliancecow",     ResourceID:
-      $user.Arn,    ResourceName: $user.UserName,    ResourceType: "User",    ResourceLocation:
+      $user.Arn,    ResourceName: $user.UserName,    ResourceType: "IAMUser",    ResourceLocation:
       ($user.Arn | split(":")[3]),    ResourceTags: ($user.Tags // []),    UserName:
       $user.UserName,    PasswordLastUsed: $lastUsed,    DaysSinceLastUsed: $daysSince,    IsStale:
       ($lastUsed == null or $daysSince > 90),    ValidationStatusCode: (if ($lastUsed
@@ -57,7 +55,7 @@ spec:
     defaultValue: 'map(  . as $user |  ($user.PasswordLastUsed // null) as $lastUsed
       |  (if $lastUsed == null then null else (now - ($lastUsed | fromdateiso8601))
       / 86400 | floor end) as $daysSince |  {    System: "aws",    Source: "compliancecow",     ResourceID:
-      $user.Arn,    ResourceName: $user.UserName,    ResourceType: "User",    ResourceLocation:
+      $user.Arn,    ResourceName: $user.UserName,    ResourceType: "IAMUser",    ResourceLocation:
       ($user.Arn | split(":")[3]),    ResourceTags: ($user.Tags // []),    UserName:
       $user.UserName,    PasswordLastUsed: $lastUsed,    DaysSinceLastUsed: $daysSince,    IsStale:
       ($lastUsed == null or $daysSince > 90),    ValidationStatusCode: (if ($lastUsed

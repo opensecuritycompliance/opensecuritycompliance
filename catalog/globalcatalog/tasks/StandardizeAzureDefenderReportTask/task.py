@@ -5,6 +5,12 @@ from compliancecowcards.structs import cards
 import pandas as pd
 from applicationtypes.azureappconnector import azureappconnector
 
+RESOURCE_GROUPS_TYPE_MAPPING = {
+    # caseinsensitive: CorrectCase
+    "virtualnetworks": "VirtualNetworks",
+    "managedclusters": "ManagedClusters"
+}
+
 
 class Task(cards.AbstractTask):
 
@@ -134,35 +140,16 @@ class Task(cards.AbstractTask):
 
         resourceGroups,resourceGroupsType = "",""
 
-        parts = s.split("/")
-
-        if "subnets" in s :
-            resourceGroupsType = "Microsoft.Network/virtualNetworks/subnets"
-        else:
-            resourceGroupsType = "/".join(parts[len(parts)-3:len(parts)-1] )
-            
-        if len(parts) > 3 :
-            resourceGroups = parts[4]
+        parts: list[str] = s.split("/")
+        resourceGroupsType = parts[-2][:1].upper() + parts[-2][1:]
         
-
+        resourceGroups = parts[4] if len(parts) > 3 else s
+        
+        for resource_type_insensitive, resource_type_sensitive in RESOURCE_GROUPS_TYPE_MAPPING.items():
+            if resource_type_insensitive.casefold() == resourceGroupsType.casefold():
+                resourceGroupsType = resource_type_sensitive
+        
         return resourceGroups, resourceGroupsType
-    
-    def upload_log_file(self, error_data) -> Tuple[str, dict]:
-        if not isinstance(error_data, list):
-            error_data = [error_data]
-        file_url, error = self.upload_df_as_json_file_to_minio(
-            df=pd.DataFrame(error_data),
-            file_name="LogFile"
-        )
-        if error:
-            return None, {'error': f"Error while uploading LogFile :: {error}"}
-        return file_url, None
-    
-    def upload_log_file_panic(self, error_data) -> dict:
-        file_url, error = self.upload_log_file(error_data)
-        if error:
-            return error
-        return { 'LogFile': file_url }
     
     def upload_output_file(self, output_data: pd.DataFrame, file_name) -> Tuple[str, dict]:
         if output_data.empty:

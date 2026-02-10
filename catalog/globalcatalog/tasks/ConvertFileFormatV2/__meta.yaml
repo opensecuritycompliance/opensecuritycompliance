@@ -35,6 +35,14 @@ inputs:
   defaultValue:  
   showField: true  
   required: true
+- name: OutputFileName 
+  description: Name of the output file. Defaults to 'OutputFile' if not specified.
+  dataType: STRING 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue:  
+  showField: true  
+  required: false  
 - name: LogConfigFile 
   description: "Error management configuration file with custom exception messages, validation error codes, and debugging templates for file conversion. Uses TOML format with dynamic placeholders to provide clear error reporting for conversion failures and parsing issues."
   dataType: FILE 

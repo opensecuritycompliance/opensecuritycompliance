@@ -1,4 +1,4 @@
-PyYAML
-pandas
-toml
-cel-python
+PyYAML==6.0.3
+pandas==2.3.3
+toml==0.10.2
+cel-python==0.4.0

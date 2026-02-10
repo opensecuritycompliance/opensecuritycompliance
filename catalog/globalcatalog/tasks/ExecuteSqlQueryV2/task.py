@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union, Tuple
 from compliancecowcards.structs import cards
-from compliancecowcards.utils import cowdictutils
+from compliancecowcards.utils import cowdictutils, cowutils
 from datetime import datetime
 import json
 import sqlite3
@@ -85,7 +85,7 @@ class Task(cards.AbstractTask):
             )
             return self.upload_log_file({"Error": error_info})
 
-        validate_flow = user_inputs.get("ValidateFlow", False)
+        validate_flow = cowutils.str_to_bool(user_inputs.get("ValidateFlow", False))
 
         error = self.validate_inputs()
         if error:

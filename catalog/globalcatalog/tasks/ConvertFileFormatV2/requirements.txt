@@ -1,7 +1,7 @@
-PyYAML
-toml
-xmltodict
-numpy
-pandas
-pyarrow
-openpyxl
+PyYAML==6.0.3
+toml==0.10.2
+xmltodict==1.0.2
+numpy==2.3.5
+pandas==2.3.3
+pyarrow==22.0.0
+openpyxl==3.1.5
