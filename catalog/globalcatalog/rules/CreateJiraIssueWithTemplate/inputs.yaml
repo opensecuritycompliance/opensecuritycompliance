@@ -16,5 +16,6 @@ userObject:
         Password: ""
 userInputs:
   JiraIssueTemplate: <<MINIO_FILE_PATH>>
+  JiraInstanceConfigFile: <<MINIO_FILE_PATH>>
 fromDate: 2025-05-20T09:08:49Z
 toDate: 2025-05-20T09:08:49Z

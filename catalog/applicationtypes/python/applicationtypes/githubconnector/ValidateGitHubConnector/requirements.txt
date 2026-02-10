@@ -1,2 +1,2 @@
-PyYAML
-PyGithub
+PyYAML==6.0.3
+PyGithub==2.8.1

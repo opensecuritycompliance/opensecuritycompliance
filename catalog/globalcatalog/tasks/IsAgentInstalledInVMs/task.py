@@ -50,7 +50,7 @@ class Task(cards.AbstractTask):
         vm_extensions_df = vm_extensions_df.rename(columns=columns)
         vm_extensions_df["System"] = "azure"
         vm_extensions_df["Source"] = "compliancecow"
-        vm_extensions_df["ResourceType"] = "Virtual Machines"
+        vm_extensions_df["ResourceType"] = "VirtualMachines"
         contrl_dict = {
             "ascdependencyagentauditlinuxeffect": ["Linux"],
             "ascdependencyagentauditwindowseffect": ["Windows"],

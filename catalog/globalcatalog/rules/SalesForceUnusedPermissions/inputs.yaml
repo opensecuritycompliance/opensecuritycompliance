@@ -137,6 +137,8 @@ userObject:
         CredentialJson: "$CREDENTIAL_JSON"
 userInputs:
   ExtractPath: .[0].records
+  OutputFileFormat: JSON
+  OutputMethod: FIRST
   SalesforcePermissionsMapFile: <<MINIO_FILE_PATH>>                        #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforcePermissionsMapFile.toml
   SalesforceUsersListRequestConfigFile: <<MINIO_FILE_PATH>>                #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUsersListRequestConfigFile.toml
   SalesforceUsersPermissionSetRequestConfigFile: <<MINIO_FILE_PATH>>       #file can be found in catalog/globalcatalog/rules/SalesForceUnusedPermissions/TaskInputs/SalesforceUsersPermissionSetRequestConfigFile.toml 

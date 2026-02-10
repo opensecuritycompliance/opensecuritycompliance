@@ -36,8 +36,33 @@ class Task(cards.AbstractTask):
             map(str.strip, self.task_inputs.user_inputs.get('OrganizationName').split(','))
         )
 
+        organization_list = []
+        orgs, error = self.github_app_connector.list_github_orgs()
+        if error:
+           return self.upload_log_file([{'Error': error}]) # Return an empty list in case of an error
+        
+        if orgs:
+            organization_list = [org.login for org in orgs]
+        else:   
+            return self.upload_log_file([{'Error': "No GitHub organizations found."}])
+
+        invalid_orgs = [org for org in organization_names if org not in organization_list]
+        
+        err_list = []
+        if invalid_orgs:
+            err_list.append({'Error': f'Organization(s) "{", ".join(invalid_orgs)}" not found.'})
+
+        
+        organization_names = [org for org in organization_names if org not in invalid_orgs]
+
         github_user_list, error_list = self.list_organization_members(
             organization_names=organization_names)
+        
+        
+        if error_list:
+            err_list.append(error_list)
+        
+        
 
         if github_user_list:
             absolute_file_path, error = self.upload_output_file(
@@ -46,16 +71,16 @@ class Task(cards.AbstractTask):
                 return {'Error': error}
             response['GitHubOrganizationMembers'] = absolute_file_path
 
-        if error_list:
-            log_file_info = self.upload_log_file(error_list=error_list)
-            if cowdictutils.is_valid_key(log_file_info, 'LogFile'):
-                response['LogFile'] = log_file_info['LogFile']
-            else:
-                return {'Error': log_file_info['Error']}
+        
+
+        if err_list:
+            log_url= self.upload_log_file(error_list=err_list)
+            response['LogFile'] = log_url["LogFile"]
+            
 
         return response
 
-    def list_organization_members(self, organization_names: list) -> tuple[list, list]:
+    def list_organization_members(self, organization_names: list[str]) -> tuple[list, list]:
         error_list = []
         github_user_list = []
         for organization_name in organization_names:
@@ -74,6 +99,11 @@ class Task(cards.AbstractTask):
                 for repo in org_repos:
                     if repo.has_in_collaborators(member.login):
                         user_repos.append(repo.name)
+                        
+                org_membership, error = self.github_app_connector.get_organization_membership_for_user(member, organization_name)
+                if error:
+                    error_list.append({'Error': f"Unable to get membership for user {member.name} :: {error}"})
+                
                 std_data = {
                     'System': 'github',
                     'Source': 'compliancecow',
@@ -84,7 +114,9 @@ class Task(cards.AbstractTask):
                     'ResourceTags': [],
                     'ResourceURL': f'https://github.com/orgs/{organization_name}/people/{member.login}',
                     'OrganizationName': organization_name,
-                    'UserEmail': member.email if member.email else 'N/A',
+                    'UserMembershipState': org_membership.state if org_membership else "",
+                    'UserMembershipRole': org_membership.role if org_membership else "",
+                    'UserEmail': email if (email := member.email) else "",
                     'UserCreatedAt': self.convert_github_timestamp(github_timestamp=member.created_at),
                     'UserUpdatedAt': self.convert_github_timestamp(github_timestamp=member.updated_at),
                     'UserCompany': member.company if member.company else 'N/A',

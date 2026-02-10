@@ -22,6 +22,9 @@ class Task(cards.AbstractTask):
 
         policies, error = azure_connector.list_azure_conditional_access_policies()
         if error:
+            if isinstance(error, dict):
+                if 'error' in error and not isinstance(error['error'], str):
+                    error['error'] = str(error['error'])
             return self.upload_log_file(error)
         
         policies_list = []

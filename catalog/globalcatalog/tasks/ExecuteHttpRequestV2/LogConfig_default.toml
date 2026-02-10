@@ -11,6 +11,8 @@ RequestConfigFile.download_failed = "Unable to download RequestConfigFile from M
 ResponseConfigFile.download_failed = "Unable to download ResponseConfigFile from MinIO. Please find more details: {Error}"
 InputFileValidationConfig.download_failed = "Unable to download InputFileValidationConfig from MinIO. Please find more details: {Error}"
 
+UseSyntheticData.SyntheticDataFile.empty = "SyntheticDataFile cannot be empty when UseSyntheticData is set to 'true'"
+
 CredentialType.NotFound = "Could not find '{credential_type}' credential type in Application."
 CredentialType.NotSupport = "Invalid credential type supported types are 'Azure, BasicAuthentication, APIKey, AWSIAM, AWSRole'."
 Credentials.Mismatch = "Invalid credentials or CredentialType mismatch between the application and RequestConfigFile.toml."

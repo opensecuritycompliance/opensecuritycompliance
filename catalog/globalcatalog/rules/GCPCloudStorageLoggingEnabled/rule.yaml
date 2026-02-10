@@ -1,211 +1,211 @@
-apiVersion: v1alpha1
+apiVersion: rule.policycow.live/v1alpha1
 kind: rule
 meta:
   name: GCPCloudStorageLoggingEnabled
   purpose: Ensures access logging is enabled for Cloud Storage buckets to track data
     interactions, enhance security monitoring, and support compliance.
-  description: Ensures access logging is enabled for Cloud Storage buckets to track
-    data interactions, enhance security monitoring, and support compliance.
+  description: Ensures access logging is enabled for Cloud Storage buckets to track data
+    interactions, enhance security monitoring, and support compliance.
   labels:
     appType:
-    - httprequest
+      - httprequest
     environment:
-    - logical
+      - logical
     execlevel:
-    - app
+      - app
+  app: HttpRequest
+  annotations: {}
 spec:
   inputs:
-    BucketsRequestConfigFile: <<MINIO_FILE_PATH>>               # Request Config file to get the list of buckets from GCP Cloud Storage  
-    CheckIfLoggingExistConditionConfig: <<MINIO_FILE_PATH>>     # Condition config file to check if Logging Exists or not  
-    ExtractBucketsJQExpression: .[].items[]             
-    MergeType: APPEND         
-    OutputFileFormat: JSON      
-    TransformLoggingExistConfigFile: <<MINIO_FILE_PATH>>        # Transform config file to standardize Logging existing file    
-    TransformLoggingNotExistConfigFile: <<MINIO_FILE_PATH>>     # Transform config file to standardize Logging not exist file    
+    BucketsRequestConfigFile: <<MINIO_FILE_PATH>>                   # Request Config file to get the list of buckets from GCP Cloud Storage  
+    CheckIfLoggingExistConditionConfig: <<MINIO_FILE_PATH>>         # Condition config file to check if Logging Exists or not      
+    OutputFileFormat: JSON
+    TransformLoggingNotExistConfigFile: <<MINIO_FILE_PATH>>         # Transform config file to standardize Logging not existing file        
+    MergeType: APPEND
+    TransformLoggingExistConfigFile: <<MINIO_FILE_PATH>>            # Transform config file to standardize Logging existing file        
+    ExtractBucketsJQExpression: .[].items[] 
   inputsMeta__:
-  - name: BucketsRequestConfigFile
-    dataType: HTTP_CONFIG
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: ExtractBucketsJQExpression
-    dataType: STRING
-    repeated: false
-    defaultValue: .[].items[]
-    allowedValues: []
-    showField: true
-    required: true
-  - name: CheckIfLoggingExistConditionConfig
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: OutputFileFormat
-    dataType: STRING
-    repeated: false
-    defaultValue: JSON
-    allowedValues:
-    - YAML
-    - TOML
-    - CSV
-    - JSON
-    - PARQUET
-    showField: true
-    required: true
-  - name: TransformLoggingNotExistConfigFile
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
-  - name: MergeType
-    dataType: STRING
-    repeated: false
-    defaultValue: APPEND
-    allowedValues:
-    - APPEND
-    - CONCATENATE
-    showField: true
-    required: true
-  - name: TransformLoggingExistConfigFile
-    dataType: FILE
-    repeated: false
-    format: toml
-    defaultValue: <<MINIO_FILE_PATH>>
-    allowedValues: []
-    showField: true
-    required: true
+    - name: BucketsRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: CheckIfLoggingExistConditionConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: OutputFileFormat
+      dataType: STRING
+      defaultValue: JSON
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+      repeated: false
+      explanation: ''
+    - name: TransformLoggingNotExistConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: MergeType
+      dataType: STRING
+      defaultValue: APPEND
+      showField: true
+      required: true
+      allowedValues:
+        - APPEND
+        - CONCATENATE
+      repeated: false
+      explanation: ''
+    - name: TransformLoggingExistConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ExtractBucketsJQExpression
+      dataType: JQ_EXPRESSION
+      defaultValue: .[].items[]
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
   tasks:
-  - name: ExecuteHttpRequest
-    alias: GetBucketList
-    type: task
-    appTags:
-      appType:
-      - httprequest
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Get the list of buckets from the GCP Cloud Storage.
-    description: Get the list of buckets from the GCP Cloud Storage.
-  - name: ExtractDataUsingJQ
-    alias: ExtractBuckets
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Extract the data alone from the listed buckets.
-    description: Extract the data alone from the listed buckets.
-  - name: CheckCondition
-    alias: CheckLoggingExist
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Check if Logging column exists or not.
-    description: Check if Logging column exists or not.
-  - name: ConvertFileFormat
-    alias: ConvertLoggingNotExistFile
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      block:
-      - block-4
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Convert the Logging not exist file PARQUET file to JSON file.
-    description: Convert the Logging not exist file PARQUET file to JSON file.
-  - name: ConvertFileFormat
-    alias: ConvertLoggingExistFile
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      block:
-      - block-4
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Convert the Logging exist file PARQUET file to JSON file.
-    description: Convert the Logging exist file PARQUET file to JSON file.
-  - name: TransformData
-    alias: TransformLoggingNotExistFile
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      block:
-      - block-5
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Standardize the converted Logging not existing file.
-    description: Standardize the converted Logging not existing file.
-  - name: TransformData
-    alias: TransformLoggingExistFile
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      block:
-      - block-5
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Standardize the converted Logging existing file.
-    description: Standardize the converted Logging not existing file.
-  - name: MergeData
-    alias: MergingTransformedLogging
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Merge Standardized Logging existing and not existing file.
-    description: Merge Standardized Logging existing and not existing file.
+    - name: ExecuteHttpRequestV2
+      alias: GetBucketList
+      type: task
+      purpose: ExecuteHttpRequestV2
+      description: Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: ExtractBuckets
+      type: task
+      purpose: ExtractDataUsingJQV2
+      description: Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: CheckConditionV2
+      alias: CheckLoggingExist
+      type: task
+      purpose: CheckConditionV2
+      description: Validates data records against configurable conditions. Splits input
+        data into matched and unmatched files using criteria such as text
+        patterns, number ranges, dates, or CEL expressions. Also supports field
+        updates and conditional transformations to ensure compliance and data
+        quality.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataV2
+      alias: TransformLoggingNotExistFile
+      type: task
+      purpose: TransformDataV2
+      description: Transform and manipulate data columns by adding, updating, deleting,
+        reordering, or deduplicating fields. Supports conditional logic,
+        cross-file data mapping, function-based calculations, and complex
+        restructuring for compliance and reporting.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+        block:
+          - block-4
+    - name: TransformDataV2
+      alias: TransformLoggingExistFile
+      type: task
+      purpose: TransformDataV2
+      description: Transform and manipulate data columns by adding, updating, deleting,
+        reordering, or deduplicating fields. Supports conditional logic,
+        cross-file data mapping, function-based calculations, and complex
+        restructuring for compliance and reporting.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+        block:
+          - block-4
+    - name: MergeDataV2
+      alias: MergingTransformedLogging
+      type: task
+      purpose: MergeDataV2
+      description: Combine data from two input files using flexible merge strategies.
+        Supports APPEND (stack rows vertically) and CONCATENATE (join columns
+        horizontally by position). Handles multiple file formats with error
+        handling for reliable integration.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
   ioMap:
-  - GetBucketList.Input.RequestConfigFile:=*.Input.BucketsRequestConfigFile
-  - ExtractBuckets.Input.InputFile:=GetBucketList.Output.OutputFile
-  - ExtractBuckets.Input.JQExpression:=*.Input.ExtractBucketsJQExpression
-  - CheckLoggingExist.Input.InputFile:=ExtractBuckets.Output.OutputFile
-  - CheckLoggingExist.Input.ConditionConfig:=*.Input.CheckIfLoggingExistConditionConfig
-  - ConvertLoggingNotExistFile.Input.InputFile:=CheckLoggingExist.Output.UnmatchedConditionFile
-  - ConvertLoggingNotExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
-  - ConvertLoggingExistFile.Input.InputFile:=CheckLoggingExist.Output.MatchedConditionFile
-  - ConvertLoggingExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
-  - TransformLoggingNotExistFile.Input.InputFile1:=ConvertLoggingNotExistFile.Output.OutputFile
-  - TransformLoggingNotExistFile.Input.TransformConfigFile:=*.Input.TransformLoggingNotExistConfigFile
-  - TransformLoggingExistFile.Input.InputFile1:=ConvertLoggingExistFile.Output.OutputFile
-  - TransformLoggingExistFile.Input.TransformConfigFile:=*.Input.TransformLoggingExistConfigFile
-  - MergingTransformedLogging.Input.InputFile1:=TransformLoggingNotExistFile.Output.OutputFile
-  - MergingTransformedLogging.Input.InputFile2:=TransformLoggingExistFile.Output.OutputFile
-  - MergingTransformedLogging.Input.MergeType:=*.Input.MergeType
-  - '*.Output.CompliancePCT_:=TransformLoggingExistFile.Output.CompliancePCT_'
-  - '*.Output.ComplianceStatus_:=TransformLoggingExistFile.Output.ComplianceStatus_'
-  - '*.Output.LogFile:=MergingTransformedLogging.Output.LogFile'
-  - '*.Output.GCPCloudStorageLoggingStatusReport:=MergingTransformedLogging.Output.MergedData'
+    - GetBucketList.Input.RequestConfigFile:=*.Input.BucketsRequestConfigFile
+    - ExtractBuckets.Input.InputFile:=GetBucketList.Output.OutputFile
+    - ExtractBuckets.Input.JQExpression:=*.Input.ExtractBucketsJQExpression
+    - ExtractBuckets.Input.LogFile:=GetBucketList.Output.LogFile
+    - CheckLoggingExist.Input.InputFile:=ExtractBuckets.Output.OutputFile
+    - CheckLoggingExist.Input.ConditionConfig:=*.Input.CheckIfLoggingExistConditionConfig
+    - CheckLoggingExist.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - CheckLoggingExist.Input.LogFile:=ExtractBuckets.Output.LogFile
+    - TransformLoggingNotExistFile.Input.InputFile1:=CheckLoggingExist.Output.UnmatchedConditionFile
+    - TransformLoggingNotExistFile.Input.TransformConfigFile:=*.Input.TransformLoggingNotExistConfigFile
+    - TransformLoggingNotExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - TransformLoggingNotExistFile.Input.LogFile:=CheckLoggingExist.Output.LogFile
+    - TransformLoggingExistFile.Input.InputFile1:=CheckLoggingExist.Output.MatchedConditionFile
+    - TransformLoggingExistFile.Input.TransformConfigFile:=*.Input.TransformLoggingExistConfigFile
+    - TransformLoggingExistFile.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - TransformLoggingExistFile.Input.LogFile:=CheckLoggingExist.Output.LogFile
+    - MergingTransformedLogging.Input.InputFile1:=TransformLoggingNotExistFile.Output.OutputFile
+    - MergingTransformedLogging.Input.InputFile2:=TransformLoggingExistFile.Output.OutputFile
+    - MergingTransformedLogging.Input.MergeType:=*.Input.MergeType
+    - MergingTransformedLogging.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - '*.Output.CompliancePCT_:=MergingTransformedLogging.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=MergingTransformedLogging.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=MergingTransformedLogging.Output.LogFile'
+    - '*.Output.GCPCloudStorageLoggingStatusReport:=MergingTransformedLogging.Output.MergedData'

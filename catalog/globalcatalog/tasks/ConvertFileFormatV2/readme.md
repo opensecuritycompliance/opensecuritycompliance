@@ -5,6 +5,7 @@ The purpose of this task is to convert files between supported formats: JSON, CS
     - Inputs :
         - **InputFile**                : [MANDATORY] Source file containing data in formats such as JSON, CSV, YAML, TOML, XLSX, XML, and PARQUET
         - **OutputFileFormat**         : [MANDATORY] Target format for conversion (e.g., JSON, CSV, PARQUET, YAML, TOML, XLSX).
+        - **OutputFileName**           : [OPTIONAL]   This name will be used for the output file
         - **LogConfigFile**            : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
         - **ProceedIfLogExists**       : [OPTIONAL] If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
         - **ProceedIfErrorExists**     : [OPTIONAL] If the current task returns an error, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
@@ -34,11 +35,14 @@ The purpose of this task is to convert files between supported formats: JSON, CS
         ]
         ```
     2. OutputFileFormat **(MANDATORY)**
-       - Specifies the target file format to convert to.
-       - Allowed values: JSON, CSV, PARQUET, YAML, TOML, XLSX.  
-       - **Sample OutputFileFormat:** CSV
+        - Specifies the target file format to convert to.
+        - Allowed values: JSON, CSV, PARQUET, YAML, TOML, XLSX.  
+        - **Sample OutputFileFormat:** CSV
+
+    3. OutputFileName **(OPTIONAL)**
+        - If OutputFileName is specified, the output file will use that name; otherwise, it defaults to `OutputFile`.
        
-    3. LogConfigFile **(OPTIONAL)**
+    4. LogConfigFile **(OPTIONAL)**
         - This file defines exception messages and error-handling logic for the current task.
         - It is a TOML file containing predefined fields with placeholders that are dynamically replaced at runtime based on the task’s context.
         - If a placeholder in the TOML file cannot be resolved at runtime, an error will be raised.

@@ -871,7 +871,7 @@ class Task(cards.AbstractTask):
 
         request_data_str = json.dumps(request_data_json)
         matches = re.findall(
-            r"<<((?!response\.|responsebody\.|validationCURLresponse\.|application\.|inputfile\.)[^>]+)>>",
+            r"<<((?!response\.|responsebody\.|validationCURLresponse\.|validationCURLresponse|application\.|inputfile\.)[^>]+)>>",
             request_data_str,
         )
 
@@ -1387,16 +1387,21 @@ class Task(cards.AbstractTask):
         decoding and placeholder replacement.
         """
 
+        place_holder = "validationCURLresponse"
+        if "<<response." in header and "<<validationCURLresponse." not in header:
+            place_holder = "response"
+            
         response_json = {}
         try:
             response_json = json.loads(raw_response) if raw_response else {}
         except json.JSONDecodeError as e:
-            # handle only json response body
-            pass
-
-        place_holder = "validationCURLresponse"
-        if "<<response." in header and "<<validationCURLresponse." not in header:
-            place_holder = "response"
+            try :
+                response_json = {
+                    "response": raw_response.decode("utf-8", errors="replace") if isinstance(raw_response, bytes) else str(raw_response)
+                }
+                header = header.replace(place_holder,f'{place_holder}.response')
+            except Exception as e:
+                pass
 
         parsed_header, error = self.http_connector.replace_placeholder(
             header, place_holder, response_json
@@ -1782,7 +1787,7 @@ class Task(cards.AbstractTask):
                     content_type = "application/json"
                 except Exception as e:
                     return None, "", f"Error parsing api response XML: {e}"
-            elif "html" in content_type and http.HTTPStatus.NO_CONTENT:
+            elif "html" in content_type and (response.status_code == http.HTTPStatus.NO_CONTENT):
                 data = {"Response": "Response has no content"}
                 content_type = "application/json"
             elif "csv" in content_type:

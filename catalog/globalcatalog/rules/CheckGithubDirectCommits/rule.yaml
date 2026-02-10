@@ -18,6 +18,7 @@ spec:
     CommitDetailsTransformConfigFile: <<MINIO_FILE_PATH>>
     ExtractComplaintStatusJQConfig: <<MINIO_FILE_PATH>>
     GithubInputFile: <<MINIO_FILE_PATH>>
+    OutputFileFormat: JSON
     PRWithCommitRequestConfigFile: <<MINIO_FILE_PATH>>
     PRWithCommitResponseConfigFile: <<MINIO_FILE_PATH>>
     RepoRequestConfigFile: <<MINIO_FILE_PATH>>
@@ -95,6 +96,16 @@ spec:
     allowedValues: []
     showField: true
     required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    showField: true
+    required: true
   tasks:
   - name: ExecuteHttpRequestV2
     alias: GetRepo
@@ -135,7 +146,7 @@ spec:
     purpose: To get the pull request associated with a commit
     description: Automate API requests by processing inputs and outputting responses
       in a structured JSON format.
-  - name: ExtractDataUsingJQ
+  - name: ExtractDataUsingJQV2
     alias: Extract complaint status using JQ
     type: task
     appTags:
@@ -146,8 +157,9 @@ spec:
       execlevel:
       - app
     purpose: To Extract the Pull request details and check with the commit
-    description: Extracts data from the InputFile based on the provided JQ filter/expression
-  - name: TransformData
+    description: Extract and transform JSON data using JQ expressions. Supports batch
+      processing with configurable chunk sizes and error handling for reliable processing.
+  - name: TransformDataV2
     alias: Extended Schema for commit details
     type: task
     appTags:
@@ -158,8 +170,10 @@ spec:
       execlevel:
       - app
     purpose: To transform the data into the extended schema
-    description: TransformData allows you to perform a variety of column transformations
-      on your InputFile1
+    description: Transform and manipulate data columns by adding, updating, deleting,
+      reordering, or deduplicating fields. Supports conditional logic, cross-file
+      data mapping, function-based calculations, and complex restructuring for compliance
+      and reporting.
   ioMap:
   - GetRepo.Input.RequestConfigFile:=*.Input.RepoRequestConfigFile
   - GetRepo.Input.ResponseConfigFile:=*.Input.RepoResponseConfigFile
@@ -167,14 +181,20 @@ spec:
   - GetBranchCommit.Input.RequestConfigFile:=*.Input.BranchCommitRequestConfigFile
   - GetBranchCommit.Input.ResponseConfigFile:=*.Input.BranchCommitResponseConfigFile
   - GetBranchCommit.Input.InputFile:=GetRepo.Output.OutputFile
+  - GetBranchCommit.Input.LogFile:=GetRepo.Output.LogFile
   - GetPullRequestAssociatedWithCommit.Input.RequestConfigFile:=*.Input.PRWithCommitRequestConfigFile
   - GetPullRequestAssociatedWithCommit.Input.ResponseConfigFile:=*.Input.PRWithCommitResponseConfigFile
   - GetPullRequestAssociatedWithCommit.Input.InputFile:=GetBranchCommit.Output.OutputFile
+  - GetPullRequestAssociatedWithCommit.Input.LogFile:=GetBranchCommit.Output.LogFile
   - Extract complaint status using JQ.Input.InputFile:=GetPullRequestAssociatedWithCommit.Output.OutputFile
-  - Extract complaint status using JQ.Input.JQConfig:=*.Input.ExtractComplaintStatusJQConfig
+  - Extract complaint status using JQ.Input.JQConfigFile:=*.Input.ExtractComplaintStatusJQConfig
+  - Extract complaint status using JQ.Input.LogFile:=GetPullRequestAssociatedWithCommit.Output.LogFile
   - Extended Schema for commit details.Input.InputFile1:=Extract complaint status
     using JQ.Output.OutputFile
   - Extended Schema for commit details.Input.TransformConfigFile:=*.Input.CommitDetailsTransformConfigFile
+  - Extended Schema for commit details.Input.OutputFileFormat:=*.Input.OutputFileFormat
+  - Extended Schema for commit details.Input.LogFile:=Extract complaint status using
+    JQ.Output.LogFile
   - '*.Output.CompliancePCT_:=Extended Schema for commit details.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=Extended Schema for commit details.Output.ComplianceStatus_'
   - '*.Output.LogFile:=Extended Schema for commit details.Output.LogFile'

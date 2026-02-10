@@ -226,7 +226,8 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 							mapslice.MapItem{Key: "ResourceType", Value: resourceType})
 						mapsliceOutputObj = append(mapsliceOutputObj,
 							mapslice.MapItem{Key: "ResourceTags", Value: ""})
-
+						mapsliceOutputObj = append(mapsliceOutputObj,
+							mapslice.MapItem{Key: "ResourceURL", Value: "N/A"})
 						if namespace == "" {
 							namespace = input_.(map[string]interface{})["namespace"].(string)
 						}

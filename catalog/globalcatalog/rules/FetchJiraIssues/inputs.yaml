@@ -13,33 +13,12 @@ userObject:
       framework:
       - jira
     userDefinedCredentials:
-      AWSSignature:
-        ValidationCURL: ""
-        AccessKey: ""
-        SecretKey: ""
-      BearerToken:
-        ValidationCURL: ""
-        Token: ""
       BasicAuthentication:
-        ValidationCURL: ""
-        UserName: ""
-        Password: ""
-      OAuth:
-        ValidationCURL: ""
-        ClientID: ""
-        ClientSecret: ""
-      CustomType:
-        ValidationCURL: ""
-        CredentialJson: null
-      APIKey:
-        ValidationCURL: ""
-        APIKey: ""
-      NoAuth: {}
-      JWTBearer:
-        Algorithm: ""
-        PrivateKey: null
-        Payload: ""
-        ValidationCURL: ""
+        ValidationCURL: |
+          curl --location 'https://[your-domain].atlassian.net/rest/api/3/search/jql?fields=id&maxResults=1&jql=created%20%3E%3D%202024-01-01' \
+            -u '[jira-username]:[jira-api-key]'
+        UserName: "$JIRA_USER_NAME"
+        Password: "$JIRA_PASSWORD"
   - name: NoCredApp
     appURL: http://localhost.com
     appPort: "0"
@@ -54,11 +33,11 @@ userObject:
       NoCred:
         Dummy: ""
 userInputs:
-  ChunksPerIteration: 5
   CustomExceptionConfigFileForJiraIssues: <<MINIO_FILE_PATH>>
+  ChunksPerIteration: 5
   JiraJQConfig: <<MINIO_FILE_PATH>>
   JiraRequestConfig: <<MINIO_FILE_PATH>>
   JiraResponseConfig: <<MINIO_FILE_PATH>>
   RuleOutputFileFormatType: PARQUET
-fromDate: 2025-06-02T06:25:40Z
-toDate: 2025-06-02T06:25:40Z
+fromDate: 2025-02-12T11:38:20Z
+toDate: 2025-02-12T11:38:20Z

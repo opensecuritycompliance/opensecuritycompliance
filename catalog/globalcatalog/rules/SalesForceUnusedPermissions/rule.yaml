@@ -14,6 +14,8 @@ meta:
 spec:
   inputs:
     ExtractPath: .[0].records
+    OutputFileFormat: JSON
+    OutputMethod: FIRST
     SalesforceOrganizationEventLogRequestConfigFile: <<MINIO_FILE_PATH>>
     SalesforceOrganizationEventLogResponseConfigFile: <<MINIO_FILE_PATH>>
     SalesforcePermissionsMapFile: <<MINIO_FILE_PATH>>
@@ -31,7 +33,8 @@ spec:
     showField: true
     required: true
   - name: ExtractPath
-    dataType: STRING
+    dataType: JQ_EXPRESSION
+    explanation: 
     repeated: false
     defaultValue: .[0].records
     allowedValues: []
@@ -85,8 +88,27 @@ spec:
     allowedValues: []
     showField: true
     required: true
+  - name: OutputMethod
+    dataType: STRING
+    repeated: false
+    defaultValue: FIRST
+    allowedValues:
+    - FIRST
+    - ALL
+    showField: true
+    required: true
+  - name: OutputFileFormat
+    dataType: STRING
+    repeated: false
+    defaultValue: JSON
+    allowedValues:
+    - JSON
+    - CSV
+    - PARQUET
+    showField: true
+    required: true
   tasks:
-  - name: ExecuteHttpRequest
+  - name: ExecuteHttpRequestV2
     alias: Get Users List
     type: task
     appTags:
@@ -98,7 +120,7 @@ spec:
       - app
     purpose: To get the list of users in the organization 
     description: To get the list of users in the organization 
-  - name: ExtractDataUsingJQ
+  - name: ExtractDataUsingJQV2
     alias: t2
     type: task
     appTags:
@@ -110,7 +132,7 @@ spec:
       - app
     purpose: To extract the data 
     description: ExtractDataUsingJQ
-  - name: ExecuteHttpRequest
+  - name: ExecuteHttpRequestV2
     alias: Get User's permission sets
     type: task
     appTags:
@@ -122,7 +144,7 @@ spec:
       - app
     purpose: To get user's permission sets
     description: To get user's permission sets
-  - name: TransformData
+  - name: TransformDataV2
     alias: t4
     type: task
     appTags:
@@ -134,7 +156,7 @@ spec:
       - app
     purpose: To transform the data
     description: To transform the data
-  - name: ExecuteHttpRequest
+  - name: ExecuteHttpRequestV2
     alias: Get Organization's EventLog
     type: task
     appTags:
@@ -162,6 +184,7 @@ spec:
   - Get Users List.Input.RequestConfigFile:=*.Input.SalesforceUsersListRequestConfigFile
   - t2.Input.InputFile:=Get Users List.Output.OutputFile
   - t2.Input.JQExpression:=*.Input.ExtractPath
+  - t2.Input.OutputMethod:=*.Input.OutputMethod
   - t2.Input.LogFile:=Get Users List.Output.LogFile
   - Get User's permission sets.Input.RequestConfigFile:=*.Input.SalesforceUsersPermissionSetRequestConfigFile
   - Get User's permission sets.Input.ResponseConfigFile:=*.Input.SalesforceUsersPermissionSetResponseConfigFile
@@ -169,6 +192,7 @@ spec:
   - Get User's permission sets.Input.LogFile:=t2.Output.LogFile
   - t4.Input.InputFile1:=Get User's permission sets.Output.OutputFile
   - t4.Input.TransformConfigFile:=*.Input.SalesforceUserPermissionSetTransformConfigFile
+  - t4.Input.OutputFileFormat:=*.Input.OutputFileFormat
   - t4.Input.LogFile:=Get User's permission sets.Output.LogFile
   - Get Organization's EventLog.Input.RequestConfigFile:=*.Input.SalesforceOrganizationEventLogRequestConfigFile
   - Get Organization's EventLog.Input.ResponseConfigFile:=*.Input.SalesforceOrganizationEventLogResponseConfigFile

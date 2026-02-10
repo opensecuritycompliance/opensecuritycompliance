@@ -1,6 +1,6 @@
-PyYAML
-toml
-pandas
-numpy
-jmespath
-fastparquet
+PyYAML==6.0.3
+toml==0.10.2
+pandas==2.3.3
+numpy==2.3.5
+jmespath==1.0.1
+fastparquet==2024.11.0

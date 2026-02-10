@@ -7,7 +7,7 @@ Transform and modify data records using JQ expressions. Add new columns, rename 
 - **InputFile**: JSON/CSV/Parquet file with records to transform
 - **JQFilter**: JQ expression for data transformation
 - **OutputMethod**: (AllowedValues: ALL, FIRST) Specifies whether to return all results from the JQ expression or only the first result.
-- **LogConfigFile**: This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context. (optional)
+- **LogConfigFile**: This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context. We can also include the from and to dates in the error message for better clarity using the {fromdate} and {todate} placeholders. (optional)
 - **LogFile**: Map the LogFile from the previous task, to handle errors. (optional)
 - **ProceedIfLogExists**: If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true. (optional, default: true)
 - **ProceedIfErrorExists**: If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true. (optional, default: true)
@@ -55,6 +55,70 @@ map(. + {
 map(select(.cvssScore > 5.0) | . + {filtered: true})
 ```
 **Description**: "Keep only records with CVSS score above 5.0 and add a 'filtered' flag to each record"
+
+## Output Method Examples
+- **Inputs**
+    - InputFile
+    ```json
+    [
+        {
+            "repositories": [
+                {"Name": "repo1"},
+                {"Name": "repo4"}
+            ],
+            "nextPageToken": "token1"
+        },
+        {
+            "repositories": [
+                {"Name": "repo2"}
+            ],
+            "nextPageToken": "token2"
+        },
+        {
+            "repositories": [
+                {"Name": "repo3"},
+                {"Name": "repo5"}
+            ]
+        }
+    ]
+    ```
+
+    - JQFilter: `.[].repositories[]`
+    
+- **OutputMethod - FIRST:**
+    - Considers only the first result of the JQ expression
+        - Output
+        ```json
+        [
+            {
+                "Name": "repo1"
+            }
+        ]
+        ```
+
+- **OutputMethod - ALL:**
+    - Considers all the results of the JQ expression
+        
+        - Output
+        ```json
+        [
+            {
+                "Name": "repo1"
+            },
+            {
+                "Name": "repo4"
+            },
+            {
+                "Name": "repo2"
+            },
+            {
+                "Name": "repo3"
+            },
+            {
+                "Name": "repo5"
+            }
+        ]
+        ```
 
 ## How It Works
 

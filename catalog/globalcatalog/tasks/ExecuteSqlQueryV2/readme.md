@@ -1,11 +1,11 @@
-The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file or in the SQLExpression) as inputs. It produces the resulting data as a Parquet file in the output as default.
+The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file or in the SQLExpression) as inputs. It produces the resulting data as a Parquet file in the output by default.  This task uses SQLite to run the SQL query on given file(s).
 
 ### **InputsAndOutputsStructure:**
 - Inputs :
     - **InputFile1**                : [MANDATORY] The primary JSON file containing an array of records on which the SQL query must be executed.
     - **InputFile2**                : [OPTIONAL] An optional secondary JSON file containing additional records to be included in the SQL query.
-    - **SQLConfig**                 : [OPTIONAL] A TOML file containing the SQL query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
-    - **SQLQuery**                  : [OPTIONAL] The SQL statements to be executed. If only InputFile1 is provided, queries run against `inputfile1`. If both InputFile1 and InputFile2 are provided, tables `inputfile1` and `inputfile2` will be available for querying, including joins, filtering, and aggregations. Must always contain a valid SQL query.
+    - **SQLConfig**                 : [OPTIONAL] A TOML file containing the SQLite query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
+    - **SQLQuery**                  : [OPTIONAL] The SQL statements to be executed. If only InputFile1 is provided, queries run against `inputfile1`. If both InputFile1 and InputFile2 are provided, tables `inputfile1` and `inputfile2` will be available for querying, including joins, filtering, and aggregations. Must always contain a valid SQL query. The task uses SQLite to run this query.
     - **OutputFileFormat**          : [OPTIONAL] Target format for conversion of output file (supported formats JSON, CSV, PARQUET).
     - **LogConfigFile**             : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
     - **ProceedIfLogExists**        : [OPTIONAL]  If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
@@ -87,6 +87,8 @@ The purpose of this task is to execute the provided SQL query on the given input
     - 'SQLConfig' is a TOML file that contains the SQLQuery to be executed.
     - The following tables will be created with the respective data: inputfile1, inputfile2.
     - If only InputFile1 is provided, then only 'inputfile1' table will be created.
+    - This task uses SQLite to run the SQL query on the provided file(s).
+    - The output file format can be specified as JSON, CSV, or PARQUET (default is PARQUET if not specified).
 
     **SQLConfig Structure:**
     ```toml

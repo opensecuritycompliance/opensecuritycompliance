@@ -17,13 +17,13 @@ spec:
   inputs:
     CustomExceptionConfigFileForPR: <<MINIO_FILE_PATH>>
     InScopeRepos: <<MINIO_FILE_PATH>>
-    LogConfigFile: <<MINIO_FILE_PATH>>
     PR-JQConfig: <<MINIO_FILE_PATH>>
     PRRequestConfig: <<MINIO_FILE_PATH>>
     PRResponseConfig: <<MINIO_FILE_PATH>>
-    ProceedIfLogExists: false
     RequiredFields:
     - RepositoryName
+    LogConfigFile: <<MINIO_FILE_PATH>>
+    ProceedIfLogExists: true
     RuleOutputFileFormat: PARQUET
   inputsMeta__:
   - name: PRRequestConfig
@@ -69,7 +69,7 @@ spec:
   - name: ProceedIfLogExists
     dataType: BOOLEAN
     repeated: false
-    defaultValue: false
+    defaultValue: true
     allowedValues: []
     showField: true
     required: true
@@ -94,12 +94,11 @@ spec:
     repeated: false
     defaultValue: PARQUET
     allowedValues:
-    - JSON
-    - CSV
-    - PARQUET
     - YAML
     - TOML
-    - XLSX
+    - CSV
+    - JSON
+    - PARQUET
     showField: true
     required: true
   tasks:
@@ -113,10 +112,10 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Field Validation for InScopeRepos File
     description: Validates records by ensuring all required fields are present, logging
       errors for missing fields.
-  - name: ExecuteHttpRequestV2
+  - name: ExecuteHttpRequest
     alias: Fetch PR data
     type: task
     appTags:
@@ -128,7 +127,7 @@ spec:
       - app
       framework:
       - github
-    purpose: Purpose of the task
+    purpose: Fetch PR data
     description: Automate API requests by processing inputs and outputting responses
       in a structured JSON format.
   - name: ConditionalLogGenerator
@@ -141,9 +140,9 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Generates log data based on conditions.
     description: Generates log data based on conditions.
-  - name: ExtractDataUsingJQV2
+  - name: ExtractDataUsingJQ
     alias: Extract And Standardize PR Data
     type: task
     appTags:
@@ -153,7 +152,7 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Extract And Standardize PR Data
     description: Extracts data from the InputFile based on the provided JQ filter/expression
   - name: CustomExceptionHandler
     alias: Custom Error Message for Exception Handling
@@ -165,11 +164,11 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Custom Error Message for Exception Handling
     description: Handles specific exceptions and map generic error messages to user-friendly,
       task-specific messages. It ensures that errors encountered during task execution
       are appropriately managed and presented in a more understandable format.
-  - name: ConvertFileFormatV2
+  - name: ConvertFileFormat
     alias: Convert Rule Output File Format
     type: task
     appTags:
@@ -179,9 +178,8 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
-    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
-      YAML, TOML, and XLSX.'
+    purpose: Convert Rule Output File Format
+    description: To convert rule output file format
   ioMap:
   - Field Validation for InScopeRepos File.Input.InputFile:=*.Input.InScopeRepos
   - Field Validation for InScopeRepos File.Input.RequiredFields:=*.Input.RequiredFields
@@ -194,7 +192,7 @@ spec:
   - Generate Conditional Logs.Input.LogConfigFile:=*.Input.LogConfigFile
   - Generate Conditional Logs.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
   - Extract And Standardize PR Data.Input.InputFile:=Generate Conditional Logs.Output.OutputFile
-  - Extract And Standardize PR Data.Input.JQConfigFile:=*.Input.PR-JQConfig
+  - Extract And Standardize PR Data.Input.JQConfig:=*.Input.PR-JQConfig
   - Extract And Standardize PR Data.Input.LogFile:=Generate Conditional Logs.Output.LogFile
   - Custom Error Message for Exception Handling.Input.InputFile1:=Extract And Standardize
     PR Data.Output.OutputFile

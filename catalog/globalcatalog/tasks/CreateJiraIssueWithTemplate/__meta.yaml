@@ -24,6 +24,14 @@ inputs:
   defaultValue: <<MINIO_FILE_URL>> 
   showField: true  
   required: true 
+- name: JiraInstanceConfigFile
+  description: Jira instance configuration file
+  dataType: FILE 
+  repeated: false 
+  allowedValues: [] 
+  defaultValue: <<MINIO_FILE_URL>> 
+  showField: true  
+  required: true 
 outputs:
 - name: CreatedTicket
   description: Contains created jira ticket id and key

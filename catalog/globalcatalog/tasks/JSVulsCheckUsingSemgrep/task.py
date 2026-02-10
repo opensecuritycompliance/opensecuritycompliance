@@ -153,6 +153,45 @@ class Task(cards.AbstractTask):
 
         return pd.DataFrame(vuln_result_list), semgrep_vuln_df, error_list
 
+    def execute_semgrep_and_load_json(self, cmd: str):
+        """
+        Execute Semgrep command and process the JSON output.
+        
+        Args:
+            cmd (str): The Semgrep command to execute
+        
+        Returns:
+            tuple: (data, total_rules, error) where:
+                - data is the parsed JSON output or None
+                - total_rules is the number of rules scanned (int)
+                - error is an error message string or None
+        """
+        # Execute Semgrep command
+        output, error, exit_status = self.ssh_connector.exec_command(cmd)
+        if error:
+            return None,0,  error
+
+        total_rules = 0
+        rules_pattern = re.compile(r"Scanning\s+\d+\s+file[s]?\s+with\s+(\d+)\s+js rules", re.IGNORECASE)
+        match = rules_pattern.search(output)
+        if match:
+            total_rules =  match.group(1)
+
+        # Extract JSON from output using regex pattern
+        json_pattern = re.compile(
+            r'\{"errors":.*?"version":\s*".*?"\}', re.DOTALL)
+        matches = json_pattern.findall(output)
+        if matches:
+            output = matches[0]
+
+        try:
+            data = json.loads(output)
+            return data, total_rules ,None
+        except json.JSONDecodeError as e:
+            return None,total_rules , str(e)
+        except TypeError as e:
+            return None,total_rules,  str(e)
+
     def scan_and_process_data(self, file_info: dict, domain_name: str, file_extension: str, vuln_result_list: list, data_list: list, error_list: list):
         meta_data = self.task_inputs.meta_data
 
@@ -171,31 +210,46 @@ class Task(cards.AbstractTask):
                 error_list.append(
                     {'Error': f"Resource '{value['URL']}' encountered an error: {error}"})
                 continue
+            
+            cmd = f'semgrep --config "p/{resource_type.lower()}" --timeout 30 --timeout-threshold 0 --max-target-bytes 0 --json {file_path}'
+            
+            # Write file, execute Semgrep, and load JSON data
+            data, total_scaned_rules, error = self.execute_semgrep_and_load_json(cmd)
+            total_rules = total_scaned_rules
+            if data['errors']:
+                error_data_df = pd.json_normalize(data['errors'])
+                error_type = error_data_df['type'].iloc[0] if 'type' in error_data_df else 'Unknown error type'
+                timeout_errors = error_data_df['message'].str.contains('Timeout when running')
+                if timeout_errors.any():
+                    timeout_rules = error_data_df.loc[timeout_errors, 'message'].str.extract(r'running\s+(\S+)')[0].unique()
 
-            output, error, exit_status = self.ssh_connector.exec_command(
-                f'semgrep --config "p/{resource_type.lower()}" --json {file_path}')
+                    timeout_message = f"Timeout when running {', '.join(timeout_rules)} occurred while scanning {resource_type} file."
 
+                    timeout_rules = [ f"--exclude-rule {rule}" for rule in timeout_rules ]
+                    joined_rules = " ".join(timeout_rules)
+                    exclude_rules_cmd = (
+                        f'semgrep --config "p/{resource_type.lower()}" '
+                        f'--timeout 30 --timeout-threshold 0 --max-target-bytes 0 --json '
+                        f'{joined_rules} {file_path}'
+                    )
+                    data,total_scaned_rules,  error = self.execute_semgrep_and_load_json(exclude_rules_cmd)
+                else:
+                    timeout_message = "An unknown error occurred."
+
+                error_list.append({'Error': f"Resource '{value['URL']}' encountered a Semgrep error: {timeout_message} ({error_type})"})
+                
+            # Remove the remote file after processing
             self.ssh_connector.remove_remote_file(file_path)
+            
+            # Check if function got an error
             if error:
+                # Handle error flow
                 error_list.append(
                     {'Error': f"Resource '{value['URL']}' encountered an error: {error}"})
                 continue
-
-            json_pattern = re.compile(
-                r'\{"errors":.*?"version":\s*".*?"\}', re.DOTALL)
-            matches = json_pattern.findall(output)
-            if matches:
-                output = matches[0]
-
-            try:
-                data = json.loads(output)
-            except json.JSONDecodeError as e:
-                error_list.append(
-                    {'Error': f"Resource '{value['URL']}' encountered an error: {e}"})
-                continue
-            except TypeError as e:
-                error_list.append(
-                    {'Error': f"Resource '{value['URL']}' encountered an error: {e}"})
+            
+            # If no error, continue with normal processing
+            if data is None:
                 continue
 
             if cowdictutils.is_valid_array(data, 'results'):
@@ -218,6 +272,8 @@ class Task(cards.AbstractTask):
                 selected_columns['ResourceLocation'] = 'N/A'
                 selected_columns['ResourceTags'] = 'N/A'
                 selected_columns['ResourceURL'] = 'N/A'
+                selected_columns["TotalRules"] =  total_rules
+                selected_columns["TotalRulesScanned"] =  total_scaned_rules
                 selected_columns['ValidationStatusCode'] = 'VULN_FOUND'
                 selected_columns[
                     'ValidationStatusNotes'] = f'Vulnerabilities found in {resource_type} file scanned by Semgrep.'
@@ -227,8 +283,8 @@ class Task(cards.AbstractTask):
                 selected_columns['UserAction'] = ""
                 selected_columns['ActionStatus'] = ""
                 selected_columns['ActionResponseURL'] = ""
-                desired_order = ['System', 'Source', 'ResourceID', 'ResourceName', 'ResourceType', 'ResourceLocation', 'ResourceTags', 'ResourceURL', 'SemgrepRuleName', 'SemgrepRuleURL', 'Message', 'VulnerabilityStartLine', 'VulnerabilityEndLine',
-                                 'Impact', 'Likelihood', 'Severity', 'OWASP', 'ValidationStatusCode', 'ValidationStatusNotes', 'ComplianceStatus', 'ComplianceStatusReason', 'EvaluatedTime', 'UserAction', 'ActionStatus', 'ActionResponseURL']
+                desired_order = ['System', 'Source', 'ResourceID', 'ResourceName', 'ResourceType', 'ResourceLocation', 'ResourceTags', 'ResourceURL', 'SemgrepRuleName', 'SemgrepRuleURL', 'TotalRules', 'TotalRulesScanned', 'Message', 'VulnerabilityStartLine', 'VulnerabilityEndLine',
+                                'Impact', 'Likelihood', 'Severity', 'OWASP', 'ValidationStatusCode', 'ValidationStatusNotes', 'ComplianceStatus', 'ComplianceStatusReason', 'EvaluatedTime', 'UserAction', 'ActionStatus', 'ActionResponseURL']
                 selected_columns = selected_columns[desired_order]
                 vuln_result_list.extend(selected_columns.to_dict(orient='records'))
                 data_list.extend(data_df.to_dict(orient='records'))
@@ -244,6 +300,7 @@ class Task(cards.AbstractTask):
 
                 error_list.append({'Error': f"Resource '{value['URL']}' encountered a Semgrep error: {timeout_message} ({error_type})"})
             else:
+
                 data_dict = {
                     'System': domain_name,
                     'Source': 'compliancecow',
@@ -255,6 +312,8 @@ class Task(cards.AbstractTask):
                     'ResourceURL': 'N/A',
                     'SemgrepRuleName': 'N/A',
                     'SemgrepRuleURL': 'N/A',
+                    'TotalRules':  total_rules,
+                    'TotalRulesScanned': total_scaned_rules,
                     'Message': 'N/A',
                     'VulnerabilityStartLine': 'N/A',
                     'VulnerabilityEndLine': 'N/A',

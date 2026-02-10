@@ -1,6 +1,9 @@
 from typing import List
 from github import GithubException
 from github import Github, Auth
+from github.Membership import Membership
+from github.NamedUser import NamedUser
+from github.AuthenticatedUser import AuthenticatedUser
 import datetime
 from  datetime import timezone
 import requests
@@ -440,6 +443,17 @@ class GitHubConnector:
         
         consolidated_list = self.remove_duplicates(updated_include_list)
         return consolidated_list , filter_errors
+        
+    def get_organization_membership_for_user(self, member: NamedUser | AuthenticatedUser, organization_name: str) -> tuple[Membership | None, str]:
+        try:
+            membership = member.get_organization_membership(organization_name)
+            return membership, ""
+        except GithubException as ge:
+            return None, f"An error occurred while fetching GitHub organizations: {ge}"
+        except ConnectionError:
+            return None, "Failed to connect to GitHub API."
+        except TimeoutError:
+            return None, "Connection to GitHub API timed out."
 
     def list_organization_members(self, organization_name: str) -> tuple[list[AuthenticatedUser], str]:
         try:

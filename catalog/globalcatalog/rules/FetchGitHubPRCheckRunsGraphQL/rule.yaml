@@ -16,15 +16,14 @@ meta:
 spec:
   inputs:
     CustomExceptionConfigFileForCheckRuns: <<MINIO_FILE_PATH>>
-    LogConfigFile: <<MINIO_FILE_PATH>>
-    OutputFileFormat: JSON
+    InScopeRepos: <<MINIO_FILE_PATH>>
     PRCheckRunJQConfig: <<MINIO_FILE_PATH>>
     PRCheckRunRequestConfig: <<MINIO_FILE_PATH>>
     PRCheckRunResponseConfig: <<MINIO_FILE_PATH>>
-    PRListForInScopeRepos: <<MINIO_FILE_PATH>>
     ProceedIfLogExists: true
+    LogConfigFile: <<MINIO_FILE_PATH>>
     RequiredFields:
-    - ResourceID
+    - RepositoryName
     RuleOutputFileFormat: PARQUET
   inputsMeta__:
   - name: PRCheckRunRequestConfig
@@ -43,10 +42,10 @@ spec:
     allowedValues: []
     showField: true
     required: true
-  - name: PRListForInScopeRepos
+  - name: InScopeRepos
     dataType: FILE
     repeated: false
-    format: parquet
+    format: json
     defaultValue: <<MINIO_FILE_PATH>>
     allowedValues: []
     showField: true
@@ -63,7 +62,7 @@ spec:
     dataType: STRING
     repeated: true
     defaultValue:
-    - ResourceID
+    - RepositoryName
     allowedValues: []
     showField: true
     required: true
@@ -80,18 +79,17 @@ spec:
     repeated: false
     defaultValue: PARQUET
     allowedValues:
-    - JSON
-    - CSV
-    - PARQUET
     - YAML
     - TOML
-    - XLSX
+    - CSV
+    - JSON
+    - PARQUET
     showField: true
     required: true
   - name: LogConfigFile
     dataType: FILE
     repeated: false
-    format: toml
+    format: json
     defaultValue: <<MINIO_FILE_PATH>>
     allowedValues: []
     showField: true
@@ -100,38 +98,10 @@ spec:
     dataType: BOOLEAN
     repeated: false
     defaultValue: true
-    allowedValues:
-    - true
-    - false
-    showField: true
-    required: true
-  - name: OutputFileFormat
-    dataType: STRING
-    repeated: false
-    defaultValue: JSON
-    allowedValues:
-    - JSON
-    - CSV
-    - PARQUET
-    - YAML
-    - TOML
-    - XLSX
+    allowedValues: []
     showField: true
     required: true
   tasks:
-  - name: ConvertFileFormatV2
-    alias: Convert PR List File Format
-    type: task
-    appTags:
-      appType:
-      - nocredapp
-      environment:
-      - logical
-      execlevel:
-      - app
-    purpose: Purpose of the task
-    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
-      YAML, TOML, and XLSX.'
   - name: InputFieldValidation
     alias: Field Validation for InScopeRepos File
     type: task
@@ -142,11 +112,11 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Field Validation for InScopeRepos File
     description: Validates records by ensuring all required fields are present, logging
       errors for missing fields.
-  - name: ExecuteHttpRequestV2
-    alias: Fetch PR Data
+  - name: ExecuteHttpRequest
+    alias: Fetch PR data
     type: task
     appTags:
       appType:
@@ -157,7 +127,7 @@ spec:
       - app
       framework:
       - github
-    purpose: Purpose of the task
+    purpose: Fetch PR data
     description: Automate API requests by processing inputs and outputting responses
       in a structured JSON format.
   - name: ConditionalLogGenerator
@@ -172,7 +142,7 @@ spec:
       - app
     purpose: Purpose of the task
     description: To generate logs by conditions
-  - name: ExtractDataUsingJQV2
+  - name: ExtractDataUsingJQ
     alias: Extract PR Check Run Data
     type: task
     appTags:
@@ -182,7 +152,7 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Extract PR Check Run Data
     description: Extracts data from the InputFile based on the provided JQ filter/expression
   - name: CustomExceptionHandler
     alias: Custom Error Message for Exception Handling
@@ -194,11 +164,11 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
+    purpose: Custom Error Message for Exception Handling
     description: Handles specific exceptions and map generic error messages to user-friendly,
       task-specific messages. It ensures that errors encountered during task execution
       are appropriately managed and presented in a more understandable format.
-  - name: ConvertFileFormatV2
+  - name: ConvertFileFormat
     alias: Convert Output File Format
     type: task
     appTags:
@@ -208,28 +178,21 @@ spec:
       - logical
       execlevel:
       - app
-    purpose: Purpose of the task
-    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
-      YAML, TOML, and XLSX.'
+    purpose: Convert Output File Format
+    description: To convert output file format
   ioMap:
-  - Convert PR List File Format.Input.InputFile:=*.Input.PRListForInScopeRepos
-  - Convert PR List File Format.Input.OutputFileFormat:=*.Input.OutputFileFormat
-  - Convert PR List File Format.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
-  - Field Validation for InScopeRepos File.Input.InputFile:=Convert PR List File Format.Output.OutputFile
+  - Field Validation for InScopeRepos File.Input.InputFile:=*.Input.InScopeRepos
   - Field Validation for InScopeRepos File.Input.RequiredFields:=*.Input.RequiredFields
-  - Field Validation for InScopeRepos File.Input.LogFile:=Convert PR List File Format.Output.LogFile
-  - Fetch PR Data.Input.RequestConfigFile:=*.Input.PRCheckRunRequestConfig
-  - Fetch PR Data.Input.ResponseConfigFile:=*.Input.PRCheckRunResponseConfig
-  - Fetch PR Data.Input.InputFile:=Field Validation for InScopeRepos File.Output.ValidDataFile
-  - Fetch PR Data.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
-  - Fetch PR Data.Input.LogFile:=Field Validation for InScopeRepos File.Output.LogFile
-  - Generate Conditional Logs.Input.InputFile:=Fetch PR Data.Output.OutputFile
-  - Generate Conditional Logs.Input.LogFile:=Fetch PR Data.Output.LogFile
+  - Fetch PR data.Input.RequestConfigFile:=*.Input.PRCheckRunRequestConfig
+  - Fetch PR data.Input.ResponseConfigFile:=*.Input.PRCheckRunResponseConfig
+  - Fetch PR data.Input.InputFile:=Field Validation for InScopeRepos File.Output.ValidDataFile
+  - Fetch PR data.Input.LogFile:=Field Validation for InScopeRepos File.Output.LogFile
+  - Generate Conditional Logs.Input.InputFile:=Fetch PR data.Output.OutputFile
+  - Generate Conditional Logs.Input.LogFile:=Fetch PR data.Output.LogFile
   - Generate Conditional Logs.Input.LogConfigFile:=*.Input.LogConfigFile
   - Generate Conditional Logs.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
   - Extract PR Check Run Data.Input.InputFile:=Generate Conditional Logs.Output.OutputFile
-  - Extract PR Check Run Data.Input.JQConfigFile:=*.Input.PRCheckRunJQConfig
-  - Extract PR Check Run Data.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
+  - Extract PR Check Run Data.Input.JQConfig:=*.Input.PRCheckRunJQConfig
   - Extract PR Check Run Data.Input.LogFile:=Generate Conditional Logs.Output.LogFile
   - Custom Error Message for Exception Handling.Input.InputFile1:=Extract PR Check
     Run Data.Output.OutputFile
@@ -239,7 +202,6 @@ spec:
   - Convert Output File Format.Input.InputFile:=Custom Error Message for Exception
     Handling.Output.OutputFile1
   - Convert Output File Format.Input.OutputFileFormat:=*.Input.RuleOutputFileFormat
-  - Convert Output File Format.Input.ProceedIfLogExists:=*.Input.ProceedIfLogExists
   - Convert Output File Format.Input.LogFile:=Custom Error Message for Exception Handling.Output.LogFile
   - '*.Output.CompliancePCT_:=Convert Output File Format.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=Convert Output File Format.Output.ComplianceStatus_'

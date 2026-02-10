@@ -17,6 +17,13 @@ userObject:
   - name: AWSAppConnector
     appURL: https://aws.amazon.com
     appPort: "0"
+    appTags:
+      appType:
+      - aws
+      environment:
+      - logical
+      execlevel:
+      - app
     userDefinedCredentials:
       AWSRole:
         AccessKey: "$AWS_ROLE_ACCESS_KEY"

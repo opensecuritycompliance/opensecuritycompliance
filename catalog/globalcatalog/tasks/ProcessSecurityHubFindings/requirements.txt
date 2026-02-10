@@ -1,2 +1,2 @@
-PyYAML
-boto3
+PyYAML==6.0.3
+boto3==1.42.30

@@ -201,21 +201,21 @@ func (inst *TaskInstance) getIAMEntities(inputs *UserInputs, accAuthDetails []Ac
 func (inst *TaskInstance) createPolicyReport(awsConnector awsconnector.AWSAppConnector, userList []UserDetailListVO, groupList []GroupDetailListVO, roleList []RoleDetailListVO, mfaRecommendation MFARecommendationVO) ([]PolicySimulatorVO, error) {
 	var policySimulatorReport []PolicySimulatorVO
 	for _, user := range userList {
-		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, user.Arn, user.UserName, awsconnector.IAM_USER, mfaRecommendation)
+		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, user.Arn, user.UserName, "AWS::IAM::User", awsconnector.IAM_USER, mfaRecommendation)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to evaluate the policy simulator for the user %v: %w", user.UserName, err)
 		}
 		policySimulatorReport = append(policySimulatorReport, report...)
 	}
 	for _, group := range groupList {
-		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, group.Arn, group.GroupName, awsconnector.IAM_GROUP, mfaRecommendation)
+		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, group.Arn, group.GroupName, "AWS::IAM::Group", awsconnector.IAM_GROUP, mfaRecommendation)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to evaluate the policy simulator for the group %v: %w", group.GroupName, err)
 		}
 		policySimulatorReport = append(policySimulatorReport, report...)
 	}
 	for _, role := range roleList {
-		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, role.Arn, role.RoleName, awsconnector.IAM_ROLE, mfaRecommendation)
+		report, err := inst.evaluatePolicyWithMFAEnforcement(awsConnector, role.Arn, role.RoleName, "AWS::IAM::Role", awsconnector.IAM_ROLE, mfaRecommendation)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to evaluate the policy simulator for the role %v: %w", role.RoleName, err)
 		}
@@ -230,7 +230,7 @@ evaluatePolicyWithMFAEnforcement evaluates policies with Multi-Factor Authentica
 It calls AWS's SimulatePrincipalPolicy to obtain policy evaluation results and GetContextKeysForPrincipalPolicy to check if the "multifactorauthpresent" context key is present.
 Based on these evaluations, it generates a standardized policy simulation report.
 */
-func (inst *TaskInstance) evaluatePolicyWithMFAEnforcement(awsConnector awsconnector.AWSAppConnector, identityARN, identityName, identityType string, mfaRecommendation MFARecommendationVO) ([]PolicySimulatorVO, error) {
+func (inst *TaskInstance) evaluatePolicyWithMFAEnforcement(awsConnector awsconnector.AWSAppConnector, identityARN, identityName, resourceType, identityType string, mfaRecommendation MFARecommendationVO) ([]PolicySimulatorVO, error) {
 	var policySimulatorReport []PolicySimulatorVO
 	resourceUrl, err := awsConnector.GetResourceUrl(awsconnector.ResourceInfo{
 		Region:       "global",
@@ -307,7 +307,7 @@ func (inst *TaskInstance) evaluatePolicyWithMFAEnforcement(awsConnector awsconne
 				Source:                 "compliancecow",
 				ResourceId:             identityARN,
 				ResourceName:           identityName,
-				ResourceType:           identityType,
+				ResourceType:           resourceType,
 				ResourceLocation:       "global",
 				ResourceURL:            resourceUrl,
 				Action:                 *op.EvalActionName,
@@ -404,7 +404,7 @@ type ErrorVO struct {
 type PolicySimulatorVO struct {
 	System                 string                  `json:"System"`
 	Source                 string                  `json:"Source"`
-	ResourceId             string                  `json:"ResourceId"`
+	ResourceId             string                  `json:"ResourceID"`
 	ResourceName           string                  `json:"ResourceName"`
 	ResourceType           string                  `json:"ResourceType"`
 	ResourceLocation       string                  `json:"ResourceLocation"`

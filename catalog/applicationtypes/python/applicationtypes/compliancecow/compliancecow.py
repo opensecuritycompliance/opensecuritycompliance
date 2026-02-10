@@ -149,6 +149,7 @@ class ComplianceCow:
     GET_SLACK_HANDLE = "/v5/partner/users/user-mediums"
     GET_ASSESSMENT_RUNS = "/v1/plan-instances"
     
+    PUT_UPDATE_ASSESSMENT_CONTROLS = "/v5/partner/assessments/update-assessment-controls"
 
     app_url: str
     app_port: int
@@ -1369,12 +1370,19 @@ class ComplianceCow:
         else:
             return f"Error while commiting evidence :: Status Code: {response.status_code}, Response: {response.text}"
 
-    def get_plans(self, fields: str = "basic"):
+    def get_plans(self, fields: str = "basic", id: str = None, name: str = None):
         try:
             auth_token, error = self.fetch_and_extract_auth_token()
             if error:
                 return None, error
-            api_endpoint_url = self.build_api_url(f"{self.GET_PLANS}?fields={fields}")
+            
+            query_params = f'?fields={fields}'
+            if name:
+                query_params = query_params+  "&name=" + name 
+            if id:
+                query_params = query_params+  "&id=" + id 
+                
+            api_endpoint_url = self.build_api_url(self.GET_PLANS + query_params)
             headers = {"Authorization": auth_token}
 
             response, error = self.make_api_request(
@@ -1398,6 +1406,44 @@ class ComplianceCow:
             return None, f"Request timed out: {te}"
         except requests.exceptions.RequestException as re:
             return None, f"An error occurred while making the request: {re}"
+
+    def put_plans_controls(self, id:str, controls_to_be_update:List ):
+       
+        try:
+            if id == "":
+                return "Assessment ID cannot be empty"
+            if not len(controls_to_be_update) > 0:
+                return "controls_to_be_update cannot be empty"
+            
+            api_endpoint_url = self.build_api_url(self.PUT_UPDATE_ASSESSMENT_CONTROLS)
+            
+            auth_token, error = self.fetch_and_extract_auth_token()
+            if error:
+                return error
+
+            headers = {"Authorization": auth_token}
+            req_body = {
+                "assessmentId": id,
+                "controls": controls_to_be_update
+            }
+            response, error = self.make_api_request( url = api_endpoint_url, headers = headers, method="PUT", json=req_body )
+
+            if error:
+                return error
+
+            if response.status_code == http.HTTPStatus.NO_CONTENT:
+                return None
+
+            error_dict = response.json()
+            if "Description" in error_dict:
+                return error_dict["Description"] 
+
+        except requests.exceptions.ConnectionError as ce:
+            return f"Connection error occurred: {ce}"
+        except requests.exceptions.Timeout as te:
+            return f"Request timed out: {te}"
+        except requests.exceptions.RequestException as re:
+            return f"An error occurred while making the request: {re}"
 
     def fetch_assessments(
         self, assessment_name: str = "", detailed: bool = False
@@ -1507,7 +1553,7 @@ class ComplianceCow:
         except requests.exceptions.RequestException as re:
             return None, f"An error occurred while making the request: {re}"
 
-    def get_assessment_run_details_by_assesment_id(
+    def get_assessment_run_details_by_assessment_id(
         self,
         assessment_id,
         created_at_start_time=None,
