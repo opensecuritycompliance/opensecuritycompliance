@@ -23,3 +23,4 @@ googleapis-common-protos==1.72.0
 google-api-core==2.28.1
 httplib2==0.31.0
 reportlab==4.2.5
+pytz==2025.2
