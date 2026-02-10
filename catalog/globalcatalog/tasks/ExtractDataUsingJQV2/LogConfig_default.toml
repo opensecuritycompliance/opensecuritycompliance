@@ -16,8 +16,6 @@
     LogFile.download_error = "Error while downloading LogFile :: {error}"
     
     ############ JQ_CONFIG_FILE EXCEPTIONS ############
-    JQConfigFile.missing = "'JQConfig' file is missing. Please ensure the configuration file is present. Please refer to the provided JQConfig-sample.toml file."
+    JQConfigFile.missing = "'JQConfig' and 'JQExpression' are both missing. Please ensure at least one of them is present. Refer to the provided JQConfig-sample.toml file for guidance."
     JQConfigFile.download_error = "Error occurred while downloading JQConfig file :: {error}"
     JQConfigFile.jq_config_field_missing_or_empty = "'JQConfig' table is missing or empty in the provided JQConfig file. Please refer to the JQConfig-sample.toml file."
-
-    

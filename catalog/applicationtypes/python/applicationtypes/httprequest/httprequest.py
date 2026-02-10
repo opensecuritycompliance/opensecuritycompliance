@@ -27,6 +27,7 @@ from botocore.awsrequest import AWSRequest
 from botocore.auth import SigV4Auth
 from botocore.credentials import Credentials, ReadOnlyCredentials
 from botocore.exceptions import BotoCoreError, NoCredentialsError
+from urllib3.filepost import encode_multipart_formdata
 
 logger = cards.Logger()
 
@@ -732,7 +733,7 @@ class HttpRequest:
             # Check for client secret and client id patterns in the body data
             if re.search(client_secret_pattern, body_data):
                 client_secret_full_pattern = (
-                    rf"{client_secret_pattern}\s*=\s*{re.escape(client_secret)}"
+                    rf"{client_secret_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_secret)}(?P=q)"
                 )
                 if re.search(client_secret_full_pattern, body_data):
                     valid_client_secret = True
@@ -740,7 +741,7 @@ class HttpRequest:
                     miss_match_cred.append("ClientSecret")
             if re.search(client_id_pattern, body_data):
                 client_id_full_pattern = (
-                    rf"{client_id_pattern}\s*=\s*{re.escape(client_id)}"
+                    rf"{client_id_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_id)}(?P=q)"
                 )
                 if re.search(client_id_full_pattern, body_data):
                     valid_client_id = True
@@ -860,6 +861,16 @@ class HttpRequest:
             else:
                 body = body_info
         files = request_data.get("Files", None)
+        
+        if headers.get("Content-Type") == "multipart/form-data":
+            _body = []
+            for k, v in body_info.items():
+                _body.append((k, json.dumps(v) if isinstance(v, (dict, list)) else str(v)))
+
+            body, content_type = encode_multipart_formdata(_body)
+            headers["Content-Type"] = content_type
+            headers[ "Content-Length"]= str(len(body))
+
 
         # Attempt to send the request with retries
         response, error = self.send_request_with_retries(
@@ -1171,10 +1182,16 @@ class HttpRequest:
                     raise TypeError("params must be a dictionary")
                 url = f"{url}?{urlencode(params, doseq=True)}"
 
-            if body and not isinstance(body, (str, bytes)):
-                raise TypeError("body must be str or bytes")
+            if body and not isinstance(body, (str, bytes, dict)):
+                raise TypeError("body must be str or bytes or dict")
 
-            body_bytes = body.encode("utf-8") if isinstance(body, str) else (body or b"")
+            body_bytes = b""
+            if isinstance(body, str):
+                body_bytes = body.encode("utf-8")
+            elif isinstance(body, bytes):
+                body_bytes = body
+            elif isinstance(body, dict):
+                body_bytes = urlencode(body).encode("utf-8")
 
             content_hash = hashlib.sha256(body_bytes).hexdigest()
 

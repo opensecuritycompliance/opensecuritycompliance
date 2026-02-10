@@ -15,8 +15,6 @@ meta:
     annotateType:
       - httprequest
   app: HttpRequest
-  tags:
-    - MCP
 spec:
   inputs:
     ListHardwaresRequestConfig: <<MINIO_FILE_PATH>>

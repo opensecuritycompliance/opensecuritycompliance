@@ -1,10 +1,14 @@
-from typing import List, Any
+import io
+import json
+from typing import List, Any, Dict
+import uuid
 from compliancecowcards.utils import cowjqutils
 from compliancecowcards.structs import cards
 import pandas as pd
 import pathlib
 from condition import CheckCondition, Condition
 import re
+import copy
 
 
 logger = cards.Logger() # Initializes a Logger instance to log data, use logger.log_data(dict) to log a data
@@ -16,6 +20,7 @@ class Task(cards.AbstractTask):
         
         default_log_config_filepath = str(pathlib.Path(__file__).parent.joinpath('LogConfig_default.toml').resolve())
         custom_log_config_url = self.task_inputs.user_inputs.get('LogConfig')
+        output_file_format = user_inputs.get('OutputFileFormat', 'PARQUET')
         
         should_proceed_on_error = self._get_boolean_value_from_input('ProceedIfErrorExists')
         self.set_log_file_name('LogFile' if should_proceed_on_error else 'Errors')
@@ -120,8 +125,9 @@ class Task(cards.AbstractTask):
         }
         
         if condition_passed_data:
-            passed_data_file_url, error = self.upload_df_as_parquet_file_to_minio(
-                df=pd.DataFrame(condition_passed_data),
+            passed_data_file_url, error = self.handle_output_file_upload(
+                result_df = pd.DataFrame(condition_passed_data),
+                output_file_format = output_file_format,
                 file_name='MatchedConditionFile'
             )
             if error:
@@ -130,8 +136,9 @@ class Task(cards.AbstractTask):
             response['MatchedConditionFile'] = passed_data_file_url
 
         if condition_failed_data:
-            failed_data_file_url, error = self.upload_df_as_parquet_file_to_minio(
-                df=pd.DataFrame(condition_failed_data),
+            failed_data_file_url, error = self.handle_output_file_upload(
+                result_df = pd.DataFrame(condition_failed_data),
+                output_file_format = output_file_format,
                 file_name='UnmatchedConditionFile'
             )
             if error:
@@ -140,6 +147,29 @@ class Task(cards.AbstractTask):
             response['UnmatchedConditionFile'] = failed_data_file_url
 
         return response
+
+    def handle_output_file_upload(
+        self, result_df: pd.DataFrame, output_file_format: str, file_name: str
+    ) -> tuple[str, dict | None]:
+        upload_funcs = {
+            "PARQUET": self.upload_df_as_parquet_file_to_minio,
+            "CSV": self.upload_df_as_csv_file_to_minio,
+            "JSON": self.upload_df_as_json_file_to_minio
+        }
+
+        output_file_format = output_file_format.upper() if output_file_format else "PARQUET"
+
+        if result_df.empty:
+            return '', None
+
+        if output_file_format not in upload_funcs:
+            # RETURN ERROR
+            return '', {
+                'Error': self.log_manager.get_error_message('CheckCondition.Outputs.OutputFileFormat.invalid', {'output_file_format': output_file_format})
+            }
+        
+        upload_func = upload_funcs[output_file_format]
+        return upload_func(result_df, file_name)
         
     def handle_logfile(self, log_file_url: str | None) -> dict:
         should_proceed_on_log = self._get_boolean_value_from_input('ProceedIfLogExists')
@@ -308,7 +338,7 @@ class Task(cards.AbstractTask):
         updated_record: dict = {**record}
         field_update_errors: list[str] = []
         field_update_condition_errors: list[str] = []
-        for field_update in condition_field_updates_list:
+        for field_update in copy.deepcopy(condition_field_updates_list):
             condition_status, error, error_conditions = condition_checker.check_condition_criteria(field_update['ConditionsCriteria'])
             if error:
                 field_update_errors.append(error)

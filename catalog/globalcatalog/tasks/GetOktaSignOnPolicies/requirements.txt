@@ -1,1 +1,4 @@
-PyYAML
+PyYAML==6.0.3
+flatdict==4.0.0
+okta==2.9.13
+asyncio==4.0.0

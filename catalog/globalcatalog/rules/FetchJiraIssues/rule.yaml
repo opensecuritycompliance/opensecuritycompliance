@@ -15,8 +15,8 @@ meta:
     - jira
 spec:
   inputs:
-    ChunksPerIteration: 5
     CustomExceptionConfigFileForJiraIssues: <<MINIO_FILE_PATH>>
+    ChunksPerIteration: 5
     JiraJQConfig: <<MINIO_FILE_PATH>>
     JiraRequestConfig: <<MINIO_FILE_PATH>>
     JiraResponseConfig: <<MINIO_FILE_PATH>>
@@ -66,16 +66,15 @@ spec:
     repeated: false
     defaultValue: PARQUET
     allowedValues:
-    - JSON
-    - CSV
-    - PARQUET
     - YAML
     - TOML
-    - XLSX
+    - CSV
+    - JSON
+    - PARQUET
     showField: true
     required: true
   tasks:
-  - name: ExecuteHttpRequestV2
+  - name: ExecuteHttpRequest
     alias: Fetch Jira Issues
     type: task
     appTags:
@@ -90,7 +89,7 @@ spec:
     purpose: Fetch Jira Issues
     description: Automate API requests by processing inputs and outputting responses
       in a structured JSON format.
-  - name: ExtractDataUsingJQV2
+  - name: ExtractDataUsingJQ
     alias: Extract And Standardize Issue Data
     type: task
     appTags:
@@ -116,7 +115,7 @@ spec:
     description: Handles specific exceptions and map generic error messages to user-friendly,
       task-specific messages. It ensures that errors encountered during task execution
       are appropriately managed and presented in a more understandable format.
-  - name: ConvertFileFormatV2
+  - name: ConvertFileFormat
     alias: Convert Output File Format
     type: task
     appTags:
@@ -127,13 +126,12 @@ spec:
       execlevel:
       - app
     purpose: Purpose of the task
-    description: 'Convert files between the supported formats: JSON, CSV, PARQUET,
-      YAML, TOML, and XLSX.'
+    description: To convert rule output file format
   ioMap:
   - Fetch Jira Issues.Input.RequestConfigFile:=*.Input.JiraRequestConfig
   - Fetch Jira Issues.Input.ResponseConfigFile:=*.Input.JiraResponseConfig
   - Extract And Standardize Issue Data.Input.InputFile:=Fetch Jira Issues.Output.OutputFile
-  - Extract And Standardize Issue Data.Input.JQConfigFile:=*.Input.JiraJQConfig
+  - Extract And Standardize Issue Data.Input.JQConfig:=*.Input.JiraJQConfig
   - Extract And Standardize Issue Data.Input.ChunksPerIteration:=*.Input.ChunksPerIteration
   - Extract And Standardize Issue Data.Input.LogFile:=Fetch Jira Issues.Output.LogFile
   - Custom Error Message For Exception Handling.Input.InputFile1:=Extract And Standardize
@@ -145,7 +143,7 @@ spec:
     Handling.Output.OutputFile1
   - Convert Output File Format.Input.OutputFileFormat:=*.Input.RuleOutputFileFormatType
   - Convert Output File Format.Input.LogFile:=Custom Error Message For Exception Handling.Output.LogFile
-  - '*.Output.CompliancePCT_:=Custom Error Message For Exception Handling.Output.CompliancePCT_'
-  - '*.Output.ComplianceStatus_:=Custom Error Message For Exception Handling.Output.ComplianceStatus_'
+  - '*.Output.CompliancePCT_:=Convert Output File Format.Output.CompliancePCT_'
+  - '*.Output.ComplianceStatus_:=Convert Output File Format.Output.ComplianceStatus_'
   - '*.Output.LogFile:=Convert Output File Format.Output.LogFile'
   - '*.Output.JiraIssuesList:=Convert Output File Format.Output.OutputFile'

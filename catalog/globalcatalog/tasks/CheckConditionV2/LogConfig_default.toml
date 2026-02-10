@@ -26,6 +26,9 @@
     InputFile.missing_fields = "The following required fields are missing in InputFile :: '{missing_fields}'"
     CustomInputs.missing_fields = "The following required fields are missing in CustomInputs file :: '{missing_fields}'"
 
+[CheckCondition.Outputs]
+    ############ OutputFileFormat EXCEPTIONS ############
+    OutputFileFormat.invalid = "Invalid OutputFileFormat provided: '{output_file_format}'. Supported formats are 'PARQUET' and 'CSV'."
     
 ############ ConditionConfig Validation EXCEPTIONS ############
 [CheckCondition.ConditionConfig.Validation]

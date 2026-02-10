@@ -17,6 +17,7 @@ meta:
 spec:
   inputs:
     JiraIssueTemplate: <<MINIO_FILE_URL>>
+    JiraInstanceConfigFile: <<MINIO_FILE_URL>>
   inputsMeta__:
   - name: JiraIssueTemplate
     description: The Jira issue template file to be used for creating the issue.
@@ -26,6 +27,14 @@ spec:
     allowedValues: []
     showField: true
     required: true
+  - name: JiraInstanceConfigFile
+    description: The Jira instance configuration file to get Jira instance URL.
+    dataType: FILE
+    repeated: false
+    defaultValue: <<MINIO_FILE_URL>>
+    allowedValues: []
+    showField: true
+    required: false
   outputsMeta__:
   - name: CreatedTicket
     description: The created Jira ticket (contains ticket key and id).
@@ -75,6 +84,7 @@ spec:
     description: Creates a Jira issue in Jira Cloud using the specified issue template file.
   ioMap:
   - t1.Input.JiraIssueTemplate:=*.Input.JiraIssueTemplate
+  - t1.Input.JiraInstanceConfigFile:=*.Input.JiraInstanceConfigFile
   - '*.Output.CreatedTicket:=t1.Output.CreatedTicket'
   - '*.Output.LogFile:=t1.Output.LogFile'
   - '*.Output.CompliancePCT_:=t1.Output.CompliancePCT_'

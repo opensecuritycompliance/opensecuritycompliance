@@ -1,2 +1,2 @@
-PyYAML
-jira
+PyYAML==6.0.3
+jira==3.8.0

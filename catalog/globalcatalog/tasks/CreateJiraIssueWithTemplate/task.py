@@ -3,6 +3,8 @@ from compliancecowcards.structs import cards
 import json
 import uuid
 from applicationtypes.jiracloud import jiracloud
+import jmespath
+import re
 
 logger = (
     cards.Logger()
@@ -27,6 +29,37 @@ class Task(cards.AbstractTask):
         )
         if error:
             return self.upload_log_file_panic(error)
+
+        jira_instance_config_file_url = self.task_inputs.user_inputs.get(
+            "JiraInstanceConfigFile"
+        )
+        jira_instance_url = ""
+
+        if (
+            jira_instance_config_file_url
+            and jira_instance_config_file_url != DEFAULT_MINIO_PLACEHOLDER
+        ):
+            jira_instance_config_data, error = self._download_json_file(
+                url=jira_instance_config_file_url,
+            )
+            if error:
+                return self.upload_log_file_panic(error)
+
+            if isinstance(jira_instance_config_data, list):
+                jira_instance_url = jmespath.search(
+                    "[0].JIRA_INSTANCE_URL", jira_instance_config_data
+                )
+                pattern = r"^https:\/\/[a-zA-Z0-9\-]+\.atlassian\.net"
+                if isinstance(jira_instance_url, str) and re.match(
+                    pattern, jira_instance_url
+                ):
+                    jira_instance_url = jira_instance_url.rstrip("/")
+                else:
+                    jira_instance_url = ""
+
+        if jira_instance_url:
+            self.task_inputs.user_object.app.application_url = jira_instance_url
+
         self.jira_app = jiracloud.JiraCloud(
             app_url=self.task_inputs.user_object.app.application_url,
             app_port=self.task_inputs.user_object.app.application_port,
@@ -69,9 +102,22 @@ class Task(cards.AbstractTask):
             Tuple[Dict, Optional[Dict]]: The created issue and any error encountered.
         """
         try:
-            issue_template_fields = issue_template.get("fields", {})
+            issue_template_fields: dict = issue_template.get("fields", {})
 
             description = issue_template_fields.get("description", "")
+
+            priority = jmespath.search("priority.name", issue_template_fields)
+            jira_priorities, error = self.jira_app.get_priorities()
+            if error:
+                return {}, {
+                    "Error": f"Failed to create Jira issue :: Error while getting priorities: {error}"
+                }
+
+            valid_priority_names = [
+                jira_priority.name for jira_priority in jira_priorities
+            ]
+            if not priority or priority not in valid_priority_names:
+                issue_template_fields.pop("priority", "")
 
             issue, err = self.jira_app.create_issue_v3(
                 issue_template_fields, 3 if isinstance(description, dict) else 2

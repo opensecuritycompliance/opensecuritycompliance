@@ -65,6 +65,9 @@ func (inst *TaskInstance) GetAWSConfigRuleEvaluationDetailsNew(inputs *UserInput
 							outputRecord.AwsRegion = *(outputResource.BaseConfigurationItems[0].AwsRegion)
 							outputRecord.ResourceName = *(outputResource.BaseConfigurationItems[0].ResourceName)
 						}
+						if outputResource.BaseConfigurationItems[0].AwsRegion != nil {
+							outputRecord.AwsRegion = *(outputResource.BaseConfigurationItems[0].AwsRegion)
+						}
 					}
 					outputRuleDetails = append(outputRuleDetails, outputRecord)
 				}

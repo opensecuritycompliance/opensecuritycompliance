@@ -1,7 +1,7 @@
 userObject:
   app:
     name: JiraCloud
-    appURL: ""
+    appURL: https://your-instance.atlassian.net # replace with actual jira instance url
     appPort: "0"
     appTags:
       appType:
@@ -12,9 +12,10 @@ userObject:
       - app
     userDefinedCredentials:
       BasicAuthentication:
-        UserName: ""
-        Password: ""
+        UserName: "$JIRA_USER_NAME"
+        Password: "$JIRA_PASSWORD"
 userInputs:
-  JiraIssueTemplate: <<MINIO_FILE_URL>>
+  JiraIssueTemplate: <<MINIO_FILE_PATH>>
+  JiraInstanceConfigFile: <<MINIO_FILE_PATH>>
 fromDate: 2025-05-20T02:56:16Z
 toDate: 2025-05-20T02:56:16Z

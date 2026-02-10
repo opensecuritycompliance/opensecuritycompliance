@@ -9,6 +9,13 @@ ConditionValue = "200"
 [Response.RuleSet.AppendColumn]
 IncludeAllInputFields = false
 
+[Response.RuleSet.PaginationCondition]
+ConditionField = "<<response.body[\"@odata.nextLink\"]>>"
+ConditionValue = ""
+
+[Response.RuleSet.Pagination]
+URL = "<<response.body[\"@odata.nextLink\"]>>"
+
 [Response.RuleSet.AppendColumn.Fields]
 
 [Response.RuleSet.Pagination.Header]

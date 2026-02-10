@@ -3,6 +3,7 @@ from typing import Tuple
 # As per the selected app, we're importing the app package
 import pandas as pd
 from applicationtypes.azureappconnector import azureappconnector
+import re
 
 class Task(cards.AbstractTask):
     def execute(self) -> dict:
@@ -84,6 +85,7 @@ class Task(cards.AbstractTask):
         control_df = control_df[control_df["ControlName"] == control_name]
         control_df[
             [
+                "ResourceType",
                 "ComplianceStatusReason",
                 "ValidationStatusCode",
                 "ValidationStatusNotes"
@@ -126,28 +128,16 @@ class Task(cards.AbstractTask):
 
     def update_status(self, row, control_status_dict: dict):
         col_vals = control_status_dict.get(row["ComplianceStatus"])
+        resource_type = row["ResourceType"]
+        resource_type_match = re.search(r"\/([^\/]+$)", resource_type)
+        resource_type = resource_type_match.group(1) if resource_type_match else resource_type
+        resource_type = resource_type[:1].upper() + resource_type[1:] # capitalize only first letter
         return pd.Series([
+                resource_type,
                 col_vals.get("ComplianceStatusReason", ""),
                 col_vals.get("ValidationStatusCode", ""),
                 col_vals.get("ValidationStatusNotes", "")
         ])
-    
-    def upload_log_file(self, error_data) -> Tuple[str, dict]:
-        if not isinstance(error_data, list):
-            error_data = [error_data]
-        file_url, error = self.upload_df_as_json_file_to_minio(
-            df=pd.DataFrame(error_data),
-            file_name="LogFile"
-        )
-        if error:
-            return None, {'Error': f"Error while uploading LogFile :: {error}"}
-        return file_url, None
-    
-    def upload_log_file_panic(self, error_data) -> dict:
-        file_url, error = self.upload_log_file(error_data)
-        if error:
-            return error
-        return { 'LogFile': file_url }
     
     def upload_output_file(self, output_data: pd.DataFrame, file_name) -> Tuple[str, dict]:
         if output_data.empty:

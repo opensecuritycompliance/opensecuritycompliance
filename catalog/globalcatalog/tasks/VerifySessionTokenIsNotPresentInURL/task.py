@@ -15,7 +15,7 @@ class Task(cards.AbstractTask):
 
         error = self.check_inputs()
         if error:
-            return self.upload_log_file_panic({'error': error})
+            return self.upload_log_file_panic({"Error": error})
         
         app = privacybisonconnector.PrivacyBisonConnector(
             app_url=self.task_inputs.user_object.app.application_url,
@@ -26,10 +26,10 @@ class Task(cards.AbstractTask):
 
         har, error = self.download_json_file_from_minio_as_dict(self.task_inputs.user_inputs.get('HarFile'))
         if error:
-            return self.upload_log_file_panic({'error': error})
+            return self.upload_log_file_panic({"Error": error})
         
         if not app.is_valid_har(har):
-            return self.upload_log_file_panic({'error': 'HarFile is in an invalid format, please check'})
+            return self.upload_log_file_panic({"Error": 'HarFile is in an invalid format, please check'})
         
         company_name, _ = app.get_company_name_from_har_file(har)
 
@@ -146,10 +146,12 @@ class Task(cards.AbstractTask):
         )
 
         data_df = pd.DataFrame.from_dict(uris_with_token_in_query)
+        if data_df.empty:
+            return self.upload_log_file_panic({"Error": 'No URLs found in the HAR file.'})
         
         file_url, error = self.upload_df_as_json_file_to_minio(data_df, 'URIsWithTokenInQuery')
         if error:
-            return {"error": f"Error uploading file to Minio: {error}"}
+            return {"Error": f"Error uploading file to Minio: {error}"}
 
         response = {
             "ComplianceStatus_": complianceStatus, # The possible values for the 'Status' field should be one of the following: 'COMPLIANT' 'NON_COMPLIANT,' or 'NOT_DETERMINED.'
@@ -280,7 +282,7 @@ class Task(cards.AbstractTask):
             content_type="application/json"
         )
         if error:
-            return None, {'error': f"Error while uploading LogFile :: {error}"}
+            return None, {"Error": f"Error while uploading LogFile :: {error}"}
         return file_url, None
     
     def upload_log_file_panic(self, error_data) -> dict:

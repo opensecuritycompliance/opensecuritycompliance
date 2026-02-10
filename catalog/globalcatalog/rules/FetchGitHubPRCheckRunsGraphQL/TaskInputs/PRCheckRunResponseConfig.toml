@@ -8,6 +8,15 @@
     ConditionValue = "200"
 
     [Response.RuleSet.AppendColumn]
-    IncludeAllInputFields = true
+    IncludeAllInputFields = false
     
     [Response.RuleSet.AppendColumn.Fields]
+    repositoryName = "<<inputfile.RepositoryName>>"
+
+    [Response.RuleSet.PaginationCondition]
+    ConditionField = "<<response.body.data.search.pageInfo.hasNextPage>>"
+    ConditionValue = 'False'
+
+    [Response.RuleSet.Pagination]
+        [Response.RuleSet.Pagination.Data.Raw]
+        Value = '{"query":"query ($queryString: String!, $afterCursor: String) {\n    search(query: $queryString, type: ISSUE, first: 50, after: $afterCursor) {\n        pageInfo {\n            endCursor\n            hasNextPage\n        }\n        issueCount\n        nodes {\n            ... on PullRequest {\n                commits(last: 10) {\n                    nodes {\n                        commit {\n                            checkSuites(last: 10) {\n                                nodes {\n                                    checkRuns(last: 50) {\n                                        nodes {\n                                            completedAt\n                                            conclusion\n                                            id\n                                            name\n                                            title\n                                            url\n                                            status\n                                            startedAt\n                                        }\n                                        totalCount\n                                    }\n                                }\n                            }\n                        }\n                    }\n                }\n                headRepository {\n                    nameWithOwner\n                }\n                id\n                title\n                number\n            }\n        }\n    }\n}\n","variables":{"queryString":"repo:<<inputfile.RepositoryName>> type:pr is:merged created:<<fromdate>>..<<todate>>","afterCursor":"<<response.body.data.search.pageInfo.endCursor>>"}}'

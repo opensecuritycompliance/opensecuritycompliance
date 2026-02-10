@@ -6,8 +6,7 @@ import json
 import uuid
 import pandas as pd
 import toml
-
-from github import PaginatedList, PullRequest, Branch, BranchProtection
+from github import Branch
 
 
 class Task(cards.AbstractTask):
@@ -18,11 +17,15 @@ class Task(cards.AbstractTask):
             return self.upload_log_file([error])
 
         criteria_config = self.task_inputs.user_inputs.get("CriteriaConfig", "")
-        min_req_rev_count = self.task_inputs.user_inputs["MinimumRequiredReviewersCount"]
+        min_req_rev_count = self.task_inputs.user_inputs[
+            "MinimumRequiredReviewersCount"
+        ]
 
         error_details = []
 
-        include_criterias, exclude_criterias, error = self.download_config_file_and_get_criterias(criteria_config)
+        include_criterias, exclude_criterias, error = (
+            self.download_config_file_and_get_criterias(criteria_config)
+        )
         if error:
             return self.upload_log_file([error])
 
@@ -47,7 +50,10 @@ class Task(cards.AbstractTask):
                 repo_query_full_name = f"{query['org']}/{repo_query}"
 
                 if repo_query_full_name not in existing_repos_dict:
-                    error_details.append(f"Repo with name '{repo_query_full_name}' doesn't exist. " "Check the organization or repository name.")
+                    error_details.append(
+                        f"Repo with name '{repo_query_full_name}' doesn't exist. "
+                        "Check the organization or repository name."
+                    )
                     continue
 
                 repo_obj = existing_repos_dict[repo_query_full_name]
@@ -122,7 +128,11 @@ class Task(cards.AbstractTask):
         pull_request_df = ruleset_df[ruleset_df["type"] == "pull_request"]
         if not pull_request_df.empty:
             require_reviewers_enabled = True
-            rule_set_count = int(pull_request_df["parameters"].apply(lambda x: x["required_approving_review_count"]).max())
+            rule_set_count = int(
+                pull_request_df["parameters"]
+                .apply(lambda x: x["required_approving_review_count"])
+                .max()
+            )
 
         branch_protect_count = 0
         if branch.protected:
@@ -132,7 +142,9 @@ class Task(cards.AbstractTask):
                 protection = None
             if protection:
                 require_reviewers_enabled = True
-                branch_protect_count = protection.required_pull_request_reviews.required_approving_review_count
+                branch_protect_count = (
+                    protection.required_pull_request_reviews.required_approving_review_count
+                )
 
         return max(rule_set_count, branch_protect_count), require_reviewers_enabled, ""
 
@@ -145,10 +157,12 @@ class Task(cards.AbstractTask):
         app_connector: githubconnector.GitHubConnector,
     ) -> Tuple[Dict[str, Union[str, int, bool]], Union[str, Dict[str, str]]]:
         validation_details = {}
-        review_count, require_reviewers_enabled, error = self.get_required_approving_review_count(
-            app_connector,
-            repo_full_name,
-            branch,
+        review_count, require_reviewers_enabled, error = (
+            self.get_required_approving_review_count(
+                app_connector,
+                repo_full_name,
+                branch,
+            )
         )
         if error:
             if isinstance(error, dict):
@@ -156,12 +170,18 @@ class Task(cards.AbstractTask):
             return {}, {"Error": error}
 
         if not require_reviewers_enabled:
-            validation_details = self.get_validation_details("2", int(min_req_rev_count))
+            validation_details = self.get_validation_details(
+                "2", int(min_req_rev_count)
+            )
         elif review_count < int(min_req_rev_count):
-            validation_details = self.get_validation_details("3", int(min_req_rev_count))
+            validation_details = self.get_validation_details(
+                "3", int(min_req_rev_count)
+            )
 
         if not validation_details:
-            validation_details = self.get_validation_details("1", int(min_req_rev_count))
+            validation_details = self.get_validation_details(
+                "1", int(min_req_rev_count)
+            )
 
         rule_set_info = {
             "System": "github",
@@ -221,7 +241,11 @@ class Task(cards.AbstractTask):
             return "missing: Task inputs"
 
         user_object = self.task_inputs.user_object
-        if not user_object or not user_object.app or not user_object.app.user_defined_credentials:
+        if (
+            not user_object
+            or not user_object.app
+            or not user_object.app.user_defined_credentials
+        ):
             return "missing: User defined credentials"
 
         if not self.task_inputs.user_inputs:
@@ -230,15 +254,25 @@ class Task(cards.AbstractTask):
         input_validation_report = ""
 
         criteria_config_file = self.task_inputs.user_inputs.get("CriteriaConfig", "")
-        if criteria_config_file is None or criteria_config_file == "" or criteria_config_file == "<<MINIO_FILE_PATH>>":
+        if (
+            criteria_config_file is None
+            or criteria_config_file == ""
+            or criteria_config_file == "<<MINIO_FILE_PATH>>"
+        ):
             input_validation_report += "'CriteriaConfig' cannot be empty."
 
-        min_req_rev_count = self.task_inputs.user_inputs.get("MinimumRequiredReviewersCount", 0)
+        min_req_rev_count = self.task_inputs.user_inputs.get(
+            "MinimumRequiredReviewersCount", 0
+        )
 
         if min_req_rev_count is None:
-            input_validation_report += "'MinimumRequiredReviewersCount' cannot be empty."
+            input_validation_report += (
+                "'MinimumRequiredReviewersCount' cannot be empty."
+            )
         elif not isinstance(min_req_rev_count, int):
-            input_validation_report += "'MinimumRequiredReviewersCount' expected type is 'Integer'."
+            input_validation_report += (
+                "'MinimumRequiredReviewersCount' expected type is 'Integer'."
+            )
         elif min_req_rev_count == 0:
             input_validation_report += "'MinimumRequiredReviewersCount' cannot be '0'."
 
@@ -251,7 +285,9 @@ class Task(cards.AbstractTask):
         app_connector = githubconnector.GitHubConnector(
             app_url=self.task_inputs.user_object.app.application_url,
             app_port=self.task_inputs.user_object.app.application_port,
-            user_defined_credentials=githubconnector.UserDefinedCredentials.from_dict(self.task_inputs.user_object.app.user_defined_credentials),
+            user_defined_credentials=githubconnector.UserDefinedCredentials.from_dict(
+                self.task_inputs.user_object.app.user_defined_credentials
+            ),
         )
         return app_connector
 

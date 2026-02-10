@@ -57,6 +57,7 @@ userInputs:
   CommitDetailsTransformConfigFile: <<MINIO_FILE_PATH>>
   ExtractComplaintStatusJQConfig: <<MINIO_FILE_PATH>>
   GithubInputFile: <<MINIO_FILE_PATH>>
+  OutputFileFormat: JSON
   PRWithCommitRequestConfigFile: <<MINIO_FILE_PATH>>
   PRWithCommitResponseConfigFile: <<MINIO_FILE_PATH>>
   RepoRequestConfigFile: <<MINIO_FILE_PATH>>

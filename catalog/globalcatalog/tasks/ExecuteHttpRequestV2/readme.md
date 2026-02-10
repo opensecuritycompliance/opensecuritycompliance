@@ -267,6 +267,10 @@ The purpose of this task is to automate API requests. It allows users to make AP
         # === For OAuth/CustomType: Uncomment and use one of these ===
         # Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
         # Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+        # NOTE : Add "<<validationCURLresponse>>" to include the full validation cURL response.
+        #        This means that if the validation cURL returns an Auth token or a Bearer token in plain/text,
+        #        the entire response will be directly used as the value of the `Authorization` header.
+
         
         # === For JWTBearer (auto-generated): Uncomment if needed ===
         # Authorization = "Bearer <<JWTBearer>>"

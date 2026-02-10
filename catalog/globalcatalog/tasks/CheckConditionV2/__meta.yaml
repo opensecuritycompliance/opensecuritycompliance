@@ -62,8 +62,17 @@ inputs:
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
   required: false
+- name: OutputFileFormat
+  description: "Target format for the conversion output. Supported options: JSON, CSV, PARQUET."
+  dataType: STRING
+  repeated: false
+  allowedValues: [JSON, CSV, PARQUET]
+  defaultValue: PARQUET
+  showField: true
+  required: false
 - name: ProceedIfLogExists 
   description: "Controls how the task behaves when log files from previous runs exist. If enabled (default: true), the task processes conditions and adds the log file to the output. If disabled (false), it skips condition evaluation and returns the existing log file."
+  dataType: BOOLEAN 
   repeated: false
   allowedValues: [true,false]
   defaultValue: true

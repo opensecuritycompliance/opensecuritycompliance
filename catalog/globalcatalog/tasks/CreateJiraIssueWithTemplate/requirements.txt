@@ -1,6 +1,4 @@
-PyYAML
+PyYAML==6.0.3
 jira==3.8.0
-jmespath
-requests
-
-
+jmespath==1.0.1
+requests==2.32.5

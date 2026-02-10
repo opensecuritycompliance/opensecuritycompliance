@@ -121,7 +121,7 @@ func (inst *TaskInstance) standardizeReportByKeyInfo(credentialReport []AWSCrede
 			Source:                 "compliancecow",
 			ResourceID:             report.ARN,
 			ResourceName:           userName,
-			ResourceType:           awsconnector.IAM_USER,
+			ResourceType:           "AWS::IAM::User",
 			ResourceLocation:       "global",
 			ResourceURL:            resourceUrl,
 			EvaluatedTime:          awsConnector.GetCurrentTime(),
@@ -149,7 +149,7 @@ func (inst *TaskInstance) validateKeyRotation(credentialReport AWSCredentialRepo
 	validationResult := ValidationResult{}
 
 	// Default values
-	complianceStatus := NON_COMPLIANT
+	complianceStatus := COMPLIANT
 	complianceStatusReason := "Access key was not applicable for the user."
 	validationStatusCode := "ACC_KEY_NT_APL"
 	validationStatusNotes := "Access key not applicable"
