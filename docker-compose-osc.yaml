@@ -21,7 +21,7 @@ services:
         aliases:
           - cowstorage
   oscmcpservice:
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscmcpservice:latest-cf70c900
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscmcpservice:latest-20260211035152
     container_name: oscmcpservice
     env_file:
       - etc/userconfig.env
