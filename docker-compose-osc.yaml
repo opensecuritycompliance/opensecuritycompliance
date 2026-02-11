@@ -21,7 +21,7 @@ services:
         aliases:
           - cowstorage
   oscmcpservice:
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscmcpservice:latest-20260211035152
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscmcpservice:latest-cf70c900
     container_name: oscmcpservice
     env_file:
       - etc/userconfig.env
@@ -156,7 +156,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscapiservice:1.1-20260130094734
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscapiservice:1.1-20260211064858
     logging:
       driver: "json-file"
       options:
