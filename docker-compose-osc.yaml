@@ -156,7 +156,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscapiservice:1.1-20260130094734
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscapiservice:1.1-20260211064858
     logging:
       driver: "json-file"
       options:

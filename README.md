@@ -26,17 +26,17 @@
 
 ## 🚀 Deployment Options
 
-For deploying Open Security Compliance with the complete web UI, MCP integration, and all services, see:
+The setup script (`setup-mcp.sh`) offers two deployment modes:
 
-**[📘 Full Deployment Guide](MCP-DEPLOYMENT.md)** - Complete setup with:
-- No-Code Web UI
-- MCP Integration (Goose AI Assistant)
-- REST API Service
-- MinIO Storage
-- Reverse Proxy with HTTPS
+**[📘 MCP + No-Code UI Deployment Guide](MCP-DEPLOYMENT.md)** — Requires an Anthropic API key
+- No-Code Web UI + AI-powered rule creation via MCP
+- 7 services including MCP integration, Goose AI Assistant support
 - External MCP Client Support (Goose Desktop/CLI, Claude Desktop/Code)
 
-The deployment guide covers production-ready setup with Docker Compose, including all 7 services and both manual and AI-assisted rule creation workflows.
+**[📗 No-Code UI Deployment Guide](NOCODE-DEPLOYMENT.md)** — No API key needed
+- No-Code Web UI for manual rule creation and management
+- 4 services: Web UI, API Service, Reverse Proxy, MinIO Storage
+- Lightweight setup, can be upgraded to MCP mode later
 
 
 # Introduction
