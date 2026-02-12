@@ -2,7 +2,7 @@
 
 ## Overview
 
-On the second Wednesday of each month, the Security GRC Guild Team at ComplianceCow will hold a meeting to build a sense of community in the GRC community, address security pros' pain points, and share time-saving tips and tricks.
+On the second Wednesday of each month, the Security GRC Guild Team at ComplianceCow will hold a meeting to foster community in the GRC space, address security pros' pain points, and share time-saving tips and tricks.
 
 The Guild defines its core goals as being:
 1. A space to grow the GRC community.
