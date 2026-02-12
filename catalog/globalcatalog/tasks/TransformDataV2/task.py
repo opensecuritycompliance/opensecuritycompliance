@@ -13,6 +13,7 @@ import jmespath
 import numpy as np
 import pandas as pd
 import toml
+import io
 # As per the selected app, we're importing the app package
 from applicationtypes.nocredapp import nocredapp
 from compliancecowcards.structs import cards
@@ -76,7 +77,7 @@ class Task(cards.AbstractTask):
         default_log_config_filepath = str(
             pathlib.Path(__file__).parent.joinpath("LogConfig_default.toml").resolve()
         )
-        custom_log_config_url = self.task_inputs.user_inputs.get("LogConfig")
+        custom_log_config_url = self.task_inputs.user_inputs.get("LogConfigFile")
         log_manager, error = cards.LogConfigManager.from_minio_file_url(
             (
                 custom_log_config_url
@@ -202,6 +203,7 @@ class Task(cards.AbstractTask):
             source_data_df,
             error_list,
             user_inputs.get("OutputFileName") or "OutputFile",
+            user_inputs.get("OutputFileFormat") or "PARQUET",
             prev_log_exist,
         )
 
@@ -211,6 +213,7 @@ class Task(cards.AbstractTask):
         source_df: pd.DataFrame,
         error_list: List,
         file_name: str,
+        output_file_format: str,
         prev_log_exist: bool,
     ) -> Dict[str, str]:
         """Upload transformed data and errors to MinIO.
@@ -225,9 +228,17 @@ class Task(cards.AbstractTask):
         """
         response = {}
         if not source_df.empty:
-            file_path, error = self.upload_df_as_parquet_file_to_minio(
-                source_df, file_name
-            )
+            upload_funcs = {
+            "PARQUET": self.upload_df_as_parquet_file_to_minio,
+            "CSV": self.upload_df_as_csv_file_to_minio,
+            "JSON": self.upload_df_as_json_file_to_minio
+            }
+            output_file_format = output_file_format.upper() if output_file_format else "PARQUET"
+
+            if output_file_format in upload_funcs:
+                upload_func = upload_funcs[output_file_format]
+                file_path, error = upload_func(source_df, file_name)
+
             if error:
                 return self.upload_log_file_panic(
                     log_manager.get_error_message(
@@ -1414,7 +1425,7 @@ class Task(cards.AbstractTask):
             target_row = target_df[target_df[target_col] == source_column_value]
         else:
             target_row = target_df[
-                target_df[target_col].str.lower() == str(source_column_value).lower()
+                target_df[target_col].astype(str).str.lower() == str(source_column_value).lower()
             ]
 
         if not target_row.empty:
@@ -1535,8 +1546,9 @@ class Task(cards.AbstractTask):
                 else:
                     value = "col_not_exist"
 
-            if self.is_nan(value):
+            if self.is_nan(value) or value is None:
                 value = None
+                break
 
         if value == "col_not_exist":
             self.err_msg = f"Invalid column: '{path}'"
@@ -1816,7 +1828,7 @@ class Task(cards.AbstractTask):
                 add_error(
                     "TransformData.Inputs.TransformConfigFile.add_column.by_function.empty_Delimiter"
                 )
-            if not item.get("Index"):
+            if item.get("Index") is None:
                 add_error(
                     "TransformData.Inputs.TransformConfigFile.add_column.by_function.empty_index"
                 )

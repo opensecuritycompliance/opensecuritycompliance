@@ -106,6 +106,9 @@ class Task(cards.AbstractTask):
                 resource_location = row['AwsRegion']
                 result_recorded_time = row['EvaluationResult']['ResultRecordedTime']
 
+                if not resource_name:
+                    resource_name = resource_id
+
                 complianceStatus_reason = ""
                 validationStatus_code = ""
                 validationStatus_notes = ""
@@ -142,21 +145,22 @@ class Task(cards.AbstractTask):
                 rule_status = {  
                     "System": "aws", 
                     "Source": "aws_config", 
-                    "ResourceId" : resource_id, 
-                    "ResourceName" : resource_name, 
-                    "ResourceType" : resource_type, 
-                    "ResourceLocation" :resource_location,
-                    "ResourceURL" : resource_url,
-                    "ConfigRuleName" :mapping_dict['RuleName'],
-                    "ValidationStatusCode" : validationStatus_code,
-                    "ValidationStatusNotes" : validationStatus_notes,
-                    "ComplianceStatus" : compiant_type,
-                    "ComplianceStatusReason" : complianceStatus_reason,
-                    "EvaluationTime" : result_recorded_time,
+                    "ResourceID": resource_id if resource_id else "N/A",
+                    "ResourceName": resource_name if resource_name else "N/A",
+                    "ResourceType": resource_type if resource_type else "N/A",
+                    "ResourceLocation": resource_location if resource_location else "N/A",
+                    "ResourceURL": resource_url if resource_url else "N/A",
+                    "ConfigRuleName": mapping_dict.get('RuleName'),
+                    "ValidationStatusCode": validationStatus_code,
+                    "ValidationStatusNotes": validationStatus_notes,
+                    "ComplianceStatus": compiant_type,
+                    "ComplianceStatusReason": complianceStatus_reason,
+                    "EvaluationTime": result_recorded_time,
                     "UserAction": "",
                     "ActionStatus": "",
                     "ActionResponseURL": ""
-                    }
+                }
+
                 return rule_status
             except (IndexError,KeyError,AttributeError) as e:
                 return {}

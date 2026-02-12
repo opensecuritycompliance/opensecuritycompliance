@@ -27,7 +27,7 @@ class Task(cards.AbstractTask):
 
         user_auth_data_df["System"] = "azure"
         user_auth_data_df["Source"] = "compliancecow"
-        user_auth_data_df["ResourceType"] = "AD Users"
+        user_auth_data_df["ResourceType"] = "Users"
 
         # check if list of columns are present in incoming data frame
         columns = {

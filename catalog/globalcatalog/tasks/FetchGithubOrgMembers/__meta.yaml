@@ -27,10 +27,10 @@ inputs:
 outputs:
 - name: GitHubOrganizationMembers
   description: GitHubOrganizationMembers
-  dataType: STRING
+  dataType: FILE
 - name: LogFile
   description: LogFile
-  dataType: STRING  
+  dataType: FILE  
 - name: ComplianceStatus_
   description: compliance status of the task
   dataType: STRING

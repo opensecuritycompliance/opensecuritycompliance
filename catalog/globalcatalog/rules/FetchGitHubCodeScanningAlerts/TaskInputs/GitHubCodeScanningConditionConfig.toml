@@ -1,62 +1,62 @@
 [[ConditionRules]]
 ConditionLabel = "filter_open_critical_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'open' && <<data.rule.security_severity_level>> == 'critical'"
+ConditionValue = "<<inputfile.state>> == 'open' && <<inputfile.rule.security_severity_level>> == 'critical'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_open_high_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'open' && <<data.rule.security_severity_level>> == 'high'"
+ConditionValue = "<<inputfile.state>> == 'open' && <<inputfile.rule.security_severity_level>> == 'high'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_open_medium_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'open' && <<data.rule.security_severity_level>> == 'medium'"
+ConditionValue = "<<inputfile.state>> == 'open' && <<inputfile.rule.security_severity_level>> == 'medium'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_open_low_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'open' && <<data.rule.security_severity_level>> == 'low'"
+ConditionValue = "<<inputfile.state>> == 'open' && <<inputfile.rule.security_severity_level>> == 'low'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_fixed_critical_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'fixed' && <<data.rule.security_severity_level>> == 'critical'"
+ConditionValue = "<<inputfile.state>> == 'fixed' && <<inputfile.rule.security_severity_level>> == 'critical'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_fixed_high_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'fixed' && <<data.rule.security_severity_level>> == 'high'"
+ConditionValue = "<<inputfile.state>> == 'fixed' && <<inputfile.rule.security_severity_level>> == 'high'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_fixed_medium_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'fixed' && <<data.rule.security_severity_level>> == 'medium'"
+ConditionValue = "<<inputfile.state>> == 'fixed' && <<inputfile.rule.security_severity_level>> == 'medium'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_fixed_low_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'fixed' && <<data.rule.security_severity_level>> == 'low'"
+ConditionValue = "<<inputfile.state>> == 'fixed' && <<inputfile.rule.security_severity_level>> == 'low'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_dismissed_critical_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'dismissed' && <<data.rule.security_severity_level>> == 'critical'"
+ConditionValue = "<<inputfile.state>> == 'dismissed' && <<inputfile.rule.security_severity_level>> == 'critical'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_dismissed_high_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'dismissed' && <<data.rule.security_severity_level>> == 'high'"
+ConditionValue = "<<inputfile.state>> == 'dismissed' && <<inputfile.rule.security_severity_level>> == 'high'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_dismissed_medium_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'dismissed' && <<data.rule.security_severity_level>> == 'medium'"
+ConditionValue = "<<inputfile.state>> == 'dismissed' && <<inputfile.rule.security_severity_level>> == 'medium'"
 
 [[ConditionRules]]
 ConditionLabel = "filter_dismissed_low_vulnerabilities"
 Condition = "CEL_CONDITION"
-ConditionValue = "<<data.state>> == 'dismissed' && <<data.rule.security_severity_level>> == 'low'"
+ConditionValue = "<<inputfile.state>> == 'dismissed' && <<inputfile.rule.security_severity_level>> == 'low'"
 
 [ConditionRulesConfig]
 ConditionsCriteria = "true"

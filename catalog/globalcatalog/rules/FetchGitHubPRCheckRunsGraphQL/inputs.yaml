@@ -36,15 +36,14 @@ userObject:
             --header 'Accept: application/vnd.github+json'
 userInputs:
   CustomExceptionConfigFileForCheckRuns: <<MINIO_FILE_PATH>>
-  LogConfigFile: <<MINIO_FILE_PATH>>
-  OutputFileFormat: JSON
+  InScopeRepos: <<MINIO_FILE_PATH>>
   PRCheckRunJQConfig: <<MINIO_FILE_PATH>>
   PRCheckRunRequestConfig: <<MINIO_FILE_PATH>>
   PRCheckRunResponseConfig: <<MINIO_FILE_PATH>>
-  PRListForInScopeRepos: <<MINIO_FILE_PATH>>
-  ProceedIfLogExists: true
   RequiredFields:
-  - ResourceID
+  - RepositoryName
   RuleOutputFileFormat: PARQUET
-fromDate: 2025-06-04T11:19:46Z
-toDate: 2025-06-04T11:19:46Z
+  ProceedIfLogExists: true
+  LogConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2025-03-12T06:46:57Z
+toDate: 2025-03-12T06:46:57Z

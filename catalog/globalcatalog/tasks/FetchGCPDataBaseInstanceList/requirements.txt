@@ -1,6 +1,6 @@
-PyYAML
-google-api-core
-google-api-python-client
-google-auth
-google-cloud-bigquery
-google-cloud-storage
+PyYAML==6.0.3
+google-api-core==2.28.1
+google-api-python-client==2.187.0
+google-auth==2.41.0
+google-cloud-bigquery==3.38.0
+google-cloud-storage==3.6.0

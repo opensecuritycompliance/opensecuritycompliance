@@ -44,11 +44,8 @@ outputs:
 - name: SecurityHubReport
   description: Security Hub Report
   dataType: FILE
-- name: SecurityHubAuditFile
-  description: Security Hub Audit File
-  dataType: FILE
-- name: SecurityHubAuditFile
-  description: Security Hub Audit File
+- name: LogFile
+  description: LogFile for the current task.
   dataType: FILE
 - name: CompliancePCT_
   description: Compliance Percentage

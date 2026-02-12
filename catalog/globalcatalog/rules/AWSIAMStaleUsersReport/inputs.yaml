@@ -57,7 +57,7 @@ userInputs:
   JQTransform: 'map(  . as $user |  ($user.PasswordLastUsed // null) as $lastUsed
     |  (if $lastUsed == null then null else (now - ($lastUsed | fromdateiso8601))
     / 86400 | floor end) as $daysSince |  {    System: "aws",    Source: "compliancecow",     ResourceID:
-    $user.Arn,    ResourceName: $user.UserName,    ResourceType: "User",    ResourceLocation:
+    $user.Arn,    ResourceName: $user.UserName,    ResourceType: "IAMUser",    ResourceLocation:
     ($user.Arn | split(":")[3]),    ResourceTags: ($user.Tags // []),    UserName:
     $user.UserName,    PasswordLastUsed: $lastUsed,    DaysSinceLastUsed: $daysSince,    IsStale:
     ($lastUsed == null or $daysSince > 90),    ValidationStatusCode: (if ($lastUsed

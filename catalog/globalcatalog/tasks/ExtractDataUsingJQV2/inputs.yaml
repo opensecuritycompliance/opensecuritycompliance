@@ -9,6 +9,8 @@ userObject:
 userInputs:
   InputFile: <<MINIO_FILE_PATH>>
   JQConfigFile: <<MINIO_FILE_PATH>>
+  JQExpression: 
+  OutputMethod: FIRST # (AllowedValues: FIRST, ALL) Specifies whether to consider all outputs from the JQ expression, or only the first one
   LogConfigFile: <<MINIO_FILE_PATH>>
   LogFile: <<MINIO_FILE_PATH>>
   ChunksPerIteration: # the number of data chunks processed per iteration (optional). 

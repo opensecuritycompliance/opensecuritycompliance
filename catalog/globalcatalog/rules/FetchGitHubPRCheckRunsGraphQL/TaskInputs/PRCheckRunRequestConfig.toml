@@ -11,8 +11,8 @@ Verify = true
 
 ConditionField = "<<response.status_code>>"
 ConditionValue = "503|504|429|403"
-MaxRetries = 110
-TimeInterval = 30
+MaxRetries = 3
+TimeInterval = "<<response.headers.Retry-After>>"
 
 [Request.Headers]
 Cookie = "_octo=GH1.1.854098947.1723007797; logged_in=no"
@@ -25,4 +25,4 @@ Authorization = "Bearer <<validationCURLresponse.token>>"
 
 [Request.Data]
     [Request.Data.Raw]
-    Value='{ "query": "query ($prId: ID!) {\n  node(id: $prId) {\n    ... on PullRequest {\n      commits(last: 10) {\n        nodes {\n          commit {\n            checkSuites(last: 10) {\n              nodes {\n                checkRuns(last: 50) {\n                  nodes {\n                    completedAt\n                    conclusion\n                    id\n                    name\n                    title\n                    url\n                    status\n                    startedAt\n                  }\n                  totalCount\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}","variables":{"prId":"<<inputfile.ResourceID>>"}}'
+    Value = '{"query":"query ($queryString: String!, $afterCursor: String) {\n    search(query: $queryString, type: ISSUE, first: 50, after: $afterCursor) {\n        pageInfo {\n            endCursor\n            hasNextPage\n        }\n        issueCount\n        nodes {\n            ... on PullRequest {\n                commits(last: 10) {\n                    nodes {\n                        commit {\n                            checkSuites(last: 10) {\n                                nodes {\n                                    checkRuns(last: 50) {\n                                        nodes {\n                                            completedAt\n                                            conclusion\n                                            id\n                                            name\n                                            title\n                                            url\n                                            status\n                                            startedAt\n                                        }\n                                        totalCount\n                                    }\n                                }\n                            }\n                        }\n                    }\n                }\n                headRepository {\n                    nameWithOwner\n                }\n                id\n                title\n                number\n            }\n        }\n    }\n}\n","variables":{"queryString":"repo:<<inputfile.RepositoryName>> type:pr is:merged created:<<fromdate>>..<<todate>>","afterCursor":""}}'

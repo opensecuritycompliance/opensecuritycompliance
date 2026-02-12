@@ -1112,7 +1112,7 @@ class AWSAppConnector:
 
         return metric_alarms_df, errors_list
 
-    def upload_file_to_s3(self, file_content, file_name, bucket_name):
+    def upload_file_to_s3(self, file_content, file_name, bucket_name, if_match_etag=None ):
         try:
             session, error = self.create_aws_session()
             if error:
@@ -1120,9 +1120,19 @@ class AWSAppConnector:
             if session:
                 s3_client = session.client("s3")
                 s3_client.head_bucket(Bucket=bucket_name)
-                response = s3_client.put_object(
-                    Bucket=bucket_name, Key=file_name, Body=file_content
-                )
+
+                put_args = {
+                    "Bucket": bucket_name,
+                    "Key": file_name,
+                    "Body": file_content,
+                }
+
+                # Optional conditional header
+                if if_match_etag:
+                    put_args["IfMatch"] = if_match_etag
+
+                response = s3_client.put_object(**put_args)
+
                 if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
                     return (
                         None,
@@ -1545,8 +1555,7 @@ class AWSAppConnector:
             s3_client = session.client("s3")
             response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
             if "Body" in response:
-                file_content = response["Body"].read()
-                return file_content, None
+                return response, None
             logging.info(f"AWS download response info: {str(response)}")
             return None, err_msg
         except botocore.exceptions.ClientError as error:

@@ -2,15 +2,34 @@
 
 Complete setup documentation for deploying Open Security Compliance Rule Engine with integrated No-Code UI and MCP capabilities.
 
+> **Don't have an Anthropic API key?** You can still use the No-Code web interface without any AI features.
+> The setup script offers two modes — see [Setup Modes](#setup-modes) below, or jump directly to the **[No-Code UI Deployment Guide](NOCODE-DEPLOYMENT.md)**.
+
 ---
 
 ## Table of Contents (Detailed Documentation)
 
 For more detailed information, see the following sections:
 
+- [Setup Modes](#setup-modes)
 - [Overview](#overview)
 - [Quick Start Guide](#quick-start-guide)
 - [Appendix](#appendix)
+
+---
+
+## Setup Modes
+
+The setup script (`setup-mcp.sh`) presents two options at startup:
+
+| Mode | Anthropic API Key | Services | Guide |
+|------|-------------------|----------|-------|
+| **1) MCP + No-Code UI** | Required | 7 services (oscmcpservice, ccowmcpclient, ccowmcpbridge, oscwebserver, oscreverseproxy, oscapiservice, cowstorage) | This document |
+| **2) No-Code UI Only** | Not required | 4 services (oscapiservice, oscreverseproxy, oscwebserver, cowstorage) | [NOCODE-DEPLOYMENT.md](NOCODE-DEPLOYMENT.md) |
+
+Choose **Option 1** if you have a valid Anthropic API key and want AI-powered rule creation via MCP alongside the No-Code web interface. The rest of this document covers this mode.
+
+Choose **Option 2** if you don't have an Anthropic API key or only need the No-Code web interface for manual rule creation. See the **[No-Code UI Deployment Guide](NOCODE-DEPLOYMENT.md)** for details.
 
 ---
 
@@ -46,7 +65,7 @@ This platform **automatically detects and uses the best available Claude model**
 ### Pre-requisites:
 
  - Docker (Steps to install can be found in the [Appendix](#1-docker-installation) below)
- - Anthropic key (Steps to procure one can be found in the [Appendix](#2-anthropic-api-key-procurement) below)
+ - Anthropic key — required for MCP mode only (Steps to procure one can be found in the [Appendix](#2-anthropic-api-key-procurement) below)
  - System Requirements
    - CPU: 8+ cores
    - RAM: 16GB+
@@ -67,11 +86,12 @@ cd opensecuritycompliance
 ### Step 2: Run the Setup Script
 
 The setup script will guide you through the entire installation process, including:
+- ✅ Asking you to choose a setup mode (MCP + No-Code UI **or** No-Code UI Only)
 - ✅ Checking system requirements
-- ✅ Validating your Anthropic API key
-- ✅ Auto-detecting the best available Claude model
+- ✅ Validating your Anthropic API key (MCP mode only)
+- ✅ Auto-detecting the best available Claude model (MCP mode only)
 - ✅ Configuring MinIO storage credentials
-- ✅ Setting up all 7 required services
+- ✅ Setting up all required services
 - ✅ Starting the platform
 More details can be found in the Appendix below.
 
@@ -156,20 +176,21 @@ Your API key will look like: `sk-ant-api03-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...`
 
 The script will automatically:
 
-1. ✅ Check Docker installation and access (detects if sudo is needed)
-2. ✅ Validate system resources (CPU, RAM, disk)
-3. ✅ Prompt for your Anthropic API key if not configured
-4. ✅ Validate your API key against Anthropic's API
-5. ✅ Auto-detect the best available Claude model (4.5 or 4)
-6. ✅ Save the detected model to configuration
-7. ✅ Prompt for MinIO credentials (validates requirements)
-8. ✅ Verify SSL certificates (uses localhost certs by default)
-9. ✅ Check environment configuration files
-10. ✅ Clean up existing Docker resources
-11. ✅ Build all Docker images
-12. ✅ Start services in the correct order
-13. ✅ Wait for services to be healthy
-14. ✅ Display access URLs and next steps
+1. ✅ Ask you to choose a setup mode (MCP + No-Code UI or No-Code UI Only)
+2. ✅ Check Docker installation and access (detects if sudo is needed)
+3. ✅ Validate system resources (CPU, RAM, disk)
+4. ✅ Prompt for your Anthropic API key if not configured (MCP mode only)
+5. ✅ Validate your API key against Anthropic's API (MCP mode only)
+6. ✅ Auto-detect the best available Claude model (MCP mode only)
+7. ✅ Save the detected model to configuration (MCP mode only)
+8. ✅ Prompt for MinIO credentials (validates requirements)
+9. ✅ Verify SSL certificates (uses localhost certs by default)
+10. ✅ Check environment configuration files
+11. ✅ Clean up existing Docker resources
+12. ✅ Build Docker images for the selected mode
+13. ✅ Start services in the correct order
+14. ✅ Wait for services to be healthy
+15. ✅ Display access URLs and next steps
 
 #### Expected Output
 
@@ -181,7 +202,16 @@ The script will automatically:
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 
-[INFO] Starting Open Security Compliance Setup...
+════════════════════════════════════════════════════════════
+  Choose your setup mode
+════════════════════════════════════════════════════════════
+
+  1) MCP + No-Code UI  (Requires a valid Anthropic API key)
+  2) No-Code UI Only   (No Anthropic API key needed)
+
+Select setup mode [1/2]: 1
+
+[INFO] Selected: MCP + No-Code UI (full setup)
 
 [INFO] Checking Anthropic API key...
 [INFO] Validating Anthropic API key...
@@ -353,8 +383,8 @@ docker compose ps
 # - oscreverseproxy (Reverse Proxy)
 # - oscapiservice (API Service)
 # - cowstorage (MinIO Storage)
-# - oscgoose (Goose Integration)
-# - oscgooseservice (Goose Service)
+# - ccowmcpclient (MCP Client Integration)
+# - ccowmcpbridge (MCP Bridge Service)
 # - oscmcpservice (MCP Service)
 ```
 
@@ -362,7 +392,7 @@ docker compose ps
 
 ```bash
 # View your detected Claude model
-cat etc/userconfig.env | grep GOOSE_MODEL
+cat etc/userconfig.env | grep MCP_MODEL
 
 # View MinIO credentials (for console access)
 cat etc/policycow.env | grep MINIO_ROOT
@@ -445,15 +475,15 @@ docker compose build --no-cache
              │                             │
              │                             ▼
              │                    ┌──────────────────┐
-             │                    │  Goose Service   │
-             │                    │  oscgooseservice │
+             │                    │  MCP Bridge      │
+             │                    │  ccowmcpbridge   │
              │                    │  Port: 8095      │
              │                    └────────┬─────────┘
              │                             │
              │                             ▼
              │                    ┌──────────────────┐
-             │                    │  Goose           │
-             │                    │  oscgoose        │
+             │                    │  MCP Client      │
+             │                    │  ccowmcpclient   │
              │                    │  Port: 8976      │
              │                    └────────┬─────────┘
              │                             │
@@ -491,7 +521,7 @@ User → Web UI (Manual Mode) → Reverse Proxy → API Service → Storage
 
 ##### Flow 2: AI-Assisted Rule Creation via UI (MCP Mode)
 ```
-User → Web UI (MCP Mode) → Reverse Proxy → Goose Service → Goose → MCP Service → API Service → Storage
+User → Web UI (MCP Mode) → Reverse Proxy → MCP Bridge → MCP Client → MCP Service → API Service → Storage
 ```
 
 ##### Flow 3: External MCP Clients (Optional)
@@ -511,8 +541,8 @@ The platform consists of 7 interconnected services:
 | oscapiservice | REST API for rule management and execution  | 9080 | Responsibilities: Rule CRUD, task management, rule execution |
 | oscwebserver | React-based web interface | 3001 | Features: Visual rule builder, AI-assisted creation, execution dashboard |
 | oscreverseproxy | HTTPS termination and routing | 443 (HTTPS), 80 (HTTP) | SSL: Localhost certificates included by default
-| oscgooseservice | MCP orchestration layer | 8095 | Features: Bridges UI requests to MCP infrastructure |
-| oscgoose | Goose AI assistant integration | 8976 | Provider: Anthropic Claude (auto-detected model) |
+| ccowmcpbridge | MCP orchestration layer | 8095 | Features: Bridges UI requests to MCP infrastructure |
+| ccowmcpclient | MCP client integration | 8976 | Provider: Anthropic Claude (auto-detected model) |
 | oscmcpservice | Model Context Protocol server | 45678 | Features: MCP protocol implementation, external client connections |
 
 ---
@@ -530,7 +560,7 @@ The platform uses two main configuration files:
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 
 # Auto-detected Claude Model (set by setup script)
-GOOSE_MODEL=claude-sonnet-4-5-20250929
+MCP_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ##### `etc/policycow.env` (Platform Settings)
@@ -571,8 +601,8 @@ opensecuritycompliance/
 │
 ├── catalog/                        # Rule catalog
 ├── exported-data/                  # Exported compliance data
-├── goose-config/                   # Goose configuration
-└── goose-sessions/                 # Goose session data
+├── mcp-config/                   # mcp configuration
+└── mcp-sessions/                 # mcp session data
 ```
 
 ---
@@ -605,7 +635,7 @@ docker compose logs oscmcpservice
 # Restart MCP stack
 docker compose restart oscmcpservice
 sleep 20  # Wait for settle time
-docker compose restart oscgoose oscgooseservice
+docker compose restart ccowmcpclient ccowmcpbridge
 ```
 
 #### API Key or Model Issues
@@ -613,7 +643,7 @@ docker compose restart oscgoose oscgooseservice
 ```bash
 # Check current configuration
 cat etc/userconfig.env | grep ANTHROPIC_API_KEY
-cat etc/userconfig.env | grep GOOSE_MODEL
+cat etc/userconfig.env | grep MCP_MODEL
 
 # Re-run setup to re-detect model
 ./setup-mcp.sh
@@ -705,7 +735,7 @@ mcp:
       envs: {
         "ENABLE_CCOW_API_TOOLS": false,
         "MCP_TOOLS_TO_BE_INCLUDED": "rules",
-        "OSC_GOOSE": true
+        "IS_OSC_CCOW_MCP_CLIENT": true
       }
       env_keys: []
       headers: {}
@@ -852,9 +882,9 @@ mkdir -p ${HOME}/policycow-backups/$(date +%Y%m%d)
 cp -r ${HOME}/tmp/cowctl/minio \
    ${HOME}/policycow-backups/$(date +%Y%m%d)/minio
 
-# Backup Goose sessions
-cp -r goose-sessions \
-   ${HOME}/policycow-backups/$(date +%Y%m%d)/goose-sessions
+# Backup CCowMCPClient sessions
+cp -r mcp-sessions \
+   ${HOME}/policycow-backups/$(date +%Y%m%d)/mcp-sessions
 
 # Backup catalogs
 cp -r catalog \
@@ -869,13 +899,16 @@ cp etc/policycow.env \
 
 ### 14. FAQ
 
-**Q: Do I need to be technical to use this platform?**  
+**Q: Do I need an Anthropic API key to use this platform?**
+A: No. The setup script offers two modes. If you don't have an Anthropic API key, choose **Option 2 (No-Code UI Only)** to use just the web interface without AI features. See the [No-Code UI Deployment Guide](NOCODE-DEPLOYMENT.md).
+
+**Q: Do I need to be technical to use this platform?**
 A: No! The setup script handles all technical details automatically. Just follow the Quick Start Guide.
 
-**Q: What AI models are supported?**  
-A: Only Anthropic Claude. The setup script automatically detects the best model your API key has access to (Claude Sonnet 4.5 or Claude Sonnet 4).
+**Q: What AI models are supported?**
+A: Only Anthropic Claude (MCP mode). The setup script automatically detects the best model your API key has access to (Claude Sonnet 4.5 or Claude Sonnet 4).
 
-**Q: Do I need to install external tools like Goose?**  
+**Q: Do I need to install external tools like Goose?**
 A: No! The Web UI has built-in AI assistance (MCP mode). External tools like Goose are completely optional.
 
 **Q: What if I don't have enough RAM?**  
@@ -894,8 +927,8 @@ A: Check the Troubleshooting Guide section, review logs with `docker compose log
 **Q: Where are my rules and data stored?**  
 A: All data is stored in MinIO (object storage) at `${HOME}/tmp/cowctl/minio/`. Make sure to backup this directory regularly.
 
-**Q: Can I use a different AI provider?**  
-A: No, currently only Anthropic Claude is supported. Other providers like OpenAI are not available at this time.
+**Q: Can I use a different AI provider?**
+A: No, currently only Anthropic Claude is supported for MCP mode. Other providers like OpenAI are not available at this time. If you don't have access to Anthropic, you can use the No-Code UI Only mode instead.
 
 ---
 
@@ -919,7 +952,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 │ AI Configuration:                                           │
 │  Provider: Anthropic only                                   │
 │  Models: Auto-detected (Sonnet 4.5 or 4)                    │
-│  Config: etc/userconfig.env (GOOSE_MODEL)                   │
+│  Config: etc/userconfig.env (MCP_MODEL)                     │
 │                                                             │
 │ Useful Commands:                                            │
 │  docker compose logs -f              - View all logs        │
@@ -928,7 +961,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 │  docker compose restart              - Restart all          │
 │                                                             │
 │ Check Configuration:                                        │
-│  cat etc/userconfig.env | grep GOOSE_MODEL                  │
+│  cat etc/userconfig.env | grep MCP_MODEL                    │
 │  cat etc/policycow.env | grep MINIO_ROOT                    │
 │                                                             │
 │ Important Notes:                                            │
@@ -941,7 +974,7 @@ A: No, currently only Anthropic Claude is supported. Other providers like OpenAI
 
 ---
 
-**Last Updated**: November 2025  
-**Version**: 2.2.0  
+**Last Updated**: February 2026
+**Version**: 2.3.0  
 **Maintained By**: Open Security Compliance Team  
 **Repository**: https://github.com/opensecuritycompliance/opensecuritycompliance

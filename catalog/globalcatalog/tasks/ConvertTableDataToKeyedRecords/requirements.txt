@@ -1,3 +1,3 @@
-PyYAML
-jq
-pandas
+PyYAML==6.0.3
+jq==1.10.0
+pandas==2.3.3

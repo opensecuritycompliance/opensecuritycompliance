@@ -17,7 +17,7 @@ class Task(cards.AbstractTask):
 
         error = self.check_inputs()
         if error:
-            return self.upload_log_file_panic({'error': error})
+            return self.upload_log_file_panic({"Error": error})
 
         self.app = privacybisonconnector.PrivacyBisonConnector(
             app_url=self.task_inputs.user_object.app.application_url,
@@ -30,16 +30,28 @@ class Task(cards.AbstractTask):
 
         file_content, error = self.download_json_file_from_minio_as_dict(harfile_name)
         if error:
-            return self.upload_log_file_panic({'error': f'Error while downloading HarFile :: {error}'})
+            return self.upload_log_file_panic({"Error": f'Error while downloading HarFile :: {error}'})
         
         if not self.app.is_valid_har(file_content):
-            return self.upload_log_file_panic({'error': 'HarFile is in an invalid format, please check'})
+            return self.upload_log_file_panic({"Error": 'HarFile is in an invalid format, please check'})
         
         company_name, _ = self.app.get_company_name_from_har_file(file_content)
 
         urisWithSriDetails = []
+        failed_uris = []
 
         entries = file_content["log"]["entries"]
+
+
+        req_url_and_resp_data_map = {}
+        for entry in entries:
+            extentions = ['.js', '.css']
+
+            request_url = entry.get("request", {}).get("url", "")
+            if any( request_url.endswith(ext) for ext in extentions):
+                req_url_and_resp_data_map[request_url] = entry.get("response", {}).get("content", {}).get("text", "")
+
+
         for entry in entries:
             entry_response_content = entry.get("response", {}).get("content")
             if not entry_response_content:
@@ -47,13 +59,14 @@ class Task(cards.AbstractTask):
             if entry_response_content.get("mimeType") != "text/html" or not entry_response_content.get("text"):
                 continue
 
-            newUrisWithSriDetails, error = self.check_sri_integrity_for_html_content(
+            newUrisWithSriDetails, failed_uri = self.check_sri_integrity_for_html_content(
                 base_url=entry.get("request", {}).get("url", ""),
-                html_content=entry_response_content.get("text", "")
+                html_content=entry_response_content.get("text", ""),
+                req_url_and_resp_data_map=req_url_and_resp_data_map
             )
-            if error:
-                return self.upload_log_file_panic({'error': error})
-
+            if failed_uri:
+                failed_uris.extend(failed_uri)
+                
             system = urllib.parse.urlparse(entry.get("request", {}).get("url", "")).netloc
             for newUriWithSriDetails in newUrisWithSriDetails:
                 newUriWithSriDetails["System"] = system
@@ -124,14 +137,17 @@ class Task(cards.AbstractTask):
                 "ActionResponseURL":""
             })
 
+        if not urisWithSriDetailsStandardized :
+            return self.upload_log_file_panic({"Error": "No resposes with HTML content found in the HAR file."})
+        
+        
         file_url, error = self.upload_df_as_json_file_to_minio(
             df=pd.DataFrame(urisWithSriDetailsStandardized),
             file_name=f"URIsWithSRIDetails",
         )
 
         if error:
-            if error:
-                return self.upload_log_file_panic({ 'error': error })
+            return self.upload_log_file_panic({ 'error': error })
 
         compliancePCT, complianceStatus = self.app.get_compliance_status(
             compliant_count=len([item for item in urisWithSriDetailsStandardized if item["ComplianceStatus"] == "COMPLIANT"]),
@@ -143,6 +159,12 @@ class Task(cards.AbstractTask):
             "CompliancePCT_": round(compliancePCT, 2),
             "URIsWithSRIDetails": file_url,
         }
+
+        if failed_uris:
+            failed_file_url, error = self.upload_log_file(failed_uris)
+            if error:
+                return self.upload_log_file_panic({ 'error': error })
+            response['LogFile'] = failed_file_url
 
         return response
 
@@ -170,13 +192,17 @@ class Task(cards.AbstractTask):
     def check_sri_integrity_for_html_content(
         self,
         base_url,
-        html_content
+        html_content,
+        req_url_and_resp_data_map
     ):
         urisWithSriDetails = []
+        failed_uris = []
 
+        visited_urls = []
         parsed_html = BeautifulSoup(html_content, features="html.parser")
-        link_elements = parsed_html.find_all("link")
-        link_elements += parsed_html.find_all("script")
+        link_elements = list(parsed_html.find_all("link"))
+        link_elements.extend(parsed_html.find_all("script"))
+
         for element in link_elements:
             attribute = None
     
@@ -195,57 +221,92 @@ class Task(cards.AbstractTask):
                     "EvaluatedTime": self.get_current_datetime()
                 })
                 continue
-
-            uriWithSriDetails = self.check_sri_integrity(
-                integrity=element["integrity"],
-                base_url=base_url,
-                link=element[attribute]
-            )
             
-            urisWithSriDetails.append(uriWithSriDetails)
+            proper_link, error = self.get_proper_url(base_url, element[attribute])
+            if error:
+                failed_uris.append(failed_uri = {
+                    "Error": f"Resource '{proper_link}' encountered a error: Invalid URL"
+                })
+                continue
 
-        return urisWithSriDetails, None
+            if proper_link in visited_urls:
+                continue
+            visited_urls.append(proper_link)
+
+            integrity = element["integrity"]
+
+            isValid = True
+            if proper_link in req_url_and_resp_data_map:
+                integrities = integrity.split(" ")
+
+                for single_integrity in integrities:
+                    [algorithm, integrity_hash] = single_integrity.split("-")
+                    if not self.get_sri_hash(algorithm, req_url_and_resp_data_map[proper_link].encode('utf-8') ) in integrity_hash:
+                        isValid = False
+
+                uriWithSriDetails = {
+                    "URI": proper_link,
+                    "Integrity": integrity,
+                    "IsValidIntegrity": isValid,
+                    "EvaluatedTime": self.get_current_datetime()
+                }
+            else:
+                uriWithSriDetails,failed_uri = self.check_sri_integrity(
+                    integrity=integrity,
+                    proper_link=proper_link
+                )
+
+                if failed_uri:
+                    failed_uris.append(failed_uri)
+                
+                urisWithSriDetails.append(uriWithSriDetails)
+
+        return urisWithSriDetails, failed_uris
     
     # -------------------------------------------- CHECK SRI INTEGRITY FOR A LINK --------------------------------------------
-    def check_sri_integrity(self, integrity: str, base_url: str, link: str):
+    def check_sri_integrity(self, integrity: str, proper_link: str):
         isValid = True
-        proper_link, error = self.get_proper_url(base_url, link)
-        if error:
+        failed_uri = {}
+        uriWithSriDetails= {}
+
+        try:
+            response = requests.get(proper_link, timeout=30)
+
+            if not response.ok:
+                reason = response.reason
+                if not reason:
+                    reason = response.text
+                failed_uri = {
+                    "Error": f"Resource '{proper_link}' encountered a error: {reason}"
+                }
+
+            integrities = integrity.split(" ")
+
+            for single_integrity in integrities:
+                [algorithm, integrity_hash] = single_integrity.split("-")
+                if not self.get_sri_hash(algorithm, response.content) in integrity_hash:
+                    isValid = False
+
             uriWithSriDetails = {
                 "URI": proper_link,
                 "Integrity": integrity,
                 "IsValidIntegrity": isValid,
-                "Reason": "Link is invalid",
                 "EvaluatedTime": self.get_current_datetime()
             }
-            return uriWithSriDetails
-        
-        response = requests.get(proper_link)
-
-        if not response.ok:
-            uriWithSriDetails = {
-                "URI": proper_link,
-                "Integrity": integrity,
-                "IsValidIntegrity": False,
-                "Reason": f"Response error: {response.text}",
-                "EvaluatedTime": self.get_current_datetime()
+        except requests.exceptions.Timeout:
+            failed_uri = {
+                "Error": f"Resource '{proper_link}' took too long to respond. The request timed out."
             }
-
-        integrities = integrity.split(" ")
-
-        for single_integrity in integrities:
-            [algorithm, integrity_hash] = single_integrity.split("-")
-            if not self.get_sri_hash(algorithm, response.content) in integrity_hash:
-                isValid = False
-
-        uriWithSriDetails = {
-            "URI": proper_link,
-            "Integrity": integrity,
-            "IsValidIntegrity": isValid,
-            "EvaluatedTime": self.get_current_datetime()
-        }
-    
-        return uriWithSriDetails
+        except requests.exceptions.ConnectionError:
+            failed_uri = {
+                "Error": f"Resource '{proper_link}' could not be reached. Connection error."
+            }
+        except Exception as e:
+            failed_uri = {
+                    "Error": f"Resource '{proper_link}' encountered a error: Unexpected error: {str(e)}"
+                }
+            
+        return uriWithSriDetails, failed_uri
     
     # -------------------------------------------- GET SRI HASH VALUE --------------------------------------------
     def get_sri_hash(self, algorithm, content):
@@ -301,7 +362,7 @@ class Task(cards.AbstractTask):
             file_name=f"LogFile",
         )
         if error:
-            return None, {'error': f"Error while uploading LogFile :: {error}"}
+            return None, {"Error": f"Error while uploading LogFile :: {error}"}
         return file_url, None
     
     def upload_log_file_panic(self, error_data) -> dict:

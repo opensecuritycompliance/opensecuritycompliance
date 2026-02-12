@@ -7,7 +7,7 @@
     
     ############ JQ EXCEPTIONS ############
     JQExpression.no_result = "The JQ expression returned no results. Please check the query and ensure the input data matches the expected structure."
-    JQExpression.syntax_error = "The JQ expression is invalid. Details: {error}"
+     JQExpression.syntax_error = "The JQ expression is invalid. Details: {error}"
     
     ############ OUTPUT METHOD EXCEPTIONS ############
     OutputMethod.invalid = "Invalid output method. Please choose either 'ALL' or 'FIRST'."

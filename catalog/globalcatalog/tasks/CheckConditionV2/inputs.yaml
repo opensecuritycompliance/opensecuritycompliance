@@ -20,6 +20,7 @@ userInputs:
     InputFile: <<MINIO_FILE_PATH>>
     CustomInputs: <<MINIO_FILE_PATH>>
     ConditionConfig: <<MINIO_FILE_PATH>>
+    OutputFileFormat:  # Output file format. Options are JSON, CSV or PARQUET (Default: PARQUET)
     LogFile: <<MINIO_FILE_PATH>>
     InputFileValidationConfig: <<MINIO_FILE_PATH>>
 fromDate: 2025-04-22T07:15:39Z

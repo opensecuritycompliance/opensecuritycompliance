@@ -95,9 +95,9 @@ class Task(cards.AbstractTask):
 
         if not har_file_url:
             error = "HAR file URL is not provided"
-            log_url, log_error = self.upload_log_file([{ 'error': error }])
+            log_url, log_error = self.upload_log_file([{ "Error": error }])
             if log_error:
-                return {"error": log_error}
+                return {"Error": log_error}
             return {"LogFile": log_url}
         else:
             try:
@@ -109,9 +109,9 @@ class Task(cards.AbstractTask):
                         raise Exception(error)
             except Exception as e:
                 error = f"Error downloading HAR file: {str(e)}"
-                log_url, log_error = self.upload_log_file([{ 'error': error }])
+                log_url, log_error = self.upload_log_file([{ "Error": error }])
                 if log_error:
-                    return {"error": log_error}
+                    return {"Error": log_error}
                 return {"LogFile": log_url}
 
         rows = []
@@ -124,9 +124,9 @@ class Task(cards.AbstractTask):
                     raise Exception(error)
         except Exception as e:
             error = f"Error downloading CSV DB file: {str(e)}"
-            log_url, log_error = self.upload_log_file([{ 'error': error }])
+            log_url, log_error = self.upload_log_file([{ "Error": error }])
             if log_error:
-                return {"error": log_error}
+                return {"Error": log_error}
             return {"LogFile": log_url}
 
         cookie_report = []
@@ -143,14 +143,20 @@ class Task(cards.AbstractTask):
             total += file_details["total"]
 
         cookie_df = pd.DataFrame(cookie_report)
+        if cookie_df.empty:
+            log_url, log_error = self.upload_log_file([{ 'Error': "No cookies found in the provided HAR file." }])
+            if log_error:
+                return {"Error": log_error}
+            return {"LogFile": log_url} 
+
         cookie_df = cookie_df.apply(privacybison.replace_empty_dicts_with_none)
         
         file_name = f'HARCookieReport-{str(uuid.uuid4())}.json'
         absolute_file_path, error = self.upload_file_to_minio(file_content=cookie_df.to_json(orient='records').encode('utf-8'), file_name=file_name, content_type="application/json")
         if error:
-            log_url, log_error = self.upload_log_file([{'error': f"Error uploading file to Minio: {error}"}])
+            log_url, log_error = self.upload_log_file([{"Error": f"Error uploading file to Minio: {error}"}])
             if log_error:
-                return {"error": log_error}
+                return {"Error": log_error}
             return {"LogFile": log_url} 
 
         response = {
@@ -280,7 +286,7 @@ class Task(cards.AbstractTask):
             content_type="application/json"
         )
         if error:
-            return None, {'error': f"Error while uploading LogFile :: {error}"}
+            return None, {"Error": f"Error while uploading LogFile :: {error}"}
         return file_url, None
 
     def read_csv_file(self, file_bytes):

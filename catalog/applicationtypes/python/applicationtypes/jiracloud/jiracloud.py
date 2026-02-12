@@ -11,10 +11,12 @@ import requests
 from jira import JIRA, JIRAError
 import jira
 import jmespath
-from typing import Tuple, Optional, Dict, Any
+from typing import ParamSpec, Tuple, Optional, Dict, Any, Callable, TypeVar
 import base64
 import time
 
+R = TypeVar('R')
+P = ParamSpec('P')
 
 class BasicAuthentication:
     user_name: str
@@ -153,7 +155,7 @@ class JiraCloud:
             return None, "Failed to create client."
         except requests.exceptions.RequestException as e:
             if isinstance(e.args[0], MaxRetryError):
-                return False, "Invalid URL."
+                return None, "Invalid URL."
             return None, "Failed to create client."
 
     def validate_attributes(self) -> str:
@@ -180,7 +182,7 @@ class JiraCloud:
         params: dict = None,
         json: dict = None,
         data: dict = None,
-        files: dict = None,
+        files: dict | list = None,
         max_retries: int = 5,
         backoff_intervals: list = [5, 10, 30, 60, 90],
     ) -> Tuple[Optional[requests.Response], Optional[str]]:
@@ -250,40 +252,76 @@ class JiraCloud:
             None,
             f"Failed after {max_retries} retries. Possibly rate-limited or server error.",
         )
+        
+    def make_api_request_with_retry_using_sdk(
+        self,
+        sdk_func: Callable[P, R],
+        retries = 5,
+        backoff_intervals = [5, 10, 30, 60, 90],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> Optional[R]:
+        for attempt in range(retries):
+            try:
+                return sdk_func(*args, **kwargs)
+            except JIRAError as e:
+                # Handle rate limiting
+                if e.status_code == 429:
+                    retry_after = e.response.headers.get("Retry-After")
+                    wait_time = (
+                        int(retry_after)
+                        if retry_after
+                        else backoff_intervals[min(attempt, len(backoff_intervals) - 1)]
+                    )
+                    logging.warning(
+                        f"Rate-limited (429). Retrying after {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+                    
+                # Handle transient 5xx errors
+                if 500 <= e.status_code < 600:
+                    wait_time = backoff_intervals[
+                        min(attempt, len(backoff_intervals) - 1)
+                    ]
+                    logging.warning(
+                        f"Server error {e.status_code}. Retrying after {wait_time}s..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+                raise
 
     def audit_logs(self):
         audit_record = []
         error_list = []
         headers = {"Accept": "application/json"}
         url = f"{self.app_url}/rest/api/3/auditing/record"
+        auth = HTTPBasicAuth(
+            self.user_defined_credentials.basic_authentication.user_name,
+            self.user_defined_credentials.basic_authentication.password,
+        )
 
-        try:
-            response = requests.get(
-                url,
-                auth=HTTPBasicAuth(
-                    self.user_defined_credentials.basic_authentication.user_name,
-                    self.user_defined_credentials.basic_authentication.password,
-                ),
-                headers=headers,
-            )
+        response, error = self.make_api_request_with_retry(
+            method="GET",
+            url=url,
+            headers=headers,
+            auth=auth,
+        )
 
-            response.raise_for_status()
-            if response.status_code == 200:
-                if cowdictutils.is_valid_key(response.json(), "records"):
-                    audit_record = response.json().get("records")
-                else:
-                    error_list.append(
-                        "Invalid response format: 'records' not found in the response."
-                    )
+        if error:
+            error_list.append(error)
+            return audit_record, error_list
 
-        except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 200:
+            data = response.json()
+            if cowdictutils.is_valid_key(data, "records"):
+                audit_record = data.get("records", [])
+            else:
+                error_list.append("Invalid response format: 'records' not found.")
+        else:
             error_list.append(
-                f"HTTP error occurred: {http_err} - Status Code: {response.status_code}"
+                f"Unexpected status code {response.status_code}: {response.text}"
             )
-        except requests.exceptions.RequestException as req_err:
-            error_list.append(f"Request error occurred: {req_err}")
-        except json.JSONDecodeError:
-            error_list.append("Error decoding JSON response from Jira Cloud.")
 
         return audit_record, error_list
 
@@ -305,10 +343,12 @@ class JiraCloud:
         jql = ""
         max_results = 10
         start_at = 0
+        auth = HTTPBasicAuth(
+            self.user_defined_credentials.basic_authentication.user_name,
+            self.user_defined_credentials.basic_authentication.password,
+        )
 
         if isinstance(req_body_dict, dict):
-            if cowdictutils.is_valid_array(req_body_dict, "expand"):
-                expand = req_body_dict["expand"]
             if cowdictutils.is_valid_key(req_body_dict, "fields"):
                 fields = req_body_dict["fields"]
                 if isinstance(fields, list):
@@ -317,8 +357,6 @@ class JiraCloud:
                 jql = req_body_dict["jql"]
             if cowdictutils.is_valid_key(req_body_dict, "max_results"):
                 max_results = req_body_dict["max_results"]
-            if cowdictutils.is_valid_key(req_body_dict, "properties"):
-                properties = req_body_dict["properties"]
         else:
             error_list.append(
                 f"Failed to search issue(s): Invalid request body format - {type(req_body_dict)}. Supported format: 'dict'"
@@ -338,14 +376,16 @@ class JiraCloud:
                     k: v for k, v in params.items() if v not in (None, "", [], {})
                 }
 
-                response = requests.get(
+                response, error = self.make_api_request_with_retry(
+                    method="GET",
                     url=f"{self.app_url}/rest/api/3/search/jql",
+                    auth=auth,
                     params=params,
-                    auth=HTTPBasicAuth(
-                        self.user_defined_credentials.basic_authentication.user_name,
-                        self.user_defined_credentials.basic_authentication.password,
-                    ),
                 )
+
+                if error:
+                    error_list.append(error)
+                    return issue_list, error_list
 
                 if response.status_code != 200:
                     error_list.append(
@@ -363,19 +403,6 @@ class JiraCloud:
                 start_at += max_results
             return issue_list, error_list
 
-        except requests.exceptions.Timeout:
-            error_list.append("Jira API request timed out. Please try again later.")
-            return issue_list, error_list
-        except requests.exceptions.ConnectionError:
-            error_list.append(
-                "Unable to connect to Jira API. Please check network or URL."
-            )
-            return issue_list, error_list
-        except requests.exceptions.RequestException as e:
-            error_list.append(
-                f"Unexpected error while calling Jira API: {str(e)}. Please contact support."
-            )
-            return issue_list, error_list
         except Exception as e:
             logging.exception("Unexpected exception while searching issues")
             error_list.append(
@@ -400,6 +427,22 @@ class JiraCloud:
             return (
                 None,
                 f"Unable to fetch Jira user permissions for user - {self.user_defined_credentials.basic_authentication.user_name}. Please contact admin/support to fix this issue.",
+            )
+    
+    def get_priorities(self) -> tuple[list[jira.Priority] | Any, str | None]:
+        try:
+            jira_connector, error = self.create_new_client()
+            if error:
+                return None, error
+            priorities = jira_connector.priorities()
+            return priorities, None
+        except jira.exceptions.JIRAError as e:
+            print(
+                f"Unable to fetch Jira priorities : {self.bytes_to_string(e.response.content)}"
+            )
+            return (
+                None,
+                f"Unable to fetch Jira priorities. Please contact admin/support to fix this issue.",
             )
 
     def search_user(self, user_name: str):
@@ -430,13 +473,21 @@ class JiraCloud:
                 return None, error
             assignee = jmespath.search("assignee.name", issueConfig)
             if assignee:
-                users = client.search_users(query=assignee)
+                users = self.make_api_request_with_retry_using_sdk(client.search_users, query=assignee)
                 if users:
                     issueConfig["assignee"] = {"id": users[0].accountId}
                 else:
                     issueConfig["assignee"] = {}
-
-            issue = client.create_issue(fields=issueConfig)
+            
+            issue = {}
+            for idx in range(2):
+                try:
+                    issue = self.make_api_request_with_retry_using_sdk(client.create_issue, fields=issueConfig)
+                    break
+                except JIRAError as e:
+                    if e.status_code != http.HTTPStatus.BAD_REQUEST or idx:
+                        raise
+                    issueConfig["assignee"] = {}
             return issue, None
         except Exception as e:
             print(

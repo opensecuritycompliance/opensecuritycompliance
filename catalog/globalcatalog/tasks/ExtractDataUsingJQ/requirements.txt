@@ -1,2 +1,2 @@
-PyYAML
-jq
+PyYAML==6.0.3
+jq==1.10.0

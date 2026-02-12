@@ -179,49 +179,259 @@ class GoogleWorkSpaceAppConnector:
             return split_values[1]
         return ""
     
-    def download_file_from_url(self,file_url):
-           try:
-                scope = 'https://www.googleapis.com/auth/drive.readonly'
-                token_source, err = self.create_config(scope)
-                if err:
-                    return None, err
-                token_source._subject = self.user_defined_credentials.google_work_space.user_email
-                service = build('drive', 'v3', credentials=token_source)
-                file_id=self.extract_drive_file_url(file_url)
-                if file_id is None:
-                    return None,"Invalid file URL"
-                # retriving file meta data
-                file_metadata = service.files().get(fileId=file_id, fields="name, mimeType").execute()
-                file_name = file_metadata['name']  
-                mime_type = file_metadata['mimeType'] 
+    def download_file_from_url(self, file_url):
+        try:
+            scope = 'https://www.googleapis.com/auth/drive.readonly'
+            token_source, err = self.create_config(scope)
+            if err:
+                return None, err
+            token_source._subject = self.user_defined_credentials.google_work_space.user_email
+            service = build('drive', 'v3', credentials=token_source)
+            
+            target_id = self.extract_drive_file_url(file_url)
+            if target_id is None:
+                return None, "Invalid file URL"
+
+            # Get the target's metadata to check if it's a file or folder
+            target_metadata = service.files().get(fileId=target_id, fields="name, mimeType").execute()
+            mime_type = target_metadata['mimeType']
+
+            # If it's a file, download directly
+            if mime_type != 'application/vnd.google-apps.folder':
+                file_name = target_metadata['name']
+                file_content = self.download_file_content(service, target_id)
+                if file_content is None:
+                    return None, "Failed to download file content"
                 
-                # retriving file content
-                request = service.files().get_media(fileId=file_id)
-                file = io.BytesIO()
-                downloader = MediaIoBaseDownload(file, request)
-                done = False
-                while done is False:
-                    status, done = downloader.next_chunk()
-           except GoogleAuthError as e:
-                logging.exception("An exception occurred while creating application: %s", str(e))
-                return None, "Invalid 'UserEmail' or 'ServiceAccountKeyFile'" 
-           except HttpError as error:
-               return None,f"An error occurred: {error}"
+                fileData = {
+                    "FileName": file_name,
+                    "FileType": mime_type,
+                    "FileContent": file_content
+                }
+                return fileData, None
+            else:
+                # If it's a folder, find the most recently UPLOADED file recursively
+                latest_file_id, latest_file_name, latest_mime_type = self.find_latest_file_recursively(service, target_id)
+                if latest_file_id is None:
+                    return None, "No files found in the folder"
                 
-           fileData = {
-               "FileName":file_name,
-               "FileType":mime_type,
-               "FileContent":file.getvalue()
-           }
-           return fileData,None
-    
-    def extract_drive_file_url(self,file_url):  
+                file_content = self.download_file_content(service, latest_file_id)
+                if file_content is None:
+                    return None, "Failed to download file content"
+                
+                fileData = {
+                    "FileName": latest_file_name,
+                    "FileType": latest_mime_type,
+                    "FileContent": file_content
+                }
+                return fileData, None
+
+        except GoogleAuthError as e:
+            logging.exception("An exception occurred while creating application: %s", str(e))
+            return None, "Invalid 'UserEmail' or 'ServiceAccountKeyFile'" 
+        except HttpError as error:
+            return None, f"An error occurred: {error}"
+
+    def find_latest_file_recursively(self, service, folder_id):
+        """
+        Recursively find the LATEST file in a Google Drive folder
+        Latest = max(createdTime, modifiedTime) across all files
+        """
+        latest_time = None
+        candidate_id = None
+        candidate_name = None
+        candidate_mime_type = None
+
+        # Step 1: Get all files and subfolders
+        query = f"'{folder_id}' in parents and trashed=false"
         
-        pattern =  r'(?:/d/|/d/e/|/forms/d/e/|id=)([-\w]{25,})'
+        results = service.files().list(
+            q=query,
+            fields="files(id, name, mimeType, createdTime, modifiedTime)",
+            orderBy="modifiedTime desc"  # Start with most recently modified
+        ).execute()
+        items = results.get('files', [])
+
+        print(f"DEBUG: Checking folder - found {len(items)} items")
+        for item in items:
+            created = item.get('createdTime', 'N/A')
+            modified = item.get('modifiedTime', 'N/A')
+            print(f"  - {item['name']} (Created: {created}, Modified: {modified})")
+
+        # Step 2: Process files and folders separately
+        files = []
+        folders = []
         
-        match = re.search(pattern, file_url)
+        for item in items:
+            if item['mimeType'] == 'application/vnd.google-apps.folder':
+                folders.append(item)
+            else:
+                files.append(item)
+
+        # Step 3: Find file with the MOST RECENT timestamp (created OR modified)
+        for file_item in files:
+            created_time = self.parse_drive_timestamp(file_item.get('createdTime'))
+            modified_time = self.parse_drive_timestamp(file_item.get('modifiedTime'))
+            
+            # Use the MOST RECENT timestamp between created and modified
+            file_latest_time = max(created_time, modified_time)
+            
+            if latest_time is None or file_latest_time > latest_time:
+                latest_time = file_latest_time
+                candidate_id = file_item['id']
+                candidate_name = file_item['name']
+                candidate_mime_type = file_item['mimeType']
+                print(f"DEBUG: New candidate: {candidate_name} (Time: {file_latest_time})")
+
+        # Step 4: Check subfolders recursively
+        for folder_item in folders:
+            subfolder_id = folder_item['id']
+            sub_result = self.find_latest_file_recursively(service, subfolder_id)
+            
+            if sub_result[0]:  # If we found a file in subfolder
+                sub_file_id, sub_file_name, sub_mime_type = sub_result
+                # Get the timestamps for the subfile to compare
+                sub_file_metadata = service.files().get(
+                    fileId=sub_file_id, 
+                    fields="createdTime,modifiedTime"
+                ).execute()
+                
+                sub_created_time = self.parse_drive_timestamp(sub_file_metadata.get('createdTime'))
+                sub_modified_time = self.parse_drive_timestamp(sub_file_metadata.get('modifiedTime'))
+                sub_latest_time = max(sub_created_time, sub_modified_time)
+                
+                if sub_latest_time > latest_time:
+                    latest_time = sub_latest_time
+                    candidate_id = sub_file_id
+                    candidate_name = sub_file_name
+                    candidate_mime_type = sub_mime_type
+
+        # Step 5: Return result
+        if candidate_id:
+            return candidate_id, candidate_name, candidate_mime_type
+        
+        return None, None, None
+
+    def get_last_uploaded_in_folder(self, service, folder_id):
+        """
+        Get the most recently UPLOADED file in a folder (including subfolders recursively)
+        Returns: (latest_time, file_id, file_name, mime_type)
+        """
+        try:
+            # First, check files in current folder
+            query = f"'{folder_id}' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'"
+            results = service.files().list(
+                q=query,
+                fields="files(id, name, mimeType, createdTime)",
+                orderBy="createdTime desc",
+                pageSize=1
+            ).execute()
+            current_files = results.get('files', [])
+            
+            current_latest_time = None
+            current_latest_file = None
+            
+            if current_files:
+                current_latest_file = current_files[0]
+                current_latest_time = self.parse_drive_timestamp(current_latest_file.get('createdTime'))
+
+            # Check subfolders recursively
+            query_folders = f"'{folder_id}' in parents and trashed=false and mimeType = 'application/vnd.google-apps.folder'"
+            folder_results = service.files().list(
+                q=query_folders,
+                fields="files(id, name)",
+                pageSize=10
+            ).execute()
+            subfolders = folder_results.get('files', [])
+            
+            subfolder_latest_time = None
+            subfolder_latest_file = None
+            
+            for subfolder in subfolders:
+                sub_time, sub_id, sub_name, sub_mime = self.get_last_uploaded_in_folder(service, subfolder['id'])
+                if sub_time and (subfolder_latest_time is None or sub_time > subfolder_latest_time):
+                    subfolder_latest_time = sub_time
+                    subfolder_latest_file = (sub_id, sub_name, sub_mime)
+
+            # Compare current folder files vs subfolder files
+            if current_latest_time and subfolder_latest_time:
+                if current_latest_time >= subfolder_latest_time:
+                    return current_latest_time, current_latest_file['id'], current_latest_file['name'], current_latest_file['mimeType']
+                else:
+                    return subfolder_latest_time, subfolder_latest_file[0], subfolder_latest_file[1], subfolder_latest_file[2]
+            elif current_latest_time:
+                return current_latest_time, current_latest_file['id'], current_latest_file['name'], current_latest_file['mimeType']
+            elif subfolder_latest_time:
+                return subfolder_latest_time, subfolder_latest_file[0], subfolder_latest_file[1], subfolder_latest_file[2]
+            else:
+                return None, None, None, None
+                
+        except Exception as e:
+            logging.error(f"Error getting last uploaded for folder {folder_id}: {str(e)}")
+            return None, None, None, None
+
+    def download_file_content(self, service, file_id):
+        """Download file content from Google Drive"""
+        try:
+            request = service.files().get_media(fileId=file_id)
+            file = io.BytesIO()
+            downloader = MediaIoBaseDownload(file, request)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+            return file.getvalue()
+        except Exception as e:
+            logging.error(f"Error downloading file {file_id}: {str(e)}")
+            return None
+
+    def parse_drive_timestamp(self, timestamp_str):
+        """Parse Google Drive timestamp string to datetime object"""
+        if not timestamp_str:
+            return datetime.min.replace(tzinfo=timezone.utc)
+        
+        try:
+            return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        except ValueError:
+            formats = [
+                '%Y-%m-%dT%H:%M:%S.%fZ',
+                '%Y-%m-%dT%H:%M:%SZ'
+            ]
+            for fmt in formats:
+                try:
+                    return datetime.strptime(timestamp_str, fmt).replace(tzinfo=timezone.utc)
+                except ValueError:
+                    continue
+            return datetime.min.replace(tzinfo=timezone.utc)
+
+    def extract_drive_file_url(self, file_url):  
+        # Pattern for file URLs: /file/d/FILE_ID/view
+        file_pattern = r'/file/d/([a-zA-Z0-9_-]{25,})'
+        
+        # Pattern for folder URLs: /folders/FOLDER_ID
+        folder_pattern = r'/folders/([a-zA-Z0-9_-]{25,})'
+        
+        # Pattern for open?id= format
+        open_pattern = r'[?&]id=([a-zA-Z0-9_-]{25,})'
+        
+        # Try file pattern first
+        match = re.search(file_pattern, file_url)
         if match:
             return match.group(1)
+        
+        # Try folder pattern
+        match = re.search(folder_pattern, file_url)
+        if match:
+            return match.group(1)
+        
+        # Try open?id= pattern
+        match = re.search(open_pattern, file_url)
+        if match:
+            return match.group(1)
+        
+        # If it's already just an ID (no URL structure)
+        if re.match(r'^[a-zA-Z0-9_-]{25,}$', file_url):
+            return file_url
+        
         return None
     
     def upload_file_to_drive(self, file_content, file_name, folder_name):

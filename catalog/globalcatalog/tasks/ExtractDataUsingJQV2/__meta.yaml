@@ -33,7 +33,24 @@ inputs:
   format: toml
   defaultValue: <<MINIO_FILE_PATH>>
   showField: true
-  required: true
+  required: false
+- name: JQExpression
+  description: The JQ filter/expression that must be executed on the InputFile data
+  dataType: JQ_EXPRESSION
+  explanation: 
+  repeated: false
+  allowedValues: []
+  defaultValue: 
+  showField: true
+  required: false
+- name: OutputMethod
+  description: 'Specifies whether to consider all outputs from the JQ expression, or only the first one'
+  dataType: STRING
+  repeated: false
+  allowedValues: ['FIRST', 'ALL']
+  defaultValue: FIRST
+  showField: true
+  required: false
 - name: LogConfigFile
   description: "Error management file with custom exception messages, error codes, and debugging templates. Uses TOML with dynamic placeholders to provide clear error reporting for JQ failures and data processing issues."
   dataType: FILE

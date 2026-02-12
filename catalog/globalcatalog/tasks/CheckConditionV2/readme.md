@@ -7,6 +7,7 @@
     - **CustomInputs**                     : [OPTIONAL]  This file contains any dynamic inputs that you may want to pass, to process the conditions
     - **InputFileValidationConfig**        : [OPTIONAL]  This field is used to check if required fields are present in the input file.
     - **LogConfig**                        : [OPTIONAL]  This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
+    - **OutputFileFormat**                 : [OPTIONAL] Target format for conversion of output file (supported formats JSON, CSV, PARQUET).
     - **ProceedIfLogExists**               : [OPTIONAL]  If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
     - **ProceedIfErrorExists**             : [OPTIONAL]  If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
     - **LogFile**                          : [OPTIONAL]  Map the LogFile from the previous task, to handle errors
@@ -392,18 +393,23 @@
     In this example, the `{error}` placeholder will be replaced with the actual error message at runtime. If the placeholder is invalid or cannot be resolved, the system will raise an error.
 
     We can also include the from and to dates in the error message for better clarity using the {fromdate} and {todate} placeholders.
+
+6. OutputFileFormat **(OPTIONAL)**
+    - Specifies the output file format for conversion.
+    - Allowed values: JSON, CSV, PARQUET.
+    - **Default:** PARQUET
   
-6. ProceedIfLogExists **(OPTIONAL)**
+7. ProceedIfLogExists **(OPTIONAL)**
     - This field is optional, and the default value of ProceedIfLogExists is true.
     - If ProceedIfLogExists is set to true, the task will continue its execution and return the LogFile at the end.
     - If it is set to false and a log file is already present, the task will skip further execution and simply return the existing LogFile.
 
-7. ProceedIfErrorExists **(OPTIONAL)**
+8. ProceedIfErrorExists **(OPTIONAL)**
     - This field is optional, and the default value of ProceedIfErrorExists is true.
     - If ProceedIfErrorExists is set to true, the task will return the error details as part of the LogFile and continue to the next task.
     - If it is set to false, the error details will be returned, and the entire rule execution will be stopped.
     
-8. LogFile **(OPTIONAL)**
+9. LogFile **(OPTIONAL)**
     - This field is required only if this task is not the first one in the rule.
     - The LogFile from the previous task must be mapped here to enable error handling.
     - If mapped correctly, and the previous task returns a LogFile, it will be passed to this task. The task’s execution will then be determined based on the value of ProceedIfLogExists.

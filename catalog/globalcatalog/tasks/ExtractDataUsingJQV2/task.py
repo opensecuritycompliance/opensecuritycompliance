@@ -235,20 +235,37 @@ class Task(cards.AbstractTask):
             self.task_inputs.user_inputs, "JQConfigFile"
         )
 
+        has_string_inputs = cowdictutils.is_valid_key(
+            self.task_inputs.user_inputs, "JQExpression"
+        )
+        
+        output_method_input = cowdictutils.is_valid_key(
+            self.task_inputs.user_inputs, "OutputMethod"
+        )
+
         # INFO : We don't need the following sanitization. Just for our reference to secure code handle
         config_url = self._sanitize_url(self.task_inputs.user_inputs.get("JQConfigFile",""))
 
-        if not has_config_file or config_url == MINIO_PLACEHOLDER:
+        if (not has_config_file or config_url == MINIO_PLACEHOLDER) and (not has_string_inputs):
             return None, self.log_manager.get_error_message(
                 "ExtractDataUsingJQ.JQConfigFile.missing"
             )
 
-        jq_config_dict, error = self.download_toml_file_from_minio_as_dict(config_url)
-        if error:
-            return None, self.log_manager.get_error_message(
-                "ExtractDataUsingJQ.JQConfigFile.download_error",
-                {"error": error},
-            )
+        if has_config_file:
+            jq_config_dict, error = self.download_toml_file_from_minio_as_dict(config_url)
+            if error:
+                return None, self.log_manager.get_error_message(
+                    "ExtractDataUsingJQ.JQConfigFile.download_error",
+                    {"error": error},
+                )
+            
+        elif has_string_inputs:
+            jq_config_dict = {
+                "JQConfig": {
+                    "JQExpression": self.task_inputs.user_inputs.get("JQExpression",""),
+                    "OutputMethod": self.task_inputs.user_inputs.get("OutputMethod","")
+                }
+            }
 
         if not cowdictutils.is_valid_key(jq_config_dict, "JQConfig"):
             return None, self.log_manager.get_error_message(
