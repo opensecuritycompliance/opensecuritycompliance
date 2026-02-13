@@ -2,7 +2,7 @@
 
 ## Overview
 
-On the second Wednesday of each month, the Security GRC Guild Team at ComplianceCow will hold a meeting to build a sense of community in the GRC community, address security pros' pain points, and share time-saving tips and tricks.
+On the second Wednesday of each month, the Security GRC Guild Team at ComplianceCow will hold a meeting to foster community in the GRC space, address security pros' pain points, and share time-saving tips and tricks.
 
 The Guild defines its core goals as being:
 1. A space to grow the GRC community.
@@ -17,8 +17,8 @@ The Guild defines its core goals as being:
 | **Meeting Presentations** | [TO COME] |
 | 📝 **Ongoing meeting doc** | [Google Doc](https://docs.google.com/document/d/10ROCE-liapf3RbE-0TXZNgSDHqeaQ6UCnafJLOQsw4U/edit?tab=t.0) |
 | **Join our Slack group!** | [ComplianceCow Slack](https://compliancecow.slack.com/archives/C09LMP7PJP6) |
-| 🎥 **Meeting Recordings** | [TO COME] |
-| ⏰ **Meeting Time** | Second Wednesday of the month, 11:00 am CST |
+| 🎥 **Meeting Recordings** | [https://grain.com/share/recording/55eb1649-5947-4534-9915-f25ae40f759e/KK9T9klRe9OUCgUIDFwOkHA8tMjxduLZgYByxsaD] |
+| ⏰ **Meeting Time** | Second Wednesday of the month, 12:00pm CST |
 | 📆 **Calendar invite** | [Download .ics file](https://us06web.zoom.us/meeting/tZ0qc-uqqT4oE9CEhZRzkFkTLl1XlAKm0nha/ics?icsToken=DKQQIG3dugAQsf2Y4…) |
 
 > **NOTE:** If you are using Outlook for Mac, you may have trouble adding the invite to your calendar. In order to avoid issues, follow the steps below:
@@ -38,7 +38,7 @@ The Guild defines its core goals as being:
 ## Schedule
 
 ### 2026 Upcoming Meetings:
-* Wednesday: February 11th, 11 am – Central Time (CST)
+* Wednesday: March 11th, 11 am – Central Time (CST)
 
 ## Contact Us!
 
