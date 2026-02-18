@@ -99,7 +99,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscwebserver:1.1-20260218095619
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscwebserver:1.1-20260218105004
     logging:
       driver: "json-file"
       options:
