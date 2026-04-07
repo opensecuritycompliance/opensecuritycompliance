@@ -26,7 +26,7 @@
 
 ## 🚀 Deployment Options
 
-The setup script (`setup-mcp.sh`) offers two deployment modes:
+The setup script (`setup.sh`) offers two deployment modes:
 
 **[📘 MCP + No-Code UI Deployment Guide](MCP-DEPLOYMENT.md)** — Requires an Anthropic API key
 - No-Code Web UI + AI-powered rule creation via MCP

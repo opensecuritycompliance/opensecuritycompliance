@@ -108,10 +108,10 @@ cd opensecuritycompliance
 
 ```bash
 # Make the setup script executable
-chmod +x setup-mcp.sh
+chmod +x setup.sh
 
 # Run the setup
-sudo ./setup-mcp.sh
+sudo ./setup.sh
 ```
 
 When prompted, **select option 2 (No-Code UI Only)**:
@@ -311,7 +311,7 @@ If you later obtain an Anthropic API key and want to enable AI-powered rule crea
 
 2. Re-run the setup script and select **option 1**:
    ```bash
-   sudo ./setup-mcp.sh
+   sudo ./setup.sh
    ```
 
 3. Follow the prompts to enter your Anthropic API key.
@@ -350,7 +350,7 @@ Ensure:
 A: No. The No-Code UI Only mode requires no API key and no AI model access.
 
 **Q: Can I upgrade to MCP mode later?**
-A: Yes. Re-run `setup-mcp.sh` and select option 1. See [Upgrading to MCP Mode](#5-upgrading-to-mcp-mode).
+A: Yes. Re-run `setup.sh` and select option 1. See [Upgrading to MCP Mode](#5-upgrading-to-mcp-mode).
 
 **Q: What are the minimum system requirements?**
 A: 4+ CPU cores, 8GB+ RAM, 20GB+ SSD. Lighter than the full MCP setup since only 4 services run.
@@ -370,8 +370,8 @@ A: The platform is designed for development and testing. For production, change 
 │              NO-CODE UI — QUICK REFERENCE                    │
 ├─────────────────────────────────────────────────────────────-┤
 │ Setup:                                                       │
-│  chmod +x setup-mcp.sh                                       │
-│  sudo ./setup-mcp.sh        → Select option 2                │
+│  chmod +x setup.sh                                       │
+│  sudo ./setup.sh        → Select option 2                │
 │                                                              │
 │ Access URLs:                                                 │
 │  https://localhost:443       - Web UI (HTTPS)                │
@@ -386,7 +386,7 @@ A: The platform is designed for development and testing. For production, change 
 │  docker compose -f docker-compose-osc.yaml restart           │
 │                                                              │
 │ Upgrade to MCP:                                              │
-│  Stop services → Re-run setup-mcp.sh → Select option 1       │
+│  Stop services → Re-run setup.sh → Select option 1       │
 └─────────────────────────────────────────────────────────────-┘
 ```
 

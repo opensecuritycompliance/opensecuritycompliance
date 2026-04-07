@@ -20,7 +20,7 @@ For more detailed information, see the following sections:
 
 ## Setup Modes
 
-The setup script (`setup-mcp.sh`) presents two options at startup:
+The setup script (`setup.sh`) presents two options at startup:
 
 | Mode | Anthropic API Key | Services | Guide |
 |------|-------------------|----------|-------|
@@ -100,10 +100,10 @@ For troubleshooting any issues you may encounter while running the script below,
 
 ```bash
 # Make the setup script executable
-chmod +x setup-mcp.sh
+chmod +x setup.sh
 
 # Run the setup
-sudo ./setup-mcp.sh
+sudo ./setup.sh
 ```
 
 **That's it!** The setup script will handle everything else automatically.
@@ -172,7 +172,7 @@ Your API key will look like: `sk-ant-api03-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...`
 
 ---
 
-### 3. What the Setup Script (setup-mcp.sh) does
+### 3. What the Setup Script (setup.sh) does
 
 The script will automatically:
 
@@ -439,7 +439,7 @@ git pull origin main
 # Rebuild and restart
 docker compose down
 docker compose build --no-cache
-./setup-mcp.sh
+./setup.sh
 ```
 
 
@@ -584,7 +584,7 @@ After setup, your directory structure will look like this:
 
 ```
 opensecuritycompliance/
-├── setup-mcp.sh                    # Setup script
+├── setup.sh                    # Setup script
 ├── docker-compose-osc.yaml         # Docker Compose configuration
 ├── export_env.sh                   # Environment export script
 │
@@ -646,7 +646,7 @@ cat etc/userconfig.env | grep ANTHROPIC_API_KEY
 cat etc/userconfig.env | grep MCP_MODEL
 
 # Re-run setup to re-detect model
-./setup-mcp.sh
+./setup.sh
 ```
 
 #### MinIO Credential Issues
@@ -659,7 +659,7 @@ cat etc/policycow.env | grep MINIO_ROOT
 nano etc/policycow.env
 
 # Or re-run setup for validation
-./setup-mcp.sh
+./setup.sh
 
 # Restart storage
 docker compose restart cowstorage
@@ -941,8 +941,8 @@ A: No, currently only Anthropic Claude is supported for MCP mode. Other provider
 │ Initial Setup:                                              │
 │  git clone https://github.com/opensecuritycompliance/...    │
 │  cd opensecuritycompliance                                  │
-│  chmod +x setup-mcp.sh                                      │
-│  ./setup-mcp.sh                                             │
+│  chmod +x setup.sh                                      │
+│  ./setup.sh                                             │
 │                                                             │
 │ Access URLs:                                                │
 │  https://localhost:443   - Web UI (HTTPS)                   │
