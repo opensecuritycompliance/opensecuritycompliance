@@ -1,0 +1,77 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  extract_security_groups_JQTransform: '[.Reservations[].Instances[].SecurityGroups[].GroupId]
+    | unique | map({GroupId: .})'
+  extract_security_groups_OutputMethod: ALL
+  fetch_all_ec2_with_sgs_RequestConfigFile: <<MINIO_FILE_PATH>>
+  fetch_ec2_in_vpcs_RequestConfigFile: <<MINIO_FILE_PATH>>
+  fetch_vpcs_RequestConfigFile: <<MINIO_FILE_PATH>>
+  filter_vpcs_JQFilter: .IsDefault == false and .Tags != null
+  filter_vpcs_OutputMethod: ALL
+  generate_report_JQTransform: 'map(.Reservations[].Instances[] | {System: "aws",
+    Source: "compliancecow", ResourceID: .InstanceId, ResourceName: (.Tags[]? | select(.Key
+    == "Name") | .Value // .InstanceId), ResourceType: "EC2Instance", ResourceLocation:
+    .Placement.AvailabilityZone, ResourceTags: (.Tags // [] | map("\(.Key)=\(.Value)")
+    | join(", ")), VpcId: .VpcId, SecurityGroups: (.SecurityGroups | map(.GroupId)
+    | join(", ")), PrivateIpAddress: .PrivateIpAddress, PublicIpAddress: (.PublicIpAddress
+    // "N/A"), InstanceState: .State.Name, ValidationStatusCode: "INST_IN_VPC_WITH_SG",
+    ValidationStatusNotes: "Instance found in filtered VPC with identified security
+    group", ComplianceStatus: "COMPLIANT", ComplianceStatusReason: "EC2 instance is
+    part of the analyzed VPC and uses the identified security groups", EvaluatedTime:
+    (now | strftime("%Y-%m-%dT%H:%M:%SZ")), UserAction: "", ActionStatus: "", ActionResponseURL:
+    ""})'
+  generate_report_OutputMethod: ALL
+fromDate: 2026-04-08T01:26:54Z
+toDate: 2026-04-08T01:26:54Z

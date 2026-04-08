@@ -1,0 +1,37 @@
+[Variables]
+Method = "GET"
+TableName = "cmdb_ci_vm_instance"
+
+[Request]
+URL = "<<application.AppURL>>/api/now/table/<<TableName>>"
+Method = "<<Method>>"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "BasicAuthentication"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Headers]
+Accept = "application/json"
+
+[Request.Params]
+sysparm_query = "operational_status=1^install_status=1"
+sysparm_fields = "sys_id,name,vm_inst_id,ip_address,os,cpu_count,ram,location,sys_created_on,sys_updated_on"
+sysparm_limit = "10000"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data.FormData]
+
+[Request.Data.URLEncoded]
+
+[Request.Data.Raw]
+
+[Request.Data.Binary]
