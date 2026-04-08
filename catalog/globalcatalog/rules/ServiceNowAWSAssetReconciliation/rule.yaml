@@ -1,0 +1,197 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: ServiceNowAWSAssetReconciliation
+  purpose: >-
+    Reconcile VM assets between ServiceNow CMDB and AWS EC2 to identify
+    discrepancies and ensure asset inventory accuracy
+  description: >-
+    This rule fetches VM assets from ServiceNow CMDB and EC2 instances from AWS,
+    performs reconciliation based on hostname matching, and generates a
+    comprehensive compliance report identifying assets present in both systems
+    (COMPLIANT) or missing from either system (NON_COMPLIANT). Includes presence
+    flags (PresentInServiceNow, PresentInAWS) for complete audit trail.
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    ServiceNowRequestConfig: <<MINIO_FILE_PATH>>
+    AWSRequestConfig: <<MINIO_FILE_PATH>>
+    ReconciliationSQLQuery: >-
+      SELECT COALESCE(inputfile1.name, json_extract(inputfile2.PrivateDnsName,
+      '$')) AS AssetName...
+    ReconciliationOutputFormat: JSON
+    StandardSchemaTransform: 'map(. + {System: .System, Source: .Source...})'
+    TransformOutputMethod: ALL
+  inputsMeta__:
+    - name: ServiceNowRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        TOML configuration file for ServiceNow Table API to fetch VM instances
+        from CMDB with filters for operational and installed VMs
+    - name: AWSRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        TOML configuration file for AWS EC2 DescribeInstances API to retrieve
+        all EC2 instances with AWS Signature authentication
+    - name: ReconciliationSQLQuery
+      dataType: SQL_EXPRESSION
+      defaultValue: >-
+        SELECT COALESCE(inputfile1.name, json_extract(inputfile2.PrivateDnsName,
+        '$')) AS AssetName...
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        SQL query that performs FULL OUTER JOIN reconciliation between
+        ServiceNow CMDB VMs and AWS EC2 instances based on hostname matching.
+        Creates union of all unique assets with presence flags and compliance
+        logic
+    - name: ReconciliationOutputFormat
+      dataType: STRING
+      defaultValue: JSON
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+      repeated: false
+      explanation: Output format set to JSON for the reconciliation results
+    - name: StandardSchemaTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: 'map(. + {System: .System, Source: .Source...})'
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        JQ transformation that maps reconciled asset data to ComplianceCow
+        standard schema with all mandatory fields plus system-specific fields
+        and presence flags
+    - name: TransformOutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues:
+        - ALL
+        - FIRST
+      repeated: false
+      explanation: Output method set to ALL to return all transformed records
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: fetch_servicenow_vms
+      type: task
+      description: >-
+        Retrieves virtual machine records from ServiceNow CMDB with operational
+        and installed status filters
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: fetch_aws_ec2
+      type: task
+      description: Retrieves all EC2 instances from AWS account with instance details
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: reconcile_assets
+      type: task
+      description: >-
+        Performs FULL OUTER JOIN to create union of all unique assets with
+        presence flags and compliance status
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: transform_to_standard_schema
+      type: task
+      description: >-
+        Maps all fields to standard schema format with mandatory compliance
+        fields
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      fetch_servicenow_vms.Input.RequestConfigFile:=*.Input.ServiceNowRequestConfig
+    - fetch_aws_ec2.Input.RequestConfigFile:=*.Input.AWSRequestConfig
+    - reconcile_assets.Input.InputFile1:=fetch_servicenow_vms.Output.OutputFile
+    - reconcile_assets.Input.InputFile2:=fetch_aws_ec2.Output.OutputFile
+    - reconcile_assets.Input.SQLQuery:=*.Input.ReconciliationSQLQuery
+    - >-
+      reconcile_assets.Input.OutputFileFormat:=*.Input.ReconciliationOutputFormat
+    - >-
+      transform_to_standard_schema.Input.InputFile:=reconcile_assets.Output.OutputFile
+    - >-
+      transform_to_standard_schema.Input.JQTransform:=*.Input.StandardSchemaTransform
+    - >-
+      transform_to_standard_schema.Input.OutputMethod:=*.Input.TransformOutputMethod
+    - >-
+      *.Output.StandardComplianceReport:=transform_to_standard_schema.Output.TransformedFile
+    - >-
+      *.Output.CompliancePCT_:=transform_to_standard_schema.Output.CompliancePCT_
+    - >-
+      *.Output.ComplianceStatus_:=transform_to_standard_schema.Output.ComplianceStatus_
+    - '*.Output.LogFile:=transform_to_standard_schema.Output.LogFile'
+  outputsMeta__:
+    - name: StandardComplianceReport
+      dataType: FILE
+      description: >-
+        ComplianceCow standard schema report with all reconciled assets and
+        compliance status
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: LogFile
+      dataType: FILE
+      description: Log file from transformation task
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true

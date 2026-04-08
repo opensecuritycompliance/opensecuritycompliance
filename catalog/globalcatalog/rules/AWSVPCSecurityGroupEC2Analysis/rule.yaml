@@ -1,0 +1,306 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: AWSVPCSecurityGroupEC2Analysis
+  purpose: >-
+    Analyze AWS VPCs, filter by criteria, identify EC2 instances and their
+    security groups, then determine all EC2 instances sharing those security
+    groups across the account
+  description: >-
+    This rule retrieves all VPCs from an AWS account, filters them based on
+    user-defined criteria such as tags or names, lists all EC2 instances within
+    those filtered VPCs, identifies associated security groups, determines all
+    EC2 instances sharing those security groups across the account, and
+    generates a comprehensive compliance report with the findings.
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    fetch_vpcs_RequestConfigFile: <<MINIO_FILE_PATH>>
+    filter_vpcs_JQFilter: >-
+      [.[] | .DescribeVpcsResponse.vpcSet.item | if type == "array" then .[]
+      else . end | select(.isDefault == "false" and .tagSet != null)]
+    filter_vpcs_OutputMethod: ALL
+    fetch_ec2_in_vpcs_RequestConfigFile: <<MINIO_FILE_PATH>>
+    extract_security_groups_JQTransform: >-
+      [.[] | .DescribeInstancesResponse.reservationSet.item | if type == "array"
+      then .[] else . end | .instancesSet.item | if type == "array" then .[]
+      else . end | .groupSet.item | if type == "array" then .[] else . end |
+      .groupId] | unique | map({GroupId: .})
+    extract_security_groups_OutputMethod: ALL
+    fetch_all_ec2_with_sgs_RequestConfigFile: <<MINIO_FILE_PATH>>
+    generate_report_JQTransform: >-
+      map(.DescribeInstancesResponse.reservationSet.item | if type == "array"
+      then .[] else . end | .instancesSet.item | if type == "array" then .[]
+      else . end | {System: "aws", Source: "compliancecow", ResourceID:
+      .instanceId, ResourceName: (if .tagSet != null then ((.tagSet.item | if
+      type == "array" then . else [.] end) | map(select(.key == "Name")) | if
+      length > 0 then .[0].value else .instanceId end) else .instanceId end),
+      ResourceType: "EC2Instance", ResourceLocation:
+      .placement.availabilityZone, ResourceTags: (if .tagSet != null then
+      ((.tagSet.item | if type == "array" then . else [.] end) |
+      map("\(.key)=\(.value)") | join(", ")) else "" end), VpcId: .vpcId,
+      SecurityGroups: (.groupSet.item | if type == "array" then map(.groupId)
+      else [.groupId] end | join(", ")), PrivateIpAddress: .privateIpAddress,
+      PublicIpAddress: (.dnsName // "N/A"), InstanceState: .instanceState.name,
+      ValidationStatusCode: "INST_IN_VPC_WITH_SG", ValidationStatusNotes:
+      "Instance found in filtered VPC with identified security group",
+      ComplianceStatus: "COMPLIANT", ComplianceStatusReason: "EC2 instance is
+      part of the analyzed VPC and uses the identified security groups",
+      EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")), UserAction: "",
+      ActionStatus: "", ActionResponseURL: ""})
+    generate_report_OutputMethod: ALL
+  inputsMeta__:
+    - name: fetch_vpcs_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: filter_vpcs_JQFilter
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        [.[] | .DescribeVpcsResponse.vpcSet.item | if type == "array" then .[]
+        else . end | select(.isDefault == "false" and .tagSet != null)]
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        JQ filter expression to navigate XML-converted JSON structure, handle
+        both single and multiple VPC items, and select non-default VPCs that
+        have tags defined (tagSet), excluding default VPCs from the analysis
+    - name: filter_vpcs_OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: fetch_ec2_in_vpcs_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: extract_security_groups_JQTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        [.[] | .DescribeInstancesResponse.reservationSet.item | if type ==
+        "array" then .[] else . end | .instancesSet.item | if type == "array"
+        then .[] else . end | .groupSet.item | if type == "array" then .[] else
+        . end | .groupId] | unique | map({GroupId: .})
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        JQ transform to extract all unique security group IDs from XML-converted
+        EC2 instances data, navigating through reservationSet and instancesSet
+        structures, handling both single objects and arrays at each level, then
+        formatting as objects with GroupId field for batch processing
+    - name: extract_security_groups_OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: fetch_all_ec2_with_sgs_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: generate_report_JQTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        map(.DescribeInstancesResponse.reservationSet.item | if type == "array"
+        then .[] else . end | .instancesSet.item | if type == "array" then .[]
+        else . end | {System: "aws", Source: "compliancecow", ResourceID:
+        .instanceId, ResourceName: (if .tagSet != null then ((.tagSet.item | if
+        type == "array" then . else [.] end) | map(select(.key == "Name")) | if
+        length > 0 then .[0].value else .instanceId end) else .instanceId end),
+        ResourceType: "EC2Instance", ResourceLocation:
+        .placement.availabilityZone, ResourceTags: (if .tagSet != null then
+        ((.tagSet.item | if type == "array" then . else [.] end) |
+        map("\(.key)=\(.value)") | join(", ")) else "" end), VpcId: .vpcId,
+        SecurityGroups: (.groupSet.item | if type == "array" then map(.groupId)
+        else [.groupId] end | join(", ")), PrivateIpAddress: .privateIpAddress,
+        PublicIpAddress: (.dnsName // "N/A"), InstanceState:
+        .instanceState.name, ValidationStatusCode: "INST_IN_VPC_WITH_SG",
+        ValidationStatusNotes: "Instance found in filtered VPC with identified
+        security group", ComplianceStatus: "COMPLIANT", ComplianceStatusReason:
+        "EC2 instance is part of the analyzed VPC and uses the identified
+        security groups", EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+        UserAction: "", ActionStatus: "", ActionResponseURL: ""})
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: >-
+        JQ transform to generate standard compliance report format from
+        XML-converted JSON structure, navigating through
+        DescribeInstancesResponse.reservationSet.item and instancesSet.item,
+        handling both single objects and arrays, extracting instance details
+        with proper field names (camelCase), processing tagSet.item for tags by
+        normalizing to array first then filtering for Name tag, groupSet.item
+        for security groups, and generating all required compliance fields
+        including System, Source, Resource details, VPC and Security Group
+        information, compliance status, validation codes, and evaluation
+        timestamp
+    - name: generate_report_OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: fetch_vpcs
+      type: task
+      description: Fetch all VPCs from AWS account using EC2 DescribeVpcs API
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: FilterDataWithJQ
+      alias: filter_vpcs
+      type: task
+      description: Filter VPCs based on user-defined criteria (tags or names)
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: fetch_ec2_in_vpcs
+      type: task
+      description: List EC2 instances within the filtered VPCs
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: extract_security_groups
+      type: task
+      description: Extract unique security group IDs from EC2 instances
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: fetch_all_ec2_with_sgs
+      type: task
+      description: Find all EC2 instances sharing the identified security groups
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: generate_report
+      type: task
+      description: Generate standard compliance report
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - fetch_vpcs.Input.RequestConfigFile:=*.Input.fetch_vpcs_RequestConfigFile
+    - filter_vpcs.Input.InputFile:=fetch_vpcs.Output.OutputFile
+    - filter_vpcs.Input.JQFilter:=*.Input.filter_vpcs_JQFilter
+    - filter_vpcs.Input.OutputMethod:=*.Input.filter_vpcs_OutputMethod
+    - >-
+      fetch_ec2_in_vpcs.Input.RequestConfigFile:=*.Input.fetch_ec2_in_vpcs_RequestConfigFile
+    - fetch_ec2_in_vpcs.Input.InputFile:=filter_vpcs.Output.FilteredFile
+    - >-
+      extract_security_groups.Input.InputFile:=fetch_ec2_in_vpcs.Output.OutputFile
+    - >-
+      extract_security_groups.Input.JQTransform:=*.Input.extract_security_groups_JQTransform
+    - >-
+      extract_security_groups.Input.OutputMethod:=*.Input.extract_security_groups_OutputMethod
+    - >-
+      fetch_all_ec2_with_sgs.Input.RequestConfigFile:=*.Input.fetch_all_ec2_with_sgs_RequestConfigFile
+    - >-
+      fetch_all_ec2_with_sgs.Input.InputFile:=extract_security_groups.Output.TransformedFile
+    - generate_report.Input.InputFile:=fetch_all_ec2_with_sgs.Output.OutputFile
+    - generate_report.Input.JQTransform:=*.Input.generate_report_JQTransform
+    - generate_report.Input.OutputMethod:=*.Input.generate_report_OutputMethod
+    - '*.Output.ComplianceReport:=generate_report.Output.TransformedFile'
+    - >-
+      *.Output.ExtendedData_EC2Instances:=fetch_all_ec2_with_sgs.Output.OutputFile
+    - '*.Output.CompliancePCT_:=generate_report.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=generate_report.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=generate_report.Output.LogFile'
+  outputsMeta__:
+    - name: ComplianceReport
+      dataType: FILE
+      description: >-
+        Rule output that contains the processed output or results generated by
+        the rule execution
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: ExtendedData_EC2Instances
+      dataType: FILE
+      description: >-
+        Rule output that contains the processed output or results generated by
+        the rule execution
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: LogFile
+      dataType: FILE
+      description: >-
+        Rule output that contains the processed output or results generated by
+        the rule execution
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true

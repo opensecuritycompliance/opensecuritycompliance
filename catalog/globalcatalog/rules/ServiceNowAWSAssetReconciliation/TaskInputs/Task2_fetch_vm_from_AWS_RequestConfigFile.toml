@@ -1,0 +1,37 @@
+[Variables]
+Method = "POST"
+Action = "DescribeInstances"
+Version = "2016-11-15"
+
+[Request]
+URL = "<<application.AppURL>>"
+Method = "<<Method>>"
+ContentType = "application/x-www-form-urlencoded"
+Redirect = true
+CredentialType = "AWSSignature"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Headers]
+Accept = "application/json"
+
+[Request.Params]
+Action = "<<Action>>"
+Version = "<<Version>>"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data.FormData]
+
+[Request.Data.URLEncoded]
+
+[Request.Data.Raw]
+
+[Request.Data.Binary]
