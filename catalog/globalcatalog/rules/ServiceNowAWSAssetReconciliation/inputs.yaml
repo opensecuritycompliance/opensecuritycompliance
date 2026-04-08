@@ -1,0 +1,63 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+      BearerToken:
+        ValidationCURL: ""
+        Token: ""
+      BasicAuthentication:
+        ValidationCURL: ""
+        UserName: ""
+        Password: ""
+      OAuth:
+        ValidationCURL: ""
+        ClientID: ""
+        ClientSecret: ""
+      CustomType:
+        ValidationCURL: ""
+        CredentialJson: null
+      APIKey:
+        ValidationCURL: ""
+        APIKey: ""
+      NoAuth: {}
+      JWTBearer:
+        Algorithm: ""
+        PrivateKey: null
+        Payload: ""
+        ValidationCURL: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  AWSRequestConfig: <<MINIO_FILE_PATH>>
+  ReconciliationOutputFormat: JSON
+  ReconciliationSQLQuery: SELECT COALESCE(inputfile1.name, json_extract(inputfile2.PrivateDnsName,
+    '$')) AS AssetName...
+  ServiceNowRequestConfig: <<MINIO_FILE_PATH>>
+  StandardSchemaTransform: 'map(. + {System: .System, Source: .Source...})'
+  TransformOutputMethod: ALL
+fromDate: 2026-04-08T02:15:53Z
+toDate: 2026-04-08T02:15:53Z
