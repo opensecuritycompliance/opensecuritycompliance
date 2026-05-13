@@ -1,0 +1,3 @@
+[JQConfig]
+JQExpression = "[.[0].items[] | {WebhookName: .metadata.name, WebhookExists: true}]"
+OutputMethod = "FIRST"

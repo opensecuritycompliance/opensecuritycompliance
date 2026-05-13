@@ -1,0 +1,391 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: CVE20251974IngressNightmareAssessment
+  purpose: >-
+    Assess Kubernetes clusters for CVE-2025-1974 (IngressNightmare) by detecting
+    vulnerable ingress-nginx deployments and verifying if any valid remediation
+    is in place.
+  description: >-
+    This rule evaluates all ingress-nginx Deployments across all namespaces in a
+    Kubernetes cluster for exposure to CVE-2025-1974 (IngressNightmare, CVSS 9.8
+    Critical). It fetches Deployments, ValidatingWebhookConfigurations, and Helm
+    release secrets via the Kubernetes API, then joins and analyzes the data to
+    determine whether the ingress-nginx version is patched, the validating
+    admission webhook is disabled, or a Helm-managed release exists. Each
+    ingress-nginx instance is marked COMPLIANT if a valid remediation is
+    detected, or NON_COMPLIANT with the exact patch command if it remains
+    vulnerable.
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    fetch_deployments_RequestConfigFile: 
+    flatten_deployments_JQConfigFile:
+    fetch_webhooks_RequestConfigFile: 
+    flatten_webhooks_JQConfigFile: 
+    fetch_helm_secrets_RequestConfigFile: 
+    flatten_helm_secrets_JQConfigFile: 
+    join_deployments_webhooks_SQLConfig: 
+    join_helm_compliance_SQLConfig:
+    sql_output_format: JSON
+    map_standard_schema_JQTransform: >-
+      map({ System: "kubernetes", Source: "compliancecow", ResourceID:
+      (.Namespace + "/" + .DeploymentName), ResourceName: .DeploymentName,
+      ResourceType: "Deployment", ResourceLocation: .Namespace, ResourceTags:
+      ("app.kubernetes.io/name=" + .AppName + ",app.kubernetes.io/instance=" +
+      .HelmInstance), ClusterName: "kind-kind", NameSpace: .Namespace, CVE:
+      "CVE-2025-1974", ChecksPerformed: { VersionCheck: .AppVersion,
+      WebhookArgPresent: .WebhookArgPresent, WebhookConfigExists:
+      .WebhookConfigExists, ManagedByHelm: .ManagedByHelm, HelmReleaseFound:
+      .HelmReleaseFound }, MatchedRemediation: (if .RemediationStatus ==
+      "PATCHED_VERSION" then "R1:UpgradedToFixedVersion" elif .RemediationStatus
+      == "WEBHOOK_DISABLED" then "R2/R3:WebhookDisabled" else "None" end),
+      AffectedReason: (if .ComplianceStatus == "NON_COMPLIANT" then
+      ("ingress-nginx version " + .AppVersion + " is <= v1.11.4 or <= v1.12.0
+      and validating webhook is active (CVE-2025-1974)") else "" end),
+      Remediation: (if .ComplianceStatus == "NON_COMPLIANT" then "Upgrade
+      ingress-nginx to v1.11.5+ or v1.12.1+, or disable the
+      ValidatingWebhookConfiguration" else "No action required" end),
+      PatchContent: (if .ComplianceStatus == "NON_COMPLIANT" then (if
+      .ManagedByHelm then "helm upgrade " + .HelmInstance + "
+      ingress-nginx/ingress-nginx --set controller.image.tag=v1.12.1 -n " +
+      .Namespace else "kubectl set image deployment/" + .DeploymentName + "
+      controller=registry.k8s.io/ingress-nginx/controller:v1.12.1 -n " +
+      .Namespace end) else "" end), ValidationStatusCode: (if .ComplianceStatus
+      == "COMPLIANT" then "INGX_VER_PATCHED" else "INGX_VER_VULN" end),
+      ValidationStatusNotes: (if .ComplianceStatus == "COMPLIANT" then
+      ("ingress-nginx " + .AppVersion + " is a patched version not affected by
+      CVE-2025-1974") else ("ingress-nginx " + .AppVersion + " is vulnerable to
+      CVE-2025-1974 (IngressNightmare) - webhook active") end),
+      ComplianceStatus: .ComplianceStatus, ComplianceStatusReason: (if
+      .ComplianceStatus == "COMPLIANT" then "Version " + .AppVersion + " is
+      patched and not vulnerable to CVE-2025-1974" else "Version " + .AppVersion
+      + " is vulnerable to CVE-2025-1974 (IngressNightmare). Webhook is active
+      and no remediation detected." end), EvaluatedTime: (now |
+      strftime("%Y-%m-%dT%H:%M:%SZ")), UserAction: "", ActionStatus: "",
+      ActionResponseURL: "", TicketId: "", TicketCreatedDate: "",
+      TicketClosedDate: "" })
+    map_standard_schema_OutputMethod: ALL
+  inputsMeta__:
+    - name: fetch_deployments_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: flatten_deployments_JQConfigFile
+      dataType: FILE
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: fetch_webhooks_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: flatten_webhooks_JQConfigFile
+      dataType: FILE
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: fetch_helm_secrets_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: flatten_helm_secrets_JQConfigFile
+      dataType: FILE
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: join_deployments_webhooks_SQLConfig
+      dataType: FILE
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: join_helm_compliance_SQLConfig
+      dataType: FILE
+      defaultValue: 
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: sql_output_format
+      dataType: STRING
+      defaultValue: JSON
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+      repeated: false
+      explanation: ''
+    - name: map_standard_schema_JQTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        map({ System: "kubernetes", Source: "compliancecow", ResourceID:
+        (.Namespace + "/" + .DeploymentName), ResourceName: .DeploymentName,
+        ResourceType: "Deployment", ResourceLocation: .Namespace, ResourceTags:
+        ("app.kubernetes.io/name=" + .AppName + ",app.kubernetes.io/instance=" +
+        .HelmInstance), ClusterName: "kind-kind", NameSpace: .Namespace, CVE:
+        "CVE-2025-1974", ChecksPerformed: { VersionCheck: .AppVersion,
+        WebhookArgPresent: .WebhookArgPresent, WebhookConfigExists:
+        .WebhookConfigExists, ManagedByHelm: .ManagedByHelm, HelmReleaseFound:
+        .HelmReleaseFound }, MatchedRemediation: (if .RemediationStatus ==
+        "PATCHED_VERSION" then "R1:UpgradedToFixedVersion" elif
+        .RemediationStatus == "WEBHOOK_DISABLED" then "R2/R3:WebhookDisabled"
+        else "None" end), AffectedReason: (if .ComplianceStatus ==
+        "NON_COMPLIANT" then ("ingress-nginx version " + .AppVersion + " is <=
+        v1.11.4 or <= v1.12.0 and validating webhook is active (CVE-2025-1974)")
+        else "" end), Remediation: (if .ComplianceStatus == "NON_COMPLIANT" then
+        "Upgrade ingress-nginx to v1.11.5+ or v1.12.1+, or disable the
+        ValidatingWebhookConfiguration" else "No action required" end),
+        PatchContent: (if .ComplianceStatus == "NON_COMPLIANT" then (if
+        .ManagedByHelm then "helm upgrade " + .HelmInstance + "
+        ingress-nginx/ingress-nginx --set controller.image.tag=v1.12.1 -n " +
+        .Namespace else "kubectl set image deployment/" + .DeploymentName + "
+        controller=registry.k8s.io/ingress-nginx/controller:v1.12.1 -n " +
+        .Namespace end) else "" end), ValidationStatusCode: (if
+        .ComplianceStatus == "COMPLIANT" then "INGX_VER_PATCHED" else
+        "INGX_VER_VULN" end), ValidationStatusNotes: (if .ComplianceStatus ==
+        "COMPLIANT" then ("ingress-nginx " + .AppVersion + " is a patched
+        version not affected by CVE-2025-1974") else ("ingress-nginx " +
+        .AppVersion + " is vulnerable to CVE-2025-1974 (IngressNightmare) -
+        webhook active") end), ComplianceStatus: .ComplianceStatus,
+        ComplianceStatusReason: (if .ComplianceStatus == "COMPLIANT" then
+        "Version " + .AppVersion + " is patched and not vulnerable to
+        CVE-2025-1974" else "Version " + .AppVersion + " is vulnerable to
+        CVE-2025-1974 (IngressNightmare). Webhook is active and no remediation
+        detected." end), EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+        UserAction: "", ActionStatus: "", ActionResponseURL: "", TicketId: "",
+        TicketCreatedDate: "", TicketClosedDate: "" })
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: map_standard_schema_OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues:
+        - ALL
+        - FIRST
+      repeated: false
+      explanation: ''
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: fetch_deployments
+      type: task
+      description: Calls the Kubernetes API to retrieve all Deployments cluster-wide
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: flatten_deployments
+      type: task
+      description: >-
+        Extracts name, namespace, image, version labels, webhook args, and Helm
+        metadata
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: fetch_webhooks
+      type: task
+      description: >-
+        Calls the Kubernetes admissionregistration API to list all validating
+        webhooks
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: flatten_webhooks
+      type: task
+      description: Extracts webhook names for join with deployments
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: fetch_helm_secrets
+      type: task
+      description: >-
+        Queries Kubernetes secrets with owner=helm label to detect Helm-managed
+        ingress-nginx releases
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: flatten_helm_secrets
+      type: task
+      description: Extracts Helm release metadata for join with deployment data
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: join_deployments_webhooks
+      type: task
+      description: >-
+        Joins flattened deployments with webhook data to determine webhook
+        presence per deployment
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: join_helm_compliance
+      type: task
+      description: >-
+        Determines COMPLIANT vs NON_COMPLIANT status based on version, webhook
+        state, and Helm remediation
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: map_standard_schema
+      type: task
+      description: >-
+        Transforms raw compliance data into the standard schema with
+        ChecksPerformed as JSON object, dynamic EvaluatedTime, and TicketId,
+        TicketCreatedDate, TicketClosedDate columns
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      fetch_deployments.Input.RequestConfigFile:=*.Input.fetch_deployments_RequestConfigFile
+    - flatten_deployments.Input.InputFile:=fetch_deployments.Output.OutputFile
+    - >-
+      flatten_deployments.Input.JQConfigFile:=*.Input.flatten_deployments_JQConfigFile
+    - >-
+      fetch_webhooks.Input.RequestConfigFile:=*.Input.fetch_webhooks_RequestConfigFile
+    - flatten_webhooks.Input.InputFile:=fetch_webhooks.Output.OutputFile
+    - flatten_webhooks.Input.JQConfigFile:=*.Input.flatten_webhooks_JQConfigFile
+    - >-
+      fetch_helm_secrets.Input.RequestConfigFile:=*.Input.fetch_helm_secrets_RequestConfigFile
+    - flatten_helm_secrets.Input.InputFile:=fetch_helm_secrets.Output.OutputFile
+    - >-
+      flatten_helm_secrets.Input.JQConfigFile:=*.Input.flatten_helm_secrets_JQConfigFile
+    - >-
+      join_deployments_webhooks.Input.InputFile1:=flatten_deployments.Output.OutputFile
+    - >-
+      join_deployments_webhooks.Input.InputFile2:=flatten_webhooks.Output.OutputFile
+    - >-
+      join_deployments_webhooks.Input.SQLConfig:=*.Input.join_deployments_webhooks_SQLConfig
+    - >-
+      join_deployments_webhooks.Input.OutputFileFormat:=*.Input.sql_output_format
+    - >-
+      join_helm_compliance.Input.InputFile1:=join_deployments_webhooks.Output.OutputFile
+    - >-
+      join_helm_compliance.Input.InputFile2:=flatten_helm_secrets.Output.OutputFile
+    - >-
+      join_helm_compliance.Input.SQLConfig:=*.Input.join_helm_compliance_SQLConfig
+    - join_helm_compliance.Input.OutputFileFormat:=*.Input.sql_output_format
+    - >-
+      map_standard_schema.Input.InputFile:=join_helm_compliance.Output.OutputFile
+    - >-
+      map_standard_schema.Input.JQTransform:=*.Input.map_standard_schema_JQTransform
+    - >-
+      map_standard_schema.Input.OutputMethod:=*.Input.map_standard_schema_OutputMethod
+    - >-
+      *.Output.CVE20251974ComplianceReport:=map_standard_schema.Output.TransformedFile
+    - '*.Output.CompliancePCT_:=map_standard_schema.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=map_standard_schema.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=map_standard_schema.Output.LogFile'
+  outputsMeta__:
+    - name: CVE20251974ComplianceReport
+      dataType: FILE
+      description: >-
+        Final compliance assessment output for CVE-2025-1974 across all
+        ingress-nginx instances
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: LogFile
+      dataType: FILE
+      description: Execution log file
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
