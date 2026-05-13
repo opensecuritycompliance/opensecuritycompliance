@@ -1,0 +1,3 @@
+[JQConfig]
+JQExpression = "[.[0].items[] | {DeploymentName: .metadata.name, Namespace: .metadata.namespace, AppVersion: (.metadata.labels[\"app.kubernetes.io/version\"] // \"unknown\"), AppName: (.metadata.labels[\"app.kubernetes.io/name\"] // \"unknown\"), HelmInstance: (.metadata.labels[\"app.kubernetes.io/instance\"] // \"unknown\"), ManagedByHelm: (if .metadata.labels[\"app.kubernetes.io/managed-by\"] == \"Helm\" then true else false end), Image: .spec.template.spec.containers[0].image, WebhookArgPresent: ((.spec.template.spec.containers[0].args // []) | map(. == \"--validating-webhook=:8443\") | length > 0)}]"
+OutputMethod = "FIRST"

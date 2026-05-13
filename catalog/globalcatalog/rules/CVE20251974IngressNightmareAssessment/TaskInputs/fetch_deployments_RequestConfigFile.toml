@@ -1,0 +1,33 @@
+[Variables]
+Method = "GET"
+CredentialType = "BearerToken"
+
+[Request]
+URL = "<<application.AppURL>>/apis/apps/v1/deployments"
+Method = "<<Method>>"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "<<CredentialType>>"
+TimeOut = 30
+Verify = false
+MaxWorkers = 5
+
+[Request.Headers]
+
+[Request.Params]
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data.FormData]
+
+[Request.Data.URLEncoded]
+
+[Request.Data.Raw]
+
+[Request.Data.Binary]
