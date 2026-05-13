@@ -338,8 +338,7 @@ check_anthropic_key() {
         
         # Array of models to check in order of preference (best to minimum required)
         local models=(
-            "claude-sonnet-4-5-20250929:Claude Sonnet 4.5"
-            "claude-sonnet-4-20250514:Claude Sonnet 4"
+            "claude-sonnet-4-6:Claude Sonnet 4.6"
         )
         
         DETECTED_MODEL=""
@@ -382,7 +381,7 @@ check_anthropic_key() {
         # Check if we found at least the minimum required model
         if [ -z "$DETECTED_MODEL" ]; then
             log_error "No compatible Claude model found"
-            echo "  - This platform requires at least Claude Sonnet 4 (claude-sonnet-4-20250514)"
+            echo "  - This platform requires Claude Sonnet 4.6 (claude-sonnet-4-6)"
             echo "  - Your API key does not have access to any supported models"
             return 1
         fi
@@ -853,8 +852,8 @@ show_mcp_info() {
     echo ""
     log_info "AI Model Configuration:"
     echo "  - Provider: Anthropic only"
-    echo "  - Detected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4}"
-    echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-20250514}"
+    echo "  - Detected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.6}"
+    echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-6}"
     echo "  - MCP Sessions: $MCP_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
     echo ""
