@@ -20,7 +20,7 @@ For more detailed information, see the following sections:
 
 ## Setup Modes
 
-The setup script (`setup.sh`) presents two options at startup:
+The setup script given in the [Quick Start Guide](#quick-start-guide) shall present two options:
 
 | Mode | Anthropic API Key | Services | Guide |
 |------|-------------------|----------|-------|
@@ -53,7 +53,7 @@ Open Security Compliance is a comprehensive rule engine platform that provides:
 
 This platform **automatically detects and uses the best available Claude model** from your Anthropic API key:
 - **Provider**: Anthropic Claude only
-- **Supported Models**: Claude Sonnet 4.5, Claude Sonnet 4
+- **Supported Models**: Claude Sonnet 4.6, Claude Sonnet 4.5
 - **Auto-Detection**: Setup script tests your API key and configures the highest available model
 - **Note**: Other providers (OpenAI, etc.) are not supported at this time
 
@@ -166,7 +166,7 @@ You'll need an Anthropic API key for AI-assisted features. The setup script will
 
 Your API key will look like: `sk-ant-api03-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...`
 
-**Note:** The setup script will validate your key and automatically detect the best Claude model you have access to (Claude Sonnet 4.5 or Claude Sonnet 4).
+**Note:** The setup script will validate your key and automatically detect the best Claude model you have access to (Claude Sonnet 4.6 or Claude Sonnet 4.5).
 
 **Note:** The setup script will check your system and warn you if requirements aren't met.
 
@@ -218,8 +218,8 @@ Select setup mode [1/2]: 1
 [SUCCESS] Anthropic API key is valid
 
 [INFO] Detecting best available Claude model...
-[SUCCESS] Claude Sonnet 4.5 access confirmed
-[SUCCESS] Best available model: Claude Sonnet 4.5
+[SUCCESS] Claude Sonnet 4.6 access confirmed
+[SUCCESS] Best available model: Claude Sonnet 4.6
 
 [INFO] Checking MinIO credentials...
 [SUCCESS] MinIO credentials validated successfully
@@ -235,8 +235,8 @@ Access URLs:
 
 AI Model Configuration:
   - Provider: Anthropic only
-  - Detected Model: Claude Sonnet 4.5
-  - Model ID: claude-sonnet-4-5-20250929
+  - Detected Model: Claude Sonnet 4.6
+  - Model ID: claude-sonnet-4-6
 ```
 
 ---
@@ -306,7 +306,7 @@ docker ps
 The setup script will prompt you to re-enter your API key. Make sure:
 1. You copied the complete key (starts with `sk-ant-`)
 2. The key is active (not expired or revoked)
-3. Your key has access to at least Claude Sonnet 4
+3. Your key has access to at least Claude Sonnet 4.5
 
 #### 4.4. MinIO Credential Requirements Not Met
 
@@ -560,7 +560,7 @@ The platform uses two main configuration files:
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 
 # Auto-detected Claude Model (set by setup script)
-MCP_MODEL=claude-sonnet-4-5-20250929
+MCP_MODEL=claude-sonnet-4-6
 ```
 
 ##### `etc/policycow.env` (Platform Settings)
@@ -744,7 +744,7 @@ mcp:
 provider: anthropic
 
 # Check your GOOSE_MODEL in etc/userconfig.env and match it here
-model: claude-sonnet-4-5-20250929  # Update to match your detected model
+model: claude-sonnet-4-6  # Update to match your detected model
 ```
 
 ##### Step 4: Verify Your Model
@@ -906,7 +906,7 @@ A: No. The setup script offers two modes. If you don't have an Anthropic API key
 A: No! The setup script handles all technical details automatically. Just follow the Quick Start Guide.
 
 **Q: What AI models are supported?**
-A: Only Anthropic Claude (MCP mode). The setup script automatically detects the best model your API key has access to (Claude Sonnet 4.5 or Claude Sonnet 4).
+A: Only Anthropic Claude (MCP mode). The setup script automatically detects the best model your API key has access to (Claude Sonnet 4.6 or Claude Sonnet 4.5).
 
 **Q: Do I need to install external tools like Goose?**
 A: No! The Web UI has built-in AI assistance (MCP mode). External tools like Goose are completely optional.
@@ -951,7 +951,7 @@ A: No, currently only Anthropic Claude is supported for MCP mode. Other provider
 │                                                             │
 │ AI Configuration:                                           │
 │  Provider: Anthropic only                                   │
-│  Models: Auto-detected (Sonnet 4.5 or 4)                    │
+│  Models: Auto-detected (Sonnet 4.6 or 4.5)                    │
 │  Config: etc/userconfig.env (MCP_MODEL)                     │
 │                                                             │
 │ Useful Commands:                                            │
