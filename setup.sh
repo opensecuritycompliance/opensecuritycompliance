@@ -339,6 +339,7 @@ check_anthropic_key() {
         # Array of models to check in order of preference (best to minimum required)
         local models=(
             "claude-sonnet-4-6:Claude Sonnet 4.6"
+            "claude-sonnet-4-5:Claude Sonnet 4.5"
         )
         
         DETECTED_MODEL=""
@@ -436,7 +437,7 @@ check_anthropic_key() {
             read -p "Would you like to try another API key? (Y/n): " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Nn]$ ]]; then
-                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4+ access is required."
+                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4.5+ access is required."
                 exit 1
             fi
             # Clear the key to prompt for a new one
@@ -873,7 +874,7 @@ show_mcp_info() {
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
-    echo "  ⚠️  Only Anthropic Claude is supported (detected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4})"
+    echo "  ⚠️  Only Anthropic Claude is supported (detected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.5})"
     echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
     echo "  ⚠️  MCP sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
