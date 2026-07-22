@@ -1,8 +1,6 @@
 module applicationtypes
 
-go 1.24.0
-
-toolchain go1.24.6
+go 1.25.0
 
 replace (
 	applicationtypes => ../go
@@ -10,7 +8,6 @@ replace (
 )
 
 require (
-	cloud.google.com/go/bigquery v1.8.0
 	cowlibrary v0.0.0-00010101000000-000000000000
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.2.0
@@ -30,21 +27,17 @@ require (
 	github.com/google/cel-go v0.22.1
 	github.com/google/go-github/v53 v53.2.0
 	github.com/okta/okta-sdk-golang/v2 v2.20.0
-	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.23
 	github.com/parquet-go/parquet-go v0.25.0
 	github.com/pelletier/go-toml/v2 v2.2.4
-	github.com/strongdm/strongdm-sdk-go/v15 v15.27.0
-	github.com/xanzy/go-gitlab v0.115.0
 	github.com/xitongsys/parquet-go v1.6.2
 	github.com/xitongsys/parquet-go-source v0.0.0-20240122235623-d6294584ab18
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.54.0
 	golang.org/x/oauth2 v0.8.0
 	google.golang.org/api v0.74.0
 )
 
 require (
 	cel.dev/expr v0.18.0 // indirect
-	cloud.google.com/go v0.100.2 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.5.1 // indirect
@@ -66,8 +59,6 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -76,7 +67,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
-	golang.org/x/time v0.3.0 // indirect
 )
 
 require (
@@ -139,11 +129,11 @@ require (
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220401170504-314d38edb7de // indirect
