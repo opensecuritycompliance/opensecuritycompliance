@@ -2,7 +2,7 @@ FROM python:3.12
 LABEL author=raj.krishnamurthy@continube.com
 RUN apt-get update && apt-get install zip
 
-ARG GOVERSION=go1.21.3.linux-amd64.tar.gz
+ARG GOVERSION=go1.25.0.linux-amd64.tar.gz
 RUN wget https://golang.org/dl/${GOVERSION}
 RUN rm -rf /usr/local/go && tar -C /usr/local -xzf ${GOVERSION}
 RUN ls /usr/local/go/bin
