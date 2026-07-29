@@ -99,7 +99,7 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscwebserver:1.2-20260604094509
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/oscwebserver:1.4-20260729182658
     logging:
       driver: "json-file"
       options:
@@ -172,6 +172,7 @@ services:
       - ./catalog/globalcatalog/rules:/policycow/catalog/globalcatalog/rules
       - ./catalog/applicationtypes:/policycow/catalog/applicationtypes
       - ./catalog/applicationscope:/policycow/catalog/applicationscope
+      - ./catalog/designnotes:/policycow/catalog/designnotes
       - ./catalog/globalcatalog/methods:/policycow/catalog/globalcatalog/methods
       - ./catalog/globalcatalog/rulegroups:/policycow/catalog/globalcatalog/rulegroups
       - ./catalog/globalcatalog/tasks:/policycow/catalog/globalcatalog/tasks
