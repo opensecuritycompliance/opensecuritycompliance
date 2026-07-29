@@ -24,7 +24,7 @@ SETUP_MODE="full"
 DOCKER_CMD="sudo docker"
 USE_SUDO=true
 
-# Global variables for detected model
+# Global variables for selected model
 DETECTED_MODEL=""
 DETECTED_MODEL_NAME=""
 
@@ -283,12 +283,14 @@ check_anthropic_key() {
                 # macOS
                 sed -i '' '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
                 sed -i '' '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+                sed -i '' '/# Selected Claude Model/d' "$ENV_FILE"
                 sed -i '' '/# Detected Claude Model/d' "$ENV_FILE"
                 sed -i '' '/^MCP_MODEL=/d' "$ENV_FILE"
             else
                 # Linux
                 sed -i '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
                 sed -i '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
+                sed -i '/# Selected Claude Model/d' "$ENV_FILE"
                 sed -i '/# Detected Claude Model/d' "$ENV_FILE"
                 sed -i '/^MCP_MODEL=/d' "$ENV_FILE"
             fi
@@ -298,7 +300,7 @@ check_anthropic_key() {
         unset MCP_MODEL
     }
     
-    # Function to validate API key and detect best available Claude model
+    # Function to validate API key and let the user select an accessible Claude model
     validate_api_key() {
         local api_key=$1
         
@@ -308,86 +310,205 @@ check_anthropic_key() {
             return 1
         fi
         
-        # Test the API key by making a simple request
-        log_info "Validating Anthropic API key..."
-        local temp_file=$(mktemp)
-        local http_code=$(curl -s -w "%{http_code}" -o "$temp_file" \
-            -H "x-api-key: $api_key" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            https://api.anthropic.com/v1/models)
-        
-        local http_body=$(cat "$temp_file")
-        rm -f "$temp_file"
-        
-        if [ "$http_code" != "200" ]; then
-            log_error "Anthropic API key validation failed (HTTP $http_code)"
-            if [ "$http_code" == "401" ]; then
-                echo "  - API key is invalid or expired"
-            elif [ "$http_code" == "403" ]; then
-                echo "  - API key does not have required permissions"
-            elif [ "$http_code" == "429" ]; then
-                echo "  - API rate limit exceeded, please try again later"
-            else
-                echo "  - Network connectivity issues or API error"
-            fi
+        if ! command -v python3 &> /dev/null; then
+            log_error "python3 is required to parse Anthropic model list"
+            echo "  - Install Python 3 and re-run setup"
             return 1
         fi
-        
-        log_success "Anthropic API key is valid"
-        
-        # Array of models to check in order of preference (best to minimum required)
-        local models=(
-            "claude-sonnet-4-6:Claude Sonnet 4.6"
-            "claude-sonnet-4-5:Claude Sonnet 4.5"
-        )
-        
-        DETECTED_MODEL=""
-        DETECTED_MODEL_NAME=""
-        
-        log_info "Detecting best available Claude model..."
-        
-        for model_entry in "${models[@]}"; do
-            local model_id="${model_entry%%:*}"
-            local model_name="${model_entry##*:}"
-            
-            log_info "Testing access to $model_name ($model_id)..."
-            local test_temp_file=$(mktemp)
-            local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
-                -X POST \
+
+        # Fetch all accessible models from https://api.anthropic.com/v1/models (paginated)
+        log_info "Validating Anthropic API key and fetching accessible models..."
+        local models_file=$(mktemp)
+        local after_id=""
+        local page=0
+        local max_pages=20
+
+        while [ $page -lt $max_pages ]; do
+            page=$((page + 1))
+            local page_file=$(mktemp)
+            local url="https://api.anthropic.com/v1/models?limit=100"
+            if [ -n "$after_id" ]; then
+                url="${url}&after_id=${after_id}"
+            fi
+
+            local http_code=$(curl -s -w "%{http_code}" -o "$page_file" \
                 -H "x-api-key: $api_key" \
                 -H "anthropic-version: 2023-06-01" \
                 -H "content-type: application/json" \
-                -d "{
-                    \"model\": \"$model_id\",
-                    \"max_tokens\": 10,
-                    \"messages\": [{\"role\": \"user\", \"content\": \"Hi\"}]
-                }" \
-                https://api.anthropic.com/v1/messages)
-            
-            rm -f "$test_temp_file"
-            
-            if [ "$test_code" == "200" ]; then
-                log_success "$model_name access confirmed"
-                DETECTED_MODEL="$model_id"
-                DETECTED_MODEL_NAME="$model_name"
+                "$url")
+
+            if [ "$http_code" != "200" ]; then
+                rm -f "$page_file" "$models_file"
+                log_error "Anthropic API key validation failed (HTTP $http_code)"
+                if [ "$http_code" == "401" ]; then
+                    echo "  - API key is invalid or expired"
+                elif [ "$http_code" == "403" ]; then
+                    echo "  - API key does not have required permissions"
+                elif [ "$http_code" == "429" ]; then
+                    echo "  - API rate limit exceeded, please try again later"
+                else
+                    echo "  - Network connectivity issues or API error"
+                fi
+                return 1
+            fi
+
+            # Merge page data into models_file; print has_more|last_id for pagination
+            local page_meta
+            page_meta=$(python3 - "$page_file" "$models_file" <<'PY'
+import json, sys
+page_path, out_path = sys.argv[1], sys.argv[2]
+with open(page_path, encoding="utf-8") as f:
+    payload = json.load(f)
+existing = []
+try:
+    with open(out_path, encoding="utf-8") as f:
+        existing = json.load(f)
+except Exception:
+    existing = []
+if not isinstance(existing, list):
+    existing = []
+existing.extend(payload.get("data") or [])
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(existing, f)
+has_more = "1" if payload.get("has_more") else "0"
+last_id = payload.get("last_id") or ""
+print(f"{has_more}|{last_id}")
+PY
+)
+            rm -f "$page_file"
+
+            local has_more="${page_meta%%|*}"
+            after_id="${page_meta#*|}"
+            if [ "$has_more" != "1" ] || [ -z "$after_id" ]; then
                 break
-            elif [ "$test_code" == "404" ] || [ "$test_code" == "403" ]; then
-                log_warning "$model_name not accessible with this API key"
-            else
-                log_warning "Could not verify $model_name access (HTTP $test_code)"
             fi
         done
-        
-        # Check if we found at least the minimum required model
-        if [ -z "$DETECTED_MODEL" ]; then
+
+        log_success "Anthropic API key is valid"
+
+        DETECTED_MODEL=""
+        DETECTED_MODEL_NAME=""
+
+        # Build selectable list from API response, newest first (by created_at)
+        # Output lines as: model_id<TAB>display_name
+        local parsed_models
+        parsed_models=$(python3 - "$models_file" <<'PY'
+import json, sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    models = json.load(f)
+
+seen = set()
+entries = []
+
+for item in models:
+    item = item or {}
+    model_id = item.get("id") or ""
+    if not model_id or model_id in seen:
+        continue
+    # Skip non-Claude entries if any appear
+    if not model_id.lower().startswith("claude"):
+        continue
+    seen.add(model_id)
+    display = item.get("display_name") or model_id
+    created_at = item.get("created_at") or ""
+    entries.append((created_at, model_id, display))
+
+# Latest → oldest by ISO created_at; missing timestamps sort last
+entries.sort(key=lambda x: (x[0], x[1]), reverse=True)
+
+for _, model_id, display in entries:
+    # TAB-separated to avoid colon issues in display names
+    print(f"{model_id}\t{display}")
+PY
+)
+        rm -f "$models_file"
+
+        local accessible_ids=()
+        local accessible_names=()
+
+        if [ -n "$parsed_models" ]; then
+            while IFS=$'\t' read -r model_id model_name; do
+                [ -z "$model_id" ] && continue
+                accessible_ids+=("$model_id")
+                accessible_names+=("$model_name")
+                log_success "$model_name ($model_id) available"
+            done <<< "$parsed_models"
+        fi
+
+        # Fallback: probe known aliases if /v1/models returned nothing usable
+        if [ ${#accessible_ids[@]} -eq 0 ]; then
+            log_warning "No models returned from /v1/models; probing known Sonnet aliases..."
+            local supported_models=(
+                "claude-sonnet-4-6:Claude Sonnet 4.6"
+                "claude-sonnet-4-5:Claude Sonnet 4.5"
+            )
+            for model_entry in "${supported_models[@]}"; do
+                local model_id="${model_entry%%:*}"
+                local model_name="${model_entry##*:}"
+
+                log_info "Testing access to $model_name ($model_id)..."
+                local test_temp_file=$(mktemp)
+                local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
+                    -X POST \
+                    -H "x-api-key: $api_key" \
+                    -H "anthropic-version: 2023-06-01" \
+                    -H "content-type: application/json" \
+                    -d "{
+                        \"model\": \"$model_id\",
+                        \"max_tokens\": 10,
+                        \"messages\": [{\"role\": \"user\", \"content\": \"Hi\"}]
+                    }" \
+                    https://api.anthropic.com/v1/messages)
+
+                rm -f "$test_temp_file"
+
+                if [ "$test_code" == "200" ]; then
+                    log_success "$model_name access confirmed"
+                    accessible_ids+=("$model_id")
+                    accessible_names+=("$model_name")
+                elif [ "$test_code" == "404" ] || [ "$test_code" == "403" ]; then
+                    log_warning "$model_name not accessible with this API key"
+                else
+                    log_warning "Could not verify $model_name access (HTTP $test_code)"
+                fi
+            done
+        fi
+
+        if [ ${#accessible_ids[@]} -eq 0 ]; then
             log_error "No compatible Claude model found"
-            echo "  - This platform requires Claude Sonnet 4.6 (claude-sonnet-4-6)"
-            echo "  - Your API key does not have access to any supported models"
+            echo "  - This platform requires access to Anthropic Claude models"
+            echo "  - Your API key does not have access to any models via /v1/models"
             return 1
         fi
-        
-        log_success "Best available model: $DETECTED_MODEL_NAME ($DETECTED_MODEL)"
+
+        # Prompt user to select a model
+        echo ""
+        echo "Accessible Claude models:"
+        local i=1
+        for idx in "${!accessible_ids[@]}"; do
+            echo "  $i) ${accessible_names[$idx]} (${accessible_ids[$idx]})"
+            i=$((i + 1))
+        done
+
+        local max_choice=${#accessible_ids[@]}
+        local selection=""
+        while true; do
+            read -p "Select model [1-$max_choice] (default: 1): " -r selection
+            if [ -z "$selection" ]; then
+                selection=1
+            fi
+            if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le "$max_choice" ]; then
+                break
+            fi
+            log_warning "Invalid selection. Enter a number between 1 and $max_choice."
+        done
+
+        local chosen_idx=$((selection - 1))
+        DETECTED_MODEL="${accessible_ids[$chosen_idx]}"
+        DETECTED_MODEL_NAME="${accessible_names[$chosen_idx]}"
+
+        log_success "Selected model: $DETECTED_MODEL_NAME ($DETECTED_MODEL)"
         return 0
     }
     
@@ -420,8 +541,8 @@ check_anthropic_key() {
             # Update API key in-place
             update_env_variable "$ENV_FILE" "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "# Anthropic API Key for MCP integration"
             
-            # Update MCP_MODEL in-place with detected model
-            update_env_variable "$ENV_FILE" "MCP_MODEL" "$DETECTED_MODEL" "# Detected Claude Model"
+            # Update MCP_MODEL in-place with selected model
+            update_env_variable "$ENV_FILE" "MCP_MODEL" "$DETECTED_MODEL" "# Selected Claude Model"
             
             log_success "API key saved to etc/userconfig.env"
             log_success "MCP_MODEL set to: $DETECTED_MODEL_NAME"
@@ -853,7 +974,7 @@ show_mcp_info() {
     echo ""
     log_info "AI Model Configuration:"
     echo "  - Provider: Anthropic only"
-    echo "  - Detected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.6}"
+    echo "  - Selected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.6}"
     echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-6}"
     echo "  - MCP Sessions: $MCP_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
@@ -874,7 +995,7 @@ show_mcp_info() {
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
-    echo "  ⚠️  Only Anthropic Claude is supported (detected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.5})"
+    echo "  ⚠️  Only Anthropic Claude is supported (selected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.5})"
     echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
     echo "  ⚠️  MCP sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
