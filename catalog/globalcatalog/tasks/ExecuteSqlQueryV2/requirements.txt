@@ -1,6 +1,6 @@
 PyYAML==6.0.3
 pandas==2.3.3
-pyarrow==22.0.0
+pyarrow==23.0.1
 duckdb==1.5.0
 sqlglot==30.1.0
 SQLAlchemy==2.0.44
