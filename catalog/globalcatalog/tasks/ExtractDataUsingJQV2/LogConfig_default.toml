@@ -8,6 +8,7 @@
     ############ JQ EXCEPTIONS ############
     JQExpression.no_result = "The JQ expression returned no results. Please check the query and ensure the input data matches the expected structure."
     JQExpression.invalid_result = "JQExpression must return an object or an array, got '{jq_result_type}' instead"
+    Streaming.missing_expression = "Streaming JQ Expression not provided"
     
     ############ OUTPUT_FILE EXCEPTIONS ############
     OutputFile.upload_error = "An error occurred while uploading the result: {error}. Please check the error details and try again"

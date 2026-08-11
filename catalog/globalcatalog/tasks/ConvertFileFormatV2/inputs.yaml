@@ -8,7 +8,8 @@ userObject:
         Dummy: ""
 userInputs:
   InputFile: <<MINIO_FILE_PATH>>
-  OutputFileFormat: # (Supported formats for conversion: JSON, CSV, PARQUET, YAML, TOML, XLSX)
+  OutputFileFormat: # (Supported formats for conversion: JSON, NDJSON, CSV, PARQUET, YAML, TOML, XLSX)
+  PreserveType: # True or False (Default: False)
   OutputFileName: 
   LogConfigFile: <<MINIO_FILE_PATH>>
   ProceedIfLogExists: # True or False (Default: True)

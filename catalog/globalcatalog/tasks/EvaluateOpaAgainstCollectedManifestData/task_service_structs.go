@@ -9,6 +9,7 @@ type UserInputs struct {
 	OpaConfigurationFile string `yaml:"OpaConfigurationFile"`
 	Source               string `yaml:"Source"`
 	LogFile              string `yaml:"LogFile"`
+	ManifestFile         string `yaml:"ManifestFile"`
 	DataFile             string `yaml:"DataFile"`
 }
 

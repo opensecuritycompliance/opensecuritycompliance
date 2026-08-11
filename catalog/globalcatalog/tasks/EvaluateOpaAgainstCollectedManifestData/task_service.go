@@ -1,6 +1,7 @@
 package main
 
 import (
+	"EvaluateOpaAgainstCollectedManifestData/opautils"
 	jumphost "applicationtypes/kubernetes"
 	cowStorage "applicationtypes/minio"
 	"archive/zip"
@@ -18,11 +19,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/pelletier/go-toml"
-
 	"github.com/ake-persson/mapslice-json"
 	"github.com/google/uuid"
 	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/storage/inmem"
+	"github.com/pelletier/go-toml"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,6 +35,7 @@ func (inst *TaskInstance) EvaluateOpaAgainstCollectedManifestData(inputs *UserIn
 	errorDetails := []ErrorVO{}
 	defer func() {
 		if len(errorDetails) > 0 {
+			fmt.Println("Errors: ", errorDetails)
 			outputs.LogFile, err = inst.uploadLogFile(errorDetails)
 		}
 	}()
@@ -54,9 +56,9 @@ func (inst *TaskInstance) EvaluateOpaAgainstCollectedManifestData(inputs *UserIn
 		errorDetails = append(errorDetails, previousTaskLog...)
 	}
 
-	if cowlibutils.IsEmpty(inputs.DataFile) && len(errorDetails) > 0 {
+	if cowlibutils.IsEmpty(inputs.ManifestFile) && len(errorDetails) > 0 {
 		return nil
-	} else if cowlibutils.IsEmpty(inputs.DataFile) {
+	} else if cowlibutils.IsEmpty(inputs.ManifestFile) {
 		errorDetails = append(errorDetails, ErrorVO{Error: "Data file cannot be empty."})
 		return nil
 	}
@@ -99,16 +101,26 @@ func (inst *TaskInstance) EvaluateOpaAgainstCollectedManifestData(inputs *UserIn
 		return nil
 	}
 
-	// get the  data file from minio
+	// get the  Manifest file from minio
 	manifestData, err := inst.downloadResourceFile(inputs)
 	if err != nil {
 		errorDetails = append(errorDetails, ErrorVO{Error: err.Error()})
 		return nil
 	}
 
+	dataFile := map[string]interface{}{}
+	if inputs.DataFile != "" {
+		// get the  data file from minio
+		dataFile, err = inst.downloadDataFile(inputs)
+		if err != nil {
+			errorDetails = append(errorDetails, ErrorVO{Error: err.Error()})
+			return nil
+		}
+	}
+
 	// run the rego rule or policy against the collected manifest data
 	output, err := inst.evaluateOpaAgainstCollectedManifestData(inputs, manifestData,
-		queryToEvaluateRego, regoRule, outputFileNameTemp)
+		queryToEvaluateRego, regoRule, outputFileNameTemp, dataFile)
 	if err != nil {
 		errorDetails = append(errorDetails, ErrorVO{Error: err.Error()})
 		return nil
@@ -123,6 +135,14 @@ func (inst *TaskInstance) EvaluateOpaAgainstCollectedManifestData(inputs *UserIn
 		return nil
 	}
 
+	//ruleDir := filepath.Dir("regoruleexecutions/")
+
+	// err = opautils.SaveJSONLocally(filepath.Join(ruleDir, "output.json"), output)
+	// if err != nil {
+	// 	errorDetails = append(errorDetails, ErrorVO{Error: err.Error()})
+	// 	return nil
+	// }
+
 	return nil
 }
 
@@ -135,7 +155,7 @@ func (inst *TaskInstance) validateRequiredInputs(inputs *UserInputs, regoRule []
 		errorDetails = append(errorDetails, ErrorVO{Error: err.Error()})
 	}
 
-	if cowlibutils.IsEmpty(inputs.DataFile) || inputs.DataFile == "<<MINIO_FILE_PATH>>" {
+	if cowlibutils.IsEmpty(inputs.ManifestFile) || inputs.ManifestFile == "<<MINIO_FILE_PATH>>" {
 		errorDetails = append(errorDetails, ErrorVO{Error: "The DataFile file is missing."})
 	}
 
@@ -172,7 +192,10 @@ func (inst *TaskInstance) validateRequiredInputs(inputs *UserInputs, regoRule []
 func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 	inputs *UserInputs, manifestData interface{},
 	queryToEvaluateRego string, regoRule []byte,
-	outputFileNameTemp string) ([]interface{}, error) {
+	outputFileNameTemp string, dataFile map[string]interface{}) ([]interface{}, error) {
+	fmt.Println("QUERY:", inputs.Query)
+
+	fmt.Println(string(regoRule))
 
 	tomlData, err := inst.downloadTomlFile(inputs)
 	if err != nil {
@@ -183,13 +206,30 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 		return nil, err
 	}
 
+	store := inmem.NewFromObject(dataFile)
+
 	ctx := context.Background()
-	r := rego.New(
+	// r := rego.New(
+	// 	rego.Query(queryToEvaluateRego),
+	// 	rego.Module(fmt.Sprintf("%v.rego", packageName), string(regoRule)), rstore))
+	opautils.RegisterBuiltins()
+
+	regoOptions := []func(*rego.Rego){
 		rego.Query(queryToEvaluateRego),
-		rego.Module(fmt.Sprintf("%v.rego", packageName), string(regoRule)))
+	}
+
+	regoOptions = opautils.AppendDependencyModules(regoOptions)
+
+	regoOptions = append(
+		regoOptions,
+		rego.Module(
+			fmt.Sprintf("%s.rego", packageName),
+			string(regoRule),
+		), rego.Store(store),
+	)
 
 	// Create a prepared query that can be evaluated.
-	query, err := r.PrepareForEval(ctx)
+	query, err := rego.New(regoOptions...).PrepareForEval(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -201,8 +241,120 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 
 			// Execute the prepared query.
 			dataToUploadInOutputJsonFileTemp := make([]interface{}, 0)
-			inputItems := input_.(map[string]interface{})["items"]
-			for _, inputItem := range inputItems.([]interface{}) {
+			inputItems := input_.(map[string]interface{})["items"].([]interface{})
+
+			type Violation struct {
+				EvaluationNotes string
+			}
+
+			violations := make(map[string]Violation)
+			fmt.Printf("INPUT ITEMS = %#v\n", inputItems)
+			rs, err := query.Eval(ctx, rego.EvalInput(inputItems))
+			if err != nil {
+				return nil, err
+			}
+			fmt.Printf("RS:: %#v\n", rs)
+
+			for _, result := range rs {
+
+				for _, expression := range result.Expressions {
+
+					evaluationNotes := ""
+
+					if expression.Value == nil {
+						continue
+					}
+
+					x := reflect.TypeOf(expression.Value)
+
+					switch x.Kind() {
+
+					case reflect.Slice, reflect.Array:
+
+						if sl, ok := expression.Value.([]interface{}); ok {
+
+							evaluationNotesTemp := ""
+
+							for _, val := range sl {
+								evaluationNotesTemp += fmt.Sprintf("%v", val)
+							}
+
+							evaluationNotes = evaluationNotesTemp
+						}
+
+					case reflect.String:
+
+						evaluationNotes = expression.Value.(string)
+
+					case reflect.Map:
+
+						exprMap := expression.Value.(map[string]interface{})
+
+						if alertMsg, ok := exprMap["alertMessage"]; ok {
+							evaluationNotes = fmt.Sprintf("%v", alertMsg)
+						}
+						alertObj, ok := exprMap["alertObject"].(map[string]interface{})
+						if !ok {
+							continue
+						}
+
+						k8sObjs, ok := alertObj["k8sApiObjects"].([]interface{})
+
+						if ok && len(k8sObjs) > 0 {
+
+							k8sObj, ok := k8sObjs[0].(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							metadata, ok := k8sObj["metadata"].(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							name, ok := metadata["name"].(string)
+							if !ok {
+								continue
+							}
+
+							violations[name] = Violation{
+								EvaluationNotes: evaluationNotes,
+							}
+
+						} else {
+
+							externalObj, ok := alertObj["externalObjects"].(map[string]interface{})
+							if !ok {
+								continue
+							}
+
+							var name string
+
+							if n, ok := externalObj["name"].(string); ok {
+								name = n
+							} else if metadata, ok := externalObj["metadata"].(map[string]interface{}); ok {
+
+								if n, ok := metadata["name"].(string); ok {
+									name = n
+								}
+							}
+
+							if name == "" {
+								continue
+							}
+
+							violations[name] = Violation{
+								EvaluationNotes: evaluationNotes,
+							}
+						}
+
+					default:
+
+						evaluationNotes = fmt.Sprintf("%v", expression.Value)
+					}
+				}
+			}
+			for _, inputItem := range inputItems {
 
 				if inputItem != nil {
 
@@ -229,7 +381,9 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 						mapsliceOutputObj = append(mapsliceOutputObj,
 							mapslice.MapItem{Key: "ResourceURL", Value: "N/A"})
 						if namespace == "" {
-							namespace = input_.(map[string]interface{})["namespace"].(string)
+							if ns, ok := input_.(map[string]interface{})["namespace"].(string); ok {
+								namespace = ns
+							}
 						}
 						mapsliceOutputObj = append(mapsliceOutputObj,
 							mapslice.MapItem{Key: "Namespace", Value: namespace})
@@ -315,67 +469,44 @@ func (inst *TaskInstance) evaluateOpaAgainstCollectedManifestData(
 						}
 					}
 
-					var isRecordCompliant bool
-					evaluationNotes := ""
-
 					mapsliceOutputObj = append(mapsliceOutputObj,
 						mapslice.MapItem{Key: "RuleName", Value: packageName})
 
-					rs, err := query.Eval(ctx, rego.EvalInput(inputItem))
-					if err != nil {
-						return nil, err
+					var isRecordCompliant bool
+					evaluationNotes := ""
+					var resourceName string
+
+					if inputs.Source == "kubernetes" {
+						_, resourceName, _ = getDataFileDetailsForKubernetes(inputItem)
 					}
-					if len(rs) != 0 {
-						evaluationNotes := ""
-						for _, result := range rs {
-							for _, expression := range result.Expressions {
-								x := reflect.TypeOf(expression.Value)
-								switch x.Kind() {
-								case reflect.Slice, reflect.Array:
-									if sl, ok := expression.Value.([]interface{}); ok {
-										evaluationNotesTemp := ""
-										for _, val := range sl {
-											evaluationNotesTemp = evaluationNotesTemp + val.(string)
-										}
-										if evaluationNotes == "" || evaluationNotes == " " {
-											evaluationNotes = evaluationNotesTemp
-										} else {
-											evaluationNotes = fmt.Sprintf("\n%v", evaluationNotesTemp)
 
-										}
+					// AWS resource name
+					if inputs.Source == "aws" {
 
-									}
+						if itemMap, ok := inputItem.(map[string]interface{}); ok {
 
-								case reflect.String:
-									if evaluationNotes == "" || evaluationNotes == " " {
-										evaluationNotes = fmt.Sprintf("\n%v", expression.Value.(string))
-									} else {
-										evaluationNotes = expression.Value.(string)
-									}
+							if val, ok := itemMap["ResourceName"]; ok {
 
-								case reflect.Map:
-									if expression.Value.(map[string]interface{})["alertMessage"] != nil {
-										if evaluationNotes == "" || evaluationNotes == " " {
-											evaluationNotes = fmt.Sprintf("%v", expression.Value.(map[string]interface{})["alertMessage"])
-										} else {
-											evaluationNotes = fmt.Sprintf("\n%v", fmt.Sprintf("%v", expression.Value.(map[string]interface{})["alertMessage"]))
-										}
-									}
-
-								default:
-									if evaluationNotes == "" || evaluationNotes == " " {
-										evaluationNotes = fmt.Sprintf("%v", expression.Value)
-									} else {
-										evaluationNotes = fmt.Sprintf("\n%v", fmt.Sprintf("%v", expression.Value))
-									}
+								if name, ok := val.(string); ok {
+									resourceName = name
 								}
-
 							}
 
+							if resourceName == "" {
+
+								if val, ok := itemMap["ResourceID"]; ok {
+
+									if name, ok := val.(string); ok {
+										resourceName = name
+									}
+								}
+							}
 						}
-						if evaluationNotes == "" || evaluationNotes == " " {
-							isRecordCompliant = true
-						}
+					}
+
+					if violation, exists := violations[resourceName]; exists {
+						isRecordCompliant = false
+						evaluationNotes = violation.EvaluationNotes
 					} else {
 						isRecordCompliant = true
 					}
@@ -492,22 +623,38 @@ func (inst *TaskInstance) getValidationDetailsFormConfigFile(inputs *UserInputs,
 
 }
 
-func (inst *TaskInstance) downloadResourceFile(inputs *UserInputs) (interface{}, error) {
+func (inst *TaskInstance) downloadDataFile(inputs *UserInputs) (map[string]interface{}, error) {
 	inputDataFile, err := cowStorage.DownloadFile(inputs.DataFile, inst.SystemInputs)
+	if err != nil {
+		return nil, err
+	}
+
+	var dataFile map[string]interface{}
+
+	err = json.Unmarshal(inputDataFile, &dataFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataFile, err
+}
+
+func (inst *TaskInstance) downloadResourceFile(inputs *UserInputs) (interface{}, error) {
+	inputDataFile, err := cowStorage.DownloadFile(inputs.ManifestFile, inst.SystemInputs)
 	if err != nil {
 		return nil, err
 	}
 
 	var manifestData interface{}
 
-	if strings.HasSuffix(inputs.DataFile, ".yaml") {
+	if strings.HasSuffix(inputs.ManifestFile, ".yaml") {
 		err = yaml.Unmarshal(inputDataFile, &manifestData)
 		if err != nil {
 			return nil, err
 		}
 		manifestData = convert(manifestData)
 
-	} else if strings.HasSuffix(inputs.DataFile, ".json") {
+	} else if strings.HasSuffix(inputs.ManifestFile, ".json") {
 		err = json.Unmarshal(inputDataFile, &manifestData)
 		if err != nil {
 			return nil, err

@@ -17,8 +17,8 @@
 #   [ConditionFieldUpdates.FAIL] -> Values to update in the record, if ConditionsCriteria fails
 
 # For ConditionField, ConditionValue and ConditionFieldUpdates.PASS/FAIL fields:
-#   Use `<<inputfile.FieldName>>` or `{{inputfile.FieldName}}` to access data from InputFile
-#   Use `<<custominputs[index].FieldName>>` or `{{custominputs[index].FieldName}}` to access data from CustomInputs file.
+#   Use `{%{inputfile.FieldName}%}` or `{{inputfile.FieldName}}` to access data from InputFile
+#   Use `{%{custominputs[index].FieldName}%}` or `{{custominputs[index].FieldName}}` to access data from CustomInputs file.
 #   All of the placeholders use JQ library to extract data. So you can also use placeholders like `{{custominputs[].FieldName}}` to extract the values of `"FieldName"` from all elements as a list
 
 [[ConditionRules]]
@@ -37,8 +37,8 @@
     # LESSER_THAN_OR_EQUALS/LT_EQ
     # GREATER_THAN_OR_EQUALS/GT_EQ
     # NUMBER_RANGE - refer below for syntax
-    ConditionField = "<<inputfile.isPatchable>>"
-    ConditionValue = true # Here you can specify the value from the data file similar to 'ConditionField'. Eg: "<<inputfile.title>>"
+    ConditionField = "{%{inputfile.isPatchable}%}"
+    ConditionValue = true # Here you can specify the value from the data file similar to 'ConditionField'. Eg: "{%{inputfile.title}%}"
     # ConditionValue is not required for 'EMPTY and NOT_EMPTY' conditions
 
     # ConditionValue SYNTAX for NUMBER_RANGE:
@@ -50,10 +50,10 @@
 [[ConditionRules]]
     ConditionLabel = "cel_check"
     Condition = "CEL_CONDITION"
-    ConditionValue = "<<inputfile.isPatchable>> && <<inputfile.createdDate>> != ''"
+    ConditionValue = "{%{inputfile.isPatchable}%} && {%{inputfile.createdDate}%} != ''"
     # You can give a CEL Expression as ConditionValue, and you can omit the 'ConditionField' completely in this case
-    # The fields that you access from InputFile or CustomInputs using `<<inputfile.FieldName>>` or `<<custominputs[index].InputName>>` must not contain spaces
-    # For example: `<<inputfile.Created date>>` is invalid. You can use the TransformData task to rename the field without spaces.
+    # The fields that you access from InputFile or CustomInputs using `{%{inputfile.FieldName}%}` or `{%{custominputs[index].InputName}%}` must not contain spaces
+    # For example: `{%{inputfile.Created date}%}` is invalid. You can use the TransformData task to rename the field without spaces.
 
 [[ConditionRules]]
     # Conditions for date
@@ -68,10 +68,10 @@
     # FROM_RULE_DATE     - Considers any date after the FromDate from rule inputs.
     # TO_RULE_DATE       - Considers any date upto the ToDate from rule inputs.
     # RULE_DATE_RANGE    - Considers date starting with FromDate, upto ToDate from the rule inputs.
-    ConditionField = "<<inputfile.createdDate>>" # For date conditions, you can mention 'now' to set ConditionField's value to current date & time
+    ConditionField = "{%{inputfile.createdDate}%}" # For date conditions, you can mention 'now' to set ConditionField's value to current date & time
     ConditionValue = "-30d" # not required for 'FROM_RULE_DATE, TO_RULE_DATE and RULE_DATE_RANGE' conditions
 
-    # For ConditionValue, you can also mention expressions like "<<inputfile.createdDate>> - 30d" and "<<inputfile.createdDate>> + 5d", to calculate date using data from InputFile
+    # For ConditionValue, you can also mention expressions like "{%{inputfile.createdDate}%} - 30d" and "{%{inputfile.createdDate}%} + 5d", to calculate date using data from InputFile
     # But the left operand must a date in the provided DateFormat, and the right operand must be of the 'Delta String Syntax' below
     # Similar to ConditionField, you can also mention 'now' to set ConditionValue to current date & time
 
@@ -154,7 +154,7 @@
         # Values to update in OutputFile, if condition passes
         Result = "NOT_PATCHABLE"
         Reason = "Not patchable, but not created within 30 days"
-        RecordID = "<<custominputs[index].InputName>>" # You can also access InputFile and CustomInputs data in any of the fields in ConditionFieldUpdates.PASS or ConditionFieldUpdates.FAIL
+        RecordID = "{%{custominputs[index].InputName}%}" # You can also access InputFile and CustomInputs data in any of the fields in ConditionFieldUpdates.PASS or ConditionFieldUpdates.FAIL
         # Add more fields as needed
     [ConditionFieldUpdates.FAIL]
         # Values to update in OutputFile, if condition fails

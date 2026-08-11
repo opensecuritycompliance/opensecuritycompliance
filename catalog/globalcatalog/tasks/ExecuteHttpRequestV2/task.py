@@ -4,7 +4,12 @@ from compliancecowcards.structs import cards
 from applicationtypes.httprequest import httprequest
 from applicationtypes.nocredapp import nocredapp
 import http
-from compliancecowcards.utils import cowdictutils, cowjqutils, cowutils
+from compliancecowcards.utils import (
+    cowdictutils,
+    cowjqutils,
+    cowutils,
+    cowplaceholderutils,
+)
 from typing import List, Dict, Tuple, Optional, Any, Union
 import json
 import uuid
@@ -69,18 +74,16 @@ class Task(cards.AbstractTask):
             else ""
         )
 
-        self.proceed_if_log_exists = user_inputs.get("ProceedIfLogExists")
-        self.proceed_if_log_exists = (
-            self.proceed_if_log_exists
-            if self.proceed_if_log_exists is not None
-            else True
+        self.proceed_if_log_exists = cowutils.str_to_bool(
+            value=user_inputs.get("ProceedIfLogExists"), default_val=True
         )
 
-        self.proceed_if_error_exists = user_inputs.get("ProceedIfErrorExists")
-        self.proceed_if_error_exists = (
-            self.proceed_if_error_exists
-            if self.proceed_if_error_exists is not None
-            else True
+        self.proceed_if_error_exists = cowutils.str_to_bool(
+            value=user_inputs.get("ProceedIfErrorExists"), default_val=True
+        )
+
+        self.disable_logging = self._get_boolean_value_from_input(
+            "DisableLogging", True
         )
 
         self.set_log_file_name("LogFile" if self.proceed_if_error_exists else "Errors")
@@ -99,9 +102,9 @@ class Task(cards.AbstractTask):
             self.download_toml_file_from_minio_as_dict,
             default_log_config_filepath,
             default_context_data={
-                'fromdate': self.task_inputs.from_date.strftime('%d/%m/%Y %H:%M'),
-                'todate': self.task_inputs.to_date.strftime('%d/%m/%Y %H:%M')
-            }
+                "fromdate": self.task_inputs.from_date.strftime("%d/%m/%Y %H:%M"),
+                "todate": self.task_inputs.to_date.strftime("%d/%m/%Y %H:%M"),
+            },
         )
         if error:
             return {"Error": error}
@@ -160,16 +163,22 @@ class Task(cards.AbstractTask):
                     "ExecuteHttpRequest.InputFile.download_failed", error
                 )
             )
-        
+
         if self._get_boolean_value_from_input("UseSyntheticData", False):
-            synthetic_data_file = self.task_inputs.user_inputs.get("SyntheticDataFile") 
-            if synthetic_data_file == None or synthetic_data_file == "" or synthetic_data_file == MINIO_PLACEHOLDER:
+            synthetic_data_file = self.task_inputs.user_inputs.get("SyntheticDataFile")
+            if (
+                synthetic_data_file == None
+                or synthetic_data_file == ""
+                or synthetic_data_file == MINIO_PLACEHOLDER
+            ):
                 return self.upload_log_file_panic(
-                    self.log_manager.get_error_message("ExecuteHttpRequest.UseSyntheticData.SyntheticDataFile.empty")
+                    self.log_manager.get_error_message(
+                        "ExecuteHttpRequest.UseSyntheticData.SyntheticDataFile.empty"
+                    )
                 )
             return {"OutputFile": synthetic_data_file}
 
-        if config_data:
+        if config_data and config_data != MINIO_PLACEHOLDER:
             config_data_resource, error = self.download_resource_data(config_data)
             if error:
                 return self.upload_log_file_panic(
@@ -191,6 +200,7 @@ class Task(cards.AbstractTask):
             user_defined_credentials=httprequest.UserDefinedCredentials.from_dict(
                 self.task_inputs.user_object.app.user_defined_credentials
             ),
+            disable_logging=self.disable_logging,
         )
 
         http_request_file_data, error = self.resolve_config_placeholders(
@@ -206,8 +216,11 @@ class Task(cards.AbstractTask):
             error_details.append({"Error": request_query_info})
             return self.upload_log_file(error_details)
 
-        is_valid_credential_type = self.http_connector.validate_credetials_type(
-            http_request_file_data.get("Request").get("CredentialType")
+        task_credential_type = http_request_file_data.get("Request").get("CredentialType")
+        is_valid_credential_type = (
+            task_credential_type == HTTPCredentialType.NO_AUTH.value
+        ) or (
+            self.http_connector.validate_credetials_type(task_credential_type)
         )
         if not is_valid_credential_type:
             return self.upload_log_file_panic(
@@ -221,7 +234,7 @@ class Task(cards.AbstractTask):
         if not is_valid_res:
             error_details.append(error)
             return self.upload_log_file(error_details)
-    
+
         if validate_flow:
             return {"ValidationStatus": "Input data validated successfully"}
 
@@ -235,6 +248,10 @@ class Task(cards.AbstractTask):
             max_worker = 1
         elif max_worker >= 20:
             max_worker = 20
+
+        output_file_name = "OutputFile"
+        if self.task_inputs.user_inputs.get("OutputFileName", ""):
+            output_file_name = self.task_inputs.user_inputs.get("OutputFileName", "")
 
         with ThreadPoolExecutor(max_workers=max_worker) as executor:
             futures = {
@@ -250,6 +267,14 @@ class Task(cards.AbstractTask):
             for future in as_completed(futures):
                 index = futures[future]
                 http_response_, content_type, error = future.result()
+
+                if content_type == "application/pdf":
+                    response = self.upload_output_file(
+                        file_content=http_response_,
+                        file_name=output_file_name,
+                        content_type="application/pdf",
+                    )
+                    return response
 
                 if error:
                     error_details.extend(error)
@@ -272,17 +297,16 @@ class Task(cards.AbstractTask):
         if any(processed_output) > 0:
             response = self.upload_output_file(
                 file_content=processed_output,
-                file_name="OutputFile",
+                file_name=output_file_name,
                 content_type=content_type,
             )
         if len(error_details) > 0:
-            log_file_response = self.upload_log_file_panic(error_details)
+            log_file_response = self.upload_log_file(error_details)
             if cowdictutils.is_valid_key(log_file_response, "LogFile"):
                 response["LogFile"] = log_file_response["LogFile"]
             elif cowdictutils.is_valid_key(log_file_response, "Errors"):
                 return log_file_response
-
-        if log_file:
+        if log_file and not response.get("LogFile"):
             response["LogFile"] = log_file
 
         return response
@@ -299,64 +323,87 @@ class Task(cards.AbstractTask):
 
         result = []
         error_details = []
+        response_file_type = ""
+        first_page = True
 
-        response, error = self.process_api_request(
-            http_request_data, data_file, http_response_query
-        )
-        if error:
-            if response == None:
-                return [], "", error
-            error_details.extend(error)
-
-        if self.required_jq_filter:
-            http_response_ = response.get("filtered_response", {})
-        else:
-            http_response_ = response.get("body", {})
-
-        content_type = response.get("headers", {}).get("Content-Type", "")
-
-        if isinstance(http_response_, (dict, list)):
-            if isinstance(http_response_, list):
-                result.extend(http_response_)
-            else:
-                result.append(http_response_)
-        else:
-            result = http_response_
-
-        if isinstance(http_response_, (dict, list)):
-            http_response_, error = self.apply_input_rulesets_to_output(
-                http_request_data, response, http_response_query, data_file
+        # Pagination is handled iteratively rather than by mutual recursion with
+        # apply_input_rulesets_to_output. Recursing once per page exhausted
+        # Python's recursion limit on large paginated responses (e.g. Azure
+        # DevOps deployments spanning hundreds of pages).
+        while True:
+            response, error = self.process_api_request(
+                http_request_data, data_file, http_response_query
             )
             if error:
+                if response == None:
+                    return [], "", error
                 error_details.extend(error)
-                return [], "", error_details
-            result.extend(http_response_)
-        else:
-            if (
-                len(
-                    http_response_query.get("Response", {})
-                    .get("RuleSet", {})
-                    .get("PaginationCondition", {})
-                    .get("ConditionField", {})
-                )
-                > 0
-            ):
-                error_details.extend(
-                    [
-                        {
-                            "Error": f"The content type '{response.get('headers', {}).get('Content-Type', '')}' does not support pagination. This feature is only supported for 'application/json' and 'application/ld+json'."
-                        }
-                    ]
-                )
-            result = http_response_
 
-        return result, response.get("response_file_type", ""), error_details
+            if self.required_jq_filter:
+                http_response_ = response.get("filtered_response", {})
+            else:
+                http_response_ = response.get("body", {})
+
+            content_type = response.get("headers", {}).get("Content-Type", "")
+
+            if content_type == "application/pdf":
+                return http_response_, "application/pdf", error_details
+
+            # response_file_type is taken from the first page, matching the
+            # previous (recursive) behaviour where the outermost call returned it.
+            if first_page:
+                response_file_type = response.get("response_file_type", "")
+                first_page = False
+
+            if isinstance(http_response_, (dict, list)):
+                if isinstance(http_response_, list):
+                    result.extend(http_response_)
+                else:
+                    result.append(http_response_)
+
+                # Evaluate the pagination ruleset. This prepares the next request
+                # in place and tells us whether another page should be fetched.
+                should_paginate, error = self.apply_input_rulesets_to_output(
+                    http_request_data, response, http_response_query, data_file
+                )
+                if error:
+                    error_details.extend(error)
+                    return [], "", error_details
+                if not should_paginate:
+                    break
+            else:
+                if (
+                    len(
+                        http_response_query.get("Response", {})
+                        .get("RuleSet", {})
+                        .get("PaginationCondition", {})
+                        .get("ConditionField", {})
+                    )
+                    > 0
+                ):
+                    error_details.extend(
+                        [
+                            {
+                                "Error": f"The content type '{response.get('headers', {}).get('Content-Type', '')}' does not support pagination. This feature is only supported for 'application/json' and 'application/ld+json'."
+                            }
+                        ]
+                    )
+                result = http_response_
+                break
+
+        return result, response_file_type, error_details
 
     def apply_input_rulesets_to_output(
         self, http_request_data, response, http_response_query, data_file
     ):
+        """
+        Evaluate the pagination ruleset against the current response. If another
+        page is required, prepare the next request in place (URL/Headers/Body/
+        Params) and return True; otherwise return False. The actual fetching of
+        the next page is driven iteratively by the caller
+        (process_api_request_and_responce) to avoid unbounded recursion.
+        """
 
-        result = []
         error_details = []
 
         request_data = http_request_data.get("Request", {})
@@ -365,29 +412,28 @@ class Task(cards.AbstractTask):
         pagination_condition = response_data.get("RuleSet", {}).get(
             "PaginationCondition", {}
         )
-        proceed_append_column = True
+        proceed_pagination = True
 
         condition_field = pagination_condition.get("ConditionField")
         if condition_field:
             parsed_value = ""
-            if condition_field.startswith("<<response."):
-                value = f'.{condition_field.replace("response.", "")}'
-                value = re.sub(r"<<(.*?)>>", r"\1", value)
-                parsed_value = self.jq_filter_query(value, response)
-                if parsed_value is None:
-                    proceed_append_column = False
-            elif condition_field.startswith("<<responsebody."):
-                value = f'.{condition_field.replace("responsebody.", "")}'
-                value = re.sub(r"<<(.*?)>>", r"\1", value)
-                parsed_value = self.jq_filter_query(value, response.get("body", {}))
-                if parsed_value is None:
-                    proceed_append_column = False
+            parsed_value, _, error = cowplaceholderutils.replace_placeholders_using_jq(
+                condition_field,
+                {"response": response, "responsebody": response.get("body", {})},
+            )
+            if error:
+                if error.endswith("is not present."):
+                    parsed_value = None
+                else:
+                    error_details.append({"Error": error})
+            if (
+                parsed_value is None
+                or f"{parsed_value}" == f"{pagination_condition['ConditionValue']}"
+            ):
+                proceed_pagination = False
 
-            if f"{parsed_value}" == f"{pagination_condition['ConditionValue']}":
-                proceed_append_column = False
-
-        if not proceed_append_column:
-            return result, error_details
+        if not proceed_pagination:
+            return False, error_details
 
         pagination = response_data.get("RuleSet", {}).get("Pagination", {})
         if pagination:
@@ -398,49 +444,41 @@ class Task(cards.AbstractTask):
                 "todate": self.task_inputs.to_date.strftime("%Y-%m-%d"),
                 "inputfile": data_file,
                 "response": response,
+                "application": {
+                    "AppURL": self.task_inputs.user_object.app.application_url
+                },
             }
 
             has_next_url, error_details = self.response_query_handle_next_url(
                 pagination, request_data, error_details, context_dict
             )
             if error_details:
-                return None, error_details
+                return False, error_details
 
             has_header, error_details = self.response_query_handle_headers(
                 pagination, request_data, error_details, context_dict
             )
             if error_details:
-                return None, error_details
+                return False, error_details
 
             has_body, error_details = self.response_query_handle_body(
                 pagination, request_data, error_details, context_dict
             )
             if error_details:
-                return None, error_details
+                return False, error_details
 
             has_params, error_details = self.response_query_handle_params(
                 pagination, request_data, error_details, context_dict
             )
             if error_details:
-                return None, error_details
+                return False, error_details
 
             if has_next_url or has_header or has_body or has_params:
                 required_pagination_call = True
 
-            if required_pagination_call:
-                # Process API request and response
-                http_response, _, error = self.process_api_request_and_responce(
-                    http_request_data, data_file, http_response_query
-                )
-                if error:
-                    error_details.append({"Error": error})
-                    return result, error_details
-                if isinstance(http_response, list):
-                    result.extend(http_response)
-                else:
-                    result.append(http_response)
+            return required_pagination_call, error_details
 
-        return result, error_details
+        return False, error_details
 
     def response_query_handle_next_url(
         self, pagination, request_data, error_details, context_dict
@@ -448,9 +486,12 @@ class Task(cards.AbstractTask):
         if not (value := str(pagination.get("URL", ""))):
             return False, error_details
 
-        updated_value = self.response_query_replace_placeholders(
+        updated_value, error = self.response_query_replace_placeholders(
             value, context_dict, replace_double_quotes=False
         )
+        if error:
+            error_details.append({"Error": error})
+            return bool(updated_value), error_details
         request_data["URL"] = updated_value if updated_value else request_data["URL"]
 
         return bool(updated_value), error_details
@@ -472,9 +513,12 @@ class Task(cards.AbstractTask):
             query_header_str = json.dumps(query_header)
 
             if query_header_str:
-                query_header_str = self.response_query_replace_placeholders(
+                query_header_str, error = self.response_query_replace_placeholders(
                     query_header_str, context_dict
                 )
+                if error:
+                    error_details.append({"Error": error})
+                    return has_header, error_details
 
             request_headers, error = self.load_json(
                 query_header_str,
@@ -542,9 +586,12 @@ class Task(cards.AbstractTask):
             else:
                 query_body_str = json.dumps(query_body)
 
-            updated_query_body_str = self.response_query_replace_placeholders(
+            updated_query_body_str, error = self.response_query_replace_placeholders(
                 query_body_str, context_dict
             )
+            if error:
+                error_details.append({"Error": error})
+                return has_body, error_details
 
             request_body, body_error = self.load_json(
                 updated_query_body_str,
@@ -577,6 +624,7 @@ class Task(cards.AbstractTask):
     ):
         has_param = False
         if "Params" in pagination:
+            context_dict['request'] = request_data 
             request_params = {}
             query_params = pagination.get("Params", {})
             # Initialize request_data["Params"] if not present
@@ -589,9 +637,12 @@ class Task(cards.AbstractTask):
             query_params_str = json.dumps(query_params)
 
             if query_params_str:
-                query_params_str = self.response_query_replace_placeholders(
+                query_params_str, error = self.response_query_replace_placeholders(
                     query_params_str, context_dict
                 )
+                if error:
+                    error_details.append({"Error": error})
+                    return has_param, error_details
 
             request_params, error = self.load_json(
                 query_params_str,
@@ -626,23 +677,17 @@ class Task(cards.AbstractTask):
     def response_query_replace_placeholders(
         self, value_string: str, context_dict: dict, replace_double_quotes=True
     ):
-        updated_value_string = value_string
-        placeholder_matches: list[str] = re.findall(r"<<(.+?)>>", value_string)
-        for match in placeholder_matches:
-            path = match.strip()
-            if not path.startswith("."):
-                path = "." + path
-            parsed_value = self.jq_filter_query(path, context_dict)
-            parsed_value = (
-                str(parsed_value).replace('"', "'")
-                if replace_double_quotes
-                else str(parsed_value)
+        updated_value_string, _, error = (
+            cowplaceholderutils.replace_placeholders_using_jq(
+                value_string, context_dict, replace_double_quotes=replace_double_quotes
             )
-            updated_value_string = str(updated_value_string).replace(
-                f"<<{match}>>", parsed_value
+        )
+        if re.search(r"<<(.+?)>>", updated_value_string):
+            return self.response_query_replace_placeholders(
+                updated_value_string, context_dict, replace_double_quotes
             )
 
-        return updated_value_string
+        return updated_value_string, error
 
     def response_query_handle_append_columns_handler(
         self, response, response_json, request_data, rule_set, data_file
@@ -678,6 +723,7 @@ class Task(cards.AbstractTask):
             "request": request_data,
             "response": modified_response,
             "responsebody": modified_response.get("body", {}),
+            "application": {"AppURL": self.task_inputs.user_object.app.application_url},
         }
 
         proceed_append_column = False
@@ -687,13 +733,14 @@ class Task(cards.AbstractTask):
             if condition_field != "":
                 parsed_value = ""
                 condition_field = condition_field.strip()
-                if condition_field.startswith("<<"):
-                    condition_field_path = condition_field.strip("<>")
-                    if not condition_field_path.startswith("."):
-                        condition_field_path = "." + condition_field_path
-                    parsed_value = self.jq_filter_query(
-                        condition_field_path, context_dict
+
+                parsed_value, _, error = (
+                    cowplaceholderutils.replace_placeholders_using_jq(
+                        condition_field, context_dict
                     )
+                )
+                if error:
+                    return response_json, error
 
                 if f"{parsed_value}" == f"{condition['ConditionValue']}":
                     proceed_append_column = True
@@ -710,13 +757,23 @@ class Task(cards.AbstractTask):
             append_column_fields = append_column["Fields"]
             if append_column_fields:
                 append_columns_str = json.dumps(append_column_fields)
-                append_columns_str = self.response_query_replace_placeholders(
+                append_columns_str, error = self.response_query_replace_placeholders(
                     append_columns_str, context_dict
                 )
+                if error:
+                    return response_json, error
 
             try:
-                if '\n' in append_columns_str or '\t' in append_columns_str or '\r' in append_columns_str:
-                    append_columns_str = append_columns_str.replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
+                if (
+                    "\n" in append_columns_str
+                    or "\t" in append_columns_str
+                    or "\r" in append_columns_str
+                ):
+                    append_columns_str = (
+                        append_columns_str.replace("\n", "\\n")
+                        .replace("\t", "\\t")
+                        .replace("\r", "\\r")
+                    )
                 updated_append_column_fields = json.loads(append_columns_str)
             except json.JSONDecodeError:
                 return (
@@ -816,7 +873,9 @@ class Task(cards.AbstractTask):
 
         if (
             required_append_column_call
-            and not ("<<responsebody." in str(append_column))
+            and not cowplaceholderutils.get_placeholders_in_template(
+                str(append_column), "responsebody"
+            )
             and isinstance(converted_response, (dict, list))
         ):
             _, error = self.response_query_handle_append_columns_handler(
@@ -870,41 +929,49 @@ class Task(cards.AbstractTask):
             }
 
         request_data_str = json.dumps(request_data_json)
-        matches = re.findall(
-            r"<<((?!response\.|responsebody\.|validationCURLresponse\.|validationCURLresponse|application\.|inputfile\.)[^>]+)>>",
-            request_data_str,
+        blacklisted_prefixes = [
+            "response.",
+            "responsebody.",
+            "validationCURLresponse.",
+            "validationCURLresponse",
+            "application.",
+            "inputfile.",
+        ]
+        is_valid_placeholder = (
+            lambda placeholder: not any(
+                [str(placeholder).startswith(black) for black in blacklisted_prefixes]
+            )
+            and placeholder != HTTPCredentialType.JWT.value
         )
 
-        missing_variable = []
-        for placeholder_key in matches:
-            placeholder_key = placeholder_key.strip()
+        placeholder_matches = cowplaceholderutils.get_placeholders_in_template(
+            request_data_str
+        )
+        filtered_placeholder_matches = [
+            p for p in placeholder_matches if is_valid_placeholder(p)
+        ]
 
-            # We are skipping the JWTBearer placeholder since the authorization is handled through the placeholder in the header.
-            # This placeholder will be replaced in the `generate_auth_and_form_url_and_body()` function.
-            if placeholder_key == "" or placeholder_key == HTTPCredentialType.JWT.value:
-                continue
-            if placeholder_key == "fromdate":
-                request_data_str = request_data_str.replace(
-                    "<<fromdate>>", self.task_inputs.from_date.strftime("%Y-%m-%d")
-                )
-            elif placeholder_key == "todate":
-                request_data_str = request_data_str.replace(
-                    "<<todate>>", self.task_inputs.to_date.strftime("%Y-%m-%d")
-                )
-            elif placeholder_key == "random_uuid4":
-                request_data_str = request_data_str.replace(
-                    "<<random_uuid4>>", str(uuid.uuid4())
-                )
-            else:
-                parsed_value = self.jq_filter_query(
-                    f".{placeholder_key}", constant_variables
-                )
-                if parsed_value is not None:
-                    request_data_str = request_data_str.replace(
-                        f"<<{placeholder_key}>>", parsed_value
-                    )
-                else:
-                    missing_variable.append(placeholder_key)
+        request_data_str, missing_variable, error = (
+            cowplaceholderutils.replace_placeholders_using_jmespath(
+                request_data_str,
+                {
+                    "fromdate": self.task_inputs.from_date.strftime("%Y-%m-%d"),
+                    "todate": self.task_inputs.to_date.strftime("%Y-%m-%d"),
+                    "random_uuid4": str(uuid.uuid4()),
+                    **constant_variables,
+                },
+                strict=False,
+                placeholders=filtered_placeholder_matches,
+            )
+        )
+        if error:
+            return None, {"Error": error}
+
+        missing_variable = [
+            m
+            for m in missing_variable
+            if not any(m.startswith(black) for black in blacklisted_prefixes) and m != HTTPCredentialType.JWT.value
+        ]
 
         error_obj = {}
         if missing_variable:
@@ -931,6 +998,21 @@ class Task(cards.AbstractTask):
 
         return http_request_data, error_obj
 
+    def header_replace_auth_placeholder(self, header_str: str, key: str, value):
+        auth_header = {}
+
+        if key in cowplaceholderutils.get_placeholders_in_template(header_str):
+            parsed_header, _, _ = (
+                cowplaceholderutils.replace_placeholders_using_jmespath(
+                    header_str, {key: value}, placeholders=[key]
+                )
+            )
+            auth_header = json.loads(parsed_header) if parsed_header else {}
+        else:
+            auth_header["Authorization"] = value
+
+        return auth_header
+
     def generate_auth_and_form_url_and_body(
         self, request_data: Dict, data_file: Optional[Dict], body: Optional[Dict]
     ) -> Tuple[
@@ -950,12 +1032,10 @@ class Task(cards.AbstractTask):
 
         # existing_auth_response = self.auth_responses.get(credential_type)
 
-        app_info = (
-            self.task_inputs.user_object.app.user_defined_credentials.get(
-                credential_type, {}
-            )
-            or {}
-        )
+        app_info = {}
+        if self.task_inputs.user_object.app.user_defined_credentials:
+            app_info = self.task_inputs.user_object.app.user_defined_credentials.get(credential_type, {})
+
         if not app_info and credential_type != HTTPCredentialType.NO_AUTH.value:
             return (
                 auth_header,
@@ -992,13 +1072,9 @@ class Task(cards.AbstractTask):
                         )
                     self.auth_responses[credential_type] = basic_auth_header
 
-            if "<<BasicAuthentication>>" in header:
-                header_ = header.replace(
-                    "<<BasicAuthentication>>", basic_auth_header["Authorization"]
-                )
-                auth_header = json.loads(header_) if header_ else {}
-            else:
-                auth_header["Authorization"] = basic_auth_header["Authorization"]
+            auth_header = self.header_replace_auth_placeholder(
+                header, "BasicAuthentication", basic_auth_header["Authorization"]
+            )
 
         elif credential_type == HTTPCredentialType.API_KEY.value:
             with self.auth_lock:
@@ -1015,11 +1091,10 @@ class Task(cards.AbstractTask):
                             error_details,
                         )
                     self.auth_responses[credential_type] = api_key_header
-            if "<<APIKey>>" in header:
-                header_ = header.replace("<<APIKey>>", api_key_header["Authorization"])
-                auth_header = json.loads(header_) if header_ else {}
-            else:
-                auth_header["Authorization"] = api_key_header["Authorization"]
+
+            auth_header = self.header_replace_auth_placeholder(
+                header, "APIKey", api_key_header["Authorization"]
+            )
 
         elif credential_type == HTTPCredentialType.BEARER.value:
             with self.auth_lock:
@@ -1039,16 +1114,12 @@ class Task(cards.AbstractTask):
                         )
                     self.auth_responses[credential_type] = bearer_token_header
 
-            if "<<BearerToken>>" in header:
-                header_ = header.replace(
-                    "<<BearerToken>>", bearer_token_header["Authorization"]
-                )
-                auth_header = json.loads(header_) if header_ else {}
-            else:
-                auth_header["Authorization"] = bearer_token_header["Authorization"]
+            auth_header = self.header_replace_auth_placeholder(
+                header, "BearerToken", bearer_token_header["Authorization"]
+            )
 
         elif credential_type == HTTPCredentialType.JWT.value:
-            if "<<JWTBearer>>" in header:
+            if "JWTBearer" in cowplaceholderutils.get_placeholders_in_template(header):
                 with self.auth_lock:
                     token = self.auth_responses.get(credential_type)
                     if not token:
@@ -1067,9 +1138,14 @@ class Task(cards.AbstractTask):
                         ).get(
                             "Algorithm", ""
                         )
+                        jwt_headers = self.task_inputs.user_object.app.user_defined_credentials.get(
+                            HTTPCredentialType.JWT.value, {}
+                        ).get(
+                            "Headers", ""
+                        )
 
                         token, error = self.http_connector.generate_jwt_token(
-                            algorithm, private_key, payload
+                            algorithm, private_key, payload, jwt_headers
                         )
                         if error:
                             error_details.append({"Error": error})
@@ -1082,8 +1158,9 @@ class Task(cards.AbstractTask):
                             )
                         self.auth_responses[credential_type] = token
 
-                auth_header = header.replace("<<JWTBearer>>", token)
-                auth_header = json.loads(auth_header) if auth_header else {}
+                auth_header = self.header_replace_auth_placeholder(
+                    header, "JWTBearer", token
+                )
             else:
                 # If self.auth_responses is not empty, we try to re-use the auth response value from that
                 # if existing_auth_response:
@@ -1209,14 +1286,14 @@ class Task(cards.AbstractTask):
                         error_details,
                     )
 
-            auth_header,error = self.http_connector.generate_aws_iam_signature(
+            auth_header, error = self.http_connector.generate_aws_iam_signature(
                 region=region,
                 service=service_name,
                 method=request_data["Method"],
                 url=url_endpoint,
                 params=parsed_params,
                 body=body,
-                headers=auth_header
+                headers=auth_header,
             )
             if error:
                 error_details.append({"Error": error})
@@ -1316,7 +1393,7 @@ class Task(cards.AbstractTask):
                                     "assuming all the file paths are MinIO file paths."
                                 }
                             ]
-                        files[f"file{number_of_file}"] = (file_name, file_content)
+                        files[key] = (file_name, file_content)
                         number_of_file += 1
                         del temp_body[key]
 
@@ -1388,18 +1465,26 @@ class Task(cards.AbstractTask):
         """
 
         place_holder = "validationCURLresponse"
-        if "<<response." in header and "<<validationCURLresponse." not in header:
+        if cowplaceholderutils.get_placeholders_in_template(
+            header, "response"
+        ) and not cowplaceholderutils.get_placeholders_in_template(
+            header, "validationCURLresponse"
+        ):
             place_holder = "response"
-            
+
         response_json = {}
         try:
             response_json = json.loads(raw_response) if raw_response else {}
         except json.JSONDecodeError as e:
-            try :
+            try:
                 response_json = {
-                    "response": raw_response.decode("utf-8", errors="replace") if isinstance(raw_response, bytes) else str(raw_response)
+                    "response": (
+                        raw_response.decode("utf-8", errors="replace")
+                        if isinstance(raw_response, bytes)
+                        else str(raw_response)
+                    )
                 }
-                header = header.replace(place_holder,f'{place_holder}.response')
+                header = header.replace(place_holder, f"{place_holder}.response")
             except Exception as e:
                 pass
 
@@ -1516,7 +1601,7 @@ class Task(cards.AbstractTask):
         data_file: Optional[Dict],
     ):
         """
-        Replaces placeholders in a target string with data from app_data and data_file, and also replaces `<<fromdate>>` and `<<todate>>` placeholders with formatted dates.
+        Replaces placeholders in a target string with data from app_data and data_file, and also replaces `fromdate` and `todate` placeholders with formatted dates.
         """
         error_details = []
 
@@ -1534,15 +1619,17 @@ class Task(cards.AbstractTask):
         if error:
             error_details.append(error)
 
-        if "<<fromdate>>" in target_str:
-            target_str = target_str.replace(
-                "<<fromdate>>", self.task_inputs.from_date.strftime("%Y-%m-%d")
-            )
+        target_str, _, error = cowplaceholderutils.replace_placeholders_using_jmespath(
+            target_str,
+            {
+                "fromdate": self.task_inputs.from_date.strftime("%Y-%m-%d"),
+                "todate": self.task_inputs.to_date.strftime("%Y-%m-%d"),
+            },
+            strict=False,
+        )
 
-        if "<<todate>>" in target_str:
-            target_str = target_str.replace(
-                "<<todate>>", self.task_inputs.to_date.strftime("%Y-%m-%d")
-            )
+        if error:
+            error_details.append(error)
 
         return target_str, error_details
 
@@ -1611,6 +1698,18 @@ class Task(cards.AbstractTask):
                     return False, f"Field '{field}' must be one of {expected}"
             elif not isinstance(value, expected):  # Validate type
                 return False, f"Field '{field}' must be of type {expected.__name__}"
+
+        # Validate user defined credentials
+        if request_data["CredentialType"] != HTTPCredentialType.NO_AUTH.value:
+            user_object = self.task_inputs.user_object
+            if (
+                not user_object
+                or not user_object.app
+                or not user_object.app.user_defined_credentials
+            ):
+                return False, self.log_manager.get_error_message(
+                    "ExecuteHttpRequest.UserDefinedCredentials.empty"
+                )
 
         return True, request_query
 
@@ -1745,6 +1844,13 @@ class Task(cards.AbstractTask):
 
         content_type = response.headers.get("Content-Type", "").lower()
 
+        if not content_type:
+            try:
+                mime = magic.Magic(mime=True)
+                content_type = mime.from_buffer(response.content)
+            except Exception:
+                content_type = ""
+
         # Handle binary/octet-stream, application/octet-stream response
         if "octet-stream" in content_type:
             try:
@@ -1765,13 +1871,17 @@ class Task(cards.AbstractTask):
             except Exception as e:
                 content_type = "text/plain"
 
+        if "application/pdf" in content_type:
+            if response.content:
+                return response.content, "application/pdf", None
+            else:
+                return None, "", [{"Error": "Empty PDF response"}]
+
         # Handle empty response
         if content_type == "":
             data = {}
         # Handle JSON/XML response
-        elif (
-            "application/" in content_type or "text/" in content_type
-        ):
+        elif "application/" in content_type or "text/" in content_type:
             if "json" in content_type:
                 try:
                     data = response.json()
@@ -1787,7 +1897,9 @@ class Task(cards.AbstractTask):
                     content_type = "application/json"
                 except Exception as e:
                     return None, "", f"Error parsing api response XML: {e}"
-            elif "html" in content_type and (response.status_code == http.HTTPStatus.NO_CONTENT):
+            elif "html" in content_type and (
+                response.status_code == http.HTTPStatus.NO_CONTENT
+            ):
                 data = {"Response": "Response has no content"}
                 content_type = "application/json"
             elif "csv" in content_type:
@@ -1804,8 +1916,8 @@ class Task(cards.AbstractTask):
                     data = {"Response": "Response has no content"}
             except Exception as e:
                 return None, "", f"Error processing api response: {e}"
-                
-        if not data: 
+
+        if not data:
             data = {"Response": "Response has no content"}
             content_type = "application/json"
 
@@ -1822,16 +1934,26 @@ class Task(cards.AbstractTask):
 
             return (response_df).to_parquet(index=False), "parquet", None
 
-        elif "text/csv" in content_type or "application/csv" in content_type:
+        elif "text/csv" in content_type or "application/csv" in content_type:         
             try:
                 csv_df = pd.DataFrame()
                 if isinstance(response, (bytes, str)):
-                    bytes_io = io.BytesIO(response if isinstance(response, bytes) else response.encode())
+                    bytes_io = io.BytesIO(
+                        response if isinstance(response, bytes) else response.encode()
+                    )
                     csv_df = pd.read_csv(bytes_io)
                 else:
                     for resp in response:
-                        bytes_io = io.BytesIO(resp if isinstance(resp, bytes) else resp.encode())
-                        csv_df = pd.concat([csv_df, pd.read_csv(bytes_io)], ignore_index=True)
+                        bytes_io = io.BytesIO(
+                            resp if isinstance(resp, bytes) else resp.encode()
+                        )
+                        csv_df = pd.concat(
+                            [csv_df, pd.read_csv(bytes_io)], ignore_index=True
+                        )
+                if csv_df.empty:
+                    return csv_df, "csv", self.log_manager.get_error_message(
+                        "ExecuteHttpRequest.FormateResponse.CSV.EmptyFile"
+                    )
                 return csv_df, "csv", None
             except Exception as e:
                 return (
@@ -1868,6 +1990,9 @@ class Task(cards.AbstractTask):
 
         elif "application/zip" in content_type or "application/x-zip" in content_type:
             return response, "zip", None
+
+        elif "application/pdf" in content_type:
+            return response, "pdf", None
 
         elif "text/plain" in content_type or "text" in content_type:
             try:
@@ -2053,16 +2178,6 @@ class Task(cards.AbstractTask):
                 "ExecuteHttpRequest.TaskInputs.empty"
             )
 
-        user_object = self.task_inputs.user_object
-        if (
-            not user_object
-            or not user_object.app
-            or not user_object.app.user_defined_credentials
-        ):
-            return self.log_manager.get_error_message(
-                "ExecuteHttpRequest.UserDefinedCredentials.empty"
-            )
-
         if not self.task_inputs.user_inputs:
             return self.log_manager.get_error_message(
                 "ExecuteHttpRequest.TaskInputs.empty"
@@ -2076,19 +2191,6 @@ class Task(cards.AbstractTask):
 
         return None
 
-    def jq_filter_query(self, query, value_dict):
-        if not value_dict:
-            return ""
-
-        parsed_values = jq.compile(query).input(value_dict).all()
-
-        if len(parsed_values) == 1:
-            if parsed_values[0] is not None:
-                return parsed_values[0]
-            return ""
-        else:
-            return parsed_values
-            
     def update_response_data(self, response_json: list | dict, data_to_update: dict):
         if isinstance(response_json, list):
             for index, item in enumerate(response_json):
@@ -2122,14 +2224,9 @@ class Task(cards.AbstractTask):
 
         flattened_data = self.flatten_data(error_msg)
 
-        absolute_file_path, error = self.upload_file_to_minio(
-            file_name=f"LogFile-{str(uuid.uuid4())}.json",
-            file_content=json.dumps(flattened_data).encode(),
-            content_type="application/json",
-        )
-        if error:
-            return {"Error": error}
-        return {"LogFile": absolute_file_path}
+        absolute_file_path = self.upload_log_file_panic(error_data=flattened_data)
+
+        return absolute_file_path
 
     def download_log_file(
         self, path: str
@@ -2139,14 +2236,16 @@ class Task(cards.AbstractTask):
             return None, None
         content, error = self.download_json_file_from_minio_as_iterable(path)
         return (content, None) if not error else (None, {"error": error.get("error")})
-        
-    def _get_boolean_value_from_input(self, input_name: str, default_value: bool) -> bool:
-        value = self.task_inputs.user_inputs.get(input_name) 
-        
+
+    def _get_boolean_value_from_input(
+        self, input_name: str, default_value: bool
+    ) -> bool:
+        value = self.task_inputs.user_inputs.get(input_name)
+
         if isinstance(value, str):
-            return value.lower() == 'true' or (value == '' and default_value)
-            
+            return value.lower() == "true" or (value == "" and default_value)
+
         if isinstance(value, bool):
             return value
-        
+
         return bool(value) or default_value

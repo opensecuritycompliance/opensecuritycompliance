@@ -97,7 +97,7 @@
  **TransformConfigFile** containing transformation configuration typically defines operations such as **AddColumn**, **UpdateColumn**, **DeleteColumn**, **ReorderColumn**, and **RemoveDuplicates** for transforming data. Below is a detailed explanation of each type of operation:
 
  **Important Note:**
-   Be sure to define the path correctly using the format `<<file_name.path>>`. For example, if referencing a column in `InputFile1`, use `<<inputfile1.column_name>>`.
+   Be sure to define the path correctly using the format `{%{file_name.path}%}`. For example, if referencing a column in `InputFile1`, use `{%{inputfile1.column_name}%}`.
 
 #### 1. **Add Column**
 
@@ -116,8 +116,8 @@ The `AddColumn` operation allows you to add new columns to your data (`InputFile
 - **value**      : The possible ways to give value in the structure below:
 
       - Fixed value                          : "System" = "aws"
-      - Value from InputFile1                : "SystemUserName" = "<<inputfile1.UserName>>"
-      - Replace placeholders from InputFile1 : "ResourceURL" = https://portal.azure.com/users/<<inputfile1.UserID>>
+      - Value from InputFile1                : "SystemUserName" = "{%{inputfile1.UserName}%}"
+      - Replace placeholders from InputFile1 : "ResourceURL" = https://portal.azure.com/users/{%{inputfile1.UserID}%}
 
 **Example:**
 
@@ -145,10 +145,10 @@ The `AddColumn` operation allows you to add new columns to your data (`InputFile
 ```toml
 [AddColumn]
 "System" = "aws"
-"SystemUserName" = "<<inputfile1.UserName>>"
-"ResourceURL" = "https://portal.azure.com/users/<<inputfile1.UserID>>>"
+"SystemUserName" = "{%{inputfile1.UserName}%}"
+"ResourceURL" = "https://portal.azure.com/users/{%{inputfile1.UserID}%}>"
 
-# Note : Comma-separated lists are not supported in AddColumn. E.g., "CombinedList" = "<<inputfile1.list1>>,<<inputfile1.list2>>"
+# Note : Comma-separated lists are not supported in AddColumn. E.g., "CombinedList" = "{%{inputfile1.list1}%},{%{inputfile1.list2}%}"
 ```
 
 **OutputFile:**
@@ -191,7 +191,7 @@ Function    = ""
 
 **Syntax explanation:**
 - **ColumnName**  : The name of the new column.
-- **Source**      : The path to the existing column (e.g., `<<inputfile1.Users>>`).
+- **Source**      : The path to the existing column (e.g., `{%{inputfile1.Users}%}`).
 - **Function**    : The transformation function to apply (e.g., `Length`).
 
 **Example for function 'Length':**
@@ -220,7 +220,7 @@ Function    = ""
 ```toml
 [[AddColumn.ByFunction]]
 ColumnName = "TotalUsers"         
-Source = "<<inputfile1.Users>>"
+Source = "{%{inputfile1.Users}%}"
 Function = "Length"
 ```
 
@@ -352,7 +352,7 @@ ObjectValues = ""
 ```toml
 [[AddColumn.AsObject]]
 ColumnName = "AdditionalInfo"
-ObjectValues = "<<inputfile1.UserID>>,<<inputfile1.Role>>,<<inputfile1.Permission>>,<<inputfile1.Address>>,<<inputfile1.Profile.Skills>>"
+ObjectValues = "{%{inputfile1.UserID}%},{%{inputfile1.Role}%},{%{inputfile1.Permission}%},{%{inputfile1.Address}%},{%{inputfile1.Profile.Skills}%}"
 ```
 
 **OutputFile:**
@@ -416,9 +416,9 @@ TargetMapping = ""
 
 **Syntax explanation:**
 - **ColumnName**: The name of the new column.
-- **Source**: The source column in the InputFile1(e.g., `<<inputfile1.UserName>>`).
-- **Target**: The target column in the InputFile2 (e.g., `<<inputfile2.Users>>`).
-- **TargetMapping**: The target mapping column in the InputFile2 (e.g., `<<inputfile2.Manager>>`).
+- **Source**: The source column in the InputFile1(e.g., `{%{inputfile1.UserName}%}`).
+- **Target**: The target column in the InputFile2 (e.g., `{%{inputfile2.Users}%}`).
+- **TargetMapping**: The target mapping column in the InputFile2 (e.g., `{%{inputfile2.Manager}%}`).
 
 **Example:**
 
@@ -453,9 +453,9 @@ JosephAntony,PerterRutherFord
 ```toml
 [[AddColumn.ByMap]]
 ColumnName = "Manager"         
-Source = "<<inputfile1.UserName>>"
-Target = "<<inputfile1.Users>>"
-TargetMapping = "<<inputfile1.Manager>>"
+Source = "{%{inputfile1.UserName}%}"
+Target = "{%{inputfile1.Users}%}"
+TargetMapping = "{%{inputfile1.Manager}%}"
 ```
 
 **OutputFile:**
@@ -501,8 +501,8 @@ ListData = []
 
 **Syntax explanation:**
 - **ColumnName**: The name of the new column.
-- **Source**: The path to the data in the source file (e.g., `<<inputfile1.requested_reviewers>>`).
-- **Target**: The path to a specific field within the list (e.g., `<<Source.login>>`).
+- **Source**: The path to the data in the source file (e.g., `{%{inputfile1.requested_reviewers}%}`).
+- **Target**: The path to a specific field within the list (e.g., `{%{Source.login}%}`).
 - **ListData**: A predefined list of values to populate the new column (e.g., `"data1,data2,data3"`).
 
 **Example:**
@@ -553,8 +553,8 @@ ListData = []
 ```toml
 [[AddColumn.AsList]]
 ColumnName = "PRReviewers"                      # New column name "PRReviewers"
-Source = "<<inputfile1.requested_reviewers>>"   # Source column (requested_reviewers). This should be a List.
-Target = "<<Source.login>>"                     # Extracting the "login" field from each object in the list.
+Source = "{%{inputfile1.requested_reviewers}%}"   # Source column (requested_reviewers). This should be a List.
+Target = "{%{Source.login}%}"                     # Extracting the "login" field from each object in the list.
 # As a result, the column 'PRReviewers' will be added as a list that contains the values of all targets from the source list.
 
 [[AddColumn.AsList]]
@@ -644,7 +644,7 @@ ContainsType = ""  # "list" or "string"
 ```toml
 [[AddColumn.ByContains]]
 ColumnName = "HasAdminAccess"
-SourceColumn = "<<inputfile1.UserPermissions>>"
+SourceColumn = "{%{inputfile1.UserPermissions}%}"
 CaseSensitive = false
 [[AddColumn.ByContains.Conditions]]
 Value = "admin"
@@ -695,17 +695,17 @@ ContainsType = "list"
 ```toml
 [[AddColumn.ByContains]]
 ColumnName = "HasSufficientAccess"
-SourceColumn = "<<inputfile1.UserPermissions>>"
+SourceColumn = "{%{inputfile1.UserPermissions}%}"
 LogicalExpression = "(C1 AND C2) OR C3"
 CaseSensitive = false
 [[AddColumn.ByContains.Conditions]]
 Value = "admin"
 ContainsType = "list"
 [[AddColumn.ByContains.Conditions]]
-Column = "<<inputfile1.RequiredPermissions>>"
+Column = "{%{inputfile1.RequiredPermissions}%}"
 ContainsType = "list"
 [[AddColumn.ByContains.Conditions]]
-Column = "<<inputfile1.BackupPermissions>>"
+Column = "{%{inputfile1.BackupPermissions}%}"
 ContainsType = "list"
 ```
 
@@ -753,7 +753,7 @@ ContainsType = "list"
 ```toml
 [[AddColumn.ByContains]]
 ColumnName = "IsAdminRole"
-SourceColumn = "<<inputfile1.UserRole>>"
+SourceColumn = "{%{inputfile1.UserRole}%}"
 CaseSensitive = false
 [[AddColumn.ByContains.Conditions]]
 Value = "admin"
@@ -804,17 +804,17 @@ ContainsType = "string"
 ```toml
 [[AddColumn.ByContains]]
 ColumnName = "MeetsAccessCriteria"
-SourceColumn = "<<inputfile1.AssignedRoles>>"
+SourceColumn = "{%{inputfile1.AssignedRoles}%}"
 LogicalExpression = "C1 AND (C2 OR C3)"
 CaseSensitive = false
 [[AddColumn.ByContains.Conditions]]
 Value = "active"
 ContainsType = "string"
 [[AddColumn.ByContains.Conditions]]
-Column = "<<inputfile1.RequiredRoles>>"
+Column = "{%{inputfile1.RequiredRoles}%}"
 ContainsType = "list"
 [[AddColumn.ByContains.Conditions]]
-Column = "<<inputfile1.DepartmentRoles>>"
+Column = "{%{inputfile1.DepartmentRoles}%}"
 ContainsType = "list"
 ```
 
@@ -848,22 +848,22 @@ ColumnName2 = ""
 
 **Syntax explanation:**
 
-- **Condition**: A condition that needs to be checked. (Nested structure is not supported (eg : <<inputfile1.User.skills.count>>))
+- **Condition**: A condition that needs to be checked. (Nested structure is not supported (eg : {%{inputfile1.User.skills.count}%}))
 As a result, new columns will be added based on whether the condition evaluates to `True` or `False`.
 
 
 **IMPORTANT: Boolean Value Comparisons:**
-When working with boolean fields in templates (like `<<inputfile1.securityUpdateAvailable>>`), it's important to follow the correct syntax to avoid unexpected errors.
+When working with boolean fields in templates (like `{%{inputfile1.securityUpdateAvailable}%}`), it's important to follow the correct syntax to avoid unexpected errors.
 
 These expressions **will work as expected**:
-- **Correct**: `~<<inputfile1.securityUpdateAvailable>>` (use the `~` prefix, checks if the boolean field is false)
-- **Correct**: `<<inputfile1.securityUpdateAvailable>> == False` (checks if the boolean field is false)
-- **Correct**: `<<inputfile1.securityUpdateAvailable>>` (checks if the boolean field is true)
-- **Correct**: `<<inputfile1.securityUpdateAvailable>> == True` (checks if the boolean field is true)
+- **Correct**: `~{%{inputfile1.securityUpdateAvailable}%}` (use the `~` prefix, checks if the boolean field is false)
+- **Correct**: `{%{inputfile1.securityUpdateAvailable}%} == False` (checks if the boolean field is false)
+- **Correct**: `{%{inputfile1.securityUpdateAvailable}%}` (checks if the boolean field is true)
+- **Correct**: `{%{inputfile1.securityUpdateAvailable}%} == True` (checks if the boolean field is true)
 
 Avoid using lowercase `true` or `false`—these will **not work**:
-- **Incorrect**: `<<inputfile1.securityUpdateAvailable>> == true` (this will fail) 
-- **Incorrect**: `<<inputfile1.securityUpdateAvailable>> == false` (this will fail)
+- **Incorrect**: `{%{inputfile1.securityUpdateAvailable}%} == true` (this will fail) 
+- **Incorrect**: `{%{inputfile1.securityUpdateAvailable}%} == false` (this will fail)
 
 **Supported Conditions:**
 
@@ -879,21 +879,21 @@ Avoid using lowercase `true` or `false`—these will **not work**:
 
 Additionally, you can use functions and more complex expressions, such as:
 
-  - `<<inputfile1.requested_reviewers_count>> > 1` (e.g., check if the count is greater than 1)
-  - `<<inputfile1.Users>> contains 'JohnDanie'` (e.g., check if a specific user exists in the `Users` list)
+  - `{%{inputfile1.requested_reviewers_count}%} > 1` (e.g., check if the count is greater than 1)
+  - `{%{inputfile1.Users}%} contains 'JohnDanie'` (e.g., check if a specific user exists in the `Users` list)
 
   **IMPORTANT: Boolean Value Comparisons:**
-  When working with boolean fields in templates (like `<<inputfile1.securityUpdateAvailable>>`), it's important to follow the correct syntax to avoid unexpected errors.
+  When working with boolean fields in templates (like `{%{inputfile1.securityUpdateAvailable}%}`), it's important to follow the correct syntax to avoid unexpected errors.
 
   These expressions **will work as expected**:
-  - **Correct**: `~<<inputfile1.securityUpdateAvailable>>` (use the `~` prefix, checks if the boolean field is false)
-  - **Correct**: `<<inputfile1.securityUpdateAvailable>> == False` (checks if the boolean field is false)
-  - **Correct**: `<<inputfile1.securityUpdateAvailable>>` (checks if the boolean field is true)
-  - **Correct**: `<<inputfile1.securityUpdateAvailable>> == True` (checks if the boolean field is true)
+  - **Correct**: `~{%{inputfile1.securityUpdateAvailable}%}` (use the `~` prefix, checks if the boolean field is false)
+  - **Correct**: `{%{inputfile1.securityUpdateAvailable}%} == False` (checks if the boolean field is false)
+  - **Correct**: `{%{inputfile1.securityUpdateAvailable}%}` (checks if the boolean field is true)
+  - **Correct**: `{%{inputfile1.securityUpdateAvailable}%} == True` (checks if the boolean field is true)
 
   Avoid using lowercase `true` or `false`—these will **not work**:
-  - **Incorrect**: `<<inputfile1.securityUpdateAvailable>> == true` (this will fail) 
-  - **Incorrect**: `<<inputfile1.securityUpdateAvailable>> == false` (this will fail)
+  - **Incorrect**: `{%{inputfile1.securityUpdateAvailable}%} == true` (this will fail) 
+  - **Incorrect**: `{%{inputfile1.securityUpdateAvailable}%} == false` (this will fail)
 
 **Example 1:**
 
@@ -942,7 +942,7 @@ Additionally, you can use functions and more complex expressions, such as:
 ```toml
 # Adding a new column(s) based on condition
 [[AddColumn.ByCondition]]
-Condition = "<<inputfile1.requested_reviewers_count>> > 1" # Checking if requested_reviewers_count is greater than 1
+Condition = "{%{inputfile1.requested_reviewers_count}%} > 1" # Checking if requested_reviewers_count is greater than 1
 
 # Define behavior for when the condition is true
 [[AddColumn.ByCondition.True]]
@@ -1020,7 +1020,7 @@ ComplianceStatusReason = "The record is non-compliant because the required numbe
 ```toml
 # Adding a new column(s) based on condition
 [[AddColumn.ByCondition]]
-Condition = "<<inputfile1.securityUpdateAvailable>>"  # Using for boolean true check 
+Condition = "{%{inputfile1.securityUpdateAvailable}%}"  # Using for boolean true check 
 
 # Define behavior for when the condition is true
 [[AddColumn.ByCondition.True]]
@@ -1075,7 +1075,7 @@ You can also use more complex conditions involving multiple fields, boolean valu
 
 ```toml
 [[AddColumn.ByCondition]]
-Condition = "~<<inputfile1.autoUpdateEnabled>> and <<inputfile1.criticalVulnerabilities>> > 0"  # Auto-update disabled AND has vulnerabilities
+Condition = "~{%{inputfile1.autoUpdateEnabled}%} and {%{inputfile1.criticalVulnerabilities}%} > 0"  # Auto-update disabled AND has vulnerabilities
 
 [[AddColumn.ByCondition.True]]
 ValidationStatusCode = "HIGH_RISK_SYS"
@@ -1103,7 +1103,7 @@ Replaces the existing column value with another existing column value mentioned 
 **Syntax:**
 ```toml
 [UpdateColumn]
-"ExistingColumn" = "<<path_to_existing_column>>"
+"ExistingColumn" = "{%{path_to_existing_column}%}"
 ```
 
 **Syntax explanation:**
@@ -1139,8 +1139,8 @@ Replaces the existing column value with another existing column value mentioned 
 
 ```toml
 [UpdateColumn]
-"ResourceName" = "<<inputfile1.UserName>>"
-"ResourceID" = "<<inputfile1.UserID>>"
+"ResourceName" = "{%{inputfile1.UserName}%}"
+"ResourceID" = "{%{inputfile1.UserID}%}"
 ```
 
 **Output Example:**
@@ -1201,7 +1201,7 @@ Position = ""  # Options: "Start", "End"
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.Concat]]
-ColumnName = "<<inputfile1.role>>"
+ColumnName = "{%{inputfile1.role}%}"
 ConcatValue = "Role: "
 Position = "Start"  # Options: "Start", "End"
 ```
@@ -1236,7 +1236,7 @@ Position = "Start"  # Options: "Start", "End"
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.Concat]]
-ColumnName = "<<inputfile1.role>>"
+ColumnName = "{%{inputfile1.role}%}"
 ConcatValue = " Role"
 Position = "End"  # Options: "Start", "End"
 ```
@@ -1289,7 +1289,7 @@ Index = 0
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.Split]]
-Source = "<<inputfile1.project>>"
+Source = "{%{inputfile1.project}%}"
 Delimiter = "/"
 Index = 3
 ```
@@ -1342,7 +1342,7 @@ ReplaceValue = ""
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.Replace]]
-ColumnName = "<<inputfile1.project>>"
+ColumnName = "{%{inputfile1.project}%}"
 Regex = "Tech"
 ReplaceValue = "Engineering"
 ```
@@ -1411,8 +1411,8 @@ Type = ""
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.ChangePath]]
-Source = "<<inputfile1.address.zipcode>>"
-Target = "<<inputfile1.address.previous_addresses>>"
+Source = "{%{inputfile1.address.zipcode}%}"
+Target = "{%{inputfile1.address.previous_addresses}%}"
 Type = "Append"
 ```
 
@@ -1483,8 +1483,8 @@ Type = "Append"
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.ChangePath]]
-Source = "<<inputfile1.address.zipcode>>"
-Target = "<<inputfile1.address.previous_addresses>>"
+Source = "{%{inputfile1.address.zipcode}%}"
+Target = "{%{inputfile1.address.previous_addresses}%}"
 Type = "Concat"
 ```
 
@@ -1550,8 +1550,8 @@ Type = "Concat"
 **TransformConfigFile:**
 ```toml
 [[UpdateColumn.ChangePath]]
-Source = "<<inputfile1.address.zipcode>>"
-Target = "<<inputfile1.address.previous_addresses>>"
+Source = "{%{inputfile1.address.zipcode}%}"
+Target = "{%{inputfile1.address.previous_addresses}%}"
 Type = ""
 ```
 
@@ -1801,9 +1801,9 @@ TargetMapping = ""
 
 **Syntax explanation:**
 - **ColumnName**: The name of the new column.
-- **Source**: The source column in the InputFile1(e.g., `<<inputfile1.UserName>>`).
-- **Target**: The target column in the InputFile2 (e.g., `<<inputfile2.Users>>`).
-- **TargetMapping**: The target mapping column in the InputFile2 (e.g., `<<inputfile2.Manager>>`).
+- **Source**: The source column in the InputFile1(e.g., `{%{inputfile1.UserName}%}`).
+- **Target**: The target column in the InputFile2 (e.g., `{%{inputfile2.Users}%}`).
+- **TargetMapping**: The target mapping column in the InputFile2 (e.g., `{%{inputfile2.Manager}%}`).
 
 **Example:**
 
@@ -1844,9 +1844,9 @@ The supported type for **InputFile2** is `CSV`. In this example,  **InputFile2**
 ```toml
 [[AddColumn.ByMap]]
 ColumnName = "Manager"         
-Source = "<<inputfile1.UserName>>"
-Target = "<<inputfile1.Users>>"
-TargetMapping = "<<inputfile1.Manager>>"
+Source = "{%{inputfile1.UserName}%}"
+Target = "{%{inputfile1.Users}%}"
+TargetMapping = "{%{inputfile1.Manager}%}"
 ```
 
 By using above mapping, the **Manager** column is added to **InputFile1**, where each user’s manager will be populated based on the mapping provided in **InputFile2**.
@@ -1886,3 +1886,55 @@ The output file that contains the transformed data.
 The log file that contains details about any errors or issues during the transformation process, or the log from the previous task.
 
 ---
+
+## **Known Issues**
+
+### UpdateColumn with Pre-existing Columns
+
+**Issue**: When using the `UpdateColumn` configuration to update values for columns that **already exist in the input file**, the transformation may incorrectly duplicate column names instead of updating the column values. This issue **only occurs when the target column already exists** in the input data.
+
+**When This Happens**:
+- The column being updated already exists in InputFile1 with existing values
+- Duplicate column names appear in the output (e.g., `ResourceName` and `ResourceName`)
+- Column values remain unchanged from the original input (e.g., "N/A" instead of the expected transformed values)
+- Error occurs during task execution before output file upload and fails execution.
+
+**When This Does NOT Happen**:
+- Using `UpdateColumn` to add completely new columns that don't exist in the input file works correctly
+- Using `AddColumn` to create new columns works as expected
+
+**Example**:
+
+**InputFile1**: 
+```json
+[
+  {
+    "UserName": "JohnDanie",
+    "UserID": "43893443",
+    "Department": "Engineering",
+    "ResourceName": "N/A",
+    "ResourceID": "N/A"
+  },
+  {
+    "UserName": "JosephAntony",
+    "UserID": "43532253",
+    "Department": "Marketing",
+    "ResourceName": "N/A",
+    "ResourceID": "N/A"
+  }
+]
+```
+
+**TransformConfigFile**:
+```toml
+[UpdateColumn]
+"ResourceName" = "{%{inputfile1.UserName}%}"
+"ResourceID" = "{%{inputfile1.UserID}%}"
+```
+
+**Actual Output** (incorrect):
+```
+ResourceName  ResourceID  Department  ResourceName  ResourceID
+JohnDanie     43893443    Engineering N/A           N/A
+JosephAntony  43532253    Marketing   N/A           N/A
+```

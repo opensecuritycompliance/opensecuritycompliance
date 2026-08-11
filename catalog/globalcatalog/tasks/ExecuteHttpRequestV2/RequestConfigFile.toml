@@ -1,9 +1,9 @@
 # The `Variables` section allows you to define constants that can be used dynamically in the request below.
-# - You can reference these variables anywhere in the request using the <<variable_name>> syntax.
+# - You can reference these variables anywhere in the request using the {%{variable_name}%} syntax.
 # - Ensure all values are strings. For non-string values (like objects), convert them to JSON-formatted strings.
 # Example:
-#   - Method = "GET" can be referenced in the [Request] section as <<Method>>.
-#   - Params = "sample data" can be used in the query string or body as <<Params>>.
+#   - Method = "GET" can be referenced in the [Request] section as {%{Method}%}.
+#   - Params = "sample data" can be used in the query string or body as {%{Params}%}.
 [Variables] # DON'T CHANGE THE SECTION NAME. KEEP AS IT IS
 # Example:
 # Method = "GET"  # HTTP method to use, e.g., GET, POST, PUT, etc.
@@ -16,12 +16,12 @@
 
 # URL Field (MANDATORY):
 # - Specify the complete API URL or build it dynamically using application variables.
-# - You can access application-level fields using the syntax <<application.FieldName>>.
+# - You can access application-level fields using the syntax {%{application.FieldName}%}.
 # Example:
 # - Using Azure APIs: Combine AppURL and SubscriptionID:
-#   "<<application.AppURL>>/subscriptions/<<application.SubscriptionID>>/resourcegroups?api-version=2021-04-01"
+#   "{%{application.AppURL}%}/subscriptions/{%{application.SubscriptionID}%}/resourcegroups?api-version=2021-04-01"
 # - Using AWS APIs: 
-#   "<<application.AppURL>>/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
+#   "{%{application.AppURL}%}/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
 URL = ""  # Specify the API endpoint.
 
 # HTTP Method (MANDATORY):
@@ -70,19 +70,19 @@ Redirect = true
 # === MANUAL AUTHORIZATION HEADER REQUIRED (Specify in [Request.Headers]) ===
 #
 # OAuth:
-#   - Must specify Authorization header using <<validationCURLresponse.*>>.
+#   - Must specify Authorization header using {%{validationCURLresponse.*}%}
 #   - Example:
-#       Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+#       Authorization = "{%{validationCURLresponse.token_type}%} {%{validationCURLresponse.access_token}%}"
 #
 # CustomType:
-#   - Must specify Authorization header using <<validationCURLresponse.*>>.
+#   - Must specify Authorization header using {%{validationCURLresponse.*}%}
 #   - Example:
-#       Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+#       Authorization = "{%{validationCURLresponse.tokenType}%} {%{validationCURLresponse.authToken}%}"
 #
 # JWTBearer:
 #   - Requires Authorization header.
-#   - Option 1 (auto):  Authorization = "Bearer <<JWTBearer>>" (for JWT generated using Algorithm, PrivateKey, Payload)
-#   - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>" (if using validationCURL)
+#   - Option 1 (auto):  Authorization = "Bearer {%{JWTBearer}%}" (for JWT generated using Algorithm, PrivateKey, Payload)
+#   - Option 2 (manual): Authorization = "{%{validationCURLresponse.token}%}" (if using validationCURL)
 #
 CredentialType = ""
 
@@ -109,7 +109,7 @@ MaxWorkers = 5
     [Request.Retries.RetryOnCondition]
     # Configure the retry logic based on specific conditions.
 
-    ConditionField = "<<response.status_code>>"
+    ConditionField = "{%{response.status_code}%}"
     # The response attribute used to determine whether a retry should be attempted.
     # This can be any response property, such as status_code, headers, body, cookies, or url.
 
@@ -150,22 +150,22 @@ MaxWorkers = 5
 # --------------------------------------------------
 # 1. Application -> ValidationCURL
 #    For Azure APIs, you can generate a Bearer token using:
-#        curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
+#        curl --location 'https://login.microsoftonline.com/{%{CustomType.TenantID}%}/oauth2/token' \
 #             --header 'Content-Type: application/x-www-form-urlencoded' \
 #             --data-urlencode 'grant_type=client_credentials' \
-#             --data-urlencode 'client_id=<<CustomType.ClientID>>' \
-#             --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
+#             --data-urlencode 'client_id={%{CustomType.ClientID}%}' \
+#             --data-urlencode 'client_secret={%{CustomType.ClientSecret}%}' \
 #             --data-urlencode 'resource=https://servicebus.azure.net'
 #
 # 2. RequestConfigFile -> Headers
 #    Once the CURL is validated, you can access its response dynamically:
 #        [Request.Headers]
-#        Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+#        Authorization = "{%{validationCURLresponse.tokenType}%} {%{validationCURLresponse.authToken}%}"
 # --------------------------------------------------
 #
 # JWTBearer:
-#   - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>" (uses Algorithm, PrivateKey, Payload)
-#   - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>" (if using validationCURL)
+#   - Option 1 (auto): Authorization = "Bearer {%{JWTBearer}%}" (uses Algorithm, PrivateKey, Payload)
+#   - Option 2 (manual): Authorization = "{%{validationCURLresponse.token}%}" (if using validationCURL)
 #
 # NoAuth:
 #   - No Authorization header required.
@@ -176,20 +176,20 @@ MaxWorkers = 5
 #     Connection = "keep-alive"
 [Request.Headers]
 # Example:
-# Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
-# NOTE : Add "<<validationCURLresponse>>" to include the full validation cURL response.
+# Authorization = "{%{validationCURLresponse.tokenType}%} {%{validationCURLresponse.authToken}%}"
+# NOTE : Add "{%{validationCURLresponse}%}" to include the full validation cURL response.
 #        This means that if the validation cURL returns an Auth token or a Bearer token in plain/text,
 #        the entire response will be directly used as the value of the `Authorization` header.
 
 # Query Parameters:
 # - Define query parameters for GET requests or additional parameters for other request types.
 # - Specify parameters as key-value pair in the format: key = value.
-# - You can use dynamic variables such as <<Params>> and <<Version>>.
-# - Additionally you can access <<fromdate>> and <<todate>> from the 'UserInputs'
+# - You can use dynamic variables such as {%{Params}%} and {%{Version}%}.
+# - Additionally you can access {%{fromdate}%} and {%{todate}%} from the 'UserInputs'
 [Request.Params]
 # Example:
-# Action = "<<Params>>"
-# Version = "<<Version>>"
+# Action = "{%{Params}%}"
+# Version = "{%{Version}%}"
 
 # Request Data Section:
 # - Specify the request body based on the ContentType.
@@ -217,7 +217,7 @@ MaxWorkers = 5
     # - Define raw data as JSON or plain text.
     [Request.Data.Raw]
     # Example:
-    # Value = '{"key": "<<Raw>>", "field1": "Value1"}'
+    # Value = '{"key": "{%{Raw}%}", "field1": "Value1"}'
 
     # Binary Body:
     # - Used with ContentType = "application/octet-stream".
@@ -232,5 +232,5 @@ MaxWorkers = 5
 #   - Headers: Define additional HTTP headers required for the request.
 #   - Params: Specify query parameters or additional request parameters.
 #   - Data: Populate request body fields based on the selected ContentType.
-# - You can access dynamic variables from the input file or application configuration using <<inputfile.FieldName>> or <<application.FieldName>>.
-# - Example: <<application.SubscriptionID>> can be used to include a subscription ID in the request.
+# - You can access dynamic variables from the input file or application configuration using {%{inputfile.FieldName}%} or {%{application.FieldName}%}.
+# - Example: {%{application.SubscriptionID}%} can be used to include a subscription ID in the request.

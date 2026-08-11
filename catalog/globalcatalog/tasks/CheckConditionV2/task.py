@@ -1,13 +1,9 @@
-import io
-import json
-from typing import List, Any, Dict
-import uuid
-from compliancecowcards.utils import cowjqutils
+from typing import List, Any
+from compliancecowcards.utils import cowutils, cowplaceholderutils
 from compliancecowcards.structs import cards
 import pandas as pd
 import pathlib
 from condition import CheckCondition, Condition
-import re
 import copy
 
 
@@ -22,7 +18,8 @@ class Task(cards.AbstractTask):
         custom_log_config_url = self.task_inputs.user_inputs.get('LogConfig')
         output_file_format = user_inputs.get('OutputFileFormat', 'PARQUET')
         
-        should_proceed_on_error = self._get_boolean_value_from_input('ProceedIfErrorExists')
+        should_proceed_on_error = cowutils.str_to_bool(value = user_inputs.get("ProceedIfErrorExists"), default_val=True)
+
         self.set_log_file_name('LogFile' if should_proceed_on_error else 'Errors')
         
         self.log_manager, error = cards.LogConfigManager.from_minio_file_url(
@@ -172,7 +169,7 @@ class Task(cards.AbstractTask):
         return upload_func(result_df, file_name)
         
     def handle_logfile(self, log_file_url: str | None) -> dict:
-        should_proceed_on_log = self._get_boolean_value_from_input('ProceedIfLogExists')
+        should_proceed_on_log = cowutils.str_to_bool(value=self.task_inputs.user_inputs.get("ProceedIfLogExists"), default_val=True)
         
         is_valid_log_url = self._is_valid_file_input(log_file_url)
             
@@ -304,9 +301,9 @@ class Task(cards.AbstractTask):
         if is_cel_condition:
             condition_field_value = context_data.copy()
             
-            condition_value_placeholders = self._get_placeholder_matches_from_string(condition_value)
+            condition_value_placeholders = list(cowplaceholderutils.get_placeholders_in_template(str(condition_value)))
             should_replace_cel_conditionvalue_placeholders = len(condition_value_placeholders) == 1 and (
-                condition_value in [r'{{{{{match}}}}}'.format(match=condition_value_placeholders[0]), f'<<{condition_value_placeholders[0]}>>']
+                condition_value in cowplaceholderutils.get_delimited_placeholder_variants(condition_value_placeholders[0])
             )
         else:
             condition_field_value, error = self._replace_placeholders(condition_field, context_data, 'CheckCondition.ConditionExecution.ConditionField')
@@ -363,52 +360,29 @@ class Task(cards.AbstractTask):
         if not isinstance(string, str):
             return string, ''
             
-        placeholder_matches = self._get_placeholder_matches_from_string(string)
+        placeholder_matches = cowplaceholderutils.get_placeholders_in_template(string)
+        
         missing_placeholders: list[str] = []
         
         updated_string = string
-        for match in set(placeholder_matches):
-            match_value, error = cowjqutils.evaluate_jq_filter(
-                context_data,
-                jq_expression=f'.{match}' if not match.startswith('.') else match
-            )
+        for match in placeholder_matches:
+            updated_string, missing, error = cowplaceholderutils.replace_placeholders_using_jq(updated_string, context_data, strict=False, placeholders=[match])
             if error:
                 return '', self.log_manager.get_error_message(f'{base_error_type}.evaluation_error', {
                     'error': error,
                     'placeholder': match
                 })
-            if match_value is None:
+            if missing:
                 missing_placeholders.append(match)
                 continue
-                
-            if string == r'{{{{{match}}}}}'.format(match=match) or string == f'<<{match}>>':
-                return match_value, ''
-                
-            updated_string = updated_string.replace(r'{{{{{match}}}}}'.format(match=match), str(match_value))
-            updated_string = updated_string.replace(f'<<{match}>>', str(match_value))
-            
+
         if missing_placeholders:
             return '', self.log_manager.get_error_message(f'{base_error_type}.missing_placeholders', {
                 'missing_placeholders': ', '.join(missing_placeholders)
             })
 
         return updated_string, ''
-        
-    def _get_placeholder_matches_from_string(self, string: str | Any) -> list[str]:
-        placeholder_matches = re.findall(r'{{(.+?)}}', string)
-        placeholder_matches.extend(re.findall(r'<<(.+?)>>', string))
-        
-        return placeholder_matches
 
-    def _get_boolean_value_from_input(self, input_name: str) -> bool:
-        value = self.task_inputs.user_inputs.get(input_name)
-        
-        if isinstance(value, str):
-            return value.lower() == 'true'
-        
-        # Return True if value is None or value is truthy
-        return value is None or bool(value)
-        
     def _is_valid_file_input(self, input_url: str | Any = '', input_name: str = '') -> bool:
         if input_name and not input_url:
             input_url = self.task_inputs.user_inputs.get(input_name)

@@ -23,3 +23,4 @@ RequestConfigFile.AllowedValues = "Only 'string' type values are allowed in requ
 RequestConfigFile.InvalidParams = "Invalid JSON string provided in 'RequestConfigFile.Params'"
 PLaceHolder.ProcessingFailed = "Error while processing place holders."
 
+FormateResponse.CSV.EmptyFile= "The CSV file was fetched successfully, but it contains no data."

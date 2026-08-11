@@ -1,0 +1,729 @@
+[K8sForbiddenContainerRegistries]
+Control = "C-0001"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Deployment,ReplicaSet,DaemonSet,StatefulSet/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sForbiddenContainerRegistries.COMPLIANT]
+  ComplianceStatusReason = "Container images are sourced only from approved and trusted registries."
+  ValidationStatusCode = "K_FCR"
+  ValidationStatusNotes = "Container images originate from approved registries."
+
+  [K8sForbiddenContainerRegistries.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because one or more container images are sourced from public or blocklisted registries, which may introduce untrusted or compromised images."
+  ValidationStatusCode = "K_NFCR"
+  ValidationStatusNotes = "Container images originate from public or blocklisted registries."
+  Remediation = "Use container images from approved internal or trusted registries."
+
+[K8sMemoryLimitsAndRequests]
+Control = "C-0004"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sMemoryLimitsAndRequests.COMPLIANT]
+  ComplianceStatusReason = "Memory resource requests and limits are defined and fall within the approved range."
+  ValidationStatusCode = "MEM_LMT_REQ_DEF"
+  ValidationStatusNotes = "Memory requests and limits are properly configured."
+
+  [K8sMemoryLimitsAndRequests.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because memory resource requests or limits are missing or fall outside the configured minimum or maximum thresholds."
+  ValidationStatusCode = "MEM_LMT_REQ_NDEF"
+  ValidationStatusNotes = "Memory requests and/or limits are missing or outside the approved range."
+  Remediation = "Ensure memory requests and memory limits are configured and comply with the organization's defined thresholds."
+
+[K8sExcessiveDeleteRights]
+Control = "C-0007"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Role,ClusterRole,ClusterRoleBinding,RoleBinding/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sExcessiveDeleteRights.COMPLIANT]
+  ComplianceStatusReason = "Delete permissions on critical Kubernetes resources are appropriately restricted."
+  ValidationStatusCode = "RBAC_DEL_R"
+  ValidationStatusNotes = "Delete permissions are properly restricted."
+
+  [K8sExcessiveDeleteRights.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because excessive delete permissions have been granted, allowing deletion of critical Kubernetes resources."
+  ValidationStatusCode = "RBAC_DEL_ER"
+  ValidationStatusNotes = "Excessive delete permissions detected."
+  Remediation = "Restrict delete permissions to only the identities that require them and follow the principle of least privilege."
+
+[K8sResourcePolicies]
+Control = "C-0009"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sResourcePolicies.COMPLIANT]
+  ComplianceStatusReason = "The namespace has resource policies defined to govern resource consumption."
+  ValidationStatusCode = "K_RP"
+  ValidationStatusNotes = "Resource policies are configured for the namespace."
+
+  [K8sResourcePolicies.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because the namespace does not have resource policies defined, which may allow uncontrolled resource consumption."
+  ValidationStatusCode = "K_NRP"
+  ValidationStatusNotes = "Resource policies are not configured for the namespace."
+  Remediation = "Define LimitRange and/or ResourceQuota resources for the namespace to control resource allocation and consumption."
+
+[K8sDashboardWorkloadAccess]
+Control = "C-0014"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sDashboardWorkloadAccess.COMPLIANT]
+  ComplianceStatusReason = "Only Kubernetes Dashboard workloads are associated with the dashboard service account and dashboard roles."
+  ValidationStatusCode = "K_DWA"
+  ValidationStatusNotes = "Dashboard service account and roles are used only by authorized dashboard workloads."
+
+  [K8sDashboardWorkloadAccess.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a non-dashboard workload is associated with the Kubernetes Dashboard service account or has been granted access through dashboard roles."
+  ValidationStatusCode = "K_NDWA"
+  ValidationStatusNotes = "Unauthorized workload is using the Kubernetes Dashboard service account or dashboard role."
+  Remediation = "Ensure that only Kubernetes Dashboard components use the dashboard service account and dashboard-specific roles. Remove unauthorized bindings and update workload service accounts."
+
+[K8sHostPathVolumes]
+Control = "C-0020"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sHostPathVolumes.COMPLIANT]
+  ComplianceStatusReason = "The workload does not mount hostPath volumes."
+  ValidationStatusCode = "K_HPV"
+  ValidationStatusNotes = "No hostPath volumes are configured."
+
+  [K8sHostPathVolumes.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because one or more containers mount hostPath volumes, which may expose sensitive files from the host node."
+  ValidationStatusCode = "K_NHPV"
+  ValidationStatusNotes = "One or more hostPath volumes are configured."
+  Remediation = "Try to refrain from using hostPath mounts."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: exposed-sensitive-interfaces-v1
+# Description: fails if known interfaces have exposed services
+# --------------------------------------------------------------------
+
+[K8sExposedSensitiveInterfaces]
+Control = "C-0021"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Service,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sExposedSensitiveInterfaces.COMPLIANT]
+  ComplianceStatusReason = "Sensitive workloads are not exposed through externally accessible Kubernetes Services."
+  ValidationStatusCode = "K_ESI"
+  ValidationStatusNotes = "Sensitive interfaces are not externally exposed."
+
+  [K8sExposedSensitiveInterfaces.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a workload exposing a sensitive interface is accessible through a Kubernetes Service of type LoadBalancer or NodePort."
+  ValidationStatusCode = "K_NESI"
+  ValidationStatusNotes = "Sensitive interfaces are externally exposed."
+  Remediation = "Avoid exposing sensitive interfaces through LoadBalancer or NodePort Services. Restrict access using internal networking, ingress controls, or network policies."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: rule-deny-cronjobs
+# Description: determines if it's cronjob
+# --------------------------------------------------------------------
+
+[K8sDenyCronJobs]
+Control = "C-0026"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sDenyCronJobs.COMPLIANT]
+  ComplianceStatusReason = "No CronJob resources are present."
+  ValidationStatusCode = "K_DCJ"
+  ValidationStatusNotes = "No CronJob resources detected."
+
+  [K8sDenyCronJobs.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because CronJob resources are present in the cluster."
+  ValidationStatusCode = "K_NDCJ"
+  ValidationStatusNotes = "CronJob resource detected."
+  Remediation = "Avoid using CronJobs unless they are explicitly required. Consider alternative scheduling mechanisms or remove unnecessary CronJobs."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: list-all-validating-webhooks
+# Description: Returns validating webhook configurations to be verified
+# --------------------------------------------------------------------
+
+[K8sValidatingWebhookConfigurations]
+Control = "C-0036"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/ValidatingWebhookConfiguration/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sValidatingWebhookConfigurations.COMPLIANT]
+  ComplianceStatusReason = "No validating webhook configurations requiring review were found."
+  ValidationStatusCode = "K_VWC"
+  ValidationStatusNotes = "No validating webhook configurations detected."
+
+  [K8sValidatingWebhookConfigurations.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a ValidatingWebhookConfiguration exists and should be reviewed for potentially malicious or unauthorized behavior."
+  ValidationStatusCode = "K_NVWC"
+  ValidationStatusNotes = "Validating webhook configuration detected."
+  Remediation = "Analyze webhook for malicious behavior."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: list-all-mutating-webhooks
+# Description: Returns mutating webhook configurations to be verified
+# --------------------------------------------------------------------
+
+[K8sMutatingWebhookConfigurations]
+Control = "C-0039"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/MutatingWebhookConfiguration/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sMutatingWebhookConfigurations.COMPLIANT]
+  ComplianceStatusReason = "No mutating webhook configurations requiring review were found."
+  ValidationStatusCode = "K_MWC"
+  ValidationStatusNotes = "No mutating webhook configurations detected."
+
+  [K8sMutatingWebhookConfigurations.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a MutatingWebhookConfiguration exists and should be reviewed for potentially malicious or unauthorized behavior."
+  ValidationStatusCode = "K_NMWC"
+  ValidationStatusNotes = "Mutating webhook configuration detected."
+  Remediation = "Analyze webhook for malicious behavior."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: rule-can-ssh-to-pod-v1
+# Description: denies pods with SSH ports opened (22/222)
+# --------------------------------------------------------------------
+
+[K8sSSHServerRunningInsideContainer]
+Control = "C-0042"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Service,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sSSHServerRunningInsideContainer.COMPLIANT]
+  ComplianceStatusReason = "No workloads expose SSH ports."
+  ValidationStatusCode = "K_SSH_C"
+  ValidationStatusNotes = "No SSH ports (22/222) are exposed by workloads."
+
+  [K8sSSHServerRunningInsideContainer.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a workload exposes SSH ports, allowing remote shell access into containers."
+  ValidationStatusCode = "K_SSH_NC"
+  ValidationStatusNotes = "SSH port (22/222) exposed by workload."
+  Remediation = "Remove SSH servers from containers and avoid exposing SSH ports. Use Kubernetes-native mechanisms such as 'kubectl exec' or ephemeral containers for administrative access."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: alert-rw-hostpath
+# Description: determines if any workload contains a hostPath volume with rw permissions
+# --------------------------------------------------------------------
+
+[K8sWritableHostPathMounts]
+Control = "C-045"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sWritableHostPathMounts.COMPLIANT]
+  ComplianceStatusReason = "No writable hostPath volumes are mounted by workloads."
+  ValidationStatusCode = "K_RWHP"
+  ValidationStatusNotes = "No writable hostPath volume mounts detected."
+
+  [K8sWritableHostPathMounts.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because a workload mounts a hostPath volume with read-write permissions, allowing containers to modify files on the host."
+  ValidationStatusCode = "K_NRWHP"
+  ValidationStatusNotes = "Writable hostPath volume mount detected."
+  Remediation = "Set the readOnly field of the mount to true."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: alert-any-hostpath
+# Description: determines if any workload contains a hostPath volume
+# --------------------------------------------------------------------
+
+[K8sAnyHostPathMounts]
+Control = "C-0048"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sAnyHostPathMounts.COMPLIANT]
+  ComplianceStatusReason = "No hostPath volumes are mounted by workloads."
+  ValidationStatusCode = "K_AHP"
+  ValidationStatusNotes = "No hostPath volume mounts detected."
+
+  [K8sAnyHostPathMounts.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because the workload mounts one or more hostPath volumes, which may allow containers to access the host filesystem."
+  ValidationStatusCode = "K_NAHP"
+  ValidationStatusNotes = "hostPath volume mount detected."
+  Remediation = "Try to refrain from using hostPath mounts."
+
+# --------------------------------------------------------------------
+# Kubescape Rule: internal-networking
+# Description: lists namespaces in which no network policies are defined
+# --------------------------------------------------------------------
+
+[K8sInternalNetworking]
+Control = "C-0049"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Namespace,NetworkPolicy,CiliumNetworkPolicy,CiliumClusterwideNetworkPolicy/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+  [K8sInternalNetworking.COMPLIANT]
+  ComplianceStatusReason = "Network policies are defined for the namespace, restricting internal network communication."
+  ValidationStatusCode = "K_IN"
+  ValidationStatusNotes = "Network policies are configured."
+
+  [K8sInternalNetworking.NON_COMPLIANT]
+  ComplianceStatusReason = "This record is non compliant because no NetworkPolicy, CiliumNetworkPolicy, or CiliumClusterwideNetworkPolicy is defined for the namespace, allowing unrestricted internal network communication."
+  ValidationStatusCode = "K_NIN"
+  ValidationStatusNotes = "No network policies configured for the namespace."
+  Remediation = "Define Kubernetes NetworkPolicy or Cilium network policies to restrict pod-to-pod communication and enforce least-privilege networking."
+
+# Kubescape Rule: resources-cpu-limit-and-request
+[K8sCpuLimitsAndRequests]
+Control = "C-0050"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sCpuLimitsAndRequests.COMPLIANT]
+ComplianceStatusReason = "CPU resource requests and limits are defined and fall within the approved range."
+ValidationStatusCode = "CPU_LMT_REQ_DEF"
+ValidationStatusNotes = "CPU requests and limits are properly configured."
+
+[K8sCpuLimitsAndRequests.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because CPU resource requests or limits are missing or fall outside the configured minimum or maximum thresholds."
+ValidationStatusCode = "CPU_LMT_REQ_NDEF"
+ValidationStatusNotes = "CPU requests and/or limits are missing or outside the approved range."
+Remediation = "Ensure CPU requests and CPU limits are configured and comply with the organization's defined thresholds."
+
+# Kubescape Rule: instance-metadata-api-access
+[K8sInstanceMetadataAPIAccess]
+Control = "C-0052"
+ExcludeCriteria = ""
+IncludeCriteria = "/hostdata/*/cloudProviderInfo/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sInstanceMetadataAPIAccess.COMPLIANT]
+ComplianceStatusReason = "Nodes do not have access to the cloud provider's Instance Metadata Service."
+ValidationStatusCode = "K_IMDS"
+ValidationStatusNotes = "Instance Metadata Service access is disabled or unavailable from cluster nodes."
+
+[K8sInstanceMetadataAPIAccess.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more cluster nodes have access to the cloud provider's Instance Metadata Service, which may expose sensitive credentials or instance metadata."
+ValidationStatusCode = "K_NIMDS"
+ValidationStatusNotes = "Instance Metadata Service is accessible from cluster nodes."
+Remediation = "Restrict access to the cloud provider's Instance Metadata Service from workloads and nodes unless explicitly required."
+
+# Kubescape Rule: configured-liveness-probe
+[K8sConfiguredLivenessProbe]
+Control = "C-0056"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sConfiguredLivenessProbe.COMPLIANT]
+ComplianceStatusReason = "Liveness probes are configured for all containers."
+ValidationStatusCode = "K_LP_C"
+ValidationStatusNotes = "Liveness probes are configured."
+
+[K8sConfiguredLivenessProbe.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more containers do not have a liveness probe configured."
+ValidationStatusCode = "K_LP_NC"
+ValidationStatusNotes = "Liveness probe is not configured."
+Remediation = "Ensure liveness probes are configured for all containers."
+
+# Kubescape Rule: pods-in-default-namespace
+[K8sPodsInDefaultNamespace]
+Control = "C-0061"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sPodsInDefaultNamespace.COMPLIANT]
+ComplianceStatusReason = "No workloads are deployed in the default namespace."
+ValidationStatusCode = "K_PDN_C"
+ValidationStatusNotes = "No workloads are deployed in the default namespace."
+
+[K8sPodsInDefaultNamespace.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more workloads are deployed in the default namespace."
+ValidationStatusCode = "K_PDN_NC"
+ValidationStatusNotes = "Workloads are deployed in the default namespace."
+Remediation = "Deploy workloads to dedicated namespaces instead of the default namespace."
+
+# Kubescape Rule: sudo-in-container-entrypoint
+[K8sSudoInContainerEntrypoint]
+Control = "C-0062"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sSudoInContainerEntrypoint.COMPLIANT]
+ComplianceStatusReason = "No containers invoke sudo in their entrypoint or command."
+ValidationStatusCode = "K_SUDO_C"
+ValidationStatusNotes = "No use of sudo detected in container entrypoints."
+
+[K8sSudoInContainerEntrypoint.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more containers invoke sudo in their entrypoint or command."
+ValidationStatusCode = "K_SUDO_NC"
+ValidationStatusNotes = "Container entrypoint or command invokes sudo."
+Remediation = "Remove the use of sudo from container entrypoints or commands and run the container with the minimum required privileges."
+
+# Kubescape Rule: naked-pods
+[K8sNakedPods]
+Control = "C-0073"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sNakedPods.COMPLIANT]
+ComplianceStatusReason = "All Pods are managed by a workload controller."
+ValidationStatusCode = "K_NP_C"
+ValidationStatusNotes = "No naked Pods detected."
+
+[K8sNakedPods.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the Pod is not managed by a Deployment, ReplicaSet, StatefulSet, DaemonSet, Job, or CronJob."
+ValidationStatusCode = "K_NP_NC"
+ValidationStatusNotes = "Naked Pod detected."
+Remediation = "Create necessary deployment object for every Pod making any Pod a first class citizen in your IaC architecture. Example command: kubectl create deployment nginx-depl --image=nginx:1.19"
+
+# Kubescape Rule: containers-mounting-docker-socket
+[K8sContainersMountingDockerSocket]
+Control = "C-0074"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sContainersMountingDockerSocket.COMPLIANT]
+ComplianceStatusReason = "No containers mount the container runtime socket."
+ValidationStatusCode = "K_CMDS_C"
+ValidationStatusNotes = "No container runtime socket mounts detected."
+
+[K8sContainersMountingDockerSocket.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more containers mount a container runtime socket from the host."
+ValidationStatusCode = "K_CMDS_NC"
+ValidationStatusNotes = "Container runtime socket mount detected."
+Remediation = "Remove mounts to container runtime sockets (e.g. Docker, containerd, CRI-O) unless explicitly required."
+
+# Kubescape Rule: image-pull-policy-is-not-set-to-always
+[K8sImagePullPolicyIsNotSetToAlways]
+Control = "C-0075"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sImagePullPolicyIsNotSetToAlways.COMPLIANT]
+ComplianceStatusReason = "All containers have imagePullPolicy set to Always."
+ValidationStatusCode = "K_IPP_C"
+ValidationStatusNotes = "Image pull policy is set to Always."
+
+[K8sImagePullPolicyIsNotSetToAlways.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more containers do not have imagePullPolicy set to Always."
+ValidationStatusCode = "K_IPP_NC"
+ValidationStatusNotes = "Image pull policy is not set to Always."
+Remediation = "Set imagePullPolicy to Always for all containers."
+
+# Kubescape Rule: label-usage-for-resources
+[K8sLabelUsageForResources]
+Control = "C-0076"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sLabelUsageForResources.COMPLIANT]
+ComplianceStatusReason = "The workload contains one or more recommended labels."
+ValidationStatusCode = "K_LUR_C"
+ValidationStatusNotes = "Recommended labels are configured on the workload."
+
+[K8sLabelUsageForResources.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the workload does not contain any of the configured recommended labels."
+ValidationStatusCode = "K_LUR_NC"
+ValidationStatusNotes = "Recommended labels are missing from the workload."
+Remediation = "Add one or more of the configured recommended labels (for example: app, tier, phase, version, owner, env) to the workload metadata."
+
+# Kubescape Rule: k8s-common-labels-usage
+[K8sCommonLabelsUsage]
+Control = "C-0077"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sCommonLabelsUsage.COMPLIANT]
+ComplianceStatusReason = "The workload contains one or more Kubernetes recommended labels."
+ValidationStatusCode = "K_KCLU_C"
+ValidationStatusNotes = "Kubernetes recommended labels are configured on the workload."
+
+[K8sCommonLabelsUsage.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the workload does not contain any of the configured Kubernetes recommended labels."
+ValidationStatusCode = "K_KCLU_NC"
+ValidationStatusNotes = "Kubernetes recommended labels are missing from the workload."
+Remediation = "Add one or more of the configured Kubernetes recommended labels (app.kubernetes.io/*) to the workload metadata."
+
+# Kubescape Rule: container-image-repository-v1
+[K8sContainerImageRepository]
+Control = "C-0078"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod,Deployment,ReplicaSet,DaemonSet,StatefulSet,Job,CronJob/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sContainerImageRepository.COMPLIANT]
+ComplianceStatusReason = "All container images are pulled from allowed repositories."
+ValidationStatusCode = "K_CIR_C"
+ValidationStatusNotes = "Container images are from approved repositories."
+
+[K8sContainerImageRepository.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because one or more container images are not pulled from an allowed repository."
+ValidationStatusCode = "K_CIR_NC"
+ValidationStatusNotes = "Container images are not from approved repositories."
+Remediation = "Configure containers to use images only from the repositories listed in imageRepositoryAllowList."
+
+# Kubescape Rule: CVE-2022-0185
+[K8sCVE20220185]
+Control = "C-0079"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/Node/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sCVE20220185.COMPLIANT]
+ComplianceStatusReason = "The node is not vulnerable to CVE-2022-0185."
+ValidationStatusCode = "K_CVE_2022_0185_C"
+ValidationStatusNotes = "No indicators of CVE-2022-0185 vulnerability were detected."
+
+[K8sCVE20220185.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the node is vulnerable to CVE-2022-0185."
+ValidationStatusCode = "K_CVE_2022_0185_NC"
+ValidationStatusNotes = "The node is vulnerable to CVE-2022-0185."
+Remediation = "Upgrade the Linux kernel to a version that includes the fix for CVE-2022-0185."
+
+# Kubescape Rule: CVE-2022-24348
+[K8sCVE202224348]
+Control = "C-0081"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Deployment/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sCVE202224348.COMPLIANT]
+ComplianceStatusReason = "The deployment is not vulnerable to CVE-2022-24348."
+ValidationStatusCode = "K_CVE_2022_24348_C"
+ValidationStatusNotes = "No indicators of CVE-2022-24348 vulnerability were detected."
+
+[K8sCVE202224348.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the deployment is vulnerable to CVE-2022-24348."
+ValidationStatusCode = "K_CVE_2022_24348_NC"
+ValidationStatusNotes = "The deployment is vulnerable to CVE-2022-24348."
+Remediation = "Upgrade the container image to a version that is not affected by CVE-2022-24348."
+
+# Kubescape Rule: exposed-critical-pods
+[K8sExposedCriticalPods]
+Control = "C-0083"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Service,Pod/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sExposedCriticalPods.COMPLIANT]
+ComplianceStatusReason = "No externally exposed Pods with critical image vulnerabilities were detected."
+ValidationStatusCode = "K_ECP_C"
+ValidationStatusNotes = "No exposed critical Pods detected."
+
+[K8sExposedCriticalPods.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the Pod is externally exposed and its image contains critical vulnerabilities."
+ValidationStatusCode = "K_ECP_NC"
+ValidationStatusNotes = "Externally exposed Pod with critical image vulnerabilities detected."
+Remediation = "Upgrade the container image to a version without critical vulnerabilities or remove unnecessary external exposure of the Pod."
+
+# Kubescape Rule: exposed-rce-pods
+[K8sExposedRCEPods]
+Control = "C-0084"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Service,Pod/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sExposedRCEPods.COMPLIANT]
+ComplianceStatusReason = "No externally exposed Pods with remote code execution vulnerabilities were detected."
+ValidationStatusCode = "K_ERP_C"
+ValidationStatusNotes = "No exposed Pods with remote code execution vulnerabilities detected."
+
+[K8sExposedRCEPods.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the Pod is externally exposed and its image contains remote code execution vulnerabilities."
+ValidationStatusCode = "K_ERP_NC"
+ValidationStatusNotes = "Externally exposed Pod with remote code execution vulnerabilities detected."
+Remediation = "Upgrade the container image to a version that fixes the remote code execution vulnerabilities or remove unnecessary external exposure of the Pod."
+
+# Kubescape Rule: excessive_amount_of_vulnerabilities_pods
+[K8sExcessiveAmountOfVulnerabilitiesPods]
+Control = "C-0085"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/namespace/*/Pod/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sExcessiveAmountOfVulnerabilitiesPods.COMPLIANT]
+ComplianceStatusReason = "The Pod does not exceed the configured threshold for High or Critical vulnerabilities."
+ValidationStatusCode = "K_EAVP_C"
+ValidationStatusNotes = "The number of High and Critical vulnerabilities is within the configured limits."
+
+[K8sExcessiveAmountOfVulnerabilitiesPods.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the Pod image exceeds the configured threshold for High and/or Critical vulnerabilities."
+ValidationStatusCode = "K_EAVP_NC"
+ValidationStatusNotes = "The Pod image exceeds the configured High and/or Critical vulnerability limits."
+Remediation = "Upgrade the container image to a version with fewer High and Critical vulnerabilities or increase the configured vulnerability thresholds if appropriate."
+
+# Kubescape Rule: CVE-2022-23648
+[K8sCVE202223648]
+Control = "C-0087"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/Node/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sCVE202223648.COMPLIANT]
+ComplianceStatusReason = "The node is not vulnerable to CVE-2022-23648."
+ValidationStatusCode = "K_CVE_2022_23648_C"
+ValidationStatusNotes = "No indicators of CVE-2022-23648 vulnerability were detected."
+
+[K8sCVE202223648.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because the node is vulnerable to CVE-2022-23648."
+ValidationStatusCode = "K_CVE_2022_23648_NC"
+ValidationStatusNotes = "The node is vulnerable to CVE-2022-23648."
+Remediation = "Upgrade the node to a version that is not affected by CVE-2022-23648."
+
+# Kubescape Rule: rbac-enabled-cloud
+[K8sRBACEnabledCloud]
+Control = "C-0088"
+ExcludeCriteria = ""
+IncludeCriteria = "/cluster/*/ClusterDescribe/*"
+Query = "data.armo_builtins.deny[_]"
+Region = "us-west-2"
+RegoFile = ""
+DataFile = ""
+EvidenceName = ""
+
+[K8sRBACEnabledCloud.COMPLIANT]
+ComplianceStatusReason = "Role-Based Access Control (RBAC) is enabled for the managed Kubernetes cluster."
+ValidationStatusCode = "K_RBAC_C"
+ValidationStatusNotes = "RBAC is enabled on the cluster."
+
+[K8sRBACEnabledCloud.NON_COMPLIANT]
+ComplianceStatusReason = "This record is non compliant because Role-Based Access Control (RBAC) is disabled for the managed Kubernetes cluster."
+ValidationStatusCode = "K_RBAC_NC"
+ValidationStatusNotes = "RBAC is disabled on the cluster."
+Remediation = "Enable Kubernetes Role-Based Access Control (RBAC) for the cluster to enforce fine-grained authorization and restrict access based on user and service account roles."

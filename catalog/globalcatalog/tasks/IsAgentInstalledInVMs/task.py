@@ -103,12 +103,17 @@ class Task(cards.AbstractTask):
         standard_df['ActionStatus'] = ''
         standard_df['ActionResponseURL'] = ''
 
+        # Get OutputFileName if provided, fallback to control_name
+        output_file_name = self.task_inputs.user_inputs.get("OutputFileName", "")
+        if not output_file_name:
+            output_file_name = control_name
+
         file_url, error = self.upload_df_as_csv_file_to_minio(
             df=standard_df,
-            file_name=control_name
+            file_name=output_file_name
         )
         if error:
-            return self.upload_and_return_audit_file(f"Error while uploading {control_name} file :: {error}")
+            return self.upload_and_return_audit_file(f"Error while uploading {output_file_name} file :: {error}")
         
         response = {
             "AgentInstalledInVMs": file_url,

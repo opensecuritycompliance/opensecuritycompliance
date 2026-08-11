@@ -3,15 +3,16 @@ The purpose of this task is to extract data from the InputFile based on the prov
 ### **InputsAndOutputsStructure:**
 
 - Inputs :
-    - **InputFile** : [MANDATORY] The file that contains the records in which the JQ expression must be executed.
-    - **JQConfigFile** : [MANDATORY] The TOML file that contains the JQExpression & OutputMethod.
-    - **JQExpression** : [OPTIONAL] A string of the JQExpression
-    - **OutputMethod** : [OPTIONAL] Output method for the JQExpression
-    - **LogConfigFile** : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
-    - **LogFile** : [OPTIONAL] Map the LogFile from the previous task, to handle errors.
-    - **ChunksPerIteration**: [OPTIONAL] It defines how many data items are processed at once to improve performance and manage large datasets efficiently.
-    - **ProceedIfLogExists** : [OPTIONAL] If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
+    - **InputFile**            : [MANDATORY] The file that contains the records in which the JQ expression must be executed.
+    - **JQConfigFile**         : [MANDATORY] The TOML file that contains the JQ configuration details such as JQExpression OutputMethod, EnableStreaming, StreamingThresholdMB and StreamingJQExpression.
+    - **JQExpression**         : [OPTIONAL] A string of the JQExpression
+    - **OutputMethod**         : [OPTIONAL] Output method for the JQExpression
+    - **LogConfigFile**        : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
+    - **LogFile**              : [OPTIONAL] Map the LogFile from the previous task, to handle errors.
+    - **ChunksPerIteration**.  : [OPTIONAL] It defines how many data items are processed at once to improve performance and manage large datasets efficiently.
+    - **ProceedIfLogExists**   : [OPTIONAL] If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
     - **ProceedIfErrorExists** : [OPTIONAL] If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
+    - **OutputFileName**        : [OPTIONAL] This name will be used for the output file. If not provided, it will default to `OutputFile`.
     
 - Outputs :
     - **OutputFile** : File that contains the output of the JQ expression.
@@ -58,6 +59,9 @@ The purpose of this task is to extract data from the InputFile based on the prov
     [JQConfig]
     JQExpression = ".[].repositories[]" # [MANDATORY] Contains the JQ filter/expression that must be executed on the InputFile data
     OutputMethod = "ALL" # [OPTIONAL] (AllowedValues: FIRST, ALL) Specifies whether to consider all outputs from the JQ expression, or only the first one
+    EnableStreaming = FALSE # [OPTIONAL] (AllowedValues: TRUE, FALSE) Specifies whether to use Streaming
+    StreamingThresholdMB = # [OPTIONAL] Streaming Methodology is used only when the InputFile size is greater than StreamingThresholdMB
+    StreamingJQExpression = "" # Contains the JQ filter/expression (Object Level) that must be executed on the InputFile data when Streaming is enabled
     ```
     
     #### **JQExpression**
@@ -181,8 +185,25 @@ The purpose of this task is to extract data from the InputFile based on the prov
 4. OutputMethod **(Optional)**
     - This is a STRING input that specifies whether to consider all outputs from the JQ expression, or only the first one.
     - This input accepts the following values: `'FIRST' & 'ALL'`
+
+5. EnableStreaming **(Optional)**
+    - BOOLEAN input (true or false)
+    - Default value: false
+    - When enabled, the task evaluates the size of the InputFile and applies streaming execution if applicable.
+
+6. StreamingThresholdMB **(Optional)**
+    - Numeric input representing file size in MB
+    - Streaming execution is applied only when:
+        - EnableStreaming = true, and
+        - InputFile size > StreamingThresholdMB
+
+7. StreamingJQExpression
+    - STRING input containing the JQ filter/expression executed at object level
+    - Used only when streaming is enabled
+    - This expression must return a JSON object or an array of JSON objects
+    - Example: ".repositories[]"
     
-5. LogConfigFile **(Optional)**
+8. LogConfigFile **(Optional)**
     - This file defines exception messages and error-handling logic for the current task.
     - It is a TOML file containing predefined fields with placeholders that are dynamically replaced at runtime based on the task’s context.
     - If a placeholder in the TOML file cannot be resolved at runtime, an error will be raised.
@@ -217,24 +238,28 @@ The purpose of this task is to extract data from the InputFile based on the prov
 
     We can also include the from and to dates in the error message for better clarity using the {fromdate} and {todate} placeholders.
     
-6. LogFile **(Optional)**
+9. LogFile **(Optional)**
     - This field is required only when this task is not the first one in the rule.
     - LogFile from the previous task must be mapped to this to handle errors.
     - If mapped correctly, when the previous task returns a `LogFile`, it will pass it to this task and this task won’t be executed.Otherwise if there is no ’LogFile from the previous task, this task will execute as expected.
        
-7. ChunksPerIteration **(Optional)**
+10. ChunksPerIteration **(Optional)**
     - `ChunksPerIteration` controls how many records are processed at a time. It helps handle large datasets by breaking them into smaller, manageable parts.
     - This improves performance and reduces the risk of system errors. Adjusting this value can help optimize processing speed and resource usage.
      
-8. ProceedIfLogExists **(Optional)**
+11. ProceedIfLogExists **(Optional)**
     - This field is optional, and the default value of `ProceedIfLogExists` is true.
     - If `ProceedIfLogExists` is set to true, the task will continue its execution and return the LogFile at the end.
     - If it is set to false and a log file is already present, the task will skip further execution and simply return the existing LogFile.
     
-9. ProceedIfErrorExists **(Optional)**
+12. ProceedIfErrorExists **(Optional)**
     - This field is optional, and the default value of `ProceedIfErrorExists` is true.
     - If `ProceedIfErrorExists` is set to true, the task will return the error details as part of the LogFile and continue to the next task.
     - If it is set to false, the error details will be returned, and the entire rule execution will be stopped.
+
+13. OutputFileName **(Optional)**
+    - This field is optional. If not provided, it will default to `OutputFile`.
+    - If provided, this name will be used for the output file containing the results of the JQ expression execution.
 
 
 ### **OutputsSection:**
@@ -242,4 +267,4 @@ The purpose of this task is to extract data from the InputFile based on the prov
 1. OutputFile
     - This file contains the output of the JQ expression.
 2. LogFile
-    - This file contains information about errors that may have occurred while executing the task.
+    - This file contains information about errors that may have occurred while executing the task.a
