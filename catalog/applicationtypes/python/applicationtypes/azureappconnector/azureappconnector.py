@@ -1,8 +1,10 @@
 # from sys import exception
 import base64
+import http
 import time
 import re
 import json
+from typing import Literal
 import requests
 from urllib.parse import urlencode
 import json
@@ -17,7 +19,7 @@ import logging
 from requests.exceptions import RequestException
 import base64
 import xml.etree.ElementTree as ET
-import io
+import msal
 
 SUPPORT_MSG = "Please contact support and review logs for further details"
 USER_REG_ERR_MSG = "Failed to fetch user registration details"
@@ -1095,7 +1097,53 @@ class AzureAppConnector:
             return None, error
 
         return resource_details, None
+    
+    def list_message_attachments(self, user_email: str, msg_id: str) -> list:
+        """
+        List attachments of a specific email message using Microsoft Graph API.
 
+        Parameters:
+            user_email (str): The mailbox email address.
+            msg_id (str): The ID of the email message.
+
+        Returns:
+            list: List of attachments for the specified email message
+            dict: Error if any
+        """
+
+        url = f"https://graph.microsoft.com/v1.0/users/{user_email}/messages/{msg_id}/attachments"
+
+        resource_details, error = self.get_azure_api_response(
+            url, self.graph_api_scope
+        )
+        if error:
+            return None, {"Error": f"Failed to fetch attachments for message {msg_id}: {error}"}
+
+        return resource_details, None
+    
+    def list_azure_emails(self, user_email: str, filter: str) -> list:
+        """
+        List emails from a specific user's mailbox using Microsoft Graph API.
+
+        Parameters:
+            user_email (str): The mailbox email address.
+            filter (str): Keyword to filter by subject.
+
+        Returns:
+            list: List of emails matching filters
+            dict: Error if any
+        """
+
+        url = f"https://graph.microsoft.com/v1.0/users/{user_email}/messages?$filter={filter}&$select=id,subject,receivedDateTime,hasAttachments,toRecipients,ccRecipients,bccRecipients,from,body,bodyPreview"
+
+        resource_details, error = self.get_azure_api_response(
+            url, self.graph_api_scope
+        )
+        if error:
+            return None, {"Error": f"Failed to fetch emails: {error}"}
+
+        return resource_details, None
+    
     def list_azure_user_memberships(self, userPrincipalName):
 
         url = f"https://graph.microsoft.com/v1.0/users/{userPrincipalName}/memberOf"
@@ -1647,6 +1695,25 @@ class AzureAppConnector:
             return None, f"unable to fetch the parent id for drive id :: {drive_id}"
         except Exception as e:
             return None, f"exception while fetching parent id :: {e}"    
+        
+    def get_folder_url(self, drive_id, path):
+        try:
+            token, err = self.get_access_token(scope='https://graph.microsoft.com/.default')
+            if err:
+                return None, f'Error while fetching access token.{err}'
+            headers = {
+                'Authorization': f'Bearer {token}',
+            }
+            response = requests.get(
+                f"https://graph.microsoft.com/v1.0/drives/{drive_id}/{path}", headers=headers)
+            if response.status_code != HTTPStatus.OK:
+                return None, f"failed to fetch folder url. Status code :: {response.status_code}"
+            response_data = response.json()
+            if response_data.get('webUrl'):
+                    return response_data['webUrl'], None
+            return None, f"unable to fetch the folder url for drive id :: {drive_id} and path :: {path}"
+        except Exception as e:
+            return None, f"exception while fetching folder url :: {e}"  
         
     def get_sharepoint_site_id(self, site_name):
         try:
@@ -2267,6 +2334,80 @@ class AzureAppConnector:
 
         except requests.exceptions.Timeout as e:
             return '', f'Request timed out while accessing {url}. Details: {str(e)}'
+            
+    def initiate_device_authentication_flow(self, scopes: list[str]) -> tuple[dict, str]:
+        authority = f"https://login.microsoftonline.com/{self.user_defined_credentials.azure.tenant_id}"
+
+        try:
+            app = msal.PublicClientApplication(
+                client_id=self.user_defined_credentials.azure.client_id,
+                authority=authority
+            )
+        except ValueError as e:
+            return {}, str(e)
+        
+        flow = app.initiate_device_flow(scopes)
+        
+        if "user_code" not in flow:
+            return flow, "Failed to create device flow. " + SUPPORT_MSG
+            
+        return flow, ""
+        
+    def get_access_token_from_device_flow(self, device_flow: dict) -> tuple[str, dict, str]:
+        authority = f"https://login.microsoftonline.com/{self.user_defined_credentials.azure.tenant_id}"
+
+        try:
+            app = msal.PublicClientApplication(
+                client_id=self.user_defined_credentials.azure.client_id,
+                authority=authority
+            )
+        except ValueError as e:
+            return "", {}, str(e)
+        
+        result = app.acquire_token_by_device_flow(device_flow)
+        if "access_token" not in result:
+            return "", result, "Failed to get access token device flow. " + SUPPORT_MSG
+            
+        return result["access_token"], result, ""
+        
+    def update_access_package_assignment_request_stage(
+        self,
+        review_result: Literal["Approve", "Deny"],
+        comment: str,
+        device_flow: dict,
+        access_package_assignment_request_id: str,
+        assignment_request_stage_id: str
+    ) -> str:
+        access_token, _, error = self.get_access_token_from_device_flow(device_flow)
+        if error:
+            return error
+            
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        url = f"https://graph.microsoft.com/v1.0/identityGovernance/entitlementManagement/accessPackageAssignmentApprovals/{access_package_assignment_request_id}/stages/{assignment_request_stage_id}"
+        
+        payload = json.dumps({
+          "reviewResult": review_result,
+          "justification": comment
+        })
+    
+        response = requests.request("PATCH", url, headers=headers, data=payload)
+        
+        if response.status_code != http.HTTPStatus.NO_CONTENT:
+            try:
+                error_resp = response.json()
+                error_message = error_resp["error"]["message"]
+                if error_message:
+                    return error_message
+            except Exception:
+                pass
+                
+            return "Unable to update the access package assignment request stage"
+            
+        return ""
 
     def extract_error_details(self, xml_response: str) -> tuple[str, str]:
         try:

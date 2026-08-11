@@ -6,5 +6,8 @@ userInputs:
   appURL: https://www.atlassian.com/software/jira
   userDefinedCredentials:
     BasicAuthentication:
-        UserName: "$JIRA_USER_NAME"
-        Password: "$JIRA_PASSWORD"
+      UserName: "$JIRA_USER_NAME"
+      Password: "$JIRA_PASSWORD"
+    OAuth:
+      ClientID: "$JIRA_CLIENT_ID"
+      ClientSecret: "$JIRA_CLIENT_SECRET"

@@ -4,7 +4,7 @@ import json
 from time import sleep
 import hashlib
 import hmac
-from urllib.parse import urljoin, urlparse, urlencode
+from urllib.parse import urljoin, urlparse, urlencode, quote
 import datetime
 import base64
 import re
@@ -13,7 +13,7 @@ import tempfile
 import boto3
 import botocore.exceptions
 import jq
-from compliancecowcards.utils import cowdictutils
+from compliancecowcards.utils import cowdictutils, cowplaceholderutils
 import shlex
 from http import HTTPMethod
 import jwt
@@ -21,6 +21,7 @@ import celpy
 import celpy.celtypes
 import time
 import random
+import uuid
 from compliancecowcards.structs import cards
 
 from botocore.awsrequest import AWSRequest
@@ -131,32 +132,41 @@ class JWTBearer:
     algorithm: str
     private_key: str
     payload: str
+    headers: str
     validation_curl: str
 
     def __init__(
-        self, algorithm: str, private_key: str, payload: str, validation_curl: str
+        self,
+        algorithm: str,
+        private_key: str,
+        payload: str,
+        validation_curl: str,
+        headers: str = "",
     ) -> None:
         self.algorithm = algorithm
         self.private_key = private_key
         self.payload = payload
+        self.headers = headers
         self.validation_curl = validation_curl
 
     @staticmethod
     def from_dict(obj) -> "JWTBearer":
-        algorithm, private_key, payload, validation_curl = "", "", "", ""
+        algorithm, private_key, payload, validation_curl, headers = "", "", "", "", ""
         if isinstance(obj, dict):
             algorithm = obj.get("Algorithm", "")
             private_key = obj.get("PrivateKey", "")
             payload = obj.get("Payload", "")
+            headers = obj.get("Headers", "")
             validation_curl = obj.get("ValidationCURL", "")
 
-        return JWTBearer(algorithm, private_key, payload, validation_curl)
+        return JWTBearer(algorithm, private_key, payload, validation_curl, headers)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["Algorithm"] = self.algorithm
         result["PrivateKey"] = self.private_key
         result["Payload"] = self.payload
+        result["Headers"] = self.headers
         result["ValidationCURL"] = self.validation_curl
         return result
 
@@ -363,16 +373,19 @@ class HttpRequest:
     app_url: str
     app_port: int
     user_defined_credentials: UserDefinedCredentials
+    disable_logging: bool
 
     def __init__(
         self,
         app_url: str = None,
         app_port: int = None,
         user_defined_credentials: UserDefinedCredentials = None,
+        disable_logging: bool = False,
     ) -> None:
         self.app_url = app_url
         self.app_port = app_port
         self.user_defined_credentials = user_defined_credentials
+        self.disable_logging = disable_logging
 
     @staticmethod
     def from_dict(obj) -> "HttpRequest":
@@ -501,11 +514,15 @@ class HttpRequest:
         payload = self.user_defined_credentials.jwt_bearer.payload
         private_key = self.user_defined_credentials.jwt_bearer.private_key
         algorithm = self.user_defined_credentials.jwt_bearer.algorithm
+        headers = self.user_defined_credentials.jwt_bearer.headers
 
-        token, error = self.generate_jwt_token(algorithm, private_key, payload)
+        token, error = self.generate_jwt_token(
+            algorithm, private_key, payload, headers
+        )
         if error:
             return False, {"Error": error}
 
+        validation_curl = validation_curl.replace("{%{JWTBearer}%}", token)
         validation_curl = validation_curl.replace("<<JWTBearer>>", token)
 
         return self.validate_curl(validation_curl)
@@ -586,11 +603,17 @@ class HttpRequest:
         if error:
             return False, {"Error": "Error while processing place holders."}
 
-        if "<<BasicAuthentication>>" in parsed_curl:
+        if (
+            "{%{BasicAuthentication}%}" in parsed_curl
+            or "<<BasicAuthentication>>" in parsed_curl
+        ):
             headers, error = self.generate_basic_auth()
             if error:
                 return False, "Invalid 'UserName' or 'Password'."
 
+            parsed_curl = parsed_curl.replace(
+                "{%{BasicAuthentication}%}", headers["Authorization"]
+            )
             parsed_curl = parsed_curl.replace(
                 "<<BasicAuthentication>>", headers["Authorization"]
             )
@@ -607,11 +630,12 @@ class HttpRequest:
         if error:
             return False, {"Error": "Error while processing place holders."}
 
-        if "<<APIKey>>" in parsed_curl:
+        if "{%{APIKey}%}" in parsed_curl or "<<APIKey>>" in parsed_curl:
             headers, error = self.generate_api_key()
             if error:
                 return False, {"Error": "Invalid 'Token'."}
 
+            parsed_curl = parsed_curl.replace("{%{APIKey}%}", headers["Authorization"])
             parsed_curl = parsed_curl.replace("<<APIKey>>", headers["Authorization"])
 
         return self.validate_curl(parsed_curl)
@@ -629,11 +653,14 @@ class HttpRequest:
         if error:
             return False, {"Error": "Error while processing place holders."}
 
-        if "<<BearerToken>>" in parsed_curl:
+        if "{%{BearerToken}%}" in parsed_curl or "<<BearerToken>>" in parsed_curl:
             headers, error = self.generate_bearer_token()
             if error:
                 return False, "Invalid 'Token'."
 
+            parsed_curl = parsed_curl.replace(
+                "{%{BearerToken}%}", headers["Authorization"]
+            )
             parsed_curl = parsed_curl.replace(
                 "<<BearerToken>>", headers["Authorization"]
             )
@@ -659,7 +686,9 @@ class HttpRequest:
             return False, {"Error": "ValidationCURL cannot be empty."}
 
         #  CHECK-1 : If the curl has any placeholder with credential type
-        if f"<<{credential_type}" in validation_curl:
+        new_placeholder = "{%{" + credential_type
+        old_placeholder = f"<<{credential_type}"
+        if new_placeholder in validation_curl or old_placeholder in validation_curl:
             return True, None
 
         #  CHECK-2 : Using 'AppURL' and 'credential_type'create a curl template and compare with the one user given
@@ -732,17 +761,13 @@ class HttpRequest:
             miss_match_cred = []
             # Check for client secret and client id patterns in the body data
             if re.search(client_secret_pattern, body_data):
-                client_secret_full_pattern = (
-                    rf"{client_secret_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_secret)}(?P=q)"
-                )
+                client_secret_full_pattern = rf"{client_secret_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_secret)}(?P=q)"
                 if re.search(client_secret_full_pattern, body_data):
                     valid_client_secret = True
                 if not valid_client_secret:
                     miss_match_cred.append("ClientSecret")
             if re.search(client_id_pattern, body_data):
-                client_id_full_pattern = (
-                    rf"{client_id_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_id)}(?P=q)"
-                )
+                client_id_full_pattern = rf"{client_id_pattern}\s*=\s*(?P<q>['\"]?){re.escape(client_id)}(?P=q)"
                 if re.search(client_id_full_pattern, body_data):
                     valid_client_id = True
                 if not valid_client_id:
@@ -808,6 +833,7 @@ class HttpRequest:
         curl_cmd = (
             curl_cmd.replace("\\", "")
             .replace("\n", " ")
+            .replace("{%{application.AppURL}%}", self.app_url)
             .replace("<<application.AppURL>>", self.app_url)
         )
 
@@ -861,16 +887,20 @@ class HttpRequest:
             else:
                 body = body_info
         files = request_data.get("Files", None)
-        
+
         if headers.get("Content-Type") == "multipart/form-data":
             _body = []
             for k, v in body_info.items():
-                _body.append((k, json.dumps(v) if isinstance(v, (dict, list)) else str(v)))
-
-            body, content_type = encode_multipart_formdata(_body)
-            headers["Content-Type"] = content_type
-            headers[ "Content-Length"]= str(len(body))
-
+                _body.append(
+                    (k, json.dumps(v) if isinstance(v, (dict, list)) else str(v))
+                )
+            
+            if _body:
+                body, content_type = encode_multipart_formdata(_body)
+                headers["Content-Type"] = content_type
+                headers[ "Content-Length"]= str(len(body))
+            else:
+                headers["Content-Type"] = None
 
         # Attempt to send the request with retries
         response, error = self.send_request_with_retries(
@@ -930,6 +960,16 @@ class HttpRequest:
         else:
             return None, "Content must be either a string or a dictionary."
 
+    def _safe_body(self, body):
+        if body is None:
+            return None
+        try:
+            if isinstance(body, (dict, list)):
+                return json.dumps(body)
+            return str(body)
+        except Exception:
+            return "<unserializable_body>"
+
     def send_request_with_retries(
         self,
         method: str,
@@ -973,6 +1013,21 @@ class HttpRequest:
         while (attempt < max_retries) or (max_retries == 0 and attempt == 0):
             try:
 
+                request_id = str(uuid.uuid4())
+                logger_data = {
+                    "request_id": request_id,
+                    "method": method,
+                    "url": url,
+                    "params": params,
+                    "body": None if files else self._safe_body(body),
+                    "has_files": bool(files),
+                }
+
+                if headers.get("Content-Type"):
+                    logger_data["header"] = {"Content-Type": headers["Content-Type"]}
+
+                logger.log_data(logger_data, self.disable_logging)
+
                 response = self.send_request(
                     method,
                     url,
@@ -1000,20 +1055,30 @@ class HttpRequest:
                             )
                         sleep(delay)  # Delay before retry
                     else:
+                        logger.log_data(
+                            {
+                                "request_id": request_id,
+                                "status_code": response.status_code,
+                                "response_headers": dict(response.headers),
+                                "response_body": response.text,
+                            },
+                            self.disable_logging,
+                        )
                         return response, None
 
                 elif isinstance(retries, dict) and (
-                    "<<" in condition_field and ">>" in condition_field
+                    cowplaceholderutils.get_placeholders_in_template(condition_field)
                 ):
                     condition_value = retries.get("RetryOnCondition", {}).get(
                         "ConditionValue", ""
                     )
                     delay = retries.get("RetryOnCondition", {}).get("TimeInterval", 0)
                     modified_condition_field = (
-                        condition_field.replace("responsebody", ".body")
+                        cowplaceholderutils.strip_placeholder_delimiters(
+                            condition_field
+                        )
+                        .replace("responsebody", ".body")
                         .replace("response", "")
-                        .replace("<<", "")
-                        .replace(">>", "")
                     )
 
                     response_dict = {
@@ -1060,14 +1125,17 @@ class HttpRequest:
                         if isinstance(delay, int) and delay > 0:
                             pass
                         elif not isinstance(delay, int):
-                            header_key = delay.replace(
-                                "<<response.headers.", ""
-                            ).replace(">>", "")
+                            header_key = (
+                                cowplaceholderutils.strip_placeholder_delimiters(
+                                    delay
+                                ).replace("response.headers.", "")
+                            )
                             retry_after = response.headers.get(header_key)
                             logger.log_data(
                                 {
                                     f"Received status {response.status_code}, Retry After: ": retry_after
-                                }
+                                },
+                                self.disable_logging,
                             )
 
                             if retry_after:
@@ -1086,7 +1154,8 @@ class HttpRequest:
                                 logger.log_data(
                                     {
                                         f"Received status {response.status_code}, Delay after increasing: ": delay
-                                    }
+                                    },
+                                    self.disable_logging,
                                 )
                         else:
                             delay = fallback_delay
@@ -1097,15 +1166,34 @@ class HttpRequest:
                         logger.log_data(
                             {
                                 f"Retrying on status {response.status_code} (attempt {attempt + 1})": f"Delay: {delay}s"
-                            }
+                            },
+                            self.disable_logging,
                         )
 
                         attempt += 1
-                        delay = fallback_delay
+                        delay = delay or fallback_delay
                         sleep(delay)
                     else:
+                        logger.log_data(
+                            {
+                                "request_id": request_id,
+                                "status_code": response.status_code,
+                                "response_headers": dict(response.headers),
+                                "response_body": response.text,
+                            },
+                            self.disable_logging,
+                        )
                         return response, None  # Return successful or non-retry status
                 else:
+                    logger.log_data(
+                        {
+                            "request_id": request_id,
+                            "status_code": response.status_code,
+                            "response_headers": dict(response.headers),
+                            "response_body": response.text,
+                        },
+                        self.disable_logging,
+                    )
                     return response, None
 
             except requests.exceptions.RequestException as e:
@@ -1122,7 +1210,8 @@ class HttpRequest:
                 logger.log_data(
                     {
                         f"Request failed": f"{str(e)}. Retrying... ({attempt + 1}/{retries}) after {delay}"
-                    }
+                    },
+                    self.disable_logging,
                 )
 
         if attempt == max_retries and isinstance(retries, dict):
@@ -1164,15 +1253,8 @@ class HttpRequest:
         )
 
     def generate_aws_iam_signature(
-        self,
-        region,
-        service,
-        method,
-        url,
-        params=None,
-        body=None,
-        headers=None
-        ):
+        self, region, service, method, url, params=None, body=None, headers=None
+    ):
         access_key = self.user_defined_credentials.aws_signature.access_key
         secret_key = self.user_defined_credentials.aws_signature.secret_key
 
@@ -1180,7 +1262,12 @@ class HttpRequest:
             if params:
                 if not isinstance(params, dict):
                     raise TypeError("params must be a dictionary")
-                url = f"{url}?{urlencode(params, doseq=True)}"
+                query_string = urlencode(
+                    params,
+                    doseq=True,
+                    quote_via=quote
+                )
+                url = f"{url}?{query_string}"
 
             if body and not isinstance(body, (str, bytes, dict)):
                 raise TypeError("body must be str or bytes or dict")
@@ -1199,10 +1286,7 @@ class HttpRequest:
             headers["X-Amz-Content-Sha256"] = content_hash
 
             request = AWSRequest(
-                method=method.upper(),
-                url=url,
-                data=body_bytes,
-                headers=headers
+                method=method.upper(), url=url, data=body_bytes, headers=headers
             )
 
             if not access_key or not secret_key:
@@ -1217,10 +1301,13 @@ class HttpRequest:
             return None, str(e)
 
     def generate_jwt_token(
-        self, algorithm: str, private_key: str, payload_str: str
+        self, algorithm: str, private_key: str, payload_str: str, headers_str: str = ""
     ) -> Tuple[str, str]:
         """
         Generates a JWT token using a specified algorithm, private key, and payload.
+        An optional 'headers_str' (JSON) can be supplied to set custom JWT header
+        fields (e.g. 'kid'), which providers like Okta require for the
+        'private_key_jwt' client assertion flow.
         """
 
         try:
@@ -1235,8 +1322,22 @@ class HttpRequest:
             except json.JSONDecodeError as e:
                 return "", 'Error while reading "Payload" data, Invalid JSON data.'
 
+            jwt_headers = None
+            if headers_str:
+                updated_headers, error = self.replace_function_placeholders(
+                    str(headers_str)
+                )
+                if error:
+                    return "", error
+                try:
+                    jwt_headers = json.loads(updated_headers)
+                except json.JSONDecodeError as e:
+                    return "", 'Error while reading "Headers" data, Invalid JSON data.'
+
             private_key_decode = base64.b64decode(private_key).decode("utf-8")
-            token = jwt.encode(payload, private_key_decode, algorithm=algorithm)
+            token = jwt.encode(
+                payload, private_key_decode, algorithm=algorithm, headers=jwt_headers
+            )
             return token, ""
         except Exception as e:
             return "", f"Error generating JWT: {e}"
@@ -1248,11 +1349,15 @@ class HttpRequest:
         payload = self.user_defined_credentials.jwt_bearer.payload
         private_key = self.user_defined_credentials.jwt_bearer.private_key
         algorithm = self.user_defined_credentials.jwt_bearer.algorithm
+        headers = self.user_defined_credentials.jwt_bearer.headers
 
-        token, error = self.generate_jwt_token(algorithm, private_key, payload)
+        token, error = self.generate_jwt_token(
+            algorithm, private_key, payload, headers
+        )
         if error:
             return False, {"Error": error}
 
+        validation_curl = validation_curl.replace("{%{JWTBearer}%}", token)
         validation_curl = validation_curl.replace("<<JWTBearer>>", token)
 
         status_code, response_body, error = self.execute_curl(validation_curl)
@@ -1420,11 +1525,23 @@ class HttpRequest:
         """
         Replaces placeholders in the target string with values from the provided dictionary.
         """
-        pattern = f"<<{placeholder_prefix}([^>]+)>>"
-        matches = re.findall(pattern, target_str)
+        new_pattern = r"\{%\{" + re.escape(placeholder_prefix) + r"([^{}%]+)\}%\}"
+        old_pattern = f"<<{placeholder_prefix}([^>]+)>>"
 
+        new_matches = re.findall(new_pattern, target_str)
+        old_matches = re.findall(old_pattern, target_str)
+
+        matches = new_matches or old_matches
         if not matches:
             return target_str, None
+
+        if new_matches and old_matches:
+            return (
+                target_str,
+                {
+                    "Error": f"Invalid placeholder format detected. Please use the format '{{%{{placeholder}}%}}' for all placeholders. The following need to be updated: {old_matches}."
+                },
+            )
 
         for placeholder_key in matches:
             query = placeholder_key.strip()
@@ -1432,15 +1549,18 @@ class HttpRequest:
                 query = f".{placeholder_key.strip()}"
             parsed_value = self.jq_filter_query(query, value_dict)
             if parsed_value is not None:
+                if new_matches:
+                    placeholder = "{%{" + placeholder_prefix + placeholder_key + "}%}"
+                else:
+                    placeholder = f"<<{placeholder_prefix}{placeholder_key}>>"
+
                 if isinstance(parsed_value, str):
                     target_str = target_str.replace(
-                        f"<<{placeholder_prefix}{placeholder_key}>>",
-                        str(parsed_value).strip(),
+                        placeholder, str(parsed_value).strip()
                     )
                 else:
                     target_str = target_str.replace(
-                        f"<<{placeholder_prefix}{placeholder_key}>>",
-                        json.dumps(parsed_value)
+                        placeholder, json.dumps(parsed_value)
                     )
             else:
                 file_type = placeholder_prefix[:-1]
@@ -1460,7 +1580,10 @@ class HttpRequest:
     ) -> Tuple[celpy.celtypes.Value, str]:
         try:
             cel_env = celpy.Environment()
-            cel_ast = cel_env.compile(expression.replace("<<", "").replace(">>", ""))
+            # Clean both new and old placeholder formats
+            cleaned = re.sub(r"\{%\{([^{}%]+)\}%\}", r"\1", expression)
+            cleaned = re.sub(r"<<([^<>]+)>>", r"\1", cleaned)
+            cel_ast = cel_env.compile(cleaned)
             result = cel_env.program(cel_ast).evaluate(celpy.json_to_cel(context))
 
             return result, ""
@@ -1469,7 +1592,7 @@ class HttpRequest:
 
     def replace_function_placeholders(self, string: str) -> Tuple[str, str]:
         """
-        Replaces placeholders in the form of {{FUNCTION_NAME}} with their corresponding
+        Replaces placeholders in the form of {%{FUNCTION_NAME}%} or <<FUNCTION_NAME>> with their corresponding
         values. It currently supports 'CURRENT_TIME' and 'CURRENT_DATE'.
         """
         functions = {
@@ -1478,24 +1601,50 @@ class HttpRequest:
         }
 
         updated_value = string
-        placeholder_matches = re.findall("<<(.*?)>>", updated_value)
-        for match in placeholder_matches:
+
+        new_pattern = r"\{%\{([^{}%]+)\}%\}"
+        old_pattern = r"<<(.*?)>>"
+
+        new_matches = re.findall(new_pattern, updated_value)
+        old_matches = re.findall(old_pattern, updated_value)
+
+        matches = new_matches or old_matches
+
+        for match in matches:
             try:
                 result, error = self.evaluate_cel_expression(match, functions)
                 if error:
-                    return (
-                        "",
-                        f"An error occurred while replacing '<<{match}>>' :: {error}",
-                    )
-                updated_value = updated_value.replace(f"<<{match}>>", str(result))
+                    if new_matches:
+                        return (
+                            "",
+                            f"An error occurred while replacing "
+                            + "'{%{"
+                            + match
+                            + "}%}'"
+                            + f" :: {error}",
+                        )
+                    else:
+                        return (
+                            "",
+                            f"An error occurred while replacing '<<{match}>>' :: {error}",
+                        )
+
+                if new_matches:
+                    placeholder = "{%{" + match + "}%}"
+                else:
+                    placeholder = f"<<{match}>>"
+
+                updated_value = updated_value.replace(placeholder, str(result))
             except Exception as e:
                 return updated_value, f"Error: {e}"
 
         return updated_value, ""
 
-    def extract_value(self, query, json_data):
-        if query.startswith("<<") and query.endswith(">>"):
-            clean_query = query[2:-2]
+    def extract_value(self, query: str, json_data):
+        if (query.startswith("<<") and query.endswith(">>")) or (
+            query.startswith("{%{") and query.endswith("}%}")
+        ):
+            clean_query = query.lstrip("<{%").rstrip("%}>")
             keys = clean_query.split(".")
 
             try:

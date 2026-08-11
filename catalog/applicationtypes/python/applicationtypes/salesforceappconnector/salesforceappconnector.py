@@ -328,3 +328,121 @@ class SalesforceAppConnector:
             if not  errNew:
                 errNew = response
             return None, errNew
+
+    def create_work_item(self, workConfig=None):
+        try:
+            if not workConfig:
+                return None, "workConfig cannot be empty"
+
+            required_fields = ["WorkType", "ProductTag", "Summary"]
+            for field in required_fields:
+                if field not in workConfig or not workConfig[field]:
+                    return None, f"'{field}' is mandatory"
+
+            # 🔹 Get token
+            authorization, err = self.get_salesforce_access_token()
+            if err:
+                return None, err
+
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": authorization
+            }
+
+            # 🔹 Resolve IDs
+            record_type_id, err = self.get_record_type_id(workConfig["WorkType"], headers)
+            if err:
+                return None, err
+
+            product_tag_id, err = self.get_product_tag_id(workConfig["ProductTag"], headers)
+            if err:
+                return None, err
+
+            payload = {
+                "RecordTypeId": record_type_id,
+                "agf__Product_Tag__c": product_tag_id,
+                "agf__Subject__c": workConfig["Summary"]
+            }
+
+            if "Description" in workConfig:
+                payload["agf__Details__c"] = workConfig["Description"]
+
+            # 🔹 API URL
+            request_url = self.app_url.rstrip('/') + "/services/data/v60.0/sobjects/agf__ADM_Work__c"
+
+            response = requests.post(request_url, headers=headers, json=payload)
+
+            if response.status_code == http.HTTPStatus.CREATED:
+
+                response_data = response.json()
+
+                record_id = response_data.get("id")
+
+                work_id, err = self.get_work_id(record_id, headers)
+
+                if err:
+                    return None, err
+
+                response_data["work_id"] = work_id
+
+                return response_data, None
+
+            return None, response.text
+
+        except Exception as e:
+            return None, str(e)
+
+    def execute_query(self, query, headers):
+        try:
+            request_url = self.app_url.rstrip('/') + "/services/data/v60.0/query?q=" + query.replace(" ", "+")
+            response = requests.get(request_url, headers=headers)
+
+            if response.status_code == http.HTTPStatus.OK:
+                return response.json(), None
+
+            return None, response.text
+
+        except Exception as e:
+            return None, str(e)
+        
+    def get_record_type_id(self, work_type, headers):
+        query = f"SELECT Id FROM RecordType WHERE SObjectType='agf__ADM_Work__c' AND Name='{work_type}'"
+        
+        result, err = self.execute_query(query, headers)
+        if err:
+            return None, err
+
+        if result["records"]:
+            return result["records"][0]["Id"], None
+
+        return None, f"WorkType '{work_type}' not found"
+
+    def get_product_tag_id(self, tag, headers):
+        query = f"SELECT Id FROM agf__ADM_Product_Tag__c WHERE Name='{tag}'"
+
+        result, err = self.execute_query(query, headers)
+        if err:
+            return None, err
+
+        if result["records"]:
+            return result["records"][0]["Id"], None
+
+        return None, f"ProductTag '{tag}' not found"
+
+    def get_work_id(self, record_id, headers):
+
+        query = f"""
+        SELECT Name
+        FROM agf__ADM_Work__c
+        WHERE Id = '{record_id}'
+        """
+
+        result, err = self.execute_query(query, headers)
+
+        if err:
+            return None, err
+
+        if result["records"]:
+            return result["records"][0]["Name"], None
+
+        return None, f"Work item '{record_id}' not found"
