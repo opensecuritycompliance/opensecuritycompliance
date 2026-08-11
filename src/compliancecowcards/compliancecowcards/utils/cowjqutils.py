@@ -1,6 +1,44 @@
-from typing import Tuple, Dict, Any, List, Optional, Union
+from typing import Tuple, Any
 import jq
 import re
+
+
+def evaluate_jq_streaming_filter(
+    input_item: Any,
+    streaming_jq_filter: str,
+    output_method: str = "FIRST"
+):
+    """
+    Args:
+        input_data: Input data to process
+        streaming_jq_filter: Streaming JQ filter expression
+        output_method: Method to determine output (ALL or FIRST)
+
+    Returns:
+        Tuple containing result and error string (if any)
+    """
+
+    if not streaming_jq_filter:
+        return None, None
+
+    try:
+        compiled = jq.compile(streaming_jq_filter).input(input_item)
+
+        if output_method.lower() == "all":
+            return compiled.all(), None
+        return compiled.first(), None
+
+    except ValueError as e:
+        return (
+            None,
+            f"Got an error while executing JQExpression, ensure whether the JQExpression that you entered is correct :: {str(e)}",
+        )
+    except Exception as e:
+        # Catch broader exceptions for more robust error handling
+        return (
+            None,
+            f"An unexpected error occurred while executing JQExpression :: {str(e)}",
+        )
 
 
 def evaluate_jq_filter(
@@ -18,12 +56,6 @@ def evaluate_jq_filter(
         Tuple containing result and error string (if any)
     """
     try:
-        # Validate filter before execution
-        try:
-            validate_jq_expression(jq_expression)
-        except ValueError as e:
-            return None, str(e)
-
         # Compile and apply filter
         compiled_filter = jq.compile(jq_expression).input(input_data)
         output_method = output_method.lower()
@@ -54,31 +86,3 @@ def evaluate_jq_filter(
             None,
             f"An unexpected error occurred while executing JQExpression :: {str(e)}",
         )
-
-
-def validate_jq_expression(jq_expression: str) -> None:
-    """
-    Validate a JQ Expression for security concerns.
-
-    Args:
-        jq_expression: JQ Expression to validate
-
-    Raises:
-        ValueError: If filter contains potentially dangerous patterns
-    """
-    # Validate filter to catch potential security issues
-    # This is a basic check - more comprehensive validation might be needed
-    dangerous_patterns = [
-        r"`.*?`",  # Backtick execution
-        r"\bsystem\s*\(",  # System command execution
-        r"\bexec\s*\(",  # Code execution
-        r"\|\s*(sh|bash)\b",  # Pipe to shell
-        r"\b(cat|grep|wget|curl|nc|rm|kill|ps)\b",  # Shell utilities
-        r"\b(python[0-9.]*|perl|lua|node|bash|sh)\b",  # Script interpreters
-    ]
-
-    for pattern in dangerous_patterns:
-        if re.search(pattern, jq_expression):
-            raise ValueError(
-                f"JQ filter contains potentially dangerous pattern: {pattern}"
-            )

@@ -41,10 +41,12 @@ def raise_400_series_error(message: str = None, description: str = None, compone
     raise exception.CCowExceptionVO(status_code=status_code, error_vo=error_vo)
 
 
-def str_to_bool(value):
-    truthy_values = {"true", "yes", "1"}
+def str_to_bool(value: str | bool | int , default_val:bool = False):
+    truthy_values = {"true", "yes", "1", "True"}
     if isinstance(value, bool):
         return value
     elif isinstance(value, str):
-        return value.lower() in truthy_values
-    return False
+        return value.lower().strip() in truthy_values
+    elif isinstance(value, int):
+        return bool(value)
+    return default_val
