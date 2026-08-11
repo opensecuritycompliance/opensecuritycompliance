@@ -28,7 +28,7 @@
     # For example, if the response status code is 200, then proceed with appending columns to the output.
     # 'ConditionField' is not mandatory; you can leave it as an empty string.
     # In that case, it won't check any condition and will directly append the columns to the output.
-    ConditionField = "<<response.status_code>>"
+    ConditionField = "{%{response.status_code}%}"
     ConditionValue = "200"
 
     [Response.RuleSet.AppendColumn]
@@ -42,22 +42,22 @@
     # Example
     # Status = "AccountDisabled" 
 
-    # You can add fields from the input file to the output using the "inputfile." prefix inside "<<>>".
+    # You can add fields from the input file to the output using the "inputfile." prefix inside "{%{}%}".
     # 'inputfile' refers to the input file for the task, "InputFile.json".
     # Example
-    # Arn = "<<inputfile.Arn>>"  
+    # Arn = "{%{inputfile.Arn}%}"  
 
     # To access a specific value from the array, use the index (e.g., "owners[0]" for the first element). 
-    # To access the entire array, use [] in place of the index (e.g., "<<inputfile.owners[].name>>").
+    # To access the entire array, use [] in place of the index (e.g., "{%{inputfile.owners[].name}%}").
     # Example
-    # Owners = "<<inputfile.Owners[].name>>"  
+    # Owners = "{%{inputfile.Owners[].name}%}"  
 
-    # You can add fields from the request config to the output using the "request." prefix inside "<<>>".
+    # You can add fields from the request config to the output using the "request." prefix inside "{%{}%}".
     # 'request' refers to the input file for the task, "RequestConfigFile.toml".
     # Example
-    # URL = "<<request.URL>>"      
+    # URL = "{%{request.URL}%}"      
 
-    # You can add fields from the raw API response using the "response." prefix inside "<<>>".
+    # You can add fields from the raw API response using the "response." prefix inside "{%{}%}".
     # 'response' contains the following fields:
     # { 
     #     "url": "request URL",
@@ -73,59 +73,59 @@
     #     ]
     # }
     # Example
-    # StatusCode = "<<response.status_code>>"  
+    # StatusCode = "{%{response.status_code}%}"  
 
-    # You can reference fields from the JSON response body using the "response.body." prefix within "<<>>". 
-    # To access a field in a JSON object or array, simply use "<<response.body.ID>>". 
+    # You can reference fields from the JSON response body using the "response.body." prefix within "{%{}%}". 
+    # To access a field in a JSON object or array, simply use "{%{response.body.ID}%}". 
     # If the response body is an array (e.g., [{}, {}]), this query will apply to all objects in the array.
     # Example
-    # ID = "<<response.body.ID>>"       
+    # ID = "{%{response.body.ID}%}"       
 
     # Condition for the 'Pagination' action
     [Response.RuleSet.PaginationCondition]
     # Specify conditions for triggering pagination actions
     # MAKE SURE : Pagination will stop only when the specified codition gets matched.
     # Example:
-    #   ConditionField = "<<response.body.entries>>"
+    #   ConditionField = "{%{response.body.entries}%}"
     #   ConditionValue = ""
     ConditionField = ""
     ConditionValue = ""
 
     [Response.RuleSet.Pagination]
         # ------------------------------------------------------------------------------
-        # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING <<response.body.key>> ,  <<response.headers.key>>, 
-        # <<response.headers.key>>,  <<response.cookies.key>>
+        # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING {%{response.body.key}%} ,  {%{response.headers.key}%}, 
+        # {%{response.headers.key}%},  {%{response.cookies.key}%}
         # ------------------------------------------------------------------------------
         # In the below parameters, you can access all the field mentioned in 'Response.RuleSet.AppendColumn.Fields'.
-        # In addition to that, you can also access <<fromdate>> and <<todate>>.
+        # In addition to that, you can also access {%{fromdate}%} and {%{todate}%}.
         # All 'Pagination' fields should be  specifed as key-value pair in the format: key = value.
         URL = ""  # Specify the API endpoint.
         
         [Response.RuleSet.Pagination.Header]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For Query Params
         [Response.RuleSet.Pagination.Params]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For URLEncoded data
         [Response.RuleSet.Pagination.Data.URLEncoded]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For FormData 
         [Response.RuleSet.Pagination.Data.FormData]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
         # (or)
-        # page = "<<response.body.Page>> + 1"
+        # page = "{%{response.body.Page}%} + 1"
 
         # For Raw data
         [Response.RuleSet.Pagination.Data.Raw]
         # Example:
-        # Value = '{"pageToken": "<<response.body.nextPageToken>>"}'
+        # Value = '{"pageToken": "{%{response.body.nextPageToken}%}"}'
 
         # For FormData 
         [Response.RuleSet.Pagination.Data.Binary]

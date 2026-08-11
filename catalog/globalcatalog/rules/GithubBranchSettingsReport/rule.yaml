@@ -27,15 +27,22 @@ spec:
     showField: true
     required: true
   - name: MinimumRequiredReviewersCount
-    dataType: INTEGER
+    dataType: INT
     repeated: false
-    defaultValue: 
+    defaultValue: 3
     allowedValues: []
     showField: true
     required: true
   tasks:
   - name: GithubBranchSettingsReport
     alias: t1
+    appTags:
+      appType:
+      - githubconnector
+      environment:
+      - logical
+      execlevel:
+      - app
     type: task
     purpose: Github Branch Settings Report
     description: Github Branch Settings Report
@@ -46,4 +53,3 @@ spec:
   - '*.Output.ComplianceStatus_:=t1.Output.ComplianceStatus_'
   - '*.Output.LogFile:=t1.Output.LogFile'
   - '*.Output.GithubBranchSettingsReport:=t1.Output.GithubBranchSettingsReport'
-

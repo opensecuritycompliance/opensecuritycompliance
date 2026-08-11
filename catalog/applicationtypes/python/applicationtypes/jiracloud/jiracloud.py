@@ -15,8 +15,9 @@ from typing import ParamSpec, Tuple, Optional, Dict, Any, Callable, TypeVar
 import base64
 import time
 
-R = TypeVar('R')
-P = ParamSpec('P')
+R = TypeVar("R")
+P = ParamSpec("P")
+
 
 class BasicAuthentication:
     user_name: str
@@ -42,24 +43,63 @@ class BasicAuthentication:
         return result
 
 
-class UserDefinedCredentials:
-    basic_authentication: BasicAuthentication
+class OAuth:
+    client_id: str
+    client_secret: str
 
-    def __init__(self, basic_authentication: BasicAuthentication) -> None:
+    def __init__(self, client_id: str, client_secret: str) -> None:
+        self.client_id = client_id
+        self.client_secret = client_secret
+
+    @staticmethod
+    def from_dict(obj) -> "OAuth":
+        client_id, client_secret = "", ""
+        if isinstance(obj, dict):
+            client_id = obj.get("ClientID", "")
+            client_secret = obj.get("ClientSecret", "")
+
+        return OAuth(client_id, client_secret)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["ClientID"] = self.client_id
+        result["ClientSecret"] = self.client_secret
+        return result
+
+
+class UserDefinedCredentials:
+    basic_authentication: Optional[BasicAuthentication]
+    o_auth: Optional[OAuth]
+
+    def __init__(
+        self,
+        basic_authentication: Optional[BasicAuthentication] = None,
+        o_auth: Optional[OAuth] = None,
+    ) -> None:
         self.basic_authentication = basic_authentication
+        self.o_auth = o_auth
 
     @staticmethod
     def from_dict(obj) -> "UserDefinedCredentials":
         basic_authentication = None
+        o_auth = None
         if isinstance(obj, dict):
-            basic_authentication = BasicAuthentication.from_dict(
-                obj.get("BasicAuthentication", None)
-            )
-        return UserDefinedCredentials(basic_authentication)
+            basic_auth_dict = obj.get("BasicAuthentication", None)
+            if basic_auth_dict:
+                basic_authentication = BasicAuthentication.from_dict(basic_auth_dict)
+
+            oauth_dict = obj.get("OAuth", None)
+            if oauth_dict:
+                o_auth = OAuth.from_dict(oauth_dict)
+
+        return UserDefinedCredentials(basic_authentication, o_auth)
 
     def to_dict(self) -> dict:
         result: dict = {}
-        result["BasicAuthentication"] = self.basic_authentication.to_dict()
+        if self.basic_authentication:
+            result["BasicAuthentication"] = self.basic_authentication.to_dict()
+        if self.o_auth:
+            result["OAuth"] = self.o_auth.to_dict()
         return result
 
 
@@ -105,14 +145,99 @@ class JiraCloud:
         result["UserDefinedCredentials"] = self.user_defined_credentials.to_dict()
         return result
 
+    def get_oauth_token(self) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Fetches OAuth token using client credentials.
+        Returns: (token, error)
+        """
+        if not self.user_defined_credentials.o_auth:
+            return None, "OAuth credentials not configured"
+
+        url: str = "https://auth.atlassian.com/oauth/token"
+        payload: dict = {
+            "grant_type": "client_credentials",
+            "client_id": self.user_defined_credentials.o_auth.client_id,
+            "client_secret": self.user_defined_credentials.o_auth.client_secret,
+        }
+        headers: dict = {"Content-Type": "application/json"}
+
+        response, error = self.make_api_request_with_retry(
+            method="POST", url=url, headers=headers, json=payload
+        )
+        if error:
+            return None, f"Failed to get OAuth token: {error}"
+
+        if response.status_code != 200:
+            return (
+                None,
+                f"Failed to get OAuth token: {response.status_code} - {response.text}",
+            )
+
+        data: dict = response.json()
+        token: Optional[str] = data.get("access_token")
+        if not token:
+            return None, "No access token in response"
+
+        return token, None
+
+    def get_accessible_resources(
+        self, token: str
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Gets accessible resources (cloud ID) for the OAuth token.
+        Returns: (cloud_id, error)
+        """
+        url: str = "https://api.atlassian.com/oauth/token/accessible-resources"
+        headers: dict = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+
+        response, error = self.make_api_request_with_retry(
+            method="GET", url=url, headers=headers
+        )
+        if error:
+            return None, f"Failed to get accessible resources: {error}"
+
+        if response.status_code != 200:
+            return (
+                None,
+                f"Failed to get accessible resources: {response.status_code} - {response.text}",
+            )
+
+        resources: list = response.json()
+        if not resources:
+            return None, "No accessible resources found"
+
+        cloud_id: Optional[str] = resources[0].get("id")
+        if not cloud_id:
+            return None, "No cloud ID in accessible resources"
+
+        return cloud_id, None
+
     def validate(self) -> bool and dict:
         err = self.validate_attributes()
         if err:
-            False, None
+            return False, None
 
         return self.is_valid_credentials()
 
     def is_valid_credentials(self):
+        """Validate credentials by attempting to fetch user details."""
+        # Try OAuth if available
+        if self.user_defined_credentials.o_auth:
+            token, error = self.get_oauth_token()
+            if error:
+                return False, error
+
+            # Verify token can access resources
+            cloud_id, error = self.get_accessible_resources(token)
+            if error:
+                return False, error
+
+            return True, None
+
+        # Fall back to basic auth
         client, error = self.create_new_client()
         if error:
             return False, error
@@ -159,16 +284,51 @@ class JiraCloud:
             return None, "Failed to create client."
 
     def validate_attributes(self) -> str:
-        emptyAttrs = []
-        if not self.user_defined_credentials.basic_authentication.user_name:
-            emptyAttrs.append("UserName")
+        """Validate that required credentials are present for either OAuth or BasicAuth."""
+        empty_attrs = []
 
-        if not self.user_defined_credentials.basic_authentication.password:
-            emptyAttrs.append("Password")
+        oauth = self.user_defined_credentials.o_auth
+        basic_auth = self.user_defined_credentials.basic_authentication
+
+        # OAuth validation
+        oauth_client_id = getattr(oauth, "client_id", None)
+        oauth_client_secret = getattr(oauth, "client_secret", None)
+
+        has_oauth = oauth_client_id and oauth_client_secret
+
+        # BasicAuth validation
+        username = getattr(basic_auth, "user_name", None)
+        password = getattr(basic_auth, "password", None)
+
+        has_basic_auth = username and password
+
+        # If neither authentication method is fully configured
+        if not has_oauth and not has_basic_auth:
+
+            # OAuth partially configured
+            if oauth:
+                if not oauth_client_id:
+                    empty_attrs.append("ClientID")
+                if not oauth_client_secret:
+                    empty_attrs.append("ClientSecret")
+
+            # BasicAuth partially configured
+            if basic_auth:
+                if not username:
+                    empty_attrs.append("UserName")
+                if not password:
+                    empty_attrs.append("Password")
+
+            # Nothing configured at all
+            if not oauth and not basic_auth:
+                empty_attrs.append(
+                    "Either OAuth(ClientID, ClientSecret) or "
+                    "BasicAuth(UserName, Password)"
+                )
 
         return (
-            "Invalid Credentials: " + ", ".join(emptyAttrs) + " is empty"
-            if emptyAttrs
+            f"Invalid Credentials: {', '.join(empty_attrs)} is empty"
+            if empty_attrs
             else ""
         )
 
@@ -252,12 +412,12 @@ class JiraCloud:
             None,
             f"Failed after {max_retries} retries. Possibly rate-limited or server error.",
         )
-        
+
     def make_api_request_with_retry_using_sdk(
         self,
         sdk_func: Callable[P, R],
-        retries = 5,
-        backoff_intervals = [5, 10, 30, 60, 90],
+        retries=5,
+        backoff_intervals=[5, 10, 30, 60, 90],
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> Optional[R]:
@@ -278,7 +438,7 @@ class JiraCloud:
                     )
                     time.sleep(wait_time)
                     continue
-                    
+
                 # Handle transient 5xx errors
                 if 500 <= e.status_code < 600:
                     wait_time = backoff_intervals[
@@ -292,14 +452,22 @@ class JiraCloud:
                 raise
 
     def audit_logs(self):
+        """Fetch audit logs from Jira using configured authentication method."""
         audit_record = []
         error_list = []
-        headers = {"Accept": "application/json"}
+
         url = f"{self.app_url}/rest/api/3/auditing/record"
-        auth = HTTPBasicAuth(
-            self.user_defined_credentials.basic_authentication.user_name,
-            self.user_defined_credentials.basic_authentication.password,
-        )
+        headers, auth = self.get_auth_headers_or_tuple()
+
+        if headers is None and auth is None:
+            error_list.append("Authentication failed: No valid credentials configured")
+            return audit_record, error_list
+
+        # Ensure Accept header is set
+        if headers is None:
+            headers = {}
+
+        headers["Accept"] = "application/json"
 
         response, error = self.make_api_request_with_retry(
             method="GET",
@@ -326,9 +494,8 @@ class JiraCloud:
         return audit_record, error_list
 
     # https://developer.atlassian.com/cloud/jira/platform/rest/v2/api-group-issue-search/#api-rest-api-2-search-post
-
     def search_issues_using_jql(self, req_body_dict):
-
+        """Search for issues using JQL with pagination support using make_api_request_with_retry."""
         error_list = []
         issue_list = []
 
@@ -338,30 +505,37 @@ class JiraCloud:
             )
             return issue_list, error_list
 
-        # required fields to form request body
         fields = ""
         jql = ""
         max_results = 10
-        start_at = 0
-        auth = HTTPBasicAuth(
-            self.user_defined_credentials.basic_authentication.user_name,
-            self.user_defined_credentials.basic_authentication.password,
-        )
+        next_page_token = None
 
-        if isinstance(req_body_dict, dict):
-            if cowdictutils.is_valid_key(req_body_dict, "fields"):
-                fields = req_body_dict["fields"]
-                if isinstance(fields, list):
-                    fields = ",".join(fields)
-            if cowdictutils.is_valid_key(req_body_dict, "jql"):
-                jql = req_body_dict["jql"]
-            if cowdictutils.is_valid_key(req_body_dict, "max_results"):
-                max_results = req_body_dict["max_results"]
-        else:
+        headers, auth = self.get_auth_headers_or_tuple()
+        if headers is None and auth is None:
+            error_list.append("Authentication failed: No valid credentials configured")
+            return issue_list, error_list
+
+        if headers is None:
+            headers = {}
+        headers["Accept"] = "application/json"
+
+        if not isinstance(req_body_dict, dict):
             error_list.append(
-                f"Failed to search issue(s): Invalid request body format - {type(req_body_dict)}. Supported format: 'dict'"
+                f"Failed to search issue(s): Invalid request body format - "
+                f"{type(req_body_dict)}. Supported format: 'dict'"
             )
             return issue_list, error_list
+
+        if cowdictutils.is_valid_key(req_body_dict, "fields"):
+            fields = req_body_dict["fields"]
+            if isinstance(fields, list):
+                fields = ",".join(fields)
+
+        if cowdictutils.is_valid_key(req_body_dict, "jql"):
+            jql = req_body_dict["jql"]
+
+        if cowdictutils.is_valid_key(req_body_dict, "max_results"):
+            max_results = req_body_dict["max_results"]
 
         try:
             while True:
@@ -369,16 +543,22 @@ class JiraCloud:
                 params = {
                     "jql": jql,
                     "fields": fields,
-                    "startAt": start_at,
                     "maxResults": max_results,
                 }
+
+                if next_page_token:
+                    params["nextPageToken"] = next_page_token
+
                 params = {
-                    k: v for k, v in params.items() if v not in (None, "", [], {})
+                    k: v
+                    for k, v in params.items()
+                    if v not in (None, "", [], {})
                 }
 
                 response, error = self.make_api_request_with_retry(
                     method="GET",
                     url=f"{self.app_url}/rest/api/3/search/jql",
+                    headers=headers,
                     auth=auth,
                     params=params,
                 )
@@ -389,27 +569,42 @@ class JiraCloud:
 
                 if response.status_code != 200:
                     error_list.append(
-                        f"Failed to search issues. Status: {response.status_code}, Response: {response.text}"
+                        f"Failed to search issues. "
+                        f"Status: {response.status_code}, "
+                        f"Response: {response.text}"
                     )
-                    break
+                    return issue_list, error_list
 
                 data = response.json()
 
                 issues = data.get("issues", [])
                 issue_list.extend(issues)
-                if not issues or len(issues) < max_results:
+
+                is_last = data.get("isLast", True)
+
+                # Stop when Jira indicates this is the last page
+                if is_last:
                     break
-                # Update pagination parameters for the next iteration
-                start_at += max_results
+
+                next_page_token = data.get("nextPageToken")
+
+                # Safety check
+                if not next_page_token:
+                    error_list.append(
+                        "Pagination error. 'nextPageToken' is missing while 'isLast' is False."
+                    )
+                    break
+
             return issue_list, error_list
 
         except Exception as e:
             logging.exception("Unexpected exception while searching issues")
             error_list.append(
-                f"Internal error while searching issues: {str(e)}. Please contact support."
+                f"Internal error while searching issues: {str(e)}. "
+                f"Please contact support."
             )
             return issue_list, error_list
-
+    
     # pass the permissions as a string seperated by commas eg: "MODIFY_REPORTER,ASSIGN_ISSUES,..."
     def get_user_permissions(self, project_key: str, permission: str):
         try:
@@ -428,7 +623,7 @@ class JiraCloud:
                 None,
                 f"Unable to fetch Jira user permissions for user - {self.user_defined_credentials.basic_authentication.user_name}. Please contact admin/support to fix this issue.",
             )
-    
+
     def get_priorities(self) -> tuple[list[jira.Priority] | Any, str | None]:
         try:
             jira_connector, error = self.create_new_client()
@@ -473,16 +668,20 @@ class JiraCloud:
                 return None, error
             assignee = jmespath.search("assignee.name", issueConfig)
             if assignee:
-                users = self.make_api_request_with_retry_using_sdk(client.search_users, query=assignee)
+                users = self.make_api_request_with_retry_using_sdk(
+                    client.search_users, query=assignee
+                )
                 if users:
                     issueConfig["assignee"] = {"id": users[0].accountId}
                 else:
                     issueConfig["assignee"] = {}
-            
+
             issue = {}
             for idx in range(2):
                 try:
-                    issue = self.make_api_request_with_retry_using_sdk(client.create_issue, fields=issueConfig)
+                    issue = self.make_api_request_with_retry_using_sdk(
+                        client.create_issue, fields=issueConfig
+                    )
                     break
                 except JIRAError as e:
                     if e.status_code != http.HTTPStatus.BAD_REQUEST or idx:
@@ -529,32 +728,54 @@ class JiraCloud:
             # Handle assignee with accountId lookup
             if cowdictutils.is_valid_key(issueConfig, "assignee"):
                 assignee_name = issueConfig.get("assignee")
-                users = client.search_users(query=assignee_name)
-                if users:
-                    issue_data["assignee"] = {"accountId": users[0].accountId}
-                else:
-                    print(
-                        f"Warning: No Jira user found for assignee '{assignee_name}'. Leaving unassigned."
+                try:
+                    users = self.make_api_request_with_retry_using_sdk(
+                        client.search_users, query=assignee_name
+                    )
+                    if users:
+                        assignable_users = self.make_api_request_with_retry_using_sdk(
+                            client.search_assignable_users_for_issues,
+                            project=issueConfig["key"],
+                            query=assignee_name,
+                        )
+                        if assignable_users:
+                            issue_data["assignee"] = {"accountId": users[0].accountId}
+                    else:
+                        logging.warning(
+                            f"No Jira user found for assignee '{assignee_name}'. Leaving unassigned."
+                        )
+                except JIRAError as e:
+                    logging.warning(
+                        f"Unable to search/assign user '{assignee_name}': {e}. Leaving unassigned."
                     )
 
             # Reporter (optional, if needed)
             if cowdictutils.is_valid_key(issueConfig, "reporter"):
                 reporter_name = issueConfig.get("reporter")
-                users = client.search_users(query=reporter_name)
-                if users:
-                    issue_data["reporter"] = {"accountId": users[0].accountId}
-                else:
-                    print(
-                        f"Warning: No Jira user found for reporter '{reporter_name}'."
+                try:
+                    users = self.make_api_request_with_retry_using_sdk(
+                        client.search_users, query=reporter_name
+                    )
+                    if users:
+                        issue_data["reporter"] = {"accountId": users[0].accountId}
+                    else:
+                        logging.warning(
+                            f"No Jira user found for reporter '{reporter_name}'."
+                        )
+                except JIRAError as e:
+                    logging.warning(
+                        f"Unable to search for reporter '{reporter_name}': {e}."
                     )
 
             if cowdictutils.is_valid_key(issueConfig, "priority"):
                 issue_data["priority"] = {"name": issueConfig.get("priority")}
 
-            new_issue = client.create_issue(fields=issue_data)
+            new_issue = self.make_api_request_with_retry_using_sdk(
+                client.create_issue, fields=issue_data
+            )
             return new_issue, None
 
-        except jira.exceptions.JIRAError as e:
+        except JIRAError as e:
             error_content = e.response.content
             try:
                 error_json = json.loads(error_content)
@@ -564,14 +785,19 @@ class JiraCloud:
                         None,
                         f'The specified project key ("Project" = "{project_key}") doesn\'t exist. Please re-run the assessment with a valid Jira config input (toml) file. If the issue persists, contact admin/support.',
                     )
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, TypeError):
                 pass
-            print(
-                f"Unable to create the Jira issue : {self.bytes_to_string(e.response.content)}"
-            )
+
+            logging.exception(f"Unable to create the Jira issue: {issueConfig}")
             return (
                 None,
-                "Unable to create the Jira issue. Please contact admin/support to fix this issue.",
+                f"Unable to create the Jira issue. Status: {e.status_code if hasattr(e, 'status_code') else 'Unknown'}. Please contact admin/support to fix this issue.\nMore info: {self.bytes_to_string(error_content)}",
+            )
+        except Exception as e:
+            logging.exception(f"Unexpected error while creating issue: {issueConfig}")
+            return (
+                None,
+                f"Unexpected error while creating issue. Please contact admin/support to fix this issue.\nMore info: {str(e)}",
             )
 
     def get_issue(self, issue_key: str):
@@ -604,7 +830,7 @@ class JiraCloud:
     def get_issue_details(
         self, issue_key: str
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-
+        """Fetch issue details using make_api_request_with_retry with auth support."""
         if not issue_key:
             return None, "Issue key is empty. Cannot fetch details."
 
@@ -647,6 +873,35 @@ class JiraCloud:
 
         return base_url, (email, api_token)
 
+    def get_auth_headers_or_tuple(self) -> Tuple[Optional[dict], Optional[tuple]]:
+        """
+        Returns authentication as headers dict (for OAuth) or auth tuple (for BasicAuth).
+
+        Returns:
+            (headers, auth_tuple):
+                - If OAuth: (headers_dict_with_bearer_token, None)
+                - If BasicAuth: (None, (username, password))
+                - If error: (None, None) with logging
+        """
+        # Try OAuth first
+        if self.user_defined_credentials.o_auth:
+            token, error = self.get_oauth_token()
+            if error:
+                logging.error(f"Failed to get OAuth token: {error}")
+                return None, None
+
+            headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+            return headers, None
+
+        # Fall back to BasicAuth
+        if self.user_defined_credentials.basic_authentication:
+            username = self.user_defined_credentials.basic_authentication.user_name
+            password = self.user_defined_credentials.basic_authentication.password
+            return None, HTTPBasicAuth(username, password)
+
+        logging.error("No authentication credentials configured")
+        return None, None
+
     def bytes_to_string(self, bytes_data):
         try:
             return bytes_data.decode("utf-8")
@@ -669,6 +924,7 @@ class JiraCloud:
     def upload_attachment(
         self, issue_key: str, files: list
     ) -> Tuple[Optional[Any], Optional[str]]:
+        """Upload attachment to issue using make_api_request_with_retry with auth support."""
         app_url = self.build_api_url(f"/rest/api/3/issue/{issue_key}/attachments")
         username = self.user_defined_credentials.basic_authentication.user_name
         password = self.user_defined_credentials.basic_authentication.password
@@ -696,7 +952,7 @@ class JiraCloud:
                 None,
                 f"Unable to upload the attachment to issue {issue_key}. Status Code: {response.status_code}. Message: {response.text}",
             )
-        
+
     def link_issues(
         self, inward_issue_key: str, outward_issue_key: str, link_type: str
     ) -> Tuple[Optional[Any], Optional[str]]:
@@ -733,6 +989,117 @@ class JiraCloud:
                 None,
                 f"Unable to link issues {inward_issue_key} and {outward_issue_key}. Status Code: {response.status_code}. Message: {response.text}",
             )
+
+    def find_user_oauth(self, username: str, token: str, cloud_id: str):
+        """Search for a Jira user by name using OAuth. Returns (user_dict, error)."""
+        try:
+            url = f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3/user/search"
+            headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+
+            response, error = self.make_api_request_with_retry(
+                method="GET", url=url, headers=headers, params={"query": username}
+            )
+            if error:
+                return None, f"Failed to search user: {error}"
+            if response.status_code != 200:
+                return None, f"Failed to search user: {response.status_code}"
+
+            users = response.json()
+            return (
+                (users[0], None)
+                if isinstance(users, list) and users
+                else (None, f"User '{username}' not found")
+            )
+
+        except Exception as e:
+            return None, f"Error searching user: {str(e)}"
+
+    def create_issue_oauth(self, issue_data: dict, token: str, cloud_id: str):
+        """Create a Jira issue using OAuth. Returns (issue_id, issue_key, error)."""
+        try:
+            url = f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/2/issue"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+
+            response, error = self.make_api_request_with_retry(
+                method="POST", url=url, headers=headers, json=issue_data
+            )
+            if error:
+                return None, None, f"Failed to create issue: {error}"
+
+            if response.status_code not in [200, 201]:
+                error_msg = response.text
+                try:
+                    error_detail = response.json()
+                    error_msg = (
+                        error_detail.get("errorMessages", [error_msg])[0]
+                        if error_detail.get("errorMessages")
+                        else error_msg
+                    )
+                except Exception:
+                    pass
+                return None, None, f"Failed to create issue: {error_msg}"
+
+            result = response.json()
+            return result.get("id"), result.get("key"), None
+
+        except Exception as e:
+            return None, None, f"Error creating issue: {str(e)}"
+
+    def get_issue_info_oauth(self, issue_id: str, token: str, cloud_id: str):
+        """Fetch full issue details using OAuth. Returns (issue_dict, error)."""
+        try:
+            url = f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3/issue/{issue_id}"
+            headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+
+            response, error = self.make_api_request_with_retry(
+                method="GET", url=url, headers=headers
+            )
+            if error:
+                return None, f"Failed to get issue: {error}"
+            if response.status_code != 200:
+                return None, f"Failed to get issue: {response.status_code}"
+
+            return response.json(), None
+
+        except Exception as e:
+            return None, f"Error fetching issue info: {str(e)}"
+
+    def upload_attachment_oauth(
+        self,
+        issue_id: str,
+        file_content: bytes,
+        file_name: str,
+        token: str,
+        cloud_id: str,
+    ):
+        """Upload a file attachment to a Jira issue using OAuth. Returns error string or None."""
+        try:
+            import io
+
+            url = f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3/issue/{issue_id}/attachments"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "X-Atlassian-Token": "no-check",
+            }
+
+            response, error = self.make_api_request_with_retry(
+                method="POST",
+                url=url,
+                headers=headers,
+                files={"file": (file_name, io.BytesIO(file_content))},
+            )
+            if error:
+                return f"Failed to upload attachment: {error}"
+            if response.status_code not in [200, 201]:
+                return f"Failed to upload attachment: {response.status_code}"
+            return None
+
+        except Exception as e:
+            return f"Error uploading attachment: {str(e)}"
 
     def build_api_url(self, endpoint):
         return f'{self.app_url.rstrip("/")}{endpoint}'

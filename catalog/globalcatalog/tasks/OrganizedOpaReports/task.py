@@ -59,7 +59,11 @@ class Task(cards.AbstractTask):
 
 
         if 'metadata' in resource_data_df.columns:
-            resource_data_df['Name']=resource_data_df['metadata'].apply(lambda x: x["name"] if isinstance(x,dict) else x)
+            resource_data_df['Name'] = resource_data_df['metadata'].apply(
+                lambda x: f"{x['namespace']}/{x['name']}"
+                if isinstance(x, dict) and x.get('namespace')
+                else x.get('name', '') if isinstance(x, dict) else x
+            )
 
             known_columns = ["ApiVersion","Kind","Name","Metadata","Spec","Status"] 
         else :

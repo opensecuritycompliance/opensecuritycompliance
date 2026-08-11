@@ -11,6 +11,15 @@ from urllib.parse import urlparse
 from compliancecowcards.utils import wsutils, cowutils
 from compliancecowcards.vo import exception
 import time
+from compliancecowcards.structs import cards
+import numpy as np
+
+import json
+from typing import Optional, Dict, Any, List
+from dateutil import parser
+import random
+
+logger = cards.Logger()
 
 
 class OAuth:
@@ -80,20 +89,37 @@ class ComplianceCow:
     UPDATE_CONTROL_META_DATA = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/meta-data"
     UPLOAD_CONTROL_ATTACHMENT = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/attachments"
     DELETE_CONTROL_ATTACHMENT = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/attachments/{attachment_id}"
-    CREATE_CONTROL_NOTE = (
+
+    CREATE_ASSESSMENT_CONTROL_NOTE = (
+        "/v5/partner/assessments/{assessment_id}/controls/{control_id}/notes"
+    )
+    UPDATE_ASSESSMENT_CONTROL_NOTE = (
+        "/v5/partner/assessments/{assessment_id}/controls/{control_id}/notes/{note_id}"
+    )
+    DELETE_ASSESSMENT_CONTROL_NOTE = (
+        "/v5/partner/assessments/{assessment_id}/controls/{control_id}/notes/{note_id}"
+    )
+    CREATE_ASSESSMENT_RUN_CONTROL_NOTE = (
         "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/notes"
     )
-    UPDATE_CONTROL_NOTE = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/notes/{note_id}"
-    DELETE_CONTROL_NOTE = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/notes/{note_id}"
+    UPDATE_ASSESSMENT_RUN_CONTROL_NOTE = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/notes/{note_id}"
+    DELETE_ASSESSMENT_RUN_CONTROL_NOTE = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/notes/{note_id}"
+
     UPDATE_ASSESSMENT_RUN_META_DATA = "/v1/plan-instances/{assessment_run_id}"
-    FETCH_EVIDENCE = "/v5/partner/assessment-runs/{assesment_run_id}/controls/{control_id}/evidence/{evidence_id}?fileFormat=PARQUET"
+    FETCH_EVIDENCE = "/v5/partner/assessment-runs/{assesment_run_id}/controls/{control_id}/evidence/{evidence_id}?fileFormat=PARQUET&include_integrity_hash=true"
     FETCH_EVIDENCE_V1 = "/v5/partner/assessment-runs/{assesment_run_id}/controls/{control_id}/evidence/{evidence_id}?include_file_content=true&fileFormat=PARQUET"
+    FETCH_EVIDENCE_V2 = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/evidence/{evidence_id}?fileFormat=CSV"
     GET_PLANS = "/v1/plans"
     GET_ASSESSMENT_RUN_DETAILS_BY_ASSESSMENT_ID = "/v5/partner/assessment-runs?page={page}&page_size={page_size}&assessment_id={assessment_id}"
     GET_ASSESSMENT_RUN_DETAILS = "/v5/partner/assessment-runs/{assessment_run_id}"
     CREATE_ASSESSMENT = "/v5/partner/assessments"
     FETCH_ASSESSMENT = (
         "/v5/partner/assessments?name={assessment_name}&include_all_controls=true"
+    )
+    UPDATE_ASSESSMENT = "/v5/partner/assessments/{assessment_id}"
+    GET_ALL_ASSESSMENT_CONTROLS = "/v5/partner/assessments/{assessment_id}/controls"
+    GET_ALL_ASSESSMENT_RUN_CONTROLS = (
+        "/v5/partner/assessment-runs/{assessment_run_id}/controls"
     )
     CREATE_ASSESSMENT_CONTROL = "/v5/partner/assessments/{assessment_id}/controls"
     UPDATE_ASSESSMENT_CONTROL = (
@@ -145,11 +171,16 @@ class ComplianceCow:
     GET_USER_MEDIUM_CONFIGS = (
         "/v1/user-medium-configurations?medium_user_id={medium_user_id}"
     )
-    LIST_USER_MEDIUM_CONFIGS = '/v1/user-medium-configurations'
+    LIST_USER_MEDIUM_CONFIGS = "/v1/user-medium-configurations"
     GET_SLACK_HANDLE = "/v5/partner/users/user-mediums"
     GET_ASSESSMENT_RUNS = "/v1/plan-instances"
-    
-    PUT_UPDATE_ASSESSMENT_CONTROLS = "/v5/partner/assessments/update-assessment-controls"
+
+    POST_UPDATE_ASSESSMENT_CONTROLS = "/v1/plans/update-plan-controls"
+
+    ASK_MCP_AGENT = "/v5/partner/agent/execute"
+
+    UPDATE_EVIDENCE_FIELDS = "/v5/partner/assessment-runs/{assessment_run_id}/controls/{control_id}/evidence/{evidence_id}/update-fields"
+    EVIDENCE_EXPORTER_CONFIG = "/v1/evidence-exporter-configs"
 
     app_url: str
     app_port: int
@@ -210,9 +241,9 @@ class ComplianceCow:
             "client_secret": self.user_defined_credentials.o_auth.client_secret,
         }
 
-        hostname = urlparse(self.app_url).hostname
-        if hostname and len(hostname.split(".")) == 4:
-            payload_data["domain_name"] = hostname.split(".")[0]
+        # hostname = urlparse(self.app_url).hostname
+        # if hostname and len(hostname.split(".")) == 4:
+        #     payload_data["domain_name"] = hostname.split(".")[0]
 
         response, error = self.make_api_request(
             api_endpoint_url, headers=headers, method="POST", data=payload_data
@@ -375,19 +406,19 @@ class ComplianceCow:
             )
             return "Unable to delete the attachment to the ComplianceCow control. Please contact admin/support to fix this issue."
 
-    def create_control_note(self, assessment_run_id, control_id, payload_data):
+    def create_assessment_run_control_note(self, assessment_run_id, control_id, data):
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
             return error
-        api_endpoint_url = self.build_api_url(self.CREATE_CONTROL_NOTE).format(
-            assessment_run_id=assessment_run_id, control_id=control_id
-        )
+        api_endpoint_url = self.build_api_url(
+            self.CREATE_ASSESSMENT_RUN_CONTROL_NOTE
+        ).format(assessment_run_id=assessment_run_id, control_id=control_id)
         headers = {
             "Authorization": auth_token,
             "Content-Type": "application/json",
         }
         response, error = self.make_api_request(
-            api_endpoint_url, headers=headers, method="POST", data=payload_data
+            api_endpoint_url, headers=headers, method="POST", data=data
         )
 
         if error:
@@ -402,17 +433,22 @@ class ComplianceCow:
             )
             return "Unable to create the note for the ComplianceCow control. Please contact admin/support to fix this issue."
 
-    def update_control_note(self, assessment_run_id, control_id, note_id, payload_data):
+    def update_assessment_run_control_note(
+        self, assessment_run_id, control_id, note_id, data
+    ):
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
             return error
-        api_endpoint_url = self.build_api_url(self.UPDATE_CONTROL_NOTE).format(
+        api_endpoint_url = self.build_api_url(
+            self.UPDATE_ASSESSMENT_RUN_CONTROL_NOTE
+        ).format(
             assessment_run_id=assessment_run_id, control_id=control_id, note_id=note_id
         )
         headers = {
             "Authorization": auth_token,
             "Content-Type": "application/json",
         }
+        payload_data = json.dumps(data)
         response, error = self.make_api_request(
             api_endpoint_url, headers=headers, method="PUT", data=payload_data
         )
@@ -429,13 +465,98 @@ class ComplianceCow:
             )
             return "Unable to update the note for the ComplianceCow control. Please contact admin/support to fix this issue."
 
-    def delete_control_note(self, note_id, assessment_run_id, control_id):
+    def delete_assessment_run_control_note(
+        self, note_id, assessment_run_id, control_id
+    ):
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
             return error
-        api_endpoint_url = self.build_api_url(self.DELETE_CONTROL_NOTE).format(
+        api_endpoint_url = self.build_api_url(
+            self.DELETE_ASSESSMENT_RUN_CONTROL_NOTE
+        ).format(
             assessment_run_id=assessment_run_id, control_id=control_id, note_id=note_id
         )
+        headers = {"Authorization": auth_token}
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="DELETE"
+        )
+
+        if error:
+            print(f"Unable to delete the note for the ComplianceCow control : {error}")
+            return "Unable to delete the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+        if response.ok and response.status_code == http.HTTPStatus.NO_CONTENT:
+            return ""
+        else:
+            print(
+                f"Unable to delete the note for the ComplianceCow control : Status Code: {response.status_code}, Response: {response.text}"
+            )
+            return "Unable to delete the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+    def create_assessment_control_note(self, assessment_id, control_id, data):
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+        api_endpoint_url = self.build_api_url(
+            self.CREATE_ASSESSMENT_CONTROL_NOTE
+        ).format(assessment_id=assessment_id, control_id=control_id)
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+        }
+        payload_data = json.dumps(data)
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="POST", data=payload_data
+        )
+
+        if error:
+            print(f"Unable to create the note for the ComplianceCow control : {error}")
+            return "Unable to create the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+        if response.ok and response.status_code == http.HTTPStatus.CREATED:
+            return ""
+        else:
+            print(
+                f"Unable to create the note for the ComplianceCow control : Status Code: {response.status_code}, Response: {response.text}"
+            )
+            return "Unable to create the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+    def update_assessment_control_note(self, assessment_id, control_id, note_id, data):
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+        api_endpoint_url = self.build_api_url(
+            self.UPDATE_ASSESSMENT_CONTROL_NOTE
+        ).format(assessment_id=assessment_id, control_id=control_id, note_id=note_id)
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+        }
+        payload_data = json.dumps(data)
+
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="PUT", data=payload_data
+        )
+
+        if error:
+            print(f"Unable to update the note for the ComplianceCow control : {error}")
+            return "Unable to update the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+        if response.ok and response.status_code == http.HTTPStatus.NO_CONTENT:
+            return ""
+        else:
+            print(
+                f"Unable to update the note for the ComplianceCow control : Status Code: {response.status_code}, Response: {response.text}"
+            )
+            return "Unable to update the note for the ComplianceCow control. Please contact admin/support to fix this issue."
+
+    def delete_assessment_control_note(self, note_id, assessment_id, control_id):
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+        api_endpoint_url = self.build_api_url(
+            self.DELETE_ASSESSMENT_CONTROL_NOTE
+        ).format(assessment_id=assessment_id, control_id=control_id, note_id=note_id)
         headers = {"Authorization": auth_token}
         response, error = self.make_api_request(
             api_endpoint_url, headers=headers, method="DELETE"
@@ -918,14 +1039,10 @@ class ComplianceCow:
             return {}, error
 
         api_endpoint_url = self.build_api_url(self.LIST_USER_MEDIUM_CONFIGS)
-        headers = {
-            'Authorization': auth_token
-        }
+        headers = {"Authorization": auth_token}
 
         response, error = self.make_api_request(
-            api_endpoint_url,
-            headers=headers,
-            method='GET'
+            api_endpoint_url, headers=headers, method="GET"
         )
         if error:
             return {}, error
@@ -933,16 +1050,19 @@ class ComplianceCow:
         if response.ok and response.status_code == http.HTTPStatus.OK:
             try:
                 user_medium_config_response: Dict[str, Any] = response.json()
-                user_medium_config = user_medium_config_response.get('items')
+                user_medium_config = user_medium_config_response.get("items")
                 if not user_medium_config or not isinstance(user_medium_config, list):
                     return {}, "User medium IDs do not exist."
 
-                return user_medium_config, ''
+                return user_medium_config, ""
 
             except (requests.JSONDecodeError, ValueError) as e:
                 return {}, f"Response is in an invalid format :: {e}"
         else:
-            return {}, f"Received error from response :: Status Code: {response.status_code}, Response: {response.text}"
+            return (
+                {},
+                f"Received error from response :: Status Code: {response.status_code}, Response: {response.text}",
+            )
 
     def create_evidence_template(
         self,
@@ -989,7 +1109,11 @@ class ComplianceCow:
             )
 
     def fetch_evidence(
-        self, assesment_run_id: str, control_id: str, evidence_id: str
+        self,
+        assesment_run_id: str,
+        control_id: str,
+        evidence_id: str,
+        exclude_meta_data: bool = False,
     ) -> Tuple[pd.DataFrame, dict, str]:
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
@@ -1003,7 +1127,10 @@ class ComplianceCow:
         )
         headers = {"Authorization": auth_token}
         response, error = self.make_api_request(
-            api_endpoint_url, headers=headers, method="GET"
+            api_endpoint_url,
+            headers=headers,
+            method="GET",
+            params={"excludeMetadata": exclude_meta_data},
         )
         if error:
             return None, None, error
@@ -1084,13 +1211,13 @@ class ComplianceCow:
         evidence_file_name: str,
         evidence_df: pd.DataFrame,
         compliance_calculation_infos: dict,
-        send_email_notification: bool = True,
-        send_notification: bool = True,
+        send_email_notification: bool = False,
+        send_notification: bool = False,
         timeout=None,
     ) -> str:
-        
+
         # send_notification takes higher priority than send_email_notification.
-        # If 'send_notification' is False, no notifications will be sent - 
+        # If 'send_notification' is False, no notifications will be sent -
         # neither email nor web notifications - even if 'send_email_notification' is True.
 
         # Sample complianceCalculationInfos struct  ::::::
@@ -1191,7 +1318,7 @@ class ComplianceCow:
                 return {
                     "FileUploadStatusDescription": f"{evidence_name} uploaded successfully in the target assessment run {assessment_run_id} and target control {assessment_run_control_id}",
                     "isFileUploaded": True,
-                    "UploadedFileName": evidence_file_name
+                    "UploadedFileName": evidence_file_name,
                 }, ""
             except (
                 requests.JSONDecodeError,
@@ -1224,7 +1351,7 @@ class ComplianceCow:
         des_record_ids=None,
         src_run_control_id=None,
         des_run_control_id=None,
-        timeout=None
+        timeout=None,
     ):
 
         auth_token, error = self.fetch_and_extract_auth_token()
@@ -1253,7 +1380,7 @@ class ComplianceCow:
         }
 
         response, error = self.make_api_request(
-            api_endpoint_url, headers=headers, method="POST", json=body,timeout=timeout
+            api_endpoint_url, headers=headers, method="POST", json=body, timeout=timeout
         )
         if error:
             return f"Error while linking evidence record :: {error}"
@@ -1333,7 +1460,7 @@ class ComplianceCow:
             return error
 
         if response.ok and response.status_code == http.HTTPStatus.OK:
-                return ""
+            return ""
         else:
             return f"Error while commiting evidence :: Status Code: {response.status_code}, Response: {response.text}"
 
@@ -1344,6 +1471,7 @@ class ComplianceCow:
         evidence_id: str,
         evidence_df: pd.DataFrame,
         commit_msg: str,
+        integrity_hash: str,
     ) -> str:
 
         auth_token, error = self.fetch_and_extract_auth_token()
@@ -1356,8 +1484,9 @@ class ComplianceCow:
         )
         headers = {"Authorization": auth_token}
         body = {
+            "integrityHash": integrity_hash,
             "data": base64.b64encode(evidence_df.to_parquet()).decode(),
-            "commitMessage": commit_msg
+            "commitMessage": commit_msg,
         }
         response, error = self.make_api_request(
             api_endpoint_url, headers=headers, method="POST", json=body
@@ -1365,8 +1494,11 @@ class ComplianceCow:
         if error:
             return error
 
+        if response.status_code == http.HTTPStatus.CONFLICT:
+            return f"Error while commiting evidence :: Status Code: {response.status_code}, Message: Integrity Hash Mismatch. Please retry with correct Integrity Hash."
+
         if response.ok and response.status_code == http.HTTPStatus.OK:
-                return ""
+            return ""
         else:
             return f"Error while commiting evidence :: Status Code: {response.status_code}, Response: {response.text}"
 
@@ -1375,13 +1507,13 @@ class ComplianceCow:
             auth_token, error = self.fetch_and_extract_auth_token()
             if error:
                 return None, error
-            
-            query_params = f'?fields={fields}'
+
+            query_params = f"?fields={fields}"
             if name:
-                query_params = query_params+  "&name=" + name 
+                query_params = query_params + "&name=" + name
             if id:
-                query_params = query_params+  "&id=" + id 
-                
+                query_params = query_params + "&id=" + id
+
             api_endpoint_url = self.build_api_url(self.GET_PLANS + query_params)
             headers = {"Authorization": auth_token}
 
@@ -1407,26 +1539,25 @@ class ComplianceCow:
         except requests.exceptions.RequestException as re:
             return None, f"An error occurred while making the request: {re}"
 
-    def put_plans_controls(self, id:str, controls_to_be_update:List ):
-       
+    def update_plans_controls(self, id: str, controls_to_be_update: List):
+
         try:
             if id == "":
                 return "Assessment ID cannot be empty"
             if not len(controls_to_be_update) > 0:
                 return "controls_to_be_update cannot be empty"
-            
-            api_endpoint_url = self.build_api_url(self.PUT_UPDATE_ASSESSMENT_CONTROLS)
-            
+
+            api_endpoint_url = self.build_api_url(self.POST_UPDATE_ASSESSMENT_CONTROLS)
+
             auth_token, error = self.fetch_and_extract_auth_token()
             if error:
                 return error
 
             headers = {"Authorization": auth_token}
-            req_body = {
-                "assessmentId": id,
-                "controls": controls_to_be_update
-            }
-            response, error = self.make_api_request( url = api_endpoint_url, headers = headers, method="PUT", json=req_body )
+            req_body = {"planId": id, "planControlsToBeUpdate": controls_to_be_update}
+            response, error = self.make_api_request(
+                url=api_endpoint_url, headers=headers, method="POST", json=req_body
+            )
 
             if error:
                 return error
@@ -1436,7 +1567,7 @@ class ComplianceCow:
 
             error_dict = response.json()
             if "Description" in error_dict:
-                return error_dict["Description"] 
+                return error_dict["Description"]
 
         except requests.exceptions.ConnectionError as ce:
             return f"Connection error occurred: {ce}"
@@ -1751,7 +1882,7 @@ class ComplianceCow:
         json=None,
         data=None,
         files=None,
-        params=None,
+        params={},
         timeout=1200,
         max_retries=3,
         retry_backoff=2,  # seconds between retries
@@ -2011,6 +2142,81 @@ class ComplianceCow:
                 return None, err
             return user_mails, None
         return None, f"Failed to fetch user mails from user block {user_block_name}"
+
+    def send_email_notification(
+        self,
+        message_header: str,
+        message_body: str,
+        channel_type: str,
+        user_mails: list,
+        cc_user_mails: list = None,
+        bcc_user_mails: list = None
+    ) -> str:
+        """
+        Send a notification via email or other configured channels.
+
+        Constructs a notification payload and sends it through the ComplianceCow API
+        to specified recipient addresses via the chosen channel type.
+
+        Args:
+            message_header (str): Header/subject line of the notification message.
+            message_body (str): Main body content of the notification.
+            channel_type (str): Channel through which to send (e.g., 'email', 'bot').
+            user_mails (list): List of recipient email addresses.
+
+        Returns:
+            str: Empty string on success, error message on failure.
+        """
+        # Build the API endpoint URL for notification sending
+        api_endpoint_url = self.build_api_url(self.SEND_SLACK_NOTIFICATION)
+
+        # Retrieve and validate authentication token
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+
+        # Construct the notification payload with header, body, channel, and recipients
+        payload = json.dumps(
+            {
+                "MessageBody": message_body,
+                "MessageHeader": message_header,
+                "NotificationChannelInfo": [
+                    {"ChannelType": channel_type}
+                ],
+                "MailNotification": {
+                    "To": user_mails,
+                    "Cc": cc_user_mails,
+                    "Bcc": bcc_user_mails
+                    },
+            }
+        )
+
+        # Prepare HTTP headers with content type and authorization
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": auth_token,
+        }
+
+        # Make the API request to send the notification
+        response, error = self.make_api_request(
+            url=api_endpoint_url, headers=headers, method="POST", data=payload
+        )
+
+        # Return error if API request failed
+        if error:
+            return error
+
+        # Check for successful response (No Content indicates success)
+        if response.status_code == http.HTTPStatus.NO_CONTENT:
+            return ""
+
+        # Extract and return error message if present in response
+        response_json = response.json()
+        if response_json.get("ErrorMessage"):
+            return response_json["ErrorMessage"]
+
+        # Return generic failure message if status indicates failure
+        return f"Failed to send {channel_type} notification"
 
     # Need to handle later
     def send_slack_notification(self, control_id, workflow_instance_id, user_mails):
@@ -2358,6 +2564,30 @@ class ComplianceCow:
                 f"Received error from the ComplianceCow Create Assessment API response: Status Code: {response.status_code}, Response: {response.text}",
             )
 
+    def update_assessment(self, assessment_id, payload_data):
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+        api_endpoint_url = self.build_api_url(self.UPDATE_ASSESSMENT).format(
+            assessment_id=assessment_id
+        )
+        headers = {"Authorization": auth_token}
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="PATCH", json=payload_data
+        )
+
+        if error:
+            print(f"Unable to update the ComplianceCow assessment : {error}")
+            return "Unable to update the ComplianceCow assessment. Please contact admin/support to fix this issue."
+
+        if response.ok and response.status_code == http.HTTPStatus.NO_CONTENT:
+            return ""
+        else:
+            print(
+                f"Unable to update the ComplianceCow assessment : Status Code: {response.status_code}, Response: {response.text}"
+            )
+            return "Unable to update the ComplianceCow assessment. Please contact admin/support to fix this issue."
+
     def create_assessment_control(self, assessment_id: str, payload: dict) -> str:
         api_endpoint_url = self.build_api_url(self.CREATE_ASSESSMENT_CONTROL).format(
             assessment_id=assessment_id
@@ -2479,6 +2709,7 @@ class ComplianceCow:
         inputs: dict,
         from_date: str,
         to_date: str,
+        disable_automated_action: bool = True,
     ) -> Tuple[str, str]:
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
@@ -2500,7 +2731,7 @@ class ComplianceCow:
             "tags": {},
             "name": run_name,
             "description": run_name,
-            "otherInfos": {"disableAutomatedAction": True},
+            "otherInfos": {"disableAutomatedAction": disable_automated_action},
             "inputs": inputs,
         }
 
@@ -2678,8 +2909,7 @@ class ComplianceCow:
 
         body = {"event": workflow_event, "input": input_obj}
         return wsutils.post(path=api_endpoint_url, data=body, header=headers)
-    
-        
+
     def get_userdetails_with_slackhandle(self, user_email: str):
         if not user_email:
             return "", "User email is empty."
@@ -2687,11 +2917,8 @@ class ComplianceCow:
         auth_token, error = self.fetch_and_extract_auth_token()
         if error:
             return "", error
-        
-        query_params = {
-            "search_name": user_email,
-            "medium_id": "slack"
-        }
+
+        query_params = {"search_name": user_email, "medium_id": "slack"}
         api_endpoint_url = self.build_api_url(endpoint=self.GET_SLACK_HANDLE)
 
         headers = {
@@ -2700,7 +2927,9 @@ class ComplianceCow:
         }
 
         try:
-            response = requests.get(url=api_endpoint_url, headers=headers, params=query_params)
+            response = requests.get(
+                url=api_endpoint_url, headers=headers, params=query_params
+            )
         except requests.RequestException as e:
             return "", f"Request failed: {str(e)}"
 
@@ -2713,8 +2942,10 @@ class ComplianceCow:
             except ValueError:
                 return "", f"Response is not valid JSON. Raw response: {response.text}"
 
-        return "", f"Failed to fetch Slack user ID for {user_email}. Status Code: {response.status_code}, Response: {response.text}"
-    
+        return (
+            "",
+            f"Failed to fetch Slack user ID for {user_email}. Status Code: {response.status_code}, Response: {response.text}",
+        )
 
     def get_assessment_id_by_name(self, assessment_name: str):
         """
@@ -2812,7 +3043,9 @@ class ComplianceCow:
                             return run.get("id"), ""  # Return the run ID on success
                     return "", f"No matching run found with name: {run_name}"
                 else:
-                    return runs[0].get("id"), ""
+                    if len(runs) > 0:
+                        return runs[0].get("id"), ""
+                    return "","No assessment runs were found for the specified assessment id or name.",                    
 
             except (json.JSONDecodeError, ValueError):
                 return "", f"Response is not valid JSON. Raw response: {response.text}"
@@ -2822,4 +3055,634 @@ class ComplianceCow:
             f"Failed to fetch assessment runs. Status Code: {response.status_code}, Response: {response.text}",
         )
 
+    def connect_mcp_and_execute_query(self, prompt: str):
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
 
+        api_endpoint_url = self.build_api_url(self.ASK_MCP_AGENT)
+        headers = {"Authorization": auth_token}
+
+        body = {"query": prompt, "mcp_server": "aws-doc"}
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="POST", json=body
+        )
+        if error:
+            return (
+                None,
+                f"Error while processing query: {error}",
+            )
+
+        if response.ok and response.status_code == http.HTTPStatus.OK:
+            return response.json(), None
+        else:
+            return (
+                None,
+                f"Error while processing query: {response.text}",
+            )
+
+    def get_all_assessment_controls(self, assessment_id: str, params=None):
+        """
+        Fetches all the assessment control details for a given assessment ID.
+        """
+
+        if not assessment_id:
+            return "", "Assessment ID is empty."
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
+
+        api_endpoint_url = self.build_api_url(
+            endpoint=self.GET_ALL_ASSESSMENT_CONTROLS
+        ).format(assessment_id=assessment_id)
+
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+
+        all_items = []
+        page = 1
+
+        while True:
+            query_params = params.copy() if params else {}
+            query_params["page"] = page
+
+            try:
+                response = requests.get(
+                    url=api_endpoint_url, headers=headers, params=query_params
+                )
+            except requests.RequestException as e:
+                return "", f"Request failed: {str(e)}"
+
+            if not (response.ok and response.status_code == http.HTTPStatus.OK):
+                return "", f"Failed: {response.status_code}, {response.text}"
+
+            data = response.json()
+
+            # collect items
+            all_items.extend(data.get("items", []))
+
+            pagination = data.get("pagination", {})
+            total_pages = int(pagination.get("totalPages", 1))
+
+            # stop condition
+            if page >= total_pages:
+                break
+
+            page += 1
+
+        return all_items, None
+
+    def get_all_assessment_run_controls(self, assessment_run_id: str, params=None):
+        if not assessment_run_id:
+            return "", "Assessment Run ID is empty."
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
+
+        api_endpoint_url = self.build_api_url(
+            endpoint=self.GET_ALL_ASSESSMENT_RUN_CONTROLS
+        ).format(assessment_run_id=assessment_run_id)
+
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+
+        all_items = []
+        page = 1
+
+        while True:
+            query_params = params.copy() if params else {}
+            query_params["page"] = page
+
+            try:
+                response = requests.get(
+                    url=api_endpoint_url, headers=headers, params=query_params
+                )
+            except requests.RequestException as e:
+                return "", f"Request failed: {str(e)}"
+
+            if not (response.ok and response.status_code == http.HTTPStatus.OK):
+                return "", f"Failed: {response.status_code}, {response.text}"
+
+            data = response.json()
+
+            # collect items
+            all_items.extend(data.get("items", []))
+
+            pagination = data.get("pagination", {})
+            total_pages = int(pagination.get("totalPages", 1))
+
+            # stop condition
+            if page >= total_pages:
+                break
+
+            page += 1
+
+        return all_items, None
+
+    # FETCH_EVIDENCE_V2 = "/v5/partner/assessment-runs/{assesment_run_id}/controls/{control_id}/evidence/{evidence_id}?fileFormat=CSV"
+    def fetch_evidence_as_csv(
+        self, assessment_run_id: str, control_id: str, evidence_id: str
+    ):
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return "", error
+
+        api_endpoint_url = self.build_api_url(endpoint=self.FETCH_EVIDENCE_V2).format(
+            assessment_run_id=assessment_run_id,
+            control_id=control_id,
+            evidence_id=evidence_id,
+        )
+
+        headers = {
+            "Authorization": auth_token,
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+
+        try:
+            response = requests.get(url=api_endpoint_url, headers=headers)
+        except requests.RequestException as e:
+            return "", f"Request failed: {str(e)}"
+
+        if response.ok and response.status_code == http.HTTPStatus.OK:
+            data = response.json()
+            return data, None
+
+        return (
+            "",
+            f"Failed to fetch assessment controls' details. Status Code: {response.status_code}, Response: {response.text}",
+        )
+
+    def update_evidence_fields(
+        self, assesment_run_id: str, control_id: str, evidence_id: str, body: dict
+    ) -> str:
+
+        auth_token, error = self.fetch_and_extract_auth_token()
+        if error:
+            return error
+
+        if body.get("integrityHash") is None:
+            return "integrityHash value is required in the request body to update evidence fields."
+
+        api_endpoint_url = self.build_api_url(self.UPDATE_EVIDENCE_FIELDS).format(
+            assessment_run_id=assesment_run_id,
+            control_id=control_id,
+            evidence_id=evidence_id,
+        )
+        headers = {"Authorization": auth_token}
+
+        response, error = self.make_api_request(
+            api_endpoint_url, headers=headers, method="POST", json=body
+        )
+
+        if error:
+            return error
+
+        try:
+
+            if response.ok and response.status_code == http.HTTPStatus.OK:
+                return ""
+            elif response.status_code == http.HTTPStatus.CONFLICT:
+                return "Evidence update failed because the record was modified by another user or process. Please refresh and try again."
+            elif response.status_code == http.HTTPStatus.BAD_REQUEST:
+                return f"Bad Request while committing evidence. Status Code: {response.status_code}, Response: {response.text}"
+            elif response.status_code == http.HTTPStatus.UNAUTHORIZED:
+                return "Unauthorized request while committing evidence."
+            elif response.status_code == http.HTTPStatus.FORBIDDEN:
+                return "Access denied while committing evidence."
+            elif response.status_code == http.HTTPStatus.NOT_FOUND:
+                return "Evidence resource not found."
+            elif response.status_code >= 500:
+                return f"Server error while committing evidence. Status Code: {response.status_code}, Response: {response.text}"
+            else:
+                return f"Error while committing evidence. Status Code: {response.status_code}, Response: {response.text}"
+
+        except Exception as e:
+            return f"Unexpected error while committing evidence: {str(e)}"
+
+    def update_evidence_with_retry(
+        self,
+        assessment_run_id,
+        assessment_run_control_id,
+        evidence_id,
+        passed_evidence_update_df,
+        failed_evidence_update_df,
+        append_new_records=False,
+        retry=True,
+        max_retries=3,
+        exponential_base=2,
+        allow_new_columns=False
+    ):
+        def json_serializer(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            if isinstance(obj, np.floating):
+                return float(obj)
+            if isinstance(obj, np.bool_):
+                return bool(obj)
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+
+            raise TypeError(
+                f"Object of type {type(obj).__name__} is not JSON serializable"
+            )
+
+        use_commit_existing_control_evidence_flow = False
+        for attempt in range(max_retries + 1):
+            evidence_df, evidence_details, error = self.fetch_evidence(
+                assesment_run_id=assessment_run_id,
+                control_id=assessment_run_control_id,
+                evidence_id=evidence_id,
+            )
+            if error:
+                return {"Error": error}
+
+            integrity_hash = evidence_details.get("integrityHash", "")
+
+            updated_evidence_df = self.get_updated_evidence_df(
+                append_new_records,
+                evidence_df,
+                passed_evidence_update_df,
+                failed_evidence_update_df,
+                allow_new_columns
+            )
+            if updated_evidence_df.empty:
+                return {"Error": "There is no data to update in the evidence"}
+
+            for column in updated_evidence_df.columns:
+                if updated_evidence_df[column].apply(type).nunique() > 1:
+                    updated_evidence_df[column] = updated_evidence_df[column].astype(
+                        str
+                    )
+                    
+            if "id" not in updated_evidence_df.columns and "recordguid__" not in updated_evidence_df.columns:
+                use_commit_existing_control_evidence_flow = True 
+            else:
+                index_key = "recordguid__" if "recordguid__" in updated_evidence_df.columns else "id"  
+                has_invalid_values = (
+                    updated_evidence_df[index_key].isna() |
+                    (updated_evidence_df[index_key].astype(str).str.strip() == '')
+                ).any()    
+                if has_invalid_values:
+                    use_commit_existing_control_evidence_flow = True      
+
+            if append_new_records or use_commit_existing_control_evidence_flow:
+                error = self.commit_existing_control_evidence(
+                    assesment_run_id=assessment_run_id,
+                    control_id=assessment_run_control_id,
+                    evidence_id=evidence_id,
+                    evidence_df=updated_evidence_df,
+                    commit_msg="Updated evidence data.",
+                    integrity_hash=integrity_hash,
+                )
+            else:
+
+                updates = self.get_patch_df(
+                    updated_evidence_df, evidence_df, ["last_updated_at__", "last_updated_by__"]
+                )
+                if not updates:
+                    return {
+                        "Error": "There is no change in the evidence data to update."
+                    }
+
+                payload = json.loads(
+                    json.dumps(
+                        {
+                            "updates": updates,
+                            "integrityHash": integrity_hash,
+                        },
+                        default=json_serializer,
+                    )
+                )
+                
+                error = self.update_evidence_fields(
+                    assesment_run_id=assessment_run_id,
+                    control_id=assessment_run_control_id,
+                    evidence_id=evidence_id,
+                    body = payload,
+                )
+
+            if error:
+                if not retry:
+                    return {"Error": error}
+                
+                error_msg = str(error)
+                if ( "Status Code: 409" in error_msg and "Integrity Hash Mismatch" in error_msg ) or "record was modified by another user or process" in error_msg:
+                    if attempt == max_retries:
+                        return {
+                            "Error": "Could not save the evidence after multiple attempts. Please check the integrity hash and try again."
+                        }
+
+                    # Apply exponential backoff with jitter (randomization) before retrying
+                    sleep_time = self._calculate_exponential_backoff_with_jitter(
+                        attempt, exponential_base
+                    )
+                    logger.log_data(
+                        {
+                            "message": "Integrity Hash Mismatch (409): Retrying with exponential backoff",
+                            "attempt": attempt + 1,
+                            "max_retries": max_retries,
+                            "sleep_seconds": sleep_time,
+                        }
+                    )
+                    time.sleep(sleep_time)
+                    continue
+                else:
+                    return {"Error": error}
+            break
+
+    def dataframeserializer(self, obj):
+        def is_date(string, fuzzy=False):
+            """
+            Return whether the string can be interpreted as a date.
+
+            :param string: str, string to check for date
+            :param fuzzy: bool, ignore unknown tokens in string if True
+            """
+            try:
+                parser.parse(string, fuzzy=fuzzy)
+                return True
+
+            except ValueError:
+                return False
+            
+        if obj is None or obj is pd.NaT:
+            return None
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if (isinstance(obj, str) and is_date(obj)) or isinstance(obj, datetime):
+            if isinstance(obj, str):
+                obj = parser.parse(obj)
+            return obj.strftime("%Y/%m/%d %H:%M:%S")
+
+    def get_patch_df(self, src_df, base_df, omit_cols=None):
+
+        def _normalize(val):
+            try:
+
+                if isinstance(val, (np.ndarray, dict, list)):
+
+                    if isinstance(val, (np.ndarray, list)) and len(val) == 0:
+                        return None
+
+                    return json.dumps(
+                        val, sort_keys=True, default=self.dataframeserializer
+                    )
+
+                if pd.isna(val):
+                    return None
+
+                if (
+                    isinstance(val, str)
+                    and val.strip().lower() in ["", "none", "nan", "null"]
+                ):
+                    return None
+
+                return val
+
+            except Exception as e:
+                print("NORMALIZE ERROR:", e)
+                return val
+
+        omit_cols = set(omit_cols or [])
+        index_col = "recordguid__" if "recordguid__" in src_df.columns else "id"
+
+
+
+        src = (
+            src_df.set_index(index_col)
+            .drop(columns=omit_cols, errors="ignore")
+        )
+
+        base = (
+            base_df.set_index(index_col)
+            .drop(columns=omit_cols, errors="ignore")
+        )
+
+        # Compare only records present in src
+        base = base.reindex(src.index)
+
+        # Align only columns
+        src, base = src.align(base, join="outer", axis=1)
+
+        if src.empty or src.shape[1] == 0:
+            return []
+
+        # Normalize values before comparison
+        src_cmp = src.apply(lambda col: col.map(_normalize))
+        base_cmp = base.apply(lambda col: col.map(_normalize))
+
+        # Replace nulls with a sentinel for comparison
+        src_cmp = src_cmp.fillna("__NULL__")
+        base_cmp = base_cmp.fillna("__NULL__")
+
+        diff_mask = src_cmp.ne(base_cmp)
+        patch_data = []
+
+        for record_id in diff_mask.index:
+
+            changed_cols = diff_mask.columns[diff_mask.loc[record_id]]
+            if len(changed_cols) == 0:
+                continue
+
+            fields = {}
+
+            for col in changed_cols:
+                value = src.at[record_id, col]
+
+                if np.isscalar(value) and pd.isna(value):
+                    value = None
+                
+                fields[col] = value
+
+            patch_data.append({"recordId": record_id, "fields": fields})
+
+        return patch_data
+
+    def get_updated_evidence_df(
+        self,
+        append_new_records: bool,
+        evidence_df: pd.DataFrame,
+        passed_evidence_update_df: pd.DataFrame,
+        failed_evidence_update_df: pd.DataFrame,
+        allow_new_columns: bool,
+    ) -> pd.DataFrame:
+        """Merge passed and failed evidence updates with existing evidence data.
+
+        Args:
+            append_new_records: If True, append new records; if False, update existing.
+            evidence_df: Current evidence data.
+            passed_evidence_update_df: Updates for passed evidence.
+            failed_evidence_update_df: Updates for failed evidence.
+
+        Returns:
+            pd.DataFrame: Updated evidence data with merged changes.
+        """
+        updated_evidence_df = pd.DataFrame()
+        if append_new_records:
+            drop_columns = [
+                "recordguid__",
+                "rowno__",
+                "recordstatus__",
+                "created_at__",
+                "last_updated_at__",
+                "tags__",
+                "created_by__",
+                "last_updated_by__",
+                "user_actions__",
+                "proposals__",
+                "remediation__",
+                "link_data__",
+                "related_data__",
+                "signal__",
+                "exceptions__",
+                "owner__",
+                "id",
+            ]
+            # Filter drop_columns to include only columns that exist in the DataFrame
+            existing_columns = [
+                col for col in drop_columns if col in passed_evidence_update_df.columns
+            ]
+
+            updated_evidence_df = passed_evidence_update_df.drop(
+                columns=existing_columns
+            )
+            for column in updated_evidence_df.columns:
+                if (
+                    isinstance(evidence_df, pd.DataFrame)
+                    and not evidence_df.empty
+                    and column in evidence_df.columns
+                ):
+                    # Ensure data type consistency with existing evidence data
+                    expected_dtype = evidence_df[column].dtype
+                    if updated_evidence_df[column].dtype != expected_dtype:
+                        # Convert to expected data type (string for object type)
+                        if expected_dtype == "object":
+                            updated_evidence_df[column] = updated_evidence_df[
+                                column
+                            ].astype(str)
+                        else:
+                            updated_evidence_df[column] = updated_evidence_df[
+                                column
+                            ].astype(expected_dtype)
+        else:
+            if not passed_evidence_update_df.empty:
+                updated_evidence_df = passed_evidence_update_df.apply(
+                    self.get_updated_evidence_data,
+                    args=[evidence_df, allow_new_columns],
+                    axis=1,
+                    result_type="expand",
+                )
+
+            if not failed_evidence_update_df.empty:
+                failed_evidence_df = failed_evidence_update_df.apply(
+                    self.get_updated_evidence_data,
+                    args=[evidence_df, allow_new_columns],
+                    axis=1,
+                    result_type="expand",
+                )
+                updated_evidence_df = pd.concat(
+                    [updated_evidence_df, failed_evidence_df]
+                )
+        return updated_evidence_df
+    
+    def get_updated_evidence_data(
+        self,
+        update_evidence_row: pd.Series,
+        evidence_df: pd.DataFrame,
+        allow_new_columns: bool = False,
+    ) -> pd.Series:
+        """Update evidence data row by finding and merging with existing record.
+
+        Args:
+            update_evidence_row: The data to update.
+            evidence_df: Existing evidence data to search for matching record.
+
+        Returns:
+            pd.Series: Updated evidence row with merged data.
+        """
+        if evidence_df is None or evidence_df.empty:
+            return update_evidence_row
+
+        evidence_update_data_df: pd.DataFrame = evidence_df[
+            evidence_df.get("recordguid__", "")
+            == update_evidence_row.get("recordguid__", "")
+        ]
+
+        if not evidence_update_data_df.empty:
+            evidence_update_data = evidence_update_data_df.iloc[0].copy()
+
+            # Existing flow
+            if not allow_new_columns:
+                evidence_update_data.update(update_evidence_row)
+                return evidence_update_data
+
+            # New flow
+            # Allow new columns and update all values,
+            # including empty strings, None, and NaN values
+            for key, value in update_evidence_row.items():
+                evidence_update_data[key] = value
+
+            return evidence_update_data
+        return update_evidence_row
+
+    def call_evidence_exporter_api(
+        self, assessment_id: str, config_yaml_content: str
+    ) -> tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """
+        Call the /api/v1/evidence-exporter-configs API with assessment_id and config file.
+        """
+        try:
+            auth_token, error = self.fetch_and_extract_auth_token()
+            if error:
+                return None, f"Failed to get auth token: {error}"
+
+            api_url = self.build_api_url(endpoint=self.EVIDENCE_EXPORTER_CONFIG)
+
+            headers = {
+                "Authorization": auth_token,
+            }
+
+            files = {
+                "config_file": (
+                    "servicenow_custom_config.yaml",
+                    config_yaml_content,
+                    "application/yaml",
+                )
+            }
+            data = {"assessment_id": assessment_id}
+
+            response, error = self.make_api_request(
+                url=api_url,
+                headers=headers,
+                method="POST",
+                files=files,
+                data=data,
+                timeout=120,
+            )
+
+            if error:
+                return None, f"API call failed: {error}"
+
+            return response.json(), None
+
+        except Exception as e:
+            return None, f"Error calling evidence exporter API: {str(e)}"
+
+    
+    def _calculate_exponential_backoff_with_jitter( self, attempt: int, exponential_base: float ) -> float:
+        min_delay_minutes = 0 if attempt == 0 else exponential_base**attempt
+        max_delay_range_minutes = exponential_base ** (attempt + 1)
+        random_delay_minutes = random.uniform(
+            min_delay_minutes, max_delay_range_minutes
+        )
+        return random_delay_minutes * 60

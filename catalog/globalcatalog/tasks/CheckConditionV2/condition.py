@@ -2,6 +2,7 @@
 from typing import Tuple, Literal, List, Callable, Any, Optional
 from compliancecowcards.structs import cards
 from datetime import datetime
+from compliancecowcards.utils.cowplaceholderutils import strip_placeholder_delimiters
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as dateparser
 import pandas as pd
@@ -366,7 +367,9 @@ class ConditionTypeUtils:
             })
         try:
             cel_env = celpy.Environment()
-            cel_ast = cel_env.compile(self.condition_value.replace('<<', '').replace('>>', ''))
+            cel_ast = cel_env.compile(
+                strip_placeholder_delimiters(self.condition_value)
+            )
             activation = json_to_cel(self.value_to_check)
             result = cel_env.program(cel_ast).evaluate(activation) # type: ignore
 
@@ -673,7 +676,7 @@ class ConditionTypeUtils:
             'S': 'seconds'
         }
     
-        delta_str_parts = re.findall(r'([+-]?\d+)([a-zA-Z]+)', delta_str)
+        delta_str_parts = re.findall(r'([+-]?\d+)([ymdHMS]+)', delta_str)
         if not delta_str_parts:
             return SENTINEL_RELATIVEDELTA, self.log_manager.get_error_message(f'{error_type_prefix}.DateExpression.syntax_error')
     

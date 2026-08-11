@@ -20,5 +20,6 @@ userInputs:
   VMsExtensionsDataFilePath: <<MINIO_FILE_PATH>>
   ControlConfigFilePath: <<MINIO_FILE_PATH>>
   ControlName: # To identify the ControlName, please refer to the 'ControlName' field in the 'ControlConfig.json' file.
+  OutputFileName: # Name of the output file. If not provided, falls back to the ControlName.
 fromDate: 2023-11-29T06:16:42Z
 toDate: 2023-11-29T06:16:42Z

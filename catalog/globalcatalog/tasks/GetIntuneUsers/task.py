@@ -56,7 +56,7 @@ class Task(cards.AbstractTask):
                 is_user_admin = len(user_roles) > 0
 
                 user_details = {
-                    "System": "intune",
+                    "System": "microsoft entra id",
                     "Source": "compliancecow",
                     "ResourceID": user_id,
                     "ResourceName": self.verify_and_get_dict_value(user, "displayName"),

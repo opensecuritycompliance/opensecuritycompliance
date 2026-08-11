@@ -11,6 +11,12 @@ The purpose of this task is to automate API requests. It allows users to make AP
     - **ProceedIfErrorExists**             : [OPTIONAL] If the current task returns an error, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
     - **LogConfigFile**                     : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
     - **LogFile**                          : [OPTIONAL] Map the LogFile from the previous task, to handle errors
+    - **UseSyntheticData**                 : [OPTIONAL] Set this to `true` if you don't want to make API calls, but instead want to use synthetic data through the SyntheticDataFile input. If this is not set or set to false, the task executes normally.
+    - **SyntheticDataFile**                : [OPTIONAL] This file will be sent as output if UseSyntheticData is set to `true`. Otherwise this input has no effect on the task.
+    - **ValidateFlow**                     : [OPTIONAL] Only validates the input data and does not execute. True or False
+    - **DisableLogging**                   : [OPTIONAL] If set to true, logging will be skipped; otherwise, all request and response details will be logged.
+    - **OutputFileName**                   : [OPTIONAL] Output filename without extension. Default value is 'OutputFile' if not given.
+
 - Outputs :
     - **OutputFile**                       : This file contains the response details.
     - **LogFile**                          : If any errors arise in the task then this will catch all the errors
@@ -20,9 +26,9 @@ The purpose of this task is to automate API requests. It allows users to make AP
 1. InputFile **(OPTIONAL)**
     - InputFile data is iterated for each data api will send request and all the response are collected and returned in json formate.
     - For example in the below 'InputFile' we have 3 resourceGroups names, my aim is to get the resourceGroups details of mentioned in the 'InputFile', so 3 api call will be send in this task.
-    we can access the InputFile data using <<inputfile.FIELD_NAME>>, Lets assumes your are going to get the details of below given 3 'resourceGroups' data in url you simply mention <<inputfile.name>>
+    we can access the InputFile data using {%{inputfile.FIELD_NAME}%}, Lets assumes your are going to get the details of below given 3 'resourceGroups' data in url you simply mention {%{inputfile.name}%}
     
-    URL = "<<application.AppURL>>/subscriptions/<<application.SubscriptionID>>/resourceGroups/<<inputfile.name>>?api-version=2021-04-01"
+    URL = "{%{application.AppURL}%}/subscriptions/{%{application.SubscriptionID}%}/resourceGroups/{%{inputfile.name}%}?api-version=2021-04-01"
 
     Using this api will get all the three 'resourceGroups' details.
 
@@ -69,11 +75,11 @@ The purpose of this task is to automate API requests. It allows users to make AP
     <!-- BELOW IS THE 'RequestConfigFile' TOML FILE WITH SAMPLE DATA -->
     ```toml
     # The Variables section allows you to define constants that can be used dynamically in the request below.
-    # - You can reference these variables anywhere in the request using the <<variable_name>> syntax.
+    # - You can reference these variables anywhere in the request using the {%{variable_name}%} syntax.
     # - Ensure all values are strings. For non-string values (like objects), convert them to JSON-formatted strings.
     # Example:
-    #   - Method = "GET" can be referenced in the [Request] section as <<Method>>.
-    #   - Params = "sample data" can be used in the query string or body as <<Params>>.
+    #   - Method = "GET" can be referenced in the [Request] section as {%{Method}%}.
+    #   - Params = "sample data" can be used in the query string or body as {%{Params}%}.
     [Variable]
     Method = "GET"
     CredentialType = "OAuth"
@@ -85,19 +91,19 @@ The purpose of this task is to automate API requests. It allows users to make AP
 
     # URL Field --> MANDATORY
     # - Specify the complete API URL or build it dynamically using application variables.
-    # - You can access application-level fields using the syntax <<application.FieldName>>.
+    # - You can access application-level fields using the syntax {%{application.FieldName}%}.
     # Example:
     # - Using Azure APIs: Combine AppURL and SubscriptionID:
-    #   "<<application.AppURL>>/subscriptions/<<application.SubscriptionID>>/resourcegroups?api-version=2021-04-01"
+    #   "{%{application.AppURL}%}/subscriptions/{%{application.SubscriptionID}%}/resourcegroups?api-version=2021-04-01"
     # - Using AWS APIs: 
-    #   "<<application.AppURL>>/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
+    #   "{%{application.AppURL}%}/ListRoles" translates to "https://iam.amazonaws.com/ListRoles".
     URL = "https://iam.amazonaws.com/"
 
     # HTTP Method --> MANDATORY
     # - Specify the HTTP method to use for the request.
     # - Supported values: 
     #   GET, POST, PUT, DELETE, PATCH.
-    Method = "<<Method>>"
+    Method = "{%{Method}%}"
 
     # Content Type --> Required when the request has 'Data' (Refer 'Request.Data' field for more information)
     # - Specify the Content-Type header to define the format of the request body.
@@ -145,34 +151,34 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # === MANUAL AUTHORIZATION HEADER REQUIRED (Specify in [Request.Headers]) ===
 
     # -> OAuth:
-    #    - Must specify Authorization header using <<validationCURLresponse.*>>
+    #    - Must specify Authorization header using {%{validationCURLresponse.*}%}
     #    - Requires 'ValidationCurl'
     #    - Example:
-    #      Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+    #      Authorization = "{%{validationCURLresponse.token_type}%} {%{validationCURLresponse.access_token}%}"
 
     # -> CustomType:
-    #    - Must specify Authorization header using <<validationCURLresponse.*>>
+    #    - Must specify Authorization header using {%{validationCURLresponse.*}%}
     #    - Requires 'ValidationCurl'
     #    - Using this type you can have user-defined 'key' as well as 'value'
     #    - For example, Azure API requires 'ClientID', 'ClientSecret', 'TenantID', 'SubscriptionID'
     #    - Under 'Application.CustomType' you can mention all the required credentials
     #    - Access them in 'ValidationCurl' (refer '[Request.Headers]' for more information)
     #    - Example:
-    #      Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
+    #      Authorization = "{%{validationCURLresponse.tokenType}%} {%{validationCURLresponse.authToken}%}"
 
     # -> JWTBearer:
     #    - Requires Authorization header
     #    - Requires 'ValidationCurl'
-    #    - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>"
+    #    - Option 1 (auto): Authorization = "Bearer {%{JWTBearer}%}"
     #      (for JWT generated using Algorithm, PrivateKey, Payload)
-    #    - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>"
+    #    - Option 2 (manual): Authorization = "{%{validationCURLresponse.token}%}"
     #      (if using validationCURL)
     #    
-    #    For the Payload field, you can specify the following placeholders in the syntax: <<FUNCTION_NAME>>
+    #    For the Payload field, you can specify the following placeholders in the syntax: {%{FUNCTION_NAME}%}
     #    
     #    SUPPORTED FUNCTIONS:
     #    - CURRENT_TIME: Replaces with the current time in Unix format
-    #                    You can also add/subtract integer values: <<CURRENT_TIME + 3600>> or <<CURRENT_TIME - 1800>>
+    #                    You can also add/subtract integer values: {%{CURRENT_TIME + 3600}%} or {%{CURRENT_TIME - 1800}%}
     #    - CURRENT_DATE: Replaces with the current date in ISO format
     #    
     #    EXAMPLE Payload:
@@ -181,11 +187,11 @@ The purpose of this task is to automate API requests. It allows users to make AP
     #      "sub": "test@some-project.iam.gserviceaccount.com",
     #      "aud": "https://oauth2.googleapis.com/token",
     #      "scope": "https://www.googleapis.com/auth/logging.read",
-    #      "iat": <<CURRENT_TIME>>,
-    #      "exp": <<CURRENT_TIME + 3600>>
+    #      "iat": {%{CURRENT_TIME}%},
+    #      "exp": {%{CURRENT_TIME + 3600}%}
     #    }
 
-    CredentialType = "<<CredentialType>>"
+    CredentialType = "{%{CredentialType}%}"
 
     # TimeOut --> OPTIONAL
     # - Specify the timeout for the request in seconds.
@@ -208,7 +214,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
         [Request.Retries.RetryOnCondition]
         # Configure the retry logic based on specific conditions.
 
-        ConditionField = "<<response.status_code>>"
+        ConditionField = "{%{response.status_code}%}"
         # The response attribute used to determine whether a retry should be attempted.
         # This can be any response property, such as status_code, headers, body, cookies, or url.
 
@@ -242,22 +248,22 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # 1. Application -> ValidationCURL
     #    For Azure APIs, you can generate a Bearer token using:
     #
-    #    curl --location 'https://login.microsoftonline.com/<<CustomType.TenantID>>/oauth2/token' \
+    #    curl --location 'https://login.microsoftonline.com/{%{CustomType.TenantID}%}/oauth2/token' \
     #         --header 'Content-Type: application/x-www-form-urlencoded' \
     #         --data-urlencode 'grant_type=client_credentials' \
-    #         --data-urlencode 'client_id=<<CustomType.ClientID>>' \
-    #         --data-urlencode 'client_secret=<<CustomType.ClientSecret>>' \
+    #         --data-urlencode 'client_id={%{CustomType.ClientID}%}' \
+    #         --data-urlencode 'client_secret={%{CustomType.ClientSecret}%}' \
     #         --data-urlencode 'resource=https://servicebus.azure.net'
     #
     # 2. RequestConfigFile -> [Request.Headers]
     #    Once the CURL is validated, you can access its response dynamically:
     #
-    #    Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
+    #    Authorization = "{%{validationCURLresponse.token_type}%} {%{validationCURLresponse.access_token}%}"
     #
     # === JWTBearer ===
-    # - Option 1 (auto): Authorization = "Bearer <<JWTBearer>>"
+    # - Option 1 (auto): Authorization = "Bearer {%{JWTBearer}%}"
     #                    (uses Algorithm, PrivateKey, Payload defined in Application)
-    # - Option 2 (manual): Authorization = "<<validationCURLresponse.token>>"
+    # - Option 2 (manual): Authorization = "{%{validationCURLresponse.token}%}"
     #                      (if using validationCURL)
     #
     # === NoAuth ===
@@ -265,18 +271,18 @@ The purpose of this task is to automate API requests. It allows users to make AP
     #
     [Request.Headers]
         # === For OAuth/CustomType: Uncomment and use one of these ===
-        # Authorization = "<<validationCURLresponse.token_type>> <<validationCURLresponse.access_token>>"
-        # Authorization = "<<validationCURLresponse.tokenType>> <<validationCURLresponse.authToken>>"
-        # NOTE : Add "<<validationCURLresponse>>" to include the full validation cURL response.
+        # Authorization = "{%{validationCURLresponse.token_type}%} {%{validationCURLresponse.access_token}%}"
+        # Authorization = "{%{validationCURLresponse.tokenType}%} {%{validationCURLresponse.authToken}%}"
+        # NOTE : Add "{%{validationCURLresponse}%}" to include the full validation cURL response.
         #        This means that if the validation cURL returns an Auth token or a Bearer token in plain/text,
         #        the entire response will be directly used as the value of the `Authorization` header.
 
         
         # === For JWTBearer (auto-generated): Uncomment if needed ===
-        # Authorization = "Bearer <<JWTBearer>>"
+        # Authorization = "Bearer {%{JWTBearer}%}"
         
         # === For JWTBearer (manual with validationCURL): Uncomment if needed ===
-        # Authorization = "<<validationCURLresponse.token>>"
+        # Authorization = "{%{validationCURLresponse.token}%}"
         
         # Specify additional HTTP headers as key-value pair in the format: key = value.
         # Example:
@@ -286,14 +292,14 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # Query Parameters:
     # - Define query parameters for GET requests or additional parameters for other request types.
     # - Specify parameters as key-value pair in the format: key = value.
-    # - You can use dynamic variables such as <<fromdate>> and <<todate>>.
+    # - You can use dynamic variables such as {%{fromdate}%} and {%{todate}%}.
     
     # When using certain credential types (e.g., AWS signature), the order of query parameters may 
     # impact request signing. Before aligning the query parameters, refer to the respective API’s 
     # documentation to ensure correct formatting and avoid potential ordering issues.
 
     [Request.Params]
-        Params = '{"Arn": "<<Params>>"}'
+        Params = '{"Arn": "{%{Params}%}"}'
 
     # Request Data Section:
     # - Specify the request body based on the ContentType.
@@ -318,7 +324,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
         # - Used with ContentType = "application/json", "text/html", "text/plain", or "application/xml".
         # - Define raw data as JSON or plain text.
         [Request.Data.Raw]
-        Value = '{"key": "<<Raw>>", "field1": "Value1"}'
+        Value = '{"key": "{%{Raw}%}", "field1": "Value1"}'
 
         # Binary Body:
         # - Used with ContentType = "application/octet-stream".
@@ -332,9 +338,9 @@ The purpose of this task is to automate API requests. It allows users to make AP
             - Headers: Define additional HTTP headers required for the request.
             - Params: Specify query parameters or additional request parameters.
             - Data: Populate request body fields based on the selected ContentType.
-        - You can access the 'FromDate' and 'ToDate' using '<<fromdate>>' and '<<todate>>'
-        - You can access dynamic variables from the input file or application configuration using <<inputfile.FieldName>> or <<application.FieldName>>.
-        - Example: <<application.SubscriptionID>> can be used to include a subscription ID in the request.
+        - You can access the 'FromDate' and 'ToDate' using '{%{fromdate}%}' and '{%{todate}%}'
+        - You can access dynamic variables from the input file or application configuration using {%{inputfile.FieldName}%} or {%{application.FieldName}%}.
+        - Example: {%{application.SubscriptionID}%} can be used to include a subscription ID in the request.
 
 4. ResponseConfigFile **(OPTIONAL)**
     'Response' is a configuration object used to specify how to process HTTP responses based on defined conditions. 'Response' is optional, meaning you can skip passing it as input to the task or leave it as an empty file if necessary.The ResponseConfigFile is required only if you need to manipulate the response output.
@@ -381,7 +387,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # For example, if the response status code is 200, then proceed with appending columns to the output.
     # 'ConditionField' is not mandatory; you can leave it as an empty string.
     # In that case, it won't check any condition and will directly append the columns to the output.
-    ConditionField = "<<response.status_code>>"
+    ConditionField = "{%{response.status_code}%}"
     ConditionValue = "200"
 
     [Response.RuleSet.AppendColumn]
@@ -395,22 +401,22 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # Example
     # Status = "AccountDisabled" 
 
-    # You can add fields from the input file to the output using the "inputfile." prefix inside "<<>>".
+    # You can add fields from the input file to the output using the "inputfile." prefix inside "{%{}%}".
     # 'inputfile' refers to the input file for the task, "InputFile.json".
     # Example
-    # Arn = "<<inputfile.Arn>>"  
+    # Arn = "{%{inputfile.Arn}%}"  
 
     # To access a specific value from the array, use the index (e.g., "owners[0]" for the first element). 
-    # To access the entire array, use [] in place of the index (e.g., "<<inputfile.owners[].name>>").
+    # To access the entire array, use [] in place of the index (e.g., "{%{inputfile.owners[].name}%}").
     # Example
-    # Owners = "<<inputfile.Owners[].name>>"  
+    # Owners = "{%{inputfile.Owners[].name}%}"  
 
-    # You can add fields from the request config to the output using the "request." prefix inside "<<>>".
+    # You can add fields from the request config to the output using the "request." prefix inside "{%{}%}".
     # 'request' refers to the input file for the task, "RequestConfigFile.toml".
     # Example
-    # URL = "<<request.URL>>"      
+    # URL = "{%{request.URL}%}"      
 
-    # You can add fields from the raw API response using the "response." prefix inside "<<>>".
+    # You can add fields from the raw API response using the "response." prefix inside "{%{}%}".
     # 'response' contains the following fields:
     # { 
     #     "url": "request URL",
@@ -426,57 +432,57 @@ The purpose of this task is to automate API requests. It allows users to make AP
     #     ]
     # }
     # Example
-    # StatusCode = "<<response.status_code>>"  
+    # StatusCode = "{%{response.status_code}%}"  
 
-    # You can reference fields from the JSON response body using the "response.body." prefix within "<<>>". 
-    # To access a field in a JSON object or array, simply use "<<response.body.ID>>". 
+    # You can reference fields from the JSON response body using the "response.body." prefix within "{%{}%}". 
+    # To access a field in a JSON object or array, simply use "{%{response.body.ID}%}". 
     # If the response body is an array (e.g., [{}, {}]), this query will apply to all objects in the array.
     # Example
-    # ID = "<<response.body.ID>>"       
+    # ID = "{%{response.body.ID}%}"       
 
     # Condition for the 'Pagination' action
     [Response.RuleSet.PaginationCondition]
     # Specify conditions for triggering pagination actions
     # MAKE SURE : Pagination will stop only when the specified codition gets matched.
     # Example:
-    #   ConditionField = "<<response.body.entries>>"
+    #   ConditionField = "{%{response.body.entries}%}"
     #   ConditionValue = ""
     ConditionField = ""
     ConditionValue = ""
 
     [Response.RuleSet.Pagination]
         # ------------------------------------------------------------------------------
-        # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING <<response.body.key>> ,  <<response.headers.key>>, 
-        # <<response.headers.key>>,  <<response.cookies.key>>
+        # MAKE SURE YOU ACCESS ALL THE RESPONSE DATA USING {%{response.body.key}%} ,  {%{response.headers.key}%}, 
+        # {%{response.headers.key}%},  {%{response.cookies.key}%}
         # ------------------------------------------------------------------------------
         # In the below parameters, you can access all the field mentioned in 'Response.RuleSet.AppendColumn.Fields'.
-        # In addition to that, you can also access <<fromdate>> and <<todate>>.
+        # In addition to that, you can also access {%{fromdate}%} and {%{todate}%}.
         # All 'Pagination' fields should be  specifed as key-value pair in the format: key = value.
         URL = ""  # Specify the API endpoint.
         
         [Response.RuleSet.Pagination.Header]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For Query Params
         [Response.RuleSet.Pagination.Params]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For URLEncoded data
         [Response.RuleSet.Pagination.Data.URLEncoded]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For FormData 
         [Response.RuleSet.Pagination.Data.FormData]
         # Example:
-        # pageToken = "<<response.body.nextPageToken>>"
+        # pageToken = "{%{response.body.nextPageToken}%}"
 
         # For Raw data
         [Response.RuleSet.Pagination.Data.Raw]
         # Example:
-        # Value = '{"pageToken": "<<response.body.nextPageToken>>"}'
+        # Value = '{"pageToken": "{%{response.body.nextPageToken}%}"}'
 
         # For FormData 
         [Response.RuleSet.Pagination.Data.Binary]
@@ -513,6 +519,20 @@ The purpose of this task is to automate API requests. It allows users to make AP
     - This field is required only when this task is not acting as task1 in the rule.
     - Generally when the previous task has 'LogFile' it will pass that log file to this task and If the 'LogFile' is empty, it will process 'ExecuteHttpRequest' task else will check other required inputs exist if they do not will simply pass this previous task 'LogFile' to 'ExecuteHttpRequest' task 'LogFile'.
 
+9. UseSyntheticData **(OPTIONAL)**
+    - This field is optional. If you want to use synthetic data instead of making actual API calls, set this field to `true`. When set to `true`, the task will skip executing the API requests and will directly return the contents of the `SyntheticDataFile` as the output. If this field is not set or is set to `false`, the task will proceed with normal execution and make the API calls as defined in the `RequestConfigFile`.
+
+10. SyntheticDataFile **(OPTIONAL)**
+    - This file is used to provide synthetic data as output when `UseSyntheticData` is set to `true`. The contents of this file will be returned as the output of the task instead of executing the API requests. If `UseSyntheticData` is not set or is set to `false`, this input will have no effect on the task, and the task will execute normally by making API calls based on the `RequestConfigFile`.
+
+11. ValidateFlow **(OPTIONAL)**
+    - This field is optional. If you want to validate the input data without executing the API requests, set this field to `true`. When set to `true`, the task will only validate the input data based on the provided configurations (such as `InputFileValidationConfig`) and will not proceed with making any API calls. If this field is not set or is set to `false`, the task will proceed with normal execution, which includes validating the input data and making API calls as defined in the `RequestConfigFile`.
+
+12. DisableLogging **(OPTIONAL)**
+    - This field is optional. If you want to disable logging for this task, set this field to `true`. When set to `true`, the task will skip all logging activities, meaning that no request or response details will be recorded in the log files. If this field is not set or is set to `false`, the task will perform logging as usual, capturing all relevant details of the API requests and responses in the log files for debugging and auditing purposes.
+
+13. OutputFileName **(OPTIONAL)**
+    - This field is optional. It allows you to specify a custom name for the output file generated by the task, without including the file extension. If this field is not provided, the default name 'OutputFile' will be used for the output file. The actual file extension will be determined based on the content type of the response or the configuration specified in the `RequestConfigFile`. For example, if you set `OutputFileName` to "API_Response" and the response content type is JSON, the output file will be named "API_Response.json". If `OutputFileName` is not set, the output file will be named "OutputFile" with the appropriate extension based on the response content type.
 
 ### **OutputsSection:**
 1. OutputFile

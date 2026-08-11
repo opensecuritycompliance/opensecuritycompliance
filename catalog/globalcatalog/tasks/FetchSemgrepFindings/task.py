@@ -370,7 +370,7 @@ class Task(cards.AbstractTask):
         findings_df['formatted_findings'] = findings_df.apply(lambda x: {
             "System": "semgrep",
             "Source": "compliancecow",
-            "ResourceID": "N/A",
+            "ResourceID": x['repository.name'],
             "ResourceName": x['repository.name'],
             "ResourceType": "Repository",
             "ResourceLocation": "N/A",
@@ -425,7 +425,7 @@ class Task(cards.AbstractTask):
                 code_summary_list.append({
                     "System": "semgrep",
                     "Source": "compliancecow",
-                    "ResourceID": "N/A",
+                    "ResourceID": project,
                     "ResourceName": project,
                     "ResourceType": "Repository",
                     "ResourceLocation": "N/A",
@@ -486,7 +486,7 @@ class Task(cards.AbstractTask):
             code_summary_list.append({
                 "System": "semgrep",
                 "Source": "compliancecow",
-                "ResourceID": "N/A",
+                "ResourceID": project,
                 "ResourceName": project,
                 "ResourceType": "Repository",
                 "ResourceLocation": "N/A",
@@ -531,7 +531,7 @@ class Task(cards.AbstractTask):
                 supply_chain_summary_list.append({
                     "System": "semgrep",
                     "Source": "compliancecow",
-                    "ResourceID": "N/A",
+                    "ResourceID": project,
                     "ResourceName": project,
                     "ResourceType": "Repository",
                     "ResourceLocation": "N/A",
@@ -592,7 +592,7 @@ class Task(cards.AbstractTask):
             supply_chain_summary_list.append({
                 "System": "semgrep",
                 "Source": "compliancecow",
-                "ResourceID": "N/A",
+                "ResourceID": project,
                 "ResourceName": project,
                 "ResourceType": "Repository",
                 "ResourceLocation": "N/A",

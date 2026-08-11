@@ -20,6 +20,8 @@ class Task(cards.AbstractTask):
         self.previous_log_data = []
         previous_log_file_url = ""
         data_file_url = ""
+        column_jq_expression = ""
+        row_jq_expression = ""
         output_file_name = ""
 
         if cowdictutils.is_valid_key(self.task_inputs.user_inputs, "LogFile"):

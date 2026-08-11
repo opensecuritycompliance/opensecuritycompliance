@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import logging
 import hashlib
-from compliancecowcards.utils import cowconstants, cowwsutils, cowdictutils
+from compliancecowcards.utils import cowconstants, cowwsutils, cowdictutils, wsutils
 
 import os
 import json
@@ -46,12 +46,16 @@ def savefile(bucket_name, file_name, file_content, header):
         "FileContent": file_content
     }
 
+
+    
+
     urlPath = cowconstants.COWStorageServiceURL+"/upload"
     # logging.info("POST_REQUEST", url=urlPath, reqData=req_body, header=header)
-    response = requests.post(urlPath, json=req_body,
-                             headers=cowwsutils.headerbuilder(header))
+    response_text = wsutils.post(path=urlPath, data=req_body, header=header)
+    # response = requests.post(urlPath, json=req_body,
+    #                          headers=cowwsutils.headerbuilder(header))
 
-    if response.status_code == 200:
+    if response_text:
         return {"message": "Successfully uploaded"}
     return {"error": "Cannot upload the file"}
 

@@ -1197,15 +1197,6 @@ class Task(cards.AbstractTask):
             return {"Error": error}
         return {"LogFile": log_file_path}
 
-    def is_valid_url(self, url):
-        try:
-            result = urllib.parse.urlparse(url)
-            if not all([result.scheme, result.netloc]):
-                return False
-            return True
-        except ValueError as e:
-            return False
-
     def get_extension(self, file_path):
         try:
             file_extension = os.path.splitext(file_path)[1]
@@ -1231,17 +1222,14 @@ class Task(cards.AbstractTask):
         elif not isinstance(data_file_path, str):
             unsupported_str_fields.append("InputFile1")
         else:
-            if not self.is_valid_url(data_file_path):
-                invalid_file_paths.append("InputFile1")
-            else:
-                extension = self.get_extension(data_file_path)
-                if extension != ".json":
+            extension = self.get_extension(data_file_path)
+            if extension != ".json":
 
-                    error_list.append(
-                        {
-                            "Error": f"'InputFile1' extension - '{extension}' is not supported. Please upload a file with the '.json' extension."
-                        }
-                    )
+                error_list.append(
+                    {
+                        "Error": f"'InputFile1' extension - '{extension}' is not supported. Please upload a file with the '.json' extension."
+                    }
+                )
 
         # Validate TransformConfigFile
         toml_file_path = task_inputs.user_inputs.get("TransformConfigFile")
@@ -1250,16 +1238,13 @@ class Task(cards.AbstractTask):
         elif not isinstance(toml_file_path, str):
             unsupported_str_fields.append("TransformConfigFile")
         else:
-            if not self.is_valid_url(toml_file_path):
-                invalid_file_paths.append("TransformConfigFile")
-            else:
-                extension = self.get_extension(toml_file_path)
-                if extension != ".toml":
-                    error_list.append(
-                        {
-                            "Error": f"'TransformConfigFile' extension - '{extension}' is not supported. Please upload a file with the '.toml' extension."
-                        }
-                    )
+            extension = self.get_extension(toml_file_path)
+            if extension != ".toml":
+                error_list.append(
+                    {
+                        "Error": f"'TransformConfigFile' extension - '{extension}' is not supported. Please upload a file with the '.toml' extension."
+                    }
+                )
 
         if empty_attrs:
             error_list.append({"Error": f"Empty input(s): {', '.join(empty_attrs)}"})

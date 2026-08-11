@@ -4,7 +4,7 @@ import logging
 import os
 import json
 import re
-from typing import Tuple
+from typing import Tuple, Optional
 from google.auth.exceptions import GoogleAuthError
 from google.api_core.exceptions import GoogleAPIError
 from google.auth.transport.requests import Request
@@ -14,6 +14,7 @@ from google.oauth2 import service_account
 from google.cloud import bigquery
 from compliancecowcards.utils import cowdictutils
 import requests
+import urllib.parse
 
 REPOSITORIES = "https://console.cloud.google.com/artifacts/docker/{project_name}/{region}/{asset_name}?project={project_name}"
 PROJECTS = "https://console.cloud.google.com/welcome?project={asset_name}"
@@ -173,6 +174,43 @@ class GCPConnector:
                         return False, "Invalid 'UserEmail'"
             return False, "Invalid 'UserEmail' or 'ServiceAccountKeyFile'"
 
+    def validate_user_email(
+        self, scope: Optional[str] = "https://www.googleapis.com/auth/cloud-platform"
+    ) -> tuple[bool, str]:
+        """
+        Validates if the impersonated user email exists and has the required Google Sheets permissions.
+        """
+        try:
+
+            credentials, error = self.create_config(scope)
+            if error:
+                return False, error
+
+            credentials = credentials.with_subject(
+                self.user_defined_credentials.google_work_space.user_email
+            )
+            credentials.refresh(Request())
+            return True, ""
+
+        except GoogleAuthError as e:
+            logging.exception(
+                "An exception occurred while validating user email: %s", str(e)
+            )
+            if len(e.args) >= 1:
+                try:
+                    if (
+                        isinstance(e.args[1], dict)
+                        and e.args[1].get("error_description")
+                        == "Invalid email or User ID"
+                    ):
+                        return (
+                            False,
+                            "User email does not exist or lacks domain-wide delegation.",
+                        )
+                except Exception:
+                    pass
+            return False, f"Failed to validate user email: {str(e)}"
+
     def create_config(self, scope: str) -> tuple[service_account.Credentials, str]:
         try:
             service_account_json_key_decoded = base64.b64decode(
@@ -200,9 +238,9 @@ class GCPConnector:
             if err:
                 return None, err
             token_source.refresh(Request())
-            token_source._subject = (
-                self.user_defined_credentials.google_work_space.user_email
-            )
+            # token_source._subject = (
+            #     self.user_defined_credentials.google_work_space.user_email
+            # )
             service = build("cloudresourcemanager", "v1", credentials=token_source)
             request = service.projects().list()
             response = request.execute()
@@ -773,3 +811,696 @@ class GCPConnector:
             query_parameters=query_parameters_formatted
         )
         return job_config
+
+    # Google Sheets API Methods
+    def _get_sheets_headers(self) -> Tuple[dict, str]:
+        """
+        Get HTTP headers with Bearer token for Google Sheets API.
+
+        Returns:
+            Tuple[headers_dict, None] on success
+            Tuple[None, error_message] on failure
+        """
+        try:
+            scope = "https://www.googleapis.com/auth/spreadsheets"
+            credentials, error = self.create_config(scope)
+            if error:
+                return None, error
+
+            credentials = credentials.with_subject(
+                self.user_defined_credentials.google_work_space.user_email
+            )
+            credentials.refresh(Request())
+            access_token = credentials.token
+
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            }
+
+            return headers, None
+
+        except Exception as e:
+            logging.error(f"Error getting sheets headers: {str(e)}")
+            return None, f"Failed to get authorization headers: {str(e)}"
+
+    def create_spreadsheet(
+        self, title: str, tab_titles: list
+    ) -> Tuple[str, str, None] | Tuple[None, None, str]:
+        """
+        Create a new Google Spreadsheet with specified tabs.
+
+        Args:
+            title: Title of the spreadsheet
+            tab_titles: List of tab/sheet names to create
+
+        Returns:
+            Tuple[spreadsheet_id, spreadsheet_url, None] on success
+            Tuple[None, None, error_message] on failure
+        """
+        try:
+            headers, error = self._get_sheets_headers()
+            if error:
+                return None, None, error
+
+            # Prepare sheets array
+            sheets = []
+            for i, tab_title in enumerate(tab_titles):
+                sheets.append(
+                    {"properties": {"sheetId": i, "title": tab_title, "index": i}}
+                )
+
+            request_body = {"properties": {"title": title}, "sheets": sheets}
+
+            url = "https://sheets.googleapis.com/v4/spreadsheets"
+            response = requests.post(url, headers=headers, json=request_body)
+            response.raise_for_status()
+
+            data = response.json()
+            spreadsheet_id = data.get("spreadsheetId")
+            spreadsheet_url = data.get("spreadsheetUrl")
+
+            logging.info(f"✓ Spreadsheet created: '{title}' - {spreadsheet_url}")
+
+            return spreadsheet_id, spreadsheet_url, None
+
+        except requests.exceptions.RequestException as e:
+            error_msg = f"HTTP error creating spreadsheet: {str(e)}"
+            logging.error(error_msg)
+            return None, None, error_msg
+        except Exception as e:
+            error_msg = f"Error creating spreadsheet: {str(e)}"
+            logging.error(error_msg)
+            return None, None, error_msg
+
+    def _get_sheet_id(
+        self, spreadsheet_id: str, sheet_name: str
+    ) -> Tuple[int, None] | Tuple[None, str]:
+        """
+        Get the sheet ID from the sheet name.
+
+        Args:
+            spreadsheet_id: ID of the spreadsheet
+            sheet_name: Name of the sheet
+
+        Returns:
+            Tuple[sheet_id, None] on success
+            Tuple[None, error_message] on failure
+        """
+        try:
+            headers, error = self._get_sheets_headers()
+            if error:
+                return None, error
+
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}"
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+
+            spreadsheet_data = response.json()
+            for sheet in spreadsheet_data.get("sheets", []):
+                if sheet["properties"]["title"] == sheet_name:
+                    return sheet["properties"]["sheetId"], None
+
+            return None, f"Sheet '{sheet_name}' not found"
+
+        except Exception as e:
+            error_msg = f"Error getting sheet ID: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+
+    def paste_csv_data(
+        self, spreadsheet_id: str, sheet_name: str, csv_content: str
+    ) -> Tuple[bool, None] | Tuple[None, str]:
+        """
+        Paste CSV data into a sheet using batchUpdate with pasteData.
+
+        Args:
+            spreadsheet_id: ID of the spreadsheet
+            sheet_name: Name of the sheet/tab
+            csv_content: Raw CSV string content
+
+        Returns:
+            Tuple[True, None] on success
+            Tuple[None, error_message] on failure
+        """
+        try:
+            headers, error = self._get_sheets_headers()
+            if error:
+                return None, error
+
+            sheet_id, error = self._get_sheet_id(spreadsheet_id, sheet_name)
+            if error:
+                return None, error
+
+            request_body = {
+                "requests": [
+                    {
+                        "pasteData": {
+                            "coordinate": {
+                                "sheetId": sheet_id,
+                                "rowIndex": 0,
+                                "columnIndex": 0,
+                            },
+                            "data": csv_content,
+                            "type": "NORMAL",
+                            "delimiter": ",",
+                        }
+                    }
+                ]
+            }
+
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}:batchUpdate"
+            response = requests.post(url, headers=headers, json=request_body)
+            response.raise_for_status()
+
+            logging.info(f"✓ CSV data pasted into '{sheet_name}'")
+            return True, None
+
+        except requests.exceptions.RequestException as e:
+            error_msg = f"HTTP error pasting CSV data: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+        except Exception as e:
+            error_msg = f"Error pasting CSV data: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+
+    def append_json_data(
+        self, spreadsheet_id: str, sheet_name: str, data_2d: list
+    ) -> Tuple[bool, None] | Tuple[None, str]:
+        """
+        Append JSON data to a sheet using values.append endpoint.
+
+        Args:
+            spreadsheet_id: ID of the spreadsheet
+            sheet_name: Name of the sheet/tab
+            data_2d: 2D array (list of lists) to append
+
+        Returns:
+            Tuple[True, None] on success
+            Tuple[None, error_message] on failure
+        """
+        try:
+            headers, error = self._get_sheets_headers()
+            if error:
+                return None, error
+
+            if isinstance(data_2d, dict) and "values" in data_2d:
+                request_body = data_2d
+            else:
+                request_body = {"values": data_2d}
+
+            encoded_sheet_name = urllib.parse.quote(sheet_name)
+            range_notation = f"'{encoded_sheet_name}'!A1"
+
+            url = (
+                f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/"
+                f"{range_notation}:append"
+            )
+
+            params = {
+                "valueInputOption": "USER_ENTERED",
+                "insertDataOption": "INSERT_ROWS",  # Appends to the bottom instead of overwriting
+            }
+
+            response = requests.post(
+                url,
+                headers=headers,
+                json=request_body,
+                params=params,
+            )
+
+            if response.status_code != 200:
+                error_msg = f"HTTP {response.status_code}: {response.text}"
+                logging.error(error_msg)
+                return None, error_msg
+
+            response.raise_for_status()
+
+            logging.info(f"✓ JSON data appended to '{sheet_name}'")
+            return True, None
+
+        except requests.exceptions.RequestException as e:
+            error_msg = f"HTTP error appending JSON data: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+        except Exception as e:
+            error_msg = f"Error appending JSON data: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+
+    def json_to_2d_array(self, json_data: list) -> list:
+        """
+        Convert JSON data (list of dicts) to 2D array with headers.
+
+        Args:
+            json_data: List of dictionaries
+
+        Returns:
+            2D array with headers as first row
+        """
+        if not json_data:
+            return []
+
+        # Get all unique keys
+        all_keys = set()
+        for record in json_data:
+            if isinstance(record, dict):
+                all_keys.update(record.keys())
+
+        headers = sorted(list(all_keys))
+        rows = [headers]
+
+        for record in json_data:
+            if isinstance(record, dict):
+                row = [str(record.get(key, "")) for key in headers]
+            else:
+                row = [str(record)]
+            rows.append(row)
+
+        return rows
+
+    def populate_spreadsheet(
+        self, spreadsheet_id: str, sheet_name: str, data_content: str, data_type: str
+    ) -> Tuple[str, None] | Tuple[None, str]:
+        """
+        Populate a spreadsheet with data (CSV or JSON).
+
+        Args:
+            spreadsheet_id: ID of the spreadsheet
+            sheet_name: Name of the sheet to populate
+            data_content: Raw file content (CSV or JSON string)
+            data_type: Either 'csv' or 'json'
+
+        Returns:
+            Tuple[spreadsheet_url, None] on success
+            Tuple[None, error_message] on failure
+        """
+        try:
+            if data_type.lower() == "csv":
+                success, error = self.paste_csv_data(
+                    spreadsheet_id, sheet_name, data_content
+                )
+                if error:
+                    return None, error
+
+            elif data_type.lower() == "json":
+                json_data = json.loads(data_content)
+                if not isinstance(json_data, list):
+                    json_data = [json_data]
+
+                data_2d = self.json_to_2d_array(json_data)
+                success, error = self.append_json_data(
+                    spreadsheet_id, sheet_name, data_2d
+                )
+                if error:
+                    return None, error
+
+            else:
+                return None, f"Unsupported data_type: {data_type}. Use 'csv' or 'json'."
+
+            # Get spreadsheet URL
+            headers, error = self._get_sheets_headers()
+            if error:
+                return None, error
+
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}"
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+
+            spreadsheet_url = response.json().get("spreadsheetUrl")
+            return spreadsheet_url, None
+
+        except json.JSONDecodeError as e:
+            error_msg = f"Invalid JSON content: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+        except Exception as e:
+            error_msg = f"Error populating spreadsheet: {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+
+    def format_spreadsheet_dynamically(
+        self,
+        spreadsheet_id: str,
+        tab_name: str,
+        formatted_data: list,
+        formatter_functions: str = "",
+    ) -> tuple[bool, str]:
+        """
+        Dynamically applies WRAP to long columns and AUTO-RESIZE to short columns.
+        """
+        try:
+            headers, error = self._get_sheets_headers()
+            if error:
+                return False, f"Failed to get headers: {error}"
+
+            sheet_id, error = self._get_sheet_id(spreadsheet_id, tab_name)
+            if error:
+                return False, f"Failed to get sheet ID: {error}"
+
+            CHARACTER_LIMIT = 50
+            long_columns = []
+            short_columns = []
+
+            funcs = (
+                [
+                    f.strip().replace(" ", "_").lower()
+                    for f in formatter_functions.split(",")
+                ]
+                if formatter_functions
+                else []
+            )
+            if not funcs:
+                funcs = ["fixed_header", "auto_resize", "wrap_columns"]
+
+            if not formatted_data:
+                return True, ""
+
+            num_columns = len(formatted_data[0])
+
+            for col_index in range(num_columns):
+                max_length = max(
+                    (
+                        len(str(row[col_index]))
+                        for row in formatted_data
+                        if col_index < len(row)
+                    ),
+                    default=0,
+                )
+
+                if max_length > CHARACTER_LIMIT:
+                    long_columns.append(col_index)
+                else:
+                    short_columns.append(col_index)
+
+            requests_payload = []
+
+            if "fixed_header" in funcs:
+                requests_payload.extend(
+                    [
+                        {
+                            "updateSheetProperties": {
+                                "properties": {
+                                    "sheetId": sheet_id,
+                                    "gridProperties": {"frozenRowCount": 1},
+                                },
+                                "fields": "gridProperties.frozenRowCount",
+                            }
+                        },
+                        {
+                            "repeatCell": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "startRowIndex": 0,
+                                    "endRowIndex": 1,
+                                },
+                                "cell": {
+                                    "userEnteredFormat": {
+                                        "backgroundColor": {
+                                            "red": 0.9,
+                                            "green": 0.9,
+                                            "blue": 0.9,
+                                        },
+                                        "textFormat": {"bold": True},
+                                    }
+                                },
+                                "fields": "userEnteredFormat(backgroundColor,textFormat)",
+                            }
+                        },
+                    ]
+                )
+
+            if "auto_resize" in funcs:
+                for col_index in short_columns:
+                    requests_payload.append(
+                        {
+                            "autoResizeDimensions": {
+                                "dimensions": {
+                                    "sheetId": sheet_id,
+                                    "dimension": "COLUMNS",
+                                    "startIndex": col_index,
+                                    "endIndex": col_index + 1,
+                                }
+                            }
+                        }
+                    )
+
+            if "wrap_columns" in funcs:
+                for col_index in long_columns:
+                    requests_payload.append(
+                        {
+                            "repeatCell": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "startRowIndex": 0,
+                                    "startColumnIndex": col_index,
+                                    "endColumnIndex": col_index + 1,
+                                },
+                                "cell": {"userEnteredFormat": {"wrapStrategy": "WRAP"}},
+                                "fields": "userEnteredFormat.wrapStrategy",
+                            }
+                        }
+                    )
+                    requests_payload.append(
+                        {
+                            "updateDimensionProperties": {
+                                "range": {
+                                    "sheetId": sheet_id,
+                                    "dimension": "COLUMNS",
+                                    "startIndex": col_index,
+                                    "endIndex": col_index + 1,
+                                },
+                                "properties": {"pixelSize": 300},
+                                "fields": "pixelSize",
+                            }
+                        }
+                    )
+
+            if requests_payload:
+                url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}:batchUpdate"
+                response = requests.post(
+                    url, headers=headers, json={"requests": requests_payload}
+                )
+                response.raise_for_status()
+
+            return True, ""
+
+        except Exception as e:
+            return False, f"Dynamic formatting error: {str(e)}"
+
+    def _get_drive_headers(self) -> Tuple[dict, str]:
+        """
+        Get HTTP headers with Bearer token for Google Drive API.
+        """
+        try:
+            scope = "https://www.googleapis.com/auth/drive"
+            credentials, error = self.create_config(scope)
+            if error:
+                return None, error
+
+            credentials = credentials.with_subject(
+                self.user_defined_credentials.google_work_space.user_email
+            )
+            credentials.refresh(Request())
+            access_token = credentials.token
+
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            }
+            return headers, None
+        except Exception as e:
+            logging.error(f"Error getting drive headers: {str(e)}")
+            return None, f"Failed to get authorization headers: {str(e)}"
+
+    def share_spreadsheet(
+        self, file_id: str, emails: list, role: str = "reader"
+    ) -> tuple[bool, str]:
+        """
+        Share the spreadsheet with a list of emails.
+        """
+        try:
+            headers, error = self._get_drive_headers()
+            if error:
+                return False, error
+
+            url = f"https://www.googleapis.com/drive/v3/files/{file_id}/permissions"
+
+            for email in emails:
+                email = email.strip()
+                if not email:
+                    continue
+                payload = {"type": "user", "role": role, "emailAddress": email}
+
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    params={
+                        "sendNotificationEmail": "true",
+                        "supportsAllDrives": "true",
+                    },
+                )
+                response.raise_for_status()
+
+            return True, ""
+        except requests.exceptions.RequestException as e:
+            error_msg = f"HTTP error sharing spreadsheet: {str(e)}"
+            logging.error(error_msg)
+            return False, error_msg
+        except Exception as e:
+            error_msg = f"Error sharing spreadsheet: {str(e)}"
+            logging.error(error_msg)
+            return False, error_msg
+
+    def get_folder_id_by_path(
+        self, folder_path: str, create_if_missing: bool = False, drive_id: str = "root"
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Resolves a folder path (e.g. 'Reports/Quarterly/Sample') to a Google Drive folder ID
+        by traversing the path level-by-level under the impersonated user's Drive.
+
+        Args:
+            folder_path: Slash-separated folder path (e.g. 'ParentFolder/SubFolder')
+            create_if_missing: If True, creates missing folders along the path.
+                               If False (default), stops and returns an error when a folder is not found.
+            drive_id: The Drive to search in. Use 'root' (default) for the user's My Drive,
+                      or pass a Shared Drive ID (e.g. '0AFxxxxxx') to search inside a Shared Drive.
+
+        Returns:
+            Tuple[folder_id, None] on success
+            Tuple[None, error_message] if a folder is not found (and create_if_missing=False) or on error
+        """
+        try:
+            scope = "https://www.googleapis.com/auth/drive"
+            credentials, err = self.create_config(scope)
+            if err:
+                return None, err
+
+            # Impersonate the configured user so we search/create inside their Drive,
+            # not the service account's own Drive.
+            credentials = credentials.with_subject(
+                self.user_defined_credentials.google_work_space.user_email
+            )
+            credentials.refresh(Request())
+
+            service = build("drive", "v3", credentials=credentials)
+
+            folder_names = [name for name in folder_path.strip("/").split("/") if name]
+            if not folder_names:
+                return (
+                    None,
+                    "Invalid folder path: path is empty or contains only slashes.",
+                )
+
+            # For Shared Drives, the traversal starts at the Shared Drive root (drive_id).
+            # For My Drive, drive_id is 'root'.
+            is_shared_drive = drive_id != "root"
+            parent_id = drive_id
+
+            for name in folder_names:
+                query = (
+                    f"name = '{name}' "
+                    f"and mimeType = 'application/vnd.google-apps.folder' "
+                    f"and trashed = false "
+                    f"and '{parent_id}' in parents"
+                )
+
+                list_kwargs = dict(
+                    q=query,
+                    fields="files(id, name)",
+                    includeItemsFromAllDrives=True,
+                    supportsAllDrives=True,
+                )
+                # 'corpora' must be set to 'drive' with a driveId when querying a Shared Drive
+                if is_shared_drive:
+                    list_kwargs["corpora"] = "drive"
+                    list_kwargs["driveId"] = drive_id
+
+                results = service.files().list(**list_kwargs).execute()
+                folders = results.get("files", [])
+
+                if folders:
+                    parent_id = folders[0]["id"]
+                elif create_if_missing:
+                    file_metadata = {
+                        "name": name,
+                        "mimeType": "application/vnd.google-apps.folder",
+                        "parents": [parent_id],
+                    }
+                    new_folder = (
+                        service.files()
+                        .create(body=file_metadata, fields="id", supportsAllDrives=True)
+                        .execute()
+                    )
+                    parent_id = new_folder.get("id")
+                    logging.info(f"Created missing folder '{name}' in Drive path.")
+                else:
+                    return None, (
+                        f"Folder '{name}' not found in the specified path '{folder_path}'. "
+                        f"Ensure the folder exists in the "
+                        f"{'Shared Drive' if is_shared_drive else 'My Drive'} of the configured user."
+                    )
+
+            return parent_id, None
+
+        except Exception as e:
+            error_msg = f"Error resolving folder path '{folder_path}': {str(e)}"
+            logging.error(error_msg)
+            return None, error_msg
+
+    def move_file_to_folder(
+        self, file_id: str, folder_id: str
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Moves a Google Drive file (e.g. a Spreadsheet) into the specified folder
+        by updating its parents.
+
+        Args:
+            file_id: The ID of the file (spreadsheet) to move
+            folder_id: The ID of the destination folder
+
+        Returns:
+            Tuple[True, None] on success
+            Tuple[False, error_message] on failure
+        """
+        try:
+            scope = "https://www.googleapis.com/auth/drive"
+            credentials, err = self.create_config(scope)
+            if err:
+                return False, err
+
+            credentials = credentials.with_subject(
+                self.user_defined_credentials.google_work_space.user_email
+            )
+            credentials.refresh(Request())
+
+            service = build("drive", "v3", credentials=credentials)
+
+            # Fetch current parents so we can remove them when adding the new one
+            file_metadata = (
+                service.files()
+                .get(fileId=file_id, fields="parents", supportsAllDrives=True)
+                .execute()
+            )
+            current_parents = ",".join(file_metadata.get("parents", []))
+
+            # Move: add new parent folder, remove existing parent(s)
+            service.files().update(
+                fileId=file_id,
+                addParents=folder_id,
+                removeParents=current_parents,
+                fields="id, parents",
+                supportsAllDrives=True,
+            ).execute()
+
+            logging.info(f"Moved file '{file_id}' to folder '{folder_id}'.")
+            return True, None
+
+        except Exception as e:
+            error_msg = (
+                f"Error moving file '{file_id}' to folder '{folder_id}': {str(e)}"
+            )
+            logging.error(error_msg)
+            return False, error_msg

@@ -20,7 +20,7 @@
 ### **InputsSection:**
 1. InputFile **(MANDATORY)**
     - This is a file containing an array of data with which the conditions must be checked from the ConditionConfig file
-    - To access data from InputFile in ConditionConfig file, use `<<inputfile.FieldName>>`
+    - To access data from InputFile in ConditionConfig file, use `{%{inputfile.FieldName}%}`
     
     **Sample InputFile:**
     ```json
@@ -81,8 +81,8 @@
 
     **Note:**
     For ConditionField, ConditionValue and ConditionFieldUpdates.PASS/FAIL fields:
-    - Use `<<inputfile.FieldName>>` or `{{inputfile.FieldName}}` to access data from InputFile
-    - Use `<<custominputs[index].FieldName>>` or `{{custominputs[index].FieldName}}` to access data from CustomInputs file.
+    - Use `{%{inputfile.FieldName}%}` or `{{inputfile.FieldName}}` to access data from InputFile
+    - Use `{%{custominputs[index].FieldName}%}` or `{{custominputs[index].FieldName}}` to access data from CustomInputs file.
     - All of the placeholders use JQ library to extract data. So you can also use placeholders like `{{custominputs[].FieldName}}` to extract the values of `"FieldName"` from all elements as a list
 
     ### **ConditionRules:**
@@ -93,8 +93,8 @@
     [[ConditionRules]]
         ConditionLabel = "check_patchable"
         Condition = "EQUALS"
-        ConditionField = "<<inputfile.isPatchable>>"
-        ConditionValue = true # Here you can specify the value from the data file similar to 'ConditionField'. Eg: "<<inputfile.title>>"
+        ConditionField = "{%{inputfile.isPatchable}%}"
+        ConditionValue = true # Here you can specify the value from the data file similar to 'ConditionField'. Eg: "{%{inputfile.title}%}"
     ```
     **Condition types for Condition field:**
     - EMPTY
@@ -147,19 +147,19 @@
     [[ConditionRules]]
         ConditionLabel = "cel_check"
         Condition = "CEL_CONDITION"
-        ConditionValue = "<<inputfile.isPatchable>> && <<inputfile.createdDate>> != ''"
+        ConditionValue = "{%{inputfile.isPatchable}%} && {%{inputfile.createdDate}%} != ''"
     ```
     **Note:**
     - You can give a CEL Expression as ConditionValue, and you can omit the 'ConditionField' completely in this case
-    - The fields that you access from InputFile or CustomInputs using `<<inputfile.FieldName>>` or `<<custominputs[index].InputName>>` must not contain spaces
-    - For example: `<<inputfile.Created date>>` is invalid. You can use the TransformData task to rename the field without spaces.
+    - The fields that you access from InputFile or CustomInputs using `{%{inputfile.FieldName}%}` or `{%{custominputs[index].InputName}%}` must not contain spaces
+    - For example: `{%{inputfile.Created date}%}` is invalid. You can use the TransformData task to rename the field without spaces.
 
     ### **Date Conditions:**
     ```toml
     [[ConditionRules]]
         ConditionLabel = "check_date"
         Condition = "FROM_DATE_OFFSET" 
-        ConditionField = "<<inputfile.createdDate>>"
+        ConditionField = "{%{inputfile.createdDate}%}"
         DateFormat = "%m/%d/%Y %H:%M" # refer the below section
         ConditionValue = "-30d" # not required for 'FROM_RULE_DATE, TO_RULE_DATE and RULE_DATE_RANGE' conditions
     ```
@@ -235,7 +235,7 @@
         - Example: `:-5d` - Assuming current date is: Aug 28 2024, this range considers any date on or before Aug 23 2024
 
     **Note:**
-    - For ConditionValue, you can also mention addition/subtraction expressions like `"<<inputfile.createdDate>> - 30d"` and `"<<inputfile.createdDate>> + 5d"`, to calculate date using data from InputFile
+    - For ConditionValue, you can also mention addition/subtraction expressions like `"{%{inputfile.createdDate}%} - 30d"` and `"{%{inputfile.createdDate}%} + 5d"`, to calculate date using data from InputFile
         - The left operand must be a date in the provided DateFormat, and the right operand must be of the 'Delta String Syntax' above
     - For '**Conditions based on Rule FromDate and ToDate**', you can ignore the ConditionValue field, as we will fetch them from the rule FromDate & ToDate
     
@@ -284,7 +284,7 @@
             # Values to update in OutputFile, if condition passes
             Result = "NOT_PATCHABLE"
             Reason = "Not patchable, but not created within 30 days"
-            RecordID = "<<custominputs[index].InputName>>"
+            RecordID = "{%{custominputs[index].InputName}%}"
             # Add more fields as needed
         [ConditionFieldUpdates.FAIL]
             # Values to update in OutputFile, if condition fails
@@ -300,7 +300,7 @@
 
     **Note:**
     - Each ConditionFieldUpdates must have values for both, or either of `ConditionFieldUpdates.PASS` and `ConditionFieldUpdates.FAIL` fields
-    - You can access InputFile (`<<inputfile.FieldName>>`) and CustomInputs (`<<custominputs[index].InputName>>`) in any of the fields in ConditionFieldUpdates.PASS and ConditionFieldUpdates.FAIL
+    - You can access InputFile (`{%{inputfile.FieldName}%}`) and CustomInputs (`{%{custominputs[index].InputName}%}`) in any of the fields in ConditionFieldUpdates.PASS and ConditionFieldUpdates.FAIL
     - You can add as many ConditionFieldUpdates as necessary
 
     ### **Reference Table for DateFormat:**
@@ -343,8 +343,8 @@
 
 3. CustomInputs: **(Optional)**
     - The 'CustomInputs' file contains any dynamic inputs that you may want to pass, to process the conditions. This file could be a static file, or it could be a file that comes from one of the previous tasks.
-    - To access data from CustomInputs file in ConditionConfig file, use `<<custominputs.FieldName>>`
-    - Since all placeholders use JQ expression, you can use placeholders like `<<custominputs[].Name>>` to extract the values of `"Name"` field from all elements as a list
+    - To access data from CustomInputs file in ConditionConfig file, use `{%{custominputs.FieldName}%}`
+    - Since all placeholders use JQ expression, you can use placeholders like `{%{custominputs[].Name}%}` to extract the values of `"Name"` field from all elements as a list
 
     **Sample CustomInputs file:**
 

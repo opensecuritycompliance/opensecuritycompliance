@@ -1,12 +1,13 @@
 from datetime import datetime
-from typing import Optional, Tuple, List, Any, Callable
+from typing import Optional, Tuple, List, Any, Callable, Dict, BinaryIO
 from abc import abstractmethod
 from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils, cowdictutils
-from compliancecowcards.structs import cowvo
+from compliancecowcards.structs import cowvo, cowsynthesizerservice_pb2
 import pandas as pd
 import uuid
 import os
 import minio
+from minio import Minio
 import json
 import tomli
 import tomli_w
@@ -15,9 +16,23 @@ import pathlib
 from posixpath import join as urljoin
 from typing_extensions import deprecated
 import io
+from io import BytesIO
 import pyarrow
 import pyarrow.parquet as pq
 import jmespath
+
+from minio.select import (
+            SelectRequest,
+            CSVInputSerialization,
+            JSONInputSerialization,
+            ParquetInputSerialization,
+            CSVOutputSerialization,
+            JSONOutputSerialization,
+            FILE_HEADER_INFO_USE,
+            JSON_TYPE_LINES,
+            
+        )
+
 
 # We'll give the compliancecow data library to user to connect with the endpoints in
 # compliancecow and continube(Need to discuss)
@@ -40,6 +55,161 @@ class AbstractTask(object):
         self._log_file_name = 'LogFile'
         self.prev_log_data = []
         pass
+
+    def get_minio_file_size_mb(self, file_url: str) -> Tuple[Optional[float], Optional[str]]:
+        """
+        Get the size of a file in MinIO without downloading it.
+        
+        Args:
+            file_url: MinIO URL of the file
+            
+        Returns:
+            Tuple of (file size in MB, error message if any)
+        """
+        try:
+            # Parse the MinIO URL to extract bucket and object name
+            # URL format: minio://bucket/path/to/file or similar
+            
+            # Check if we have access to MinIO client through parent class
+            if not hasattr(self, 'minio_client'):
+                return None, "MinIO client not available"
+            
+            # Extract bucket and object from URL
+            bucket_name, object_name, error = self.parse_minio_url(file_url)
+            if error:
+                return None, f"Error getting file size: {str(error)}"
+            
+            """ Get object stats from MinIO, so that we can get the meta data 
+            (like bucket_name, object_name, size) of the object without loading it. """
+            
+            minio_client = self.minio_client
+            if minio_client is None:
+                minio_client, error = cowfilestoreutils.get_minio_client_with_inputs(
+                    self.task_inputs)
+                if error and bool(error):
+                    return None, error
+            stat = minio_client.stat_object(bucket_name, object_name)
+            
+            # Convert size from bytes to MB
+            size_mb = stat.size / (1024 * 1024)
+            
+            return size_mb, None
+
+        except AttributeError as e:
+            return None, f"Configuration error: {e}"
+
+        except ValueError as e:
+            return None, f"Invalid input value: {e}"
+        
+        except Exception as e:
+            return None, f"Error getting file size: {str(e)}"
+    
+    def parse_minio_url(self, minio_url: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """
+        Parse MinIO URL to extract bucket and object path.
+        
+        Args:
+            minio_url: MinIO URL in format "minio://bucket/path/to/object"
+                      or your custom format
+        
+        Returns:
+            Tuple of (bucket_name, object_name, error_message)
+        
+        Example implementations based on common URL formats:
+        """
+
+        try:
+            # Format 1: http://cnminio:9000/<bucket_name>/<file_path>
+            if minio_url.startswith("http://cnminio:9000/"):
+                url_without_prefix = minio_url.replace("http://cnminio:9000/", "")
+                parts = url_without_prefix.split("/", 1)
+                """
+                    1st part - PORT
+                    2nd part - Bucket Name
+                    3rd part - File path
+
+                    we are returning 2nd and 3rd part (index - 1 and 2)
+                """
+                if len(parts) == 2:
+                    return parts[0], parts[1], None
+                else:
+                    return None, None, f"Invalid MinIO URL format: {minio_url}"
+            
+            # Format 2: https://localhost:9000/<bucket_name>/<file_path>
+            elif minio_url.startswith("https://localhost:9000/"):
+                url_without_prefix = minio_url.replace("https://localhost:9000/", "")
+                parts = url_without_prefix.split("/", 1)
+                """
+                    1st part - PORT
+                    2nd part - Bucket Name
+                    3rd part - File path
+
+                    we are returning 2nd and 3rd part (index - 1 and 2)
+                """
+                if len(parts) == 2:
+                    return parts[0], parts[1], None
+                else:
+                    return None, None, f"Invalid MinIO URL format: {minio_url}"
+            
+            # Format 3: <bucket_name>/<file_path> (relative path)
+            else:
+                parts = minio_url.split("/", 1)
+                if len(parts) == 2:
+                    return parts[0], parts[1], None
+                else:
+                    return None, None, f"Invalid MinIO URL format: {minio_url}"
+                
+        except ValueError as e:
+            return None, None, str(e)
+                        
+        except Exception as e:
+            return None, None, f"Error parsing MinIO URL: {str(e)}"
+    
+    def download_file_from_minio_as_stream(
+        self,
+        minio_url: str
+    ) -> Tuple[Optional[BinaryIO], Optional[str]]:
+        """
+        Download a file from MinIO as a stream object without loading 
+        the entire file into memory.
+        
+        Args:
+            minio_url: MinIO URL of the file to download
+        
+        Returns:
+            Tuple of (stream object, error message)
+            Stream object implements read() method for streaming consumption
+        """
+        try:
+            # Parse the MinIO URL to get bucket and object name
+            bucket_name, object_name, error = self.parse_minio_url(minio_url)
+            if error:
+                return None, error
+            
+            # Get object from MinIO as a stream
+            # The get_object method returns a urllib3.response.HTTPResponse object. It is a file-like streaming response, not the full file in memory
+            # Data is read lazily from the network when .read() or iteration is used,
+            # which supports streaming
+            
+            minio_client = self.minio_client
+            if minio_client is None:
+                minio_client, error = cowfilestoreutils.get_minio_client_with_inputs(
+                    self.task_inputs)
+                if error and bool(error):
+                    return None, error
+            response = minio_client.get_object(bucket_name, object_name)
+            
+            # Return the response object which can be read incrementally
+            return response, None
+        
+        except AttributeError as e:
+            return None, f"Configuration error: {e}"
+
+        except ValueError as e:
+            return None, f"Invalid input value: {e}"
+            
+        except Exception as e:
+            return None, f"Error downloading file as stream: {str(e)}"
 
     def upload_file_to_minio(self, file_content=None, file_name: str = None, content_type: str = None) -> Tuple[str, dict]:
         """
@@ -71,7 +241,7 @@ class AbstractTask(object):
             file_name=file_name, file_content=file_content, content_type=content_type)
 
         return absolute_file_path, error
-    
+
     def convert_and_upload_df_to_minio(
         self,
         df: pd.DataFrame = None,
@@ -82,7 +252,7 @@ class AbstractTask(object):
     ) -> Tuple[str, dict]:
         """
         Uploads the result after applying the convertion_func function on a DataFrame to MinIO.
-        
+
         ### Parameters:
         - df (pd.DataFrame): The DataFrame to upload.
         - convertion_func (function): A function that takes pd.DataFrame as argument, and returns file_content and error information if any, as a tuple.
@@ -98,12 +268,12 @@ class AbstractTask(object):
 
         if not file_name:
             return None, {"error": "File name cannot be empty. Please provide a valid file name for uploading."}
-            
+
         if cowdfutils.is_df_empty(df):
             return None, {"error": "DataFrame is empty. Please ensure the DataFrame contains data before uploading."}
-        
+
         file_name, _ = os.path.splitext(file_name)
-        
+
         try:
             file_content, error = convertion_func(df)
             if error:
@@ -115,9 +285,8 @@ class AbstractTask(object):
             file_name=f'{file_name}-{str(uuid.uuid4())}.{extension}',
             file_content=file_content,
             content_type=content_type)
-    
+
     def upload_df_as_parquet_file_to_minio(self, df: pd.DataFrame = None, file_name: str = None) -> Tuple[str, dict]:
-        
         """
         Uploads a DataFrame as a Parquet file to MinIO.
         ### Parameters:
@@ -127,7 +296,7 @@ class AbstractTask(object):
         - str: The absolute file path of the uploaded file.
         - dict: Dictionary containing error information if any, otherwise None.
         """
-        
+
         return self.convert_and_upload_df_to_minio(
             df=df,
             convertion_func=cowdfutils.df_to_parquet,
@@ -135,9 +304,8 @@ class AbstractTask(object):
             extension="parquet",
             content_type="application/parquet"
         )
-    
+
     def upload_df_as_json_file_to_minio(self, df: pd.DataFrame = None, file_name: str = None) -> Tuple[str, dict]:
-        
         """
         Uploads a DataFrame as a JSON file to MinIO.
         ### Parameters:
@@ -244,12 +412,12 @@ class AbstractTask(object):
 
         if not file_name:
             return None, {"error": "File name cannot be empty. Please provide a valid file name for uploading."}
-        
+
         if not isinstance(data, dict):
             return None, {'error': f"Data must be a dictionary, got '{type(data).__name__}' instead"}
-        
+
         file_name, _ = os.path.splitext(file_name)
-        
+
         try:
             file_content = tomli_w.dumps(data)
         except TypeError as e:
@@ -323,16 +491,16 @@ class AbstractTask(object):
             - Example return might look like: `{"Errors": [<value of 'error_data', appended to 'self.prev_log_data'>]}`
         - You can use any of the above methods to stop task/rule execution.
         """
-        
+
         if not log_file_name:
             log_file_name = self._log_file_name
-        
+
         if log_file_name == 'Error':
             return '', {'Error': str(error_data)}
-            
+
         if not isinstance(error_data, list):
             error_data = [error_data]
-            
+
         self.prev_log_data.extend(error_data)
 
         if log_file_name == 'Errors':
@@ -344,20 +512,20 @@ class AbstractTask(object):
         )
         if error:
             return '', {'error': f"Error while uploading {log_file_name} :: {error}"}
-            
+
         if logger:
+            # Optional logging
             logger.log_data({"event": "errors_logged",
                             "errors": json.dumps(error_data)})
 
         return file_url, None
-    
+
     def upload_log_file_panic(
         self,
         error_data: List[dict] | dict | str,
         logger: Optional['Logger'] = None,
         log_file_name: Optional[str] = ''
     ) -> dict:
-
         """
         Uploads Dict or a List[dict] as LogFile to MinIO.
         ### Parameters:
@@ -366,7 +534,7 @@ class AbstractTask(object):
         - log_file_name (str): The name of the file to be uploaded (Default: `'LogFile'`). Do NOT assign this parameter, unless you explicitly want to change LogFile's name, such as in an action/workflow task.
         ### Returns:
         - dict: Dictionary containing the uploaded LogFile's URL, in a ready to exit task format.
-        
+
         ### Note:
         - When `log_file_name` is "Error":
             - The function will stop execution and return an error
@@ -392,9 +560,9 @@ class AbstractTask(object):
                 # Other task code
         ```
         """
-        
+
         log_file_name = log_file_name if log_file_name else self._log_file_name
-        
+
         if log_file_name == 'Error':
             return {'Error': str(error_data)}
 
@@ -405,10 +573,9 @@ class AbstractTask(object):
             error_data, logger, log_file_name)
         if error:
             return error
-        return { log_file_name: file_url }
-        
+        return {log_file_name: file_url}
+
     def download_parquet_file_from_minio_as_df(self, file_url=None) -> Tuple[pd.DataFrame, dict]:
-        
         """
         Downloads a Parquet file from MinIO as a DataFrame.
         ### Parameters:
@@ -433,9 +600,8 @@ class AbstractTask(object):
             return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
 
         return df, None
-    
+
     def download_json_file_from_minio_as_dict(self, file_url=None) -> Tuple[dict, dict]:
-        
         """
         Downloads a JSON file from MinIO as a Python Dictionary.
         ### Parameters:
@@ -703,12 +869,317 @@ class AbstractTask(object):
 
         return "The following inputs: " + ", ".join(missing_inputs) + " is/are empty" if missing_inputs else ""
 
+    def sanitize_url(self, url: str) -> str:
+        """
+        Sanitize a URL input to prevent path traversal attacks.
+
+        Args:
+            url: URL to sanitize
+
+        Returns:
+            Sanitized URL
+        """
+        if not isinstance(url, str):
+            return str(url)
+
+        # Remove any path traversal attempts
+        sanitized = re.sub(r"\.\./", "", url)
+        return sanitized
+
+    def select_object_content_stream(
+        self,
+        file_url: str,
+        input_format: str,
+        output_format: str,
+        sql_expression: str = "SELECT * FROM S3Object" ,
+    ) -> tuple[bytes, dict | None]:
+        """
+        Stream-convert an object using MinIO select_object_content
+        Supported:
+        CSV / NDJSON → CSV / NDJSON 
+        """
+       
+        # if file_url.startswith("file://"):
+        #     return None, {"error": "select_object_content does not support local files"}
+        
+        minio_client = self.minio_client
+        if minio_client is None:
+            minio_client, error = cowfilestoreutils.get_minio_client_with_inputs(
+                self.task_inputs
+            )
+           
+            if error:
+                return None, error
+
+        # parse bucket & object from your MinIO URL style
+        bucket, object_name = cowfilestoreutils.parse_minio_url(file_url)
+        
+        
+        json_serialization = None
+        json_serialization = JSONInputSerialization()
+        object.__setattr__(json_serialization, "json_type", JSON_TYPE_LINES)
+        csv_serialization = CSVInputSerialization()
+        object.__setattr__(csv_serialization,"file_header_info",FILE_HEADER_INFO_USE)
+
+        input_map = {
+                    "csv": csv_serialization,
+                    "ndjson": json_serialization,
+                    }
+
+        output_map = {
+                    "csv": CSVOutputSerialization(),
+                    "ndjson": JSONOutputSerialization(),
+                }
+
+       
+        if input_format not in input_map or output_format not in output_map:
+            return None, {"error": "Unsupported format for select_object_content"}
+
+        request = SelectRequest(expression = sql_expression,
+            input_serialization=input_map[input_format],
+            output_serialization=output_map[output_format],
+        )
+
+        try:
+            result = minio_client.select_object_content(
+                bucket_name=bucket,
+                object_name=object_name,
+                request=request,
+            ) 
+            output = b""
+            for chunk in result.stream():
+                output += chunk
+                
+            return output, None        
+
+        except Exception as e:
+            return None, {"error": str(e)}
+
+
+class AbstractSynthesizer(object):
+    """ 
+        The user should extend their class from this, to implement the synthesizer.
+        They'll get the inputs specific to synthesizer cards.
+        We'll have common libraries to use within synthesizers
+    """
+
+    synthesizer_inputs: cowsynthesizerservice_pb2.SynthesizerV2
+
+    file_outputs: list
+    auth_token: str
+    header: dict
+
+    def __init__(self, synthesizer_inputs=None, file_outputs=None, auth_token=None, header=None) -> None:
+        self.synthesizer_inputs = synthesizer_inputs
+        self.auth_token = auth_token
+        self.header = header
+        if self.auth_token is None and self.synthesizer_inputs and self.synthesizer_inputs.auth_token:
+            self.auth_token = self.synthesizer_inputs.auth_token
+        if self.header is None:
+            self.header = {'Authorization': self.auth_token}
+        if file_outputs is None:
+            file_outputs = list()
+        self.file_outputs = file_outputs
+
+    def compliance_pct(self, output_files: list = None) -> dict:
+        return None
+
+    def compliance_status(self, output_files: list = None) -> dict:
+        return None
+
+    def get_compliance_info(self, output_files: list = None) -> dict:
+        return None
+
+    def upload_file(self, bucket_name=None, file_name=None, file_df: pd.DataFrame = pd.DataFrame(), meta_df: pd.DataFrame = pd.DataFrame(), fields_meta: dict = None, compliance_status=None, compliance_pct=0, compliance_weight=0):
+        """
+
+        we need to take care of file uploading, and we need to return the handle as an object like what we handle it in synthesizers
+        data_frame | file_byts, meta_data, field_meta
+
+        """
+
+        if not bucket_name:
+            bucket_name = "demo"
+
+        # filepath = domain + os.sep + plan_guid + os.sep + \
+        #     control_guid + os.sep + plan_exec_guid + \
+        #     os.sep + template_type + os.sep + evidence_id
+
+        domain_id, assessment_id, assessment_run_id, assessment_control_id, evidence_id = None, self.synthesizer_inputs.assessment_run_id, self.synthesizer_inputs.assessment_run_control_id, self.synthesizer_inputs.assessment_id, self.synthesizer_inputs.evidence_id
+
+        if not assessment_id:
+            assessment_id = str(uuid.uuid4())
+
+        if not assessment_run_id:
+            assessment_run_id = str(uuid.uuid4())
+
+        if not assessment_control_id:
+            assessment_control_id = str(uuid.uuid4())
+
+        if not domain_id:
+            domain_id = str(uuid.uuid4())
+
+        if not evidence_id:
+            evidence_id = str(uuid.uuid4())
+
+        regexp = re.compile(r'^.[A-Za-z]+$')
+        file_path_lib_obj = pathlib.Path(file_name)
+        extension = file_path_lib_obj.suffix
+        filename = file_name
+        if regexp.search(extension):
+            filename = file_path_lib_obj.stem
+
+        # filename, file_extension = os.path.splitext(
+        #     os.path.basename(file_name))
+
+        file_name = domain_id+"/"+assessment_id+"/"+assessment_control_id + \
+            "/"+assessment_run_id+"/evidence/"+evidence_id+"/"+filename
+
+        file_name_parquet = file_name+".parquet"
+        meta_file_name_parquet = file_name+"_meta__.parquet"
+        fields_meta_file_name = file_name+"_fields_meta__.json"
+
+        responsedata = cowsynthesizerservice_pb2.FileOutput(
+            compliance_pct__=compliance_pct, compliance_status__=compliance_status, compliance_weight__=compliance_weight)
+
+        # responsedata = {
+        #     "dataFileHash": "",
+        #     "metaDataFileHash": "",
+        #     "metaFieldFileHash": "",
+        #     "compliancePCT__": compliance_pct,
+        #     "complianceStatus__": compliance_status,
+        #     "complianceWeight__": compliance_weight,
+        # }
+
+        file_hash, file_path = None, None
+
+        if not file_df.empty:
+            file_byts = cowstorageserviceutils.df_to_parquet_bytes(file_df)
+            file_hash, file_path, error = cowfilestoreutils.upload_file(
+                bucket_name=bucket_name, file_name=file_name_parquet, file_content=file_byts)
+            if error:
+                responsedata.errors.append(cowsynthesizerservice_pb2.ErrorMessage(details=json.dumps(
+                    error), error="cannot upload the src file", error_code=500, error_type=cowsynthesizerservice_pb2.SYSTEM_DEFINED_ERROR, status="error"))
+                return error
+
+        responsedata.data_file_hash = file_hash
+        responsedata.data_file_path = file_path
+        responsedata.file_name = filename
+
+        # responsedata["dataFileHash"] = file_hash
+        # responsedata["dataFilePath"] = file_path
+        # responsedata["fileName"] = filename
+        # responsedata["file_name"] = filename
+
+        if not meta_df.empty:
+
+            meta_file_byts = cowstorageserviceutils.df_to_parquet_bytes(
+                meta_df)
+
+            meta_file_hash, meta_file_path, error = cowfilestoreutils.upload_file(
+                bucket_name=bucket_name, file_name=meta_file_name_parquet, file_content=meta_file_byts)
+
+            if not error:
+                responsedata.meta_data_file_hash = meta_file_hash
+                responsedata.meta_data_file_path = meta_file_path
+                # responsedata["metaDataFileHash"] = meta_file_hash
+                # responsedata["metaDataFilePath"] = meta_file_path
+
+        # TODO: As of now we're not allowing the user to define the column details. Need to evaluate to enable this
+
+        # if fields_meta and isinstance(fields_meta, dict) and bool(fields_meta):
+        #     fields_meta_byts = cowstorageserviceutils.dict_to_json_bytes(
+        #         fields_meta)
+
+        #     fields_meta_file_hash, fields_meta_meta_file_path, error = cowfilestoreutils.upload_file(
+        #         bucket_name=bucket_name, file_name=fields_meta_file_name, file_content=fields_meta_byts)
+
+        #     if not error:
+        #         responsedata.meta_field_file_hash = fields_meta_file_hash
+        #         responsedata.meta_field_file_path = fields_meta_meta_file_path
+                # responsedata["metaFieldFileHash"] = fields_meta_file_hash
+                # responsedata["metaFieldFilePath"] = fields_meta_meta_file_path
+
+        if error is None:
+            is_data_already_available = False
+            if self.file_outputs:
+                for idx, file_output in enumerate(self.file_outputs):
+                    if file_output.file_name == file_name:
+                        is_data_already_available = True
+                        responsedata.errors = file_output.errors
+                        self.file_outputs[idx] = responsedata
+                        break
+
+            if not is_data_already_available:
+                self.file_outputs.append(responsedata)
+
+        return error
+
+    def append_errors(self, file_name: str, error_msg: str, error_code: int = 400, error: str = None, error_data_as_df: pd.DataFrame = pd.DataFrame()) -> dict:
+        file_hash, file_path = None, None
+
+        if not error_data_as_df.empty:
+            file_byts = cowstorageserviceutils.df_to_parquet_bytes(
+                error_data_as_df)
+            file_hash, file_path, error = cowfilestoreutils.upload_file(
+                file_name=file_name+"_error.parquet", file_content=file_byts, bucket_name="demo")
+            if error:
+                return error
+        error_obj = cowsynthesizerservice_pb2.ErrorMessage(
+            details=error_msg, error=error, status="error", error_code=error_code, error_type=cowsynthesizerservice_pb2.USER_DEFINED_ERROR, file_hash=file_hash)
+
+        is_value_already_present = False
+
+        if self.file_outputs:
+            for idx, file_output in enumerate(self.file_outputs):
+                if file_output.file_name == file_name:
+                    file_output.errors.append(error_obj)
+                    self.file_outputs[idx] = file_output
+                    is_value_already_present = True
+                    break
+
+        # if is_proper_response_already_present:
+        #     return {'error': 'proper response already presented in the outputs'}
+
+        if not self.file_outputs:
+            self.file_outputs = []
+
+        if not is_value_already_present:
+            responsedata = cowsynthesizerservice_pb2.FileOutput(
+                file_name=file_name, errors=[error_obj])
+
+            self.file_outputs.append(responsedata)
+
+        return None
+
+    def download_file(self, hash=None, header=None):
+        return cowfilestoreutils.download_file(hash=hash, header=header)
+
+    @abstractmethod
+    def execute(self, synthesizer_inputs: dict):
+        """
+            please use upload_file method from the class
+        """
+
+        pass
+
+    def add_signal(self, df: pd.DataFrame = pd.DataFrame(), condition=None, values=None, actions=None):
+        """
+            Needs to discuss about the structure
+        """
+
+        if not df.empty:
+            pass
+
 
 class Logger(object):
     def __init__(self, log_file="TaskLogs.ndjson"):
         self.log_file = log_file
 
-    def log_data(self, data):
+    def log_data(self, data, disableLogging=False):
+
+        if disableLogging: return
+
         if not isinstance(data, dict):
             raise TypeError("Expected data to be a dictionary")
 
@@ -981,3 +1452,4 @@ class LogConfigManager:
                 return toml_data, ''
         else:
             return {}, f"The provided filepath: '{abs_filepath}' does not exist"
+

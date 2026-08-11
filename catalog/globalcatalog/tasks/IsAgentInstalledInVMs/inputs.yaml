@@ -20,5 +20,6 @@ userInputs:
   VMsExtensionsDataFilePath: <<MINIO_FILE_PATH>>
   ControlConfigFilePath: <<MINIO_FILE_PATH>>
   ControlName: 
+  OutputFileName: ""
 fromDate: "2023-11-07T06:16:42Z"
 toDate: "2023-11-07T06:16:42Z"

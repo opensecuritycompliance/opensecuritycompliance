@@ -4,6 +4,9 @@ userInputs:
   appPort: 0
   appURL: https://<instance>.service-now.com
   userDefinedCredentials:
-    SNOW:
+    OAuth:
+      ClientID: "$CLIENT_ID" 
+      ClientSecret: "$CLIENT_SECRET"
+    SNOW: 
       UserName: "$SERVICE_NOW_USERNAME"
       Password: "$SERVICE_NOW_PASSWORD"
