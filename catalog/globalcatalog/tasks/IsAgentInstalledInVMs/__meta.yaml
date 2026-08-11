@@ -40,6 +40,14 @@ inputs:
   defaultValue: ''
   showField: true
   required: true
+- name: OutputFileName
+  description: "Name of the output file that preserves the control name if not provided."
+  dataType: STRING
+  repeated: false
+  allowedValues: []
+  defaultValue: ''
+  showField: true
+  required: false
 outputs:
 - name: CompliancePCT_
   description: Compliance Percentage

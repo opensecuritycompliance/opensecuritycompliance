@@ -200,7 +200,8 @@ spec:
   - t7.Input.UserDataFile:=t4.Output.OutputFile
   - t7.Input.PermissionsMapFile:=*.Input.SalesforcePermissionsMapFile
   - t7.Input.EventLogFile:=Get Organization's EventLog.Output.OutputFile
+  - t7.Input.LogFile:=Get Organization's EventLog.Output.LogFile
   - '*.Output.CompliancePCT_:=Get Organization''s EventLog.Output.CompliancePCT_'
   - '*.Output.ComplianceStatus_:=Get Organization''s EventLog.Output.ComplianceStatus_'
-  - '*.Output.LogFile:=Get Organization''s EventLog.Output.LogFile'
+  - '*.Output.LogFile:=t7.Output.LogFile'
   - '*.Output.UsersUnusedPermissions:=t7.Output.OutputFile'

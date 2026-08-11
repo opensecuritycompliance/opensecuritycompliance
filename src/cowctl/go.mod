@@ -34,7 +34,7 @@ require (
 	applicationtypes v0.0.0-00010101000000-000000000000 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
-	github.com/apache/thrift v0.14.2 // indirect
+	github.com/apache/thrift v0.23.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -60,7 +60,7 @@ require (
 	github.com/jwalton/go-supportscolor v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -88,7 +88,7 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 	github.com/schollz/progressbar/v3 v3.13.1 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/sirupsen/logrus v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -99,12 +99,12 @@ require (
 	github.com/xitongsys/parquet-go-source v0.0.0-20240122235623-d6294584ab18 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

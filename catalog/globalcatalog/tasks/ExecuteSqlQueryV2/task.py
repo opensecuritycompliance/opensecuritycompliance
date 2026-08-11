@@ -1,7 +1,8 @@
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Literal, Optional, Union, Tuple
 from compliancecowcards.structs import cards
 from compliancecowcards.utils import cowdictutils, cowutils
 from datetime import datetime
+from compliancecowcards.utils import cowbqschema_generator
 import json
 import sqlite3
 import pandas as pd
@@ -12,7 +13,13 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import io
 import pathlib
-import re
+import sqlglot
+from sqlglot import exp
+from sqlglot.errors import ParseError
+import sqlalchemy
+from sqlalchemy.types import JSON
+from sqlalchemy.exc import SQLAlchemyError
+import duckdb
 
 logger = cards.Logger()
 
@@ -45,19 +52,8 @@ class Task(cards.AbstractTask):
         )
         custom_log_config_url = self.task_inputs.user_inputs.get("LogConfigFile")
 
-        self.proceed_if_log_exists = user_inputs.get("ProceedIfLogExists")
-        self.proceed_if_log_exists = (
-            self.proceed_if_log_exists
-            if self.proceed_if_log_exists is not None
-            else True
-        )
-
-        self.proceed_if_error_exists = user_inputs.get("ProceedIfErrorExists")
-        self.proceed_if_error_exists = (
-            self.proceed_if_error_exists
-            if self.proceed_if_error_exists is not None
-            else True
-        )
+        self.proceed_if_log_exists  = cowutils.str_to_bool(value=user_inputs.get("ProceedIfLogExists"),default_val=True)
+        self.proceed_if_error_exists = cowutils.str_to_bool(value=user_inputs.get("ProceedIfErrorExists"),default_val=True)
 
         log_config_manager, error = cards.LogConfigManager.from_minio_file_url(
             (
@@ -130,24 +126,69 @@ class Task(cards.AbstractTask):
         if validate_flow:
             return {"ValidationStatus": "Input data validated successfully"}
 
-        file1_df, error = self.load_file(file1_url)
+        file1_list, error = self.load_file(file1_url)
         if error:
             error_info = log_config_manager.get_error_message(
                 "ExcecuteSQLQuery.Validation.InputFile1.load_failed", {"error": error}
             )
             return self.upload_log_file({"Error": error_info})
 
-        file1_df = file1_df.map(self.stringify_complex_types)
-        file2_df = pd.DataFrame()
+        file2_list = []
         if file2_url:
-            file2_df, error = self.load_file(file2_url)
+            file2_list, error = self.load_file(file2_url)
             if error:
                 error_info = log_config_manager.get_error_message(
                     "ExcecuteSQLQuery.Validation.InputFile2.load_failed",
                     {"error": error},
                 )
                 return self.upload_log_file({"Error": error_info})
-            file2_df = file2_df.map(self.stringify_complex_types)
+                
+        result_df, error = self.run_duckdb(file1_list, file2_list, sql_query)
+        if error:
+            result_df, error = self.run_sqlite(file1_list, file2_list, sql_query, log_config_manager)
+            if error:
+                return self.upload_log_file({"Error": error})
+            
+        result = self.handle_output_file_upload(
+            result_df, output_file_format, log_config_manager
+        )
+        if prev_log_file and not result.get("LogFile"):
+            result["LogFile"] = prev_log_file
+        return result
+        
+    def run_duckdb(
+        self,
+        file1_list: list[dict],
+        file2_list: list[dict],
+        sql_query: str
+    ) -> tuple[pd.DataFrame, str]:
+        file1_df = pd.DataFrame(file1_list)
+        try:
+            with sqlalchemy.create_engine("duckdb:///:memory:").begin() as conn:
+                self.df_to_sql_with_schema(file1_df, conn, "inputfile1")
+                if file2_list:
+                    file2_df = pd.DataFrame(file2_list)
+                    self.df_to_sql_with_schema(file2_df, conn, "inputfile2")
+                    
+                result_df = pd.read_sql_query(sql_query, conn)
+                return result_df, ""
+        except (duckdb.Error, SQLAlchemyError) as e:
+            logger.log_data({
+                "warning": f"Unable to run SQL query using DuckDB, falling back to SQLite",
+                "details": str(e)
+            })
+            
+            return pd.DataFrame(), str(e)
+        
+    def run_sqlite(
+        self,
+        file1_list: list[dict],
+        file2_list: list[dict],
+        sql_query: str,
+        log_config_manager: cards.LogConfigManager
+    ) -> tuple[pd.DataFrame, str]:
+        file1_df = pd.json_normalize(file1_list).map(self.stringify_complex_types)
+        file2_df = pd.json_normalize(file2_list if file2_list else []).map(self.stringify_complex_types)
 
         try:
             with sqlite3.connect(":memory:") as conn:
@@ -162,13 +203,10 @@ class Task(cards.AbstractTask):
                 "ExcecuteSQLQuery.Validation.SQLConfig.query_execution_failed",
                 {"error": str(e)},
             )
-            return self.upload_log_file({"Error": error_info})
+            return pd.DataFrame(), error_info
 
         result_df = result_df.map(self.parse_json_string)
-        result = self.handle_output_file_upload(
-            result_df, output_file_format, log_config_manager
-        )
-        return result
+        return result_df, ""
 
     def validate_sql_config(self, config: dict) -> list[dict]:
         errors = []
@@ -217,39 +255,42 @@ class Task(cards.AbstractTask):
             else [{"Error": f"Failed to download LogFile: {error}"}]
         )
 
-    def load_file(self, file_path: str) -> Tuple[pd.DataFrame, Optional[str]]:
+    def load_file(self, file_path: str) -> Tuple[list[dict], Optional[str]]:
         """Load a JSON file into a DataFrame."""
         if not self.is_valid_url(file_path):
-            return pd.DataFrame(), "Invalid URL"
+            return [], "Invalid URL"
         if not file_path.endswith(".json"):
             return (
-                pd.DataFrame(),
+                [],
                 f"Expected JSON, got {os.path.splitext(file_path)[1]}",
             )
         data, error = self.download_json_file_from_minio_as_iterable(file_path)
         if error:
-            return pd.DataFrame(), error
-        return pd.json_normalize(data), None
+            return [], error
+        return data if isinstance(data, list) else [data], None
 
     def is_safe_sql_query(self, query: str) -> bool:
-        """Basic validation to prevent SQL injection."""
-        # Disallow dangerous keywords (case-insensitive)
-        dangerous_keywords = {
-            "drop",
-            "delete",
-            "truncate",
-            "update",
-            "insert",
-            "alter",
-            ";--",
-            "/*",
-            "*/",
-        }
-        query_lower = query.lower()
-        return not any(
-            re.search(rf"\b{re.escape(kw)}\b", query_lower, re.IGNORECASE)
-            for kw in dangerous_keywords
-        )
+        """Allow only non-mutating statements and reject explicit SQL comments."""
+    
+        if "/*" in query or "*/" in query or ";--" in query:
+            return False
+    
+        try:
+            statements = list(sqlglot.parse(query))
+        except ParseError:
+            return False
+    
+        if not statements:
+            return False
+    
+        for statement in statements:
+            if isinstance(
+                statement,
+                (exp.Delete, exp.Drop, exp.Insert, exp.Update, exp.Alter),
+            ):
+                return False
+    
+        return True
 
     def stringify_complex_types(self, value: any) -> Union[str, any]:
         """Convert complex types to JSON strings for SQLite compatibility."""
@@ -295,17 +336,21 @@ class Task(cards.AbstractTask):
         """
         response = {}
 
+        output_file_name = "OutputFile"
+        if self.task_inputs.user_inputs.get("OutputFileName", ""):
+            output_file_name = self.task_inputs.user_inputs.get("OutputFileName", "")
+
         if not result_df.empty:
 
             if output_file_format.upper() == "JSON":
                 # Convert DataFrame to JSON string
                 result_json = result_df.to_json(orient="records")
                 file_path, error = self.upload_iterable_as_json_file_to_minio(
-                    json.loads(result_json), "OutputFile"
+                    json.loads(result_json), output_file_name
                 )
 
             elif output_file_format.upper() == "CSV":
-                file_name = f"OutputFile-{uuid.uuid4()}"
+                file_name = f"{output_file_name}-{uuid.uuid4()}"
                 # Convert DataFrame to CSV and upload
                 csv_buffer = io.StringIO()
                 result_df.to_csv(csv_buffer, index=False)
@@ -448,3 +493,55 @@ class Task(cards.AbstractTask):
             return all([result.scheme, result.netloc])
         except Exception:
             return False
+            
+    def df_to_sql_with_schema(
+        self,
+        df: pd.DataFrame,
+        connector_engine,
+        table_name: str,
+        index = False,
+        if_exists: Literal["fail", "replace", "append"] = "replace",
+    ):
+        field_info_list = self.generate_schema(df, table_name)
+        
+        if field_info_list:
+            field_info = dict()
+            for val in field_info_list:
+                if cowdictutils.is_valid_key(val, "type"):
+                    if val["type"] == "RECORD" or val["mode"] == "REPEATED":
+                        field_info[val["name"]] = JSON
+
+            if bool(field_info):
+                df.to_sql(
+                    table_name,
+                    connector_engine,
+                    dtype=field_info,
+                    index=index,
+                    if_exists=if_exists,
+                )
+            else:
+                df.to_sql(
+                    table_name, connector_engine, index=index, if_exists=if_exists
+                )
+                
+    def generate_schema(self, df: pd.DataFrame, table_name: str):
+        schema = None
+        jsonData = df.to_dict(orient='records')
+        
+        generator = cowbqschema_generator.SchemaGenerator(
+            input_format='dict',
+            keep_nulls=True,
+            quoted_values_are_strings=True
+        )
+
+        schema_map, error_logs = generator.deduce_schema(jsonData)
+        if error_logs:
+            logger.log_data({
+                "warning": f"There were type mismatch errors while trying to generate schema for '{table_name}'",
+                "details": error_logs,
+            })
+        
+        schema = generator.flatten_schema(schema_map)
+        schema = json.loads(json.dumps(schema))
+        
+        return schema

@@ -2,5 +2,5 @@ PyYAML==6.0.3
 boto3==1.42.30
 requests==2.32.5
 jq==1.10.0
-PyJWT==2.10.1
+PyJWT==2.13.0
 cel-python==0.4.0

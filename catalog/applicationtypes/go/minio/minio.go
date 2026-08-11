@@ -327,12 +327,20 @@ func UploadCSVFile(fileName string, fileContent interface{}, systemInputs interf
 	}
 	folderName := GetFolderName(systemInputsVO.MetaData)
 
-	// https://github.com/gocarina/
-	csvBytes, err := gocsv.MarshalBytes(fileContent)
-	if err != nil {
-		return "", err
+	var reader *bytes.Reader
+
+	if rawBytes, ok := fileContent.([]byte); ok {
+		// fileContent is already []byte, skip MarshalBytes
+		reader = bytes.NewReader(rawBytes)
+	} else {
+		// https://github.com/gocarina/
+		// fileContent is a struct slice, marshal it
+		csvBytes, err := gocsv.MarshalBytes(fileContent)
+		if err != nil {
+			return "", err
+		}
+		reader = bytes.NewReader(csvBytes)
 	}
-	reader := bytes.NewReader(csvBytes)
 	objectName := folderName + fileName
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)

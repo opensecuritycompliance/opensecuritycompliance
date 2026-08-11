@@ -92,9 +92,9 @@ func (inst *TaskInstance) formatUser(users []*admin.User, googleWorkSpaceConnect
 
 	for _, user := range users {
 		formattedUser := User{
-			System:          "google_workspace",
+			System:          "googleworkspace",
 			Source:          "compliancecow",
-			ResourceType:    "user",
+			ResourceType:    "User",
 			ResourceName:    user.Name.FullName,
 			ResourceID:      user.Id,
 			Email:           user.PrimaryEmail,
@@ -118,10 +118,6 @@ func (inst *TaskInstance) formatUser(users []*admin.User, googleWorkSpaceConnect
 
 		} else {
 			formattedUser.AccountStatus = "Active"
-		}
-		// modifying resource type, if the resource type is amdin
-		if formattedUser.IsAdmin {
-			formattedUser.ResourceType = "Admin"
 		}
 
 		// fetch roles and privilege for user

@@ -17,8 +17,6 @@ class Task(cards.AbstractTask):
 
     def execute(self) -> dict:
 
-        self.set_log_file_name("Error")
-
         if error := self._check_inputs():
             return self.upload_log_file_panic(error)
 

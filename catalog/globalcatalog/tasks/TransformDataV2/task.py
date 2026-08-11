@@ -14,9 +14,11 @@ import numpy as np
 import pandas as pd
 import toml
 import io
+
 # As per the selected app, we're importing the app package
 from applicationtypes.nocredapp import nocredapp
 from compliancecowcards.structs import cards
+from compliancecowcards.utils import cowutils, cowplaceholderutils
 
 MINIO_FILE_PATH = "<<MINIO_FILE_PATH>>"
 
@@ -87,10 +89,9 @@ class Task(cards.AbstractTask):
             self.download_toml_file_from_minio_as_dict,
             default_log_config_filepath,
             default_context_data={
-                'fromdate': self.task_inputs.from_date.strftime('%d/%m/%Y %H:%M'),
-                'todate': self.task_inputs.to_date.strftime('%d/%m/%Y %H:%M')
-            }
-            
+                "fromdate": self.task_inputs.from_date.strftime("%d/%m/%Y %H:%M"),
+                "todate": self.task_inputs.to_date.strftime("%d/%m/%Y %H:%M"),
+            },
         )
         # Exit the task if failed to form LogConfigManager instance
         if error:
@@ -106,7 +107,12 @@ class Task(cards.AbstractTask):
             """ProceedIfLogExists determines whether to continue and complete the task if a previous log file is found.
             If true: The task continues and returns at the end.
             If false: The task stops immediately and returns the existing log file."""
-            if not user_inputs.get("ProceedIfLogExists", True):
+
+            proceed_if_log_exists = cowutils.str_to_bool(
+                value=user_inputs.get("ProceedIfLogExists"), default_val=True
+            )
+
+            if not proceed_if_log_exists:
                 return {"LogFile": log_file}
             else:
                 log_data, error = self.download_json_file_from_minio_as_dict(log_file)
@@ -132,7 +138,10 @@ class Task(cards.AbstractTask):
         """ProceedIfErrorExists determines whether to proceed with the next task when an error occurs.
             If true: The error is returned as a log file, and execution continues to the next task.
             If false: The rule flow stops immediately."""
-        proceed_if_error_exists = user_inputs.get("ProceedIfErrorExists", True)
+        proceed_if_error_exists = cowutils.str_to_bool(
+            value=user_inputs.get("ProceedIfErrorExists"), default_val=True
+        )
+
         self.set_log_file_name("LogFile" if proceed_if_error_exists else "Errors")
 
         # Perform basic validation
@@ -229,11 +238,13 @@ class Task(cards.AbstractTask):
         response = {}
         if not source_df.empty:
             upload_funcs = {
-            "PARQUET": self.upload_df_as_parquet_file_to_minio,
-            "CSV": self.upload_df_as_csv_file_to_minio,
-            "JSON": self.upload_df_as_json_file_to_minio
+                "PARQUET": self.upload_df_as_parquet_file_to_minio,
+                "CSV": self.upload_df_as_csv_file_to_minio,
+                "JSON": self.upload_df_as_json_file_to_minio,
             }
-            output_file_format = output_file_format.upper() if output_file_format else "PARQUET"
+            output_file_format = (
+                output_file_format.upper() if output_file_format else "PARQUET"
+            )
 
             if output_file_format in upload_funcs:
                 upload_func = upload_funcs[output_file_format]
@@ -516,7 +527,10 @@ class Task(cards.AbstractTask):
                                 axis=1,
                             )
 
-                elif isinstance(value, str) and "<<" in value and ">>" in value:
+                elif isinstance(value, str) and (
+                    ("<<" in value and ">>" in value)
+                    or ("{%{" in value and "}%}" in value)
+                ):
                     source_df[key] = source_df.apply(
                         lambda row: self.get_updated_value(
                             row,
@@ -562,15 +576,10 @@ class Task(cards.AbstractTask):
         """
         try:
             # Clean the source column name
-            source_col_clean = (
-                source_col.replace("inputfile1.", "")
-                .replace("InputFile1.", "")
-                .replace("<<", "")
-                .replace(">>", "")
-            )
+            source_col_clean = self.replace_placeholders_in_string(source_col)
 
             # Get the source value
-            source_value = self.get_updated_value(row, f"<<{source_col_clean}>>")
+            source_value = self.get_updated_value(row, f"{{%{{{source_col_clean}}}%}}")
 
             if source_value is None:
                 return False
@@ -585,15 +594,11 @@ class Task(cards.AbstractTask):
                 if condition.get("Value"):
                     check_value = condition.get("Value")
                 elif condition.get("Column"):
-                    compare_col_clean = (
+                    compare_col_clean = self.replace_placeholders_in_string(
                         condition.get("Column")
-                        .replace("inputfile1.", "")
-                        .replace("InputFile1.", "")
-                        .replace("<<", "")
-                        .replace(">>", "")
                     )
                     check_value = self.get_updated_value(
-                        row, f"<<{compare_col_clean}>>"
+                        row, f"{{%{{{compare_col_clean}}}%}}"
                     )
 
                 if check_value is not None:
@@ -748,13 +753,10 @@ class Task(cards.AbstractTask):
                         for item in check_value
                         if item is not None
                     )
-            
+
             # Handle case where check_value might be from another column (could be list)
             elif isinstance(source_value, list) and isinstance(check_value, str):
                 return check_value in source_value
-                
-
-           
 
         return False
 
@@ -836,14 +838,9 @@ class Task(cards.AbstractTask):
 
                         if config:
 
-                            new_col = (
+                            new_col = self.replace_placeholders_in_string(
                                 config.get("ColumnName", "")
-                                .replace("inputfile1.", "")
-                                .replace("InputFile1.", "")
-                                .replace("<<", "")
-                                .replace(">>", "")
                             )
-
                             # Update the column
                             source_df[new_col] = source_df.apply(
                                 lambda row: (
@@ -860,12 +857,8 @@ class Task(cards.AbstractTask):
 
                         if config:
 
-                            source = (
+                            source = self.replace_placeholders_in_string(
                                 config.get("Source", "")
-                                .replace("inputfile1.", "")
-                                .replace("InputFile1.", "")
-                                .replace("<<", "")
-                                .replace(">>", "")
                             )
 
                             # Update the column
@@ -886,12 +879,8 @@ class Task(cards.AbstractTask):
 
                         if config:
 
-                            new_col = (
+                            new_col = self.replace_placeholders_in_string(
                                 config.get("ColumnName", "")
-                                .replace("inputfile1.", "")
-                                .replace("InputFile1.", "")
-                                .replace("<<", "")
-                                .replace(">>", "")
                             )
 
                             regex = config.get("Regex", None)
@@ -915,19 +904,11 @@ class Task(cards.AbstractTask):
                 ):
                     for config in value:
                         if config:
-                            source = (
+                            source = self.replace_placeholders_in_string(
                                 config.get("Source", "")
-                                .replace("inputfile1.", "")
-                                .replace("InputFile1.", "")
-                                .replace("<<", "")
-                                .replace(">>", "")
                             )
-                            target = (
+                            target = self.replace_placeholders_in_string(
                                 config.get("Target", "")
-                                .replace("inputfile1.", "")
-                                .replace("InputFile1.", "")
-                                .replace("<<", "")
-                                .replace(">>", "")
                             )
 
                             # Fetch the source and target path values
@@ -939,13 +920,8 @@ class Task(cards.AbstractTask):
                             )
 
                 elif value and isinstance(value, str):
-                    clean_col = (
-                        value.replace("inputfile1.", "")
-                        .replace("InputFile1.", "")
-                        .replace("<<", "")
-                        .replace(">>", "")
-                        .strip()
-                    )
+                    clean_col = self.replace_placeholders_in_string(value).strip()
+
                     if clean_col in source_df.columns:
                         columns_to_rename[clean_col] = key
                     else:
@@ -1194,15 +1170,15 @@ class Task(cards.AbstractTask):
         Returns:
             pd.Series: Updated row.
         """
-        source_path_full = "<<" + source_path + ">>"
-        target_path_full = "<<" + target_path + ">>"
+        source_path_full = "{%{" + source_path + "}%}"
+        target_path_full = "{%{" + target_path + "}%}"
         source_value = self.get_updated_value(row, source_path_full)
         target_value = self.get_updated_value(row, target_path_full)
         if source_value is None or target_value is None:
             return row
 
         # Extract the key from the last part of the source_path
-        key = source_path.split(".")[-1].replace("<<", "").replace(">>", "")
+        key = self.replace_placeholders_in_string(source_path.split(".")[-1])
         if isinstance(target_value, list):
             if not operation_type:
                 operation_type = UpdateColumnType.APPEND.value
@@ -1229,7 +1205,7 @@ class Task(cards.AbstractTask):
         Returns:
             pd.Series: Updated row.
         """
-        keys = path.replace("<<", "").replace(">>", "").split(".")
+        keys = cowplaceholderutils.strip_placeholder_delimiters(path).split(".")
         current = row
         for key in keys[:-1]:
             if key not in current:
@@ -1260,7 +1236,9 @@ class Task(cards.AbstractTask):
             # If the value is not None, add it to the dictionary
             if value:
                 # Use a list split just once and calculate the index
-                key = modified_obj.split(".")[-1].replace("<<", "").replace(">>", "")
+                key = cowplaceholderutils.strip_placeholder_delimiters(
+                    (modified_obj).split(".")[-1]
+                )
                 data_dict[key] = value
         row[new_col] = data_dict
         return row
@@ -1281,17 +1259,16 @@ class Task(cards.AbstractTask):
         """
 
         # Clean up source and target strings once, not inside the loop
-        source_key = (
-            source.replace("inputfile1.", "")
-            .replace("InputFile1.", "")
-            .replace("<<", "")
-            .replace(">>", "")
+
+        source_key = self.replace_placeholders_in_string(source)
+
+        target_clean = self.replace_placeholders_in_string(
+            target.replace("Source.", "")
         )
-        target_clean = target.replace("Source.", "").replace("<<", "").replace(">>", "")
 
         # Get the source list
-        source_list = self.get_updated_value(row, f"<<{source_key}>>")
-        #source_list = self.get_updated_value(row, source_key)
+        source_list = self.get_updated_value(row, f"{{%{{{source_key}}}%}}")
+        # source_list = self.get_updated_value(row, source_key)
         row[new_col] = []
         if isinstance(source_list, list):
             row[new_col] = [
@@ -1299,7 +1276,6 @@ class Task(cards.AbstractTask):
                 for data in source_list
                 if isinstance(data, dict)
             ]
- 
 
         return row
 
@@ -1410,11 +1386,11 @@ class Task(cards.AbstractTask):
             return row
 
         # Extract the source column value from the row
-        source_col = source_col.replace("inputfile1.", "").replace("InputFile1.", "")
-        source_column_value = self.get_updated_value(row, source_col)
-        target_col = (
-            target_col.replace("<<", "").replace(">>", "").replace("inputfile2.", "")
-        )
+        source_col = self.replace_placeholders_in_string(source_col)
+        source_column_value = self.get_updated_value(row, f"{{%{{{source_col}}}%}}")
+
+        target_col = self.replace_placeholders_in_string(target_col)
+
         if not target_col in target_df.columns:
             self.err_msg = self.err_msg = f"Invalid column - '{target_col}'"
             raise ValueError
@@ -1425,14 +1401,14 @@ class Task(cards.AbstractTask):
             target_row = target_df[target_df[target_col] == source_column_value]
         else:
             target_row = target_df[
-                target_df[target_col].astype(str).str.lower() == str(source_column_value).lower()
+                target_df[target_col].astype(str).str.lower()
+                == str(source_column_value).lower()
             ]
 
         if not target_row.empty:
             # Retrieve the value from the map column
-            map_col = (
-                map_col.replace("<<", "").replace(">>", "").replace("inputfile2.", "")
-            )
+            map_col = self.replace_placeholders_in_string(map_col)
+
             if not map_col in target_row.columns:
                 self.err_msg = self.err_msg = f"Invalid column - '{map_col}'"
                 raise ValueError
@@ -1459,9 +1435,7 @@ class Task(cards.AbstractTask):
         try:
             if not condition:
                 return pd.DataFrame(), df, ""
-            clean_condition = (
-                condition.replace("<<", "").replace(">>", "").replace("inputfile1.", "")
-            )
+            clean_condition = self.replace_placeholders_in_string(condition)
             matched_df = df.query(clean_condition)
             unmatched_df = (
                 df[~df.index.isin(matched_df.index)] if not matched_df.empty else df
@@ -1476,6 +1450,24 @@ class Task(cards.AbstractTask):
             )
         except Exception as e:
             return pd.DataFrame(), pd.DataFrame(), str(e)
+
+    def replace_placeholders_in_string(self, template: str) -> str:
+        """Replace placeholders in a string template.
+
+        Args:
+            template: String containing placeholders to replace.
+        Returns:
+            str: String with placeholders replaced.
+        """
+        updated_template = cowplaceholderutils.strip_placeholder_delimiters(template)
+        result = (
+            updated_template.replace("inputfile1.", "")
+            .replace("InputFile1.", "")
+            .replace("InputFile2.", "")
+            .replace("inputfile2.", "")
+        )
+
+        return result
 
     def modify_string(self, key: str, regex_list: List[str]) -> str:
         """Remove specified patterns from a string.
@@ -1499,29 +1491,33 @@ class Task(cards.AbstractTask):
         Returns:
             str: Extracted value or empty string.
         """
-        matches = re.findall(r"<<([^>]*)>>", path)
+        placeholders = cowplaceholderutils.get_placeholders_in_template(path)
 
-        if not matches:
-            valid_syntax = "<<inputfile.column_name>>"
-            self.err_msg = f"Invalid syntax - {path}. Valid syntax - {valid_syntax}'"
-            raise ValueError
-        # If there's only one match and it fully matches the path (ignoring the '<<' and '>>')
-        if len(matches) == 1 and len(matches[0]) == len(path.strip("<<>>")):
-            return self.extract_value_from_data(row, path)
-        value = path
-        # Replace each match with its corresponding value from the data
-        for match in matches:
-            extracted = self.extract_value_from_data(row, match)
-            match = "<<" + match + ">>"
-            value = value.replace(match, str(extracted))
-        return value
+        if not placeholders:
+            valid_syntax = "{%{inputfile.column_name}%}"
+            self.err_msg = f"Invalid syntax - {path}. Valid syntax - {valid_syntax}"
+            raise ValueError(self.err_msg)
+
+        # Pass resolver without defining inner function
+        result, _, error = cowplaceholderutils._replace_placeholders(
+            template=path,
+            resolution_func=lambda key: self._resolve_placeholder(row, key),
+            strict=False,
+            placeholders=placeholders,
+        )
+
+        if error:
+            self.err_msg = error
+            raise ValueError(error)
+
+        return result
 
     def extract_value_from_data(self, row: pd.Series, path: str) -> str:
         """Extract value from a row using a dot-separated path.
 
         Args:
             row: Row to extract from.
-            path: Dot-separated path (e.g., '<<a.b[0].c>>').
+            path: Dot-separated path (e.g., '{%{a.b[0].c}%}').
 
         Returns:
             str: Extracted value.
@@ -1529,7 +1525,7 @@ class Task(cards.AbstractTask):
         Raises:
             ValueError: If the path is invalid.
         """
-        keys = path.strip("<<>>").split(".")
+        keys = cowplaceholderutils.strip_placeholder_delimiters(path).split(".")
         value = row
 
         for key in keys:
@@ -1542,7 +1538,7 @@ class Task(cards.AbstractTask):
                     raise IndexError
             else:
                 if isinstance(value, dict) or isinstance(value, pd.Series):
-                   value = value.get(key, "col_not_exist")
+                    value = value.get(key, "col_not_exist")
                 else:
                     value = "col_not_exist"
 
@@ -1555,6 +1551,15 @@ class Task(cards.AbstractTask):
             raise ValueError
 
         return value
+
+    def _resolve_placeholder(
+        self, row: pd.Series, key: str
+    ) -> Tuple[Optional[str], Optional[str]]:
+        try:
+            value = self.extract_value_from_data(row, key)
+            return value, None
+        except Exception as e:
+            return None, str(e)
 
     def is_nan(self, value: Any) -> bool:
         """Check if a value is NaN.

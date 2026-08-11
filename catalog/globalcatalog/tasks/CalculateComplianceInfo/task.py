@@ -6,6 +6,7 @@ import pathlib
 import pyarrow.parquet as pq
 import pyarrow as pa
 import os
+import json
 
 from datetime import datetime
 
@@ -51,7 +52,7 @@ class Task(cards.AbstractTask):
                         if file_extension == ".ndjson":
                             evidence_df = pd.read_json(data, lines=True, keep_default_dates=False, dtype=False)
                         elif file_extension == ".json":
-                            evidence_df = pd.read_json(data, keep_default_dates=False, dtype=False)
+                            evidence_df = pd.json_normalize(json.loads(message))
                         else:
                             evidence_df = pd.read_csv(data)
 

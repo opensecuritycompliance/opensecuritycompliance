@@ -1,3 +1,6 @@
 [JQConfig]
 JQExpression = ".[].repositories[]" # [MANDATORY] Contains the JQ filter/expression that must be executed on the InputFile data
 OutputMethod = "ALL" # [OPTIONAL] (AllowedValues: FIRST, ALL) Specifies whether to consider all outputs from the JQ expression, or only the first one
+EnableStreaming = true # [OPTIONAL] (AllowedValues: TRUE, FALSE) Specifies whether to use Streaming
+StreamingThresholdMB = 50 # [OPTIONAL] Streaming Methodology is used only when the InputFile size is greater than StreamingThresholdMB
+StreamingJQExpression = ".profile.projects[]" # Contains the JQ filter/expression (Object Level) that must be executed on the InputFile data when Streaming is enabled

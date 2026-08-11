@@ -11,6 +11,7 @@ from urllib import parse
 import pandas as pd
 import base64
 from posixpath import join as urljoin
+import time
 
 file_store_bucket_name = os.getenv("COW_STORAGE_BUCKET_NAME")
 file_store_prefix = os.getenv("COW_STORAGE_FILE_PREFIX")
@@ -143,7 +144,31 @@ def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio,
             new_object_name = prefix + new_object_name
             folder_structure = prefix + folder_structure
 
-            etag = minio_client.put_object(bucket_name=bucket_name, object_name=new_object_name, data=file_content, length=content_length)
+            max_retries = 3
+            for attempt in range(1, max_retries + 1):
+                try:
+                    etag = minio_client.put_object(
+                        bucket_name=bucket_name,
+                        object_name=new_object_name,
+                        data=file_content,
+                        length=content_length,
+                    )
+                    break  # success — exit the retry loop
+                except S3Error as e:
+                    #  Retry only on IncompleteBody error:
+                    # minio.error.S3Error: S3 operation failed; code: IncompleteBody, 
+                    # message: You did not provide the number of bytes specified by the Content-Length HTTP header.
+                    if e.code != "IncompleteBody":
+                        raise
+
+                    if attempt < max_retries:
+                        wait = 2 ** (attempt - 1)   # 1s, 2s, 4s back-off
+                        print(f"[MinIO] put_object attempt {attempt} failed ({e.code}). "
+                              f"Retrying in {wait}s...")
+                        time.sleep(wait)
+                    else:
+                        print(f"[MinIO] put_object failed after {max_retries} attempts: {e}")
+                        raise
 
             if is_amazon_s3_host(minio_client._base_url.host):
                 file_name, error = build_object_url_with_host(minio_client=minio_client, bucket=bucket_name, object_name=new_object_name)
@@ -310,15 +335,15 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
     if is_policy_cow_flow and is_policy_cow_flow == "true":
         is_policy_cow_flow = True
 
-    is_valid_content = False
+    try:
+        validate_file_content(file_content)
+         # If content is valid → continue
+    except CCowEmptyFileContentException as e:
+        # e.to_dict() returns: {"error": "File content is empty: ..."}
+        return None, None, e.to_dict()  
+       
 
-    if isinstance(file_content, pd.DataFrame):
-        if not file_content.empty:
-            is_valid_content = True
-    elif file_content:
-        is_valid_content = True
-
-    if (persistence_type == "minio" or is_policy_cow_flow) and is_valid_content:
+    if (persistence_type == "minio" or is_policy_cow_flow):
 
         if is_policy_cow_flow and minio_client is None:
             minio_url = "%s:%s" % (os.getenv("MINIO_HOST_NAME", "cowstorage"), os.getenv("MINIO_PORT_NUMBER", "9000"))
@@ -539,3 +564,99 @@ def load_bool(value, default_value):
         return value.lower() == "true"
     except Exception:
         return default_value
+    
+    
+def parse_minio_url(file_url: str):
+    """
+    Parse a MinIO / S3 object URL and return (bucket_name, object_name).
+
+    Supports:
+    - http://host/bucket/path/file.ext
+    - https://host/bucket/path/file.ext
+    """
+    if not file_url:
+        return None, None
+
+    parsed_url = parse.urlparse(file_url)
+    path = parsed_url.path.lstrip("/")
+    parts = path.split("/")
+
+    if len(parts) < 2:
+        return None, None
+
+    bucket_name = parts[0]
+    object_name = "/".join(parts[1:])
+
+    if is_amazon_s3_host(parsed_url.netloc):
+        if len(parts) >= 4:
+            bucket_name = parts[2]
+            object_name = "/".join(parts[3:])
+
+    return bucket_name, object_name
+
+class CCowEmptyFileContentException(Exception):
+    """Custom exception for empty or invalid file content"""
+    
+    def __init__(self, message: str = None):
+        # Store the error message and pass to parent Exception class
+        super().__init__(message)
+        self.message = message
+
+    def to_dict(self) -> dict:
+        # Convert exception to dictionary format for API/JSON responses
+        return {
+            "error": self.message,
+        }
+
+    def __str__(self):
+        # Return string representation for logging and debugging
+        return self.message or "File content is empty"
+
+def validate_file_content(file_content) -> None:
+    # Check if the file content is None 
+    if file_content is None:
+        raise CCowEmptyFileContentException(
+            "File content is empty: received None value"
+        )
+
+    # Handle pandas DataFrame objects
+    if isinstance(file_content, pd.DataFrame):
+        # Raise an exception if the DataFrame has no rows or columns
+        if file_content.empty:
+            raise CCowEmptyFileContentException(
+                "File content is empty: DataFrame is empty"
+            )
+        return
+
+    # Handle string content
+    if isinstance(file_content, str):
+        # Remove whitespace and check if the string is blank
+        if not file_content.strip():
+            raise CCowEmptyFileContentException(
+                "File content is empty: string is blank"
+            )
+        return
+
+    # Handle byte content
+    if isinstance(file_content, bytes):
+        # Check if the byte sequence is empty
+        if len(file_content) == 0:
+            raise CCowEmptyFileContentException(
+                "File content is empty: bytes is empty"
+            )
+        return
+
+    # Handle common collection types
+    if isinstance(file_content, (list, dict)):
+        # Check if the collection contains any elements
+        if not file_content:
+            raise CCowEmptyFileContentException(
+                f"File content is empty: {type(file_content).__name__} is empty"
+            )
+        return
+
+    # Fallback validation for any other type:
+    if not file_content:
+        raise CCowEmptyFileContentException(
+            f"File content is empty: {type(file_content).__name__}"
+        )

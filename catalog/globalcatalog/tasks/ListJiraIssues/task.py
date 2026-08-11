@@ -70,49 +70,73 @@ class Task(cards.AbstractTask):
         standard_list = []
 
         for issue in issue_list:
-            if not hasattr(issue, 'fields') or issue.fields is None:
-              continue
+            fields = issue.get("fields", {}) or {}
 
-            is_valid_fields = True
+            project = fields.get("project") or {}
+            issuetype = fields.get("issuetype") or {}
+            priority = fields.get("priority") or {}
+            status = fields.get("status") or {}
+            creator = fields.get("creator") or {}
+            assignee = fields.get("assignee") or {}
+            reporter = fields.get("reporter") or {}
+            project_name = project.get("name", "")
 
             data = {
-                "System"                   : "jira",
-                "Source"                   : "compliancecow",
-                "ResourceName"             : issue.key if hasattr(issue, 'key') and issue.key is not None else "",
-                "ResourceID"               : issue.id if hasattr(issue, 'id') and issue.id is not None else "",
-                "ResourceLocation"         : "N/A",
-                "ResourceTags"             : "N/A",
-                "ResourceType"             : issue.fields.issuetype.name if is_valid_fields and hasattr(issue.fields, 'issuetype') and issue.fields.issuetype is not None and hasattr(issue.fields.issuetype, 'name') and issue.fields.issuetype.name is not None else "",
-                "ResourceURL"              : self.task_inputs.user_object.app.application_url + "/jira/software/c/projects/" + issue.fields.project.name + "/issues/" + issue.key if is_valid_fields and hasattr(issue.fields, 'project') and issue.fields.project is not None and hasattr(issue.fields.project, 'name') and issue.fields.project.name is not None else "",
-                "Project"                  : issue.fields.project.name if hasattr(issue.fields, 'project') and issue.fields.project is not None and hasattr(issue.fields.project, 'name') and issue.fields.project.name is not None else "",
-                "Description"              : issue.fields.description if hasattr(issue.fields, 'description') and issue.fields.description is not None else "",
-                "Summary"                  : issue.fields.summary if hasattr(issue.fields, 'summary') and issue.fields.summary is not None else "",
-                "Priority"                 : issue.fields.priority.name if hasattr(issue.fields, 'priority') and issue.fields.priority is not None and hasattr(issue.fields.priority, 'name') and issue.fields.priority.name is not None else "",
-                "Status"                   : issue.fields.status.name if is_valid_fields and hasattr(issue.fields, 'status') and issue.fields.status is not None and hasattr(issue.fields.status, 'name') and issue.fields.status.name is not None else "",
-                "StatusCategoryChangeDate" : issue.fields.statuscategorychangedate if is_valid_fields and hasattr(issue.fields, 'statuscategorychangedate') and issue.fields.statuscategorychangedate is not None else "",
-                "CreatedDate"              : issue.fields.created if is_valid_fields and hasattr(issue.fields, 'created') and issue.fields.created is not None else "",
-                "UpdatedDate"              : issue.fields.updated if is_valid_fields and hasattr(issue.fields, 'updated') and issue.fields.updated is not None else "",
-                "Creator"                  : issue.fields.creator.displayName if is_valid_fields and hasattr(issue.fields, 'creator') and issue.fields.creator is not None and hasattr(issue.fields.creator, 'displayName') and issue.fields.creator.displayName is not None else "",
-                "Assignee"                 : issue.fields.assignee.displayName if is_valid_fields and hasattr(issue.fields, 'assignee') and issue.fields.assignee is not None and hasattr(issue.fields.assignee, 'displayName') and issue.fields.assignee.displayName is not None else "",
-                "Reporter"                 : issue.fields.reporter.displayName if is_valid_fields and hasattr(issue.fields, 'reporter') and issue.fields.reporter is not None and hasattr(issue.fields.reporter, 'displayName') and issue.fields.reporter.displayName is not None else "",
-                "IssueLinks"               : issue.fields.issuelinks if is_valid_fields and hasattr(issue.fields, 'issuelinks') and issue.fields.issuelinks is not None else [],
-                "Labels"                   : issue.fields.labels if is_valid_fields and hasattr(issue.fields, 'labels') and issue.fields.labels is not None else [],
-                "EvaluatedTime"            : self.get_current_datetime(),
-                "UserAction"               : "",
-                "ActionStatus"             : "",
-                "ActionResponseURL"        : ""
+                "System": "jira",
+                "Source": "compliancecow",
+                "ResourceName": issue.get("key", ""),
+                "ResourceID": issue.get("id", ""),
+                "ResourceLocation": "N/A",
+                "ResourceTags": "N/A",
+                "ResourceType": issuetype.get("name", ""),
+                "ResourceURL": (
+                    f"{self.task_inputs.user_object.app.application_url}/browse/{issue.get('key', '')}"
+                ),
+                "Project": project_name,
+                "Description": self.get_description_text(fields.get("description")),
+                "Summary": fields.get("summary", ""),
+                "Priority": priority.get("name", ""),
+                "Status": status.get("name", ""),
+                "StatusCategoryChangeDate": fields.get("statuscategorychangedate", ""),
+                "CreatedDate": fields.get("created", ""),
+                "UpdatedDate": fields.get("updated", ""),
+                "Creator": creator.get("displayName", ""),
+                "Assignee": assignee.get("displayName", ""),
+                "Reporter": reporter.get("displayName", ""),
+                "IssueLinks": fields.get("issuelinks", []) or [],
+                "Labels": fields.get("labels", []) or [],
+                "EvaluatedTime": self.get_current_datetime(),
+                "UserAction": "",
+                "ActionStatus": "",
+                "ActionResponseURL": "",
             }
-
-            is_valid_fields = False
-            if hasattr(issue, 'fields') and issue.fields is not None:
-                is_valid_fields = True
 
             standard_list.append(data)
 
         return standard_list
 
+    def get_description_text(self, description):
+        if not description:
+            return ""
 
-    
+        # Plain text description
+        if isinstance(description, str):
+            return description
+
+        # Unexpected type
+        if not isinstance(description, dict):
+            return str(description)
+
+        content = description.get("content", [])
+        text_parts = []
+
+        for block in content:
+            for item in block.get("content", []):
+                if item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+
+        return "\n".join(text_parts)
+
     def upload_log_file(self, errors_list):
         log_file_path, error = self.upload_file_to_minio(file_content=json.dumps(errors_list).encode('utf-8'), 
                                                          file_name=f'LogFile-{str(uuid.uuid4())}.json', content_type='application/json')

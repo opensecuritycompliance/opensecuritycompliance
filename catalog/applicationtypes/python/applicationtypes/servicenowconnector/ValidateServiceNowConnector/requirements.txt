@@ -8,4 +8,4 @@ jmespath==1.0.1
 minio==7.2.18
 requests==2.32.5
 xmltodict==1.0.2
-urllib3==2.5.0
+urllib3==2.7.0
