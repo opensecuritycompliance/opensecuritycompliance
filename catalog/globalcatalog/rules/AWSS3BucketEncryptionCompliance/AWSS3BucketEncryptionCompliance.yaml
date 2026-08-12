@@ -1,0 +1,269 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: AWSS3BucketEncryptionCompliance
+  purpose: >-
+    Validate that all S3 buckets in AWS accounts have encryption enabled for
+    data security compliance and generate CSV report
+  description: >-
+    This rule fetches all S3 buckets from AWS accounts, checks encryption
+    configuration for each bucket using AWS S3 API, marks buckets as COMPLIANT
+    if encryption is enabled or NON_COMPLIANT if encryption is missing, and
+    converts the final report to CSV format
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    fetch_buckets_RequestConfigFile: >-
+      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_12753_ExecuteHttpRequestV2_RequestConfigFile.toml
+    fetch_buckets_ResponseConfigFile: >-
+      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_16173_ExecuteHttpRequestV2_ResponseConfigFile.toml
+    check_encryption_RequestConfigFile: >-
+      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_87901_ExecuteHttpRequestV2_RequestConfigFile.toml
+    check_encryption_ResponseConfigFile: >-
+      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_62694_ExecuteHttpRequestV2_ResponseConfigFile.toml
+    JQTransform: >-
+      map(. + {
+        System: "aws",
+        Source: "compliancecow",
+        ResourceID: .BucketName,
+        ResourceName: .BucketName,
+        ResourceType: "S3Bucket",
+        ResourceLocation: "global",
+        ResourceTags: "",
+        ResourceURL: ("https://" + .BucketName + ".s3.amazonaws.com"),
+        EncryptionEnabled: (if .StatusCode == "200" then "true" else "false" end),
+        EncryptionAlgorithm: (if .StatusCode == "200" then .EncryptionType else "None" end),
+        KMSKeyID: (if .StatusCode == "200" then (.KMSMasterKeyID // "N/A") else "N/A" end),
+        ValidationStatusCode: (if .StatusCode == "200" then "ENCR_ENBL_S3BK" else "ENCR_MISS_S3BK" end),
+        ValidationStatusNotes: (if .StatusCode == "200" then ("Encryption enabled with " + .EncryptionType) else "No encryption configured for this bucket" end),
+        ComplianceStatus: (if .StatusCode == "200" then "COMPLIANT" else "NON_COMPLIANT" end),
+        ComplianceStatusReason: (if .StatusCode == "200" then "S3 bucket has server-side encryption enabled" else "S3 bucket does not have encryption enabled" end),
+        EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+        UserAction: "",
+        ActionStatus: "",
+        ActionResponseURL: ""
+      } | {System, Source, ResourceID, ResourceName, ResourceType,
+      ResourceLocation, ResourceTags, ResourceURL, EncryptionEnabled,
+      EncryptionAlgorithm, KMSKeyID, BucketKeyEnabled, BucketName, CreationDate,
+      EncryptionType, KMSMasterKeyID, StatusCode, ValidationStatusCode,
+      ValidationStatusNotes, ComplianceStatus, ComplianceStatusReason,
+      EvaluatedTime, UserAction, ActionStatus, ActionResponseURL})
+    OutputMethod: ALL
+    OutputFileFormat: CSV
+    OutputFileName: S3BucketEncryptionComplianceReport
+  inputsMeta__:
+    - name: fetch_buckets_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: >-
+        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_12753_ExecuteHttpRequestV2_RequestConfigFile.toml
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: fetch_buckets_ResponseConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: >-
+        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_16173_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: check_encryption_RequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: >-
+        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_87901_ExecuteHttpRequestV2_RequestConfigFile.toml
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: check_encryption_ResponseConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: >-
+        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_62694_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: JQTransform
+      dataType: JQ_EXPRESSION
+      defaultValue: >-
+        map(. + {
+          System: "aws",
+          Source: "compliancecow",
+          ResourceID: .BucketName,
+          ResourceName: .BucketName,
+          ResourceType: "S3Bucket",
+          ResourceLocation: "global",
+          ResourceTags: "",
+          ResourceURL: ("https://" + .BucketName + ".s3.amazonaws.com"),
+          EncryptionEnabled: (if .StatusCode == "200" then "true" else "false" end),
+          EncryptionAlgorithm: (if .StatusCode == "200" then .EncryptionType else "None" end),
+          KMSKeyID: (if .StatusCode == "200" then (.KMSMasterKeyID // "N/A") else "N/A" end),
+          ValidationStatusCode: (if .StatusCode == "200" then "ENCR_ENBL_S3BK" else "ENCR_MISS_S3BK" end),
+          ValidationStatusNotes: (if .StatusCode == "200" then ("Encryption enabled with " + .EncryptionType) else "No encryption configured for this bucket" end),
+          ComplianceStatus: (if .StatusCode == "200" then "COMPLIANT" else "NON_COMPLIANT" end),
+          ComplianceStatusReason: (if .StatusCode == "200" then "S3 bucket has server-side encryption enabled" else "S3 bucket does not have encryption enabled" end),
+          EvaluatedTime: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+          UserAction: "",
+          ActionStatus: "",
+          ActionResponseURL: ""
+        } | {System, Source, ResourceID, ResourceName, ResourceType,
+        ResourceLocation, ResourceTags, ResourceURL, EncryptionEnabled,
+        EncryptionAlgorithm, KMSKeyID, BucketKeyEnabled, BucketName,
+        CreationDate, EncryptionType, KMSMasterKeyID, StatusCode,
+        ValidationStatusCode, ValidationStatusNotes, ComplianceStatus,
+        ComplianceStatusReason, EvaluatedTime, UserAction, ActionStatus,
+        ActionResponseURL})
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: OutputFileFormat
+      dataType: STRING
+      defaultValue: CSV
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+        - YAML
+        - TOML
+        - XLSX
+      repeated: false
+      explanation: ''
+    - name: OutputFileName
+      dataType: STRING
+      defaultValue: S3BucketEncryptionComplianceReport
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: fetch_buckets
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: check_encryption
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: TransformDataWithJQ
+      alias: compliance_transform
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ConvertFileFormatV2
+      alias: convert_to_csv
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      fetch_buckets.Input.RequestConfigFile:=*.Input.fetch_buckets_RequestConfigFile
+    - >-
+      fetch_buckets.Input.ResponseConfigFile:=*.Input.fetch_buckets_ResponseConfigFile
+    - >-
+      check_encryption.Input.RequestConfigFile:=*.Input.check_encryption_RequestConfigFile
+    - >-
+      check_encryption.Input.ResponseConfigFile:=*.Input.check_encryption_ResponseConfigFile
+    - check_encryption.Input.InputFile:=fetch_buckets.Output.OutputFile
+    - compliance_transform.Input.InputFile:=check_encryption.Output.OutputFile
+    - compliance_transform.Input.JQTransform:=*.Input.JQTransform
+    - compliance_transform.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      convert_to_csv.Input.InputFile:=compliance_transform.Output.TransformedFile
+    - convert_to_csv.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - convert_to_csv.Input.OutputFileName:=*.Input.OutputFileName
+    - >-
+      *.Output.S3BucketEncryptionComplianceReportCSV:=convert_to_csv.Output.OutputFile
+    - >-
+      *.Output.S3BucketEncryptionComplianceReportJSON:=compliance_transform.Output.TransformedFile
+    - '*.Output.CompliancePCT_:=convert_to_csv.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=convert_to_csv.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=convert_to_csv.Output.LogFile'
+  outputsMeta__:
+    - name: S3BucketEncryptionComplianceReportCSV
+      dataType: FILE
+      description: >-
+        Final compliance report in CSV format - Excel compatible with all
+        compliance data
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: S3BucketEncryptionComplianceReportJSON
+      dataType: FILE
+      description: >-
+        Complete compliance report in JSON format with COMPLIANT/NON_COMPLIANT
+        status for each bucket
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: LogFile
+      dataType: FILE
+      description: Error log file containing any errors encountered during rule execution
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true

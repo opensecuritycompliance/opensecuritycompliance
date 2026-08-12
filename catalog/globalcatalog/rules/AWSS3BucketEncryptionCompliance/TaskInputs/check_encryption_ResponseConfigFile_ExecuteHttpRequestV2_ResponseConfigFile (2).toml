@@ -1,0 +1,35 @@
+[Response.Filter]
+JQExpression = ""
+OutputMethod = "FIRST"
+
+[Response.RuleSet.AppendColumnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "200"
+
+[Response.RuleSet.AppendColumn]
+IncludeAllInputFields = true
+
+[Response.RuleSet.PaginationCondition]
+ConditionField = ""
+ConditionValue = ""
+
+[Response.RuleSet.Pagination]
+URL = ""
+
+[Response.RuleSet.AppendColumn.Fields]
+StatusCode = "<<response.status_code>>"
+EncryptionType = "<<response.body.ServerSideEncryptionConfiguration.Rule.ApplyServerSideEncryptionByDefault.SSEAlgorithm>>"
+BucketKeyEnabled = "<<response.body.ServerSideEncryptionConfiguration.Rule.BucketKeyEnabled>>"
+
+[Response.RuleSet.Pagination.Header]
+
+[Response.RuleSet.Pagination.Params]
+
+[Response.RuleSet.Pagination.Data.URLEncoded]
+
+[Response.RuleSet.Pagination.Data.FormData]
+
+[Response.RuleSet.Pagination.Data.Raw]
+
+[Response.RuleSet.Pagination.Data.Binary]
+ 

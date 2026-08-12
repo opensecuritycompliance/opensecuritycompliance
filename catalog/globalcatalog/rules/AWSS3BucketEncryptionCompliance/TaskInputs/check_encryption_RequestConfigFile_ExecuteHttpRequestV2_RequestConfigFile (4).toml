@@ -1,0 +1,34 @@
+[Variables]
+Method = "GET"
+CredentialType = "AWSSignature"
+
+[Request]
+URL = "https://<<inputfile.BucketName>>.s3.us-west-2.amazonaws.com/?encryption"
+Method = "<<Method>>"
+ContentType = "application/json"
+Redirect = true
+CredentialType = "<<CredentialType>>"
+TimeOut = 30
+Verify = true
+MaxWorkers = 10
+
+[Request.Headers]
+
+[Request.Params]
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data.FormData]
+
+[Request.Data.URLEncoded]
+
+[Request.Data.Raw]
+
+[Request.Data.Binary]
+ 
