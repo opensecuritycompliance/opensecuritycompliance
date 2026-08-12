@@ -33,60 +33,60 @@ spec:
     fetch_cloudtrail_logs_RequestConfigFile: >-
       
     analyze_access_JQTransform: |-
-      map(.Events[])
-      | map({
-          BucketName: (.Resources[0].ResourceName // "Unknown"),
-          UserIdentity: (
-            .Username
-            // (.CloudTrailEvent | fromjson | .userIdentity.userName)
-           // "Unknown"
-         ),
-        EventName: .EventName,
-        EventTime: .EventTime,
-        EventSource: .EventSource,
-        LastAccessDate: .EventTime,
-        DaysSinceAccess: ((now - (.EventTime // now)) / 86400 | floor)
-        })
+                  [
+                    .[] 
+                  | .Events[] 
+                  | {
+                      BucketName: (.Resources[0].ResourceName // "Unknown"),
+                      UserIdentity: (.Username // .UserIdentity.principalId // "Unknown"),
+                      EventName: (.EventName // "Unknown"),
+                      EventTime: .EventTime,
+                      EventSource: (.EventSource // "Unknown"),
+                      LastAccessDate: .EventTime,
+                      DaysSinceAccess: (
+                        if (.EventTime | type) == "number" then
+                          ((now - .EventTime) / 86400 | floor)
+                        else
+                          0
+                        end
+                     )
+                    }
+                  ]
     analyze_access_OutputMethod: ALL
     determine_compliance_JQTransform: |-
-      map(
-        . + {
-          ComplianceStatus: (
-            if .DaysSinceAccess > 45 then
-              "NON_COMPLIANT"
-            else
-              "COMPLIANT"
-            end
-          ),
-          ComplianceStatusReason: (
-            if .DaysSinceAccess > 45 then
-              "S3 bucket not accessed for more than 45 days"
-            else
-              "S3 bucket accessed within 45 days"
-            end
-          ),
-          ValidationStatusCode: (
-            if .DaysSinceAccess > 45 then
-              "S3_NO_ACC_45D"
-            else
-              "S3_ACC_OK"
-            end
-          ),
-          ValidationStatusNotes: (
-            if .DaysSinceAccess > 45 then
-              "Bucket has been inactive for \(.DaysSinceAccess) days"
-            else
-              "Bucket actively used"
-            end
-          )
-        }
-      )
+      map(. + {
+        ComplianceStatus: (
+          if .DaysSinceAccess > 45
+          then "NON_COMPLIANT"
+          else "COMPLIANT"
+          end
+        ),
+        ComplianceStatusReason: (
+          if .DaysSinceAccess > 45
+          then "S3 bucket not accessed for more than 45 days"
+          else "S3 bucket accessed within 45 days"
+          end
+        ),
+        ValidationStatusCode: (
+          if .DaysSinceAccess > 45
+          then "S3_NO_ACC_45D"
+          else "S3_ACC_OK"
+          end
+        ),
+        ValidationStatusNotes: (
+          if .DaysSinceAccess > 45
+          then "Bucket has been inactive for \(.DaysSinceAccess) days"
+          else "Bucket actively used"
+          end
+        )
+      })
+      
     determine_compliance_OutputMethod: ALL
   inputsMeta__:
     - name: fetch_s3_buckets_RequestConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_68887_ExecuteHttpRequestV2_RequestConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -95,8 +95,8 @@ spec:
       explanation: ''
     - name: fetch_iam_users_RequestConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_82912_ExecuteHttpRequestV2_RequestConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -105,8 +105,8 @@ spec:
       explanation: ''
     - name: fetch_cloudtrail_logs_RequestConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_82820_ExecuteHttpRequestV2_RequestConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -115,16 +115,7 @@ spec:
       explanation: ''
     - name: analyze_access_JQTransform
       dataType: JQ_EXPRESSION
-      defaultValue: |-
-        map({
-          BucketName: (.Resources[0].ResourceName // "Unknown"),
-          UserIdentity: (.Username // .UserIdentity.principalId // "Unknown"),
-          EventName: .EventName,
-          EventTime: .EventTime,
-          EventSource: .EventSource,
-          LastAccessDate: .EventTime,
-          DaysSinceAccess: ((now - ((.EventTime // now | fromdateiso8601))) / 86400 | floor)
-        })
+      defaultValue: ""
       showField: true
       required: true
       allowedValues: []
@@ -142,13 +133,7 @@ spec:
       explanation: ''
     - name: determine_compliance_JQTransform
       dataType: JQ_EXPRESSION
-      defaultValue: |-
-        map(. + {
-          ComplianceStatus: (if .DaysSinceAccess > 45 then "NON_COMPLIANT" else "COMPLIANT" end),
-          ComplianceStatusReason: (if .DaysSinceAccess > 45 then "S3 bucket not accessed for more than 45 days" else "S3 bucket accessed within 45 days" end),
-          ValidationStatusCode: (if .DaysSinceAccess > 45 then "S3_NO_ACC_45D" else "S3_ACC_OK"),
-          ValidationStatusNotes: (if .DaysSinceAccess > 45 then "Bucket has been inactive for \(.DaysSinceAccess) days" else "Bucket actively used")
-        })
+      defaultValue: ""
       showField: true
       required: true
       allowedValues: []
