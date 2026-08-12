@@ -26,13 +26,13 @@ meta:
 spec:
   inputs:
     fetch_buckets_RequestConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_12753_ExecuteHttpRequestV2_RequestConfigFile.toml
+      
     fetch_buckets_ResponseConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_16173_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      
     check_encryption_RequestConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_87901_ExecuteHttpRequestV2_RequestConfigFile.toml
+      
     check_encryption_ResponseConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_62694_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      
     JQTransform: >-
       map(. + {
         System: "aws",

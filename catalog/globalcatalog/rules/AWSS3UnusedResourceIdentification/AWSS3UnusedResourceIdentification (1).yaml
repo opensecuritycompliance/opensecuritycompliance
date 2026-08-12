@@ -27,11 +27,11 @@ meta:
 spec:
   inputs:
     fetch_s3_buckets_RequestConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_68887_ExecuteHttpRequestV2_RequestConfigFile.toml
+      
     fetch_iam_users_RequestConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_82912_ExecuteHttpRequestV2_RequestConfigFile.toml
+      
     fetch_cloudtrail_logs_RequestConfigFile: >-
-      http://cowstorage:9000/ruleinputs/AWSS3UnusedResourceIdentification/file_82820_ExecuteHttpRequestV2_RequestConfigFile.toml
+      
     analyze_access_JQTransform: |-
       map(.Events[])
       | map({
