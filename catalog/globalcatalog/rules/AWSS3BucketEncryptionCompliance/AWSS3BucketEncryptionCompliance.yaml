@@ -66,8 +66,8 @@ spec:
   inputsMeta__:
     - name: fetch_buckets_RequestConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_12753_ExecuteHttpRequestV2_RequestConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -76,8 +76,8 @@ spec:
       explanation: ''
     - name: fetch_buckets_ResponseConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_16173_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -86,8 +86,8 @@ spec:
       explanation: ''
     - name: check_encryption_RequestConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_87901_ExecuteHttpRequestV2_RequestConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
@@ -96,8 +96,8 @@ spec:
       explanation: ''
     - name: check_encryption_ResponseConfigFile
       dataType: HTTP_CONFIG
-      defaultValue: >-
-        http://cowstorage:9000/ruleinputs/AWSS3BucketEncryptionCompliance/file_62694_ExecuteHttpRequestV2_ResponseConfigFile.toml
+      defaultValue: ""
+        
       format: toml
       showField: true
       required: true
