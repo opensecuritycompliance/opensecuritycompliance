@@ -112,21 +112,53 @@ func (thisObj *JiraCloud) CreateNewTicket(ticketDetail JiraTicket) (*jira.Issue,
 			},
 		},
 	}
-	issueCreated, response, err := jiraClient.Issue.Create(&issue)
-	if err != nil {
-		if response != nil && response.StatusCode == 400 {
-			if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil {
-				for _, errorMessage := range apiError.Errors {
-					if errorMessage == fmt.Sprintf("No project could be found with key '%s'.", ticketDetail.Project) || errorMessage == fmt.Sprintf("Specify a valid project ID or key") {
-						return nil, fmt.Errorf("The specified project name (\"Project\" = \"%s\") doesn't exist, please check.", ticketDetail.Project)
-					}
-				}
-			}
+	
+	if ticketDetail.Priority != "" {
+	    isValidPriority := false
+		jiraPriorities, _, err := jiraClient.Priority.GetList()
+		if err != nil {
+			return  nil, fmt.Errorf("Failed to create Jira issue :: Error while getting priorities: %s", err)
 		}
-		return nil, err
-	}
-	return issueCreated, nil
+		
+    	for _, priority := range jiraPriorities {
+            if ticketDetail.Priority == priority.Name {
+                isValidPriority = true
+                break
+            }
+    	}
 
+        if !isValidPriority {
+            issue.Fields.Priority = nil
+        }
+	}
+
+	var issueCreated *jira.Issue
+	var response *jira.Response
+	for idx := range 2 {
+        issueCreated, response, err = jiraClient.Issue.Create(&issue)
+    	if err != nil {
+    		if response != nil && response.StatusCode == 400 {
+    			if err := json.NewDecoder(response.Body).Decode(&apiError); err == nil {
+    				for _, errorMessage := range apiError.Errors {
+    					if errorMessage == fmt.Sprintf("No project could be found with key '%s'.", ticketDetail.Project) || errorMessage == fmt.Sprintf("Specify a valid project ID or key") {
+    						return nil, fmt.Errorf("The specified project name (\"Project\" = \"%s\") doesn't exist, please check.", ticketDetail.Project)
+    					}
+    				}
+    			}
+
+                if idx == 0 {
+                    issue.Fields.Reporter.AccountID = ""
+                    issue.Fields.Assignee.AccountID = ""
+                    continue
+                }
+    		}
+
+            return nil, err
+    	}
+        break
+	}
+	
+	return issueCreated, nil
 }
 
 func (thisObj *JiraCloud) FindUser(user string) ([]jira.User, error) {
@@ -216,12 +248,6 @@ func validateTicketDetails(ticketDetail JiraTicket) error {
 	}
 	if cowlibutils.IsEmpty(ticketDetail.Summary) {
 		return errors.New("Summary is empty. Summary must be valid for ticket creation")
-	}
-	if cowlibutils.IsEmpty(ticketDetail.AssigneeId) {
-		return errors.New("AssigneeId is empty")
-	}
-	if cowlibutils.IsEmpty(ticketDetail.ReporterId) {
-		return errors.New("ReporterId is empty")
 	}
 	if cowlibutils.IsEmpty(ticketDetail.Priority) {
 		return errors.New("Priority is empty")

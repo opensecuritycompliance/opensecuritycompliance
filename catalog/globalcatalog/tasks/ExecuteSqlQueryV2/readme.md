@@ -1,16 +1,20 @@
-The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file or in the SQLExpression) as inputs. It produces the resulting data as a Parquet file in the output by default.  This task uses SQLite to run the SQL query on given file(s).
+The purpose of this task is to execute the provided SQL query on the given input file(s). The task requires at least one JSON file and an SQL query (defined in a TOML file or in the SQLExpression) as inputs. It produces the resulting data as a Parquet file in the output by default.
+
+**IMPORTANT**: This task uses **[DuckDB](https://duckdb.org/docs/stable/sql/introduction)** to run the SQL query on given file(s).
 
 ### **InputsAndOutputsStructure:**
 - Inputs :
     - **InputFile1**                : [MANDATORY] The primary JSON file containing an array of records on which the SQL query must be executed.
     - **InputFile2**                : [OPTIONAL] An optional secondary JSON file containing additional records to be included in the SQL query.
-    - **SQLConfig**                 : [OPTIONAL] A TOML file containing the SQLite query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
-    - **SQLQuery**                  : [OPTIONAL] The SQL statements to be executed. If only InputFile1 is provided, queries run against `inputfile1`. If both InputFile1 and InputFile2 are provided, tables `inputfile1` and `inputfile2` will be available for querying, including joins, filtering, and aggregations. Must always contain a valid SQL query. The task uses SQLite to run this query.
+    - **SQLConfig**                 : [OPTIONAL] A TOML file containing the SQL query to be executed. Tables named inputfile1 and inputfile2 will be created based on the input files provided.
+    - **SQLQuery**                  : [OPTIONAL] The SQL statements to be executed. If only InputFile1 is provided, queries run against `inputfile1`. If both InputFile1 and InputFile2 are provided, tables `inputfile1` and `inputfile2` will be available for querying, including joins, filtering, and aggregations. Must always contain a valid SQL query.
     - **OutputFileFormat**          : [OPTIONAL] Target format for conversion of output file (supported formats JSON, CSV, PARQUET).
     - **LogConfigFile**             : [OPTIONAL] This file defines all exception messages and error-handling details for the current task. It is a TOML file containing predefined fields with placeholder values, which will be dynamically replaced at runtime based on the task’s context.
     - **ProceedIfLogExists**        : [OPTIONAL]  If the previous task returns a log file and passes it to the current task, this field determines whether the current task should proceed and return the log file at the end of execution, or stop immediately and return the log file. The default value is true.
     - **ProceedIfErrorExists**      : [OPTIONAL]  If the current task returns an error or if a log file from a previous task is available, this field determines whether to return the log file and continue to the next task, or to stop the entire rule execution. The default value is true.
     - **LogFile**                   : [OPTIONAL]  Map the LogFile from the previous task, to handle errors.
+    - **OutputFileName**            : [OPTIONAL] This name will be used for the output file. If not provided, it will default to `OutputFile`.
+    - **ValidateFlow**              : [OPTIONAL] If set to true, only validates the input data and does not execute task logic. The default value is false.
 
 - Outputs :
     - **OutputFile**                : File that contains the result of the SQL Query.
@@ -87,30 +91,22 @@ The purpose of this task is to execute the provided SQL query on the given input
     - 'SQLConfig' is a TOML file that contains the SQLQuery to be executed.
     - The following tables will be created with the respective data: inputfile1, inputfile2.
     - If only InputFile1 is provided, then only 'inputfile1' table will be created.
-    - This task uses SQLite to run the SQL query on the provided file(s).
     - The output file format can be specified as JSON, CSV, or PARQUET (default is PARQUET if not specified).
+    - **IMPORTANT**: This task uses **[DuckDB](https://duckdb.org/docs/stable/sql/introduction)** to run the SQL query on the provided file(s).
 
     **SQLConfig Structure:**
     ```toml
     SQLQuery = '''
         SELECT
             inputfile1.*,
-            CASE 
-                WHEN COUNT(inputfile2.timestamp) = 0 THEN NULL
-                ELSE json_group_array(
-                    json_object(
-                        'timestamp', inputfile2.timestamp
-                    )
-                )
-            END AS UsageLogTimestamps
-        FROM
-            inputfile1
-        LEFT JOIN
-            inputfile2
-        ON
-            inputfile1.email = inputfile2.`resource.labels.email_id`
-        GROUP BY
-            inputfile1.email;
+            list({
+                "timestamp": inputfile2.timestamp
+            }) FILTER (inputfile2.timestamp IS NOT NULL)
+            AS UsageLogTimestamps
+        FROM inputfile1
+        LEFT JOIN inputfile2
+            ON inputfile1.email = (inputfile2.resource->>'$.labels.email_id')
+        GROUP BY inputfile1.*;
     '''
     ```
 
@@ -121,6 +117,7 @@ The purpose of this task is to execute the provided SQL query on the given input
     - The queries must be written in standard SQL syntax and should return the desired results, such as filtering, aggregations, or joins.
     - This field is optional and must always contain valid SQL query.
     - Either a valid SQL query must be provided or an SQL config file must be provided.
+    - **IMPORTANT**: This task uses **[DuckDB](https://duckdb.org/docs/stable/sql/introduction)** to run the SQL query on the provided file(s).
 
 5. OutputFileFormat **(OPTIONAL)**
     - Specifies the output file format for conversion.
@@ -181,6 +178,14 @@ The purpose of this task is to execute the provided SQL query on the given input
     - This field is required only when this task is not the first one in the rule.
     - LogFile from the previous task must be mapped to this to handle errors.
     - If mapped correctly, when the previous task returns a 'LogFile', it will pass it to this task and this task won't be executed.Otherwise if there is no 'LogFile from the previous task, this task will execute as expected.
+
+10. OutputFileName **(Optional)**
+    - This field is optional. If not provided, it will default to `OutputFile`.
+    - If provided, this name will be used for the output file containing the results of the SQL query execution.
+
+11. ValidateFlow **(Optional)**
+    - This field is optional, and the default value of ValidateFlow is false.
+    - If ValidateFlow is set to true, the task will only validate the input data without executing the SQL query. This is useful for testing and ensuring that the inputs are correct before performing the actual execution. If the validation fails, an error will be raised, and the task will not proceed with executing the SQL query.
 
 
 ### **OutputsSection:**

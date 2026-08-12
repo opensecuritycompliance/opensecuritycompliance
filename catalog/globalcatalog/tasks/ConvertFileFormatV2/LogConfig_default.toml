@@ -17,6 +17,7 @@ LogFile.download_failed = "An error occurred while downloading LogFile. Please f
 # Input file download and parsing exceptions
 InputFile.download_failed = "An error occurred while downloading InputFile. Please find more details: {error}"
 InputFile.Parser.json_parsing_error = "Error parsing the JSON file: {error}"
+InputFile.Parser.ndjson_parsing_error = "Error parsing the NDJSON file: {error}"
 InputFile.Parser.yaml_parsing_error = "Error parsing the YAML file: {error}"
 InputFile.Parser.toml_parsing_error = "Error parsing the TOML file: {error}"
 InputFile.Parser.xml_parsing_error = "Error parsing the XML file: {error}"
@@ -26,6 +27,7 @@ InputFile.Parser.xlsx_parsing_error = "Error parsing the XLSX file: {error}"
 
 # Input file conversion exceptions
 InputFile.Converter.json_conversion_error = "Error converting to JSON format: {error}"
+InputFile.Converter.ndjson_conversion_error = "Error converting to NDJSON format: {error}"
 InputFile.Converter.yaml_conversion_error = "Error converting to YAML format: {error}"
 InputFile.Converter.toml_conversion_error = "Error converting to TOML format: {error}"
 InputFile.Converter.csv_conversion_error = "Error converting to CSV format: {error}"

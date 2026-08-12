@@ -1,0 +1,34 @@
+[Response.Filter]
+JQExpression = ".ListAllMyBucketsResult.Buckets.Bucket[]"
+OutputMethod = "ALL"
+
+[Response.RuleSet.AppendColumnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "200"
+
+[Response.RuleSet.AppendColumn]
+IncludeAllInputFields = false
+
+[Response.RuleSet.PaginationCondition]
+ConditionField = ""
+ConditionValue = ""
+
+[Response.RuleSet.Pagination]
+URL = ""
+
+[Response.RuleSet.AppendColumn.Fields]
+BucketName = "<<response.body.ListAllMyBucketsResult.Buckets.Bucket[].Name>>"
+CreationDate = "<<response.body.ListAllMyBucketsResult.Buckets.Bucket[].CreationDate>>"
+
+[Response.RuleSet.Pagination.Header]
+
+[Response.RuleSet.Pagination.Params]
+
+[Response.RuleSet.Pagination.Data.URLEncoded]
+
+[Response.RuleSet.Pagination.Data.FormData]
+
+[Response.RuleSet.Pagination.Data.Raw]
+
+[Response.RuleSet.Pagination.Data.Binary]
+ 

@@ -672,6 +672,11 @@ func (thisObj *AWSAppConnector) GetLastModifiedInFolder(ctx context.Context, s3C
 }
 
 func (thisObj *AWSAppConnector) IsFile(s3Client *s3V2.Client, bucket, key string) bool {
+	// If key ends with '/', it's explicitly a folder/prefix, not a file
+	if strings.HasSuffix(key, "/") {
+		return false
+	}
+
 	_, err := s3Client.HeadObject(context.TODO(), &s3V2.HeadObjectInput{
 		Bucket: awsV2.String(bucket),
 		Key:    awsV2.String(key),
