@@ -14,9 +14,9 @@ userObject:
       NoCred:
         Dummy: ""
 userInputs:
-  InputFile1: file://OutputFile-d4daa6de-3ab1-4ef6-bcf1-4c8021dc9b6a.json
-  InputFile2: file://sod_config.json
-  SQLConfig: file://OpenLDAPSql.toml # SQL configuration file in TOML format. sample provided in SQLConfig-sample.toml
+  InputFile1: <<MINIO_FILE_PATH>>
+  InputFile2: <<MINIO_FILE_PATH>>
+  SQLConfig: <<MINIO_FILE_PATH>> # SQL configuration file in TOML format. sample provided in SQLConfig-sample.toml
   SQLQuery: "" # SQL query to be executed on input files. If both SQLConfig and SQLQuery are provided, SQLConfig takes precedence.
   OutputFileFormat: "" # Output file format. Options are JSON, CSV or Parquet (Default: Parquet)
   LogConfigFile: <<MINIO_FILE_PATH>>
