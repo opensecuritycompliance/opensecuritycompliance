@@ -1,0 +1,22 @@
+userObject:
+  app:
+    name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+userInputs:
+  InputFile1: <<MINIO_FILE_PATH>>
+  InputFile2: <<MINIO_FILE_PATH>>
+  MergeType: APPEND # APPEND or CONCATENATE (Default: APPEND)
+  # APPEND -> Adds records/elements from InputFile2 to InputFile1.
+  # CONCATENATE -> Merges the fields from both InputFile1 and InputFile2 for each record/element and returns the combined data.
+  OutputFileFormat: "" # Output file format. Options are JSON, CSV or Parquet (Default: Parquet)
+  LogConfigFile: <<MINIO_FILE_PATH>>
+  ProceedIfLogExists: # True or False (Default: True)
+  ProceedIfErrorExists: # True or False (Default: True)
+  LogFile: <<MINIO_FILE_PATH>>
+  OutputFileName: "" # Output filename without extension. Default is OutputFile
+fromDate: 2025-04-15
+toDate: 2025-04-15

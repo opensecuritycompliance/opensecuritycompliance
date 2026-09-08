@@ -1,0 +1,27 @@
+# Main configuration for Merge Data feature
+[MergeData]
+ 
+# Validation error messages for user inputs and file formats
+[MergeData.Validation]
+InputFiles.empty = "Both InputFile1 and InputFile2 are missing or invalid. Please provide at least one valid input."
+
+# Merge validation errors
+MergeType.invalid = "The provided MergeType '{merge_type}' is invalid. Please use either 'APPEND' or 'CONCATENATE'."
+InputFile2.missing_columns = "The following columns are missing in InputFile2: {missing_columns}. Both files must have the same structure to merge."
+OutputFileFormat.invalid = "The specified OutputFileFormat is not supported. Please use either 'CSV' or 'JSON' or 'PARQUET'."
+
+# Exception messages during file operations
+[MergeData.Exception]
+
+# Log file related exceptions
+LogFile.download_failed = "An error occurred while downloading LogFile. Please find more details: {error}"
+
+# Input file validation and parsing exceptions
+InputFile1.download_failed = "An error occurred while downloading InputFile1. Please find more details: {error}"
+InputFile2.download_failed = "An error occurred while downloading InputFile2. Please find more details: {error}"
+
+# Merge file exceptions
+MergeData.merge_failed = "Error during merge operation: {error}"
+
+# Output file upload exceptions
+OutputFile.upload_failed = "An error occurred while uploading MergeData. Please find more details: {error}"
