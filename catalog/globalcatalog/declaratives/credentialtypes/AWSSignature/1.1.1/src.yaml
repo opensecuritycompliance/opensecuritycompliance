@@ -33,3 +33,11 @@ spec:
    dataType: STRING # data type of the attribute.  Available Types STRING, INT, FLOAT, FILE
    allowedValues: [] # optional. only available when multi select == true. Comma separated string or numeric.
    defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+ - name: ServiceName #Attribute Name -  only alpha
+   displayName: ServiceName # Display Name
+   secret: false # optional. boolean: true | false. If true, this attribute value should go to the vault
+   required: false # boolean: true | false
+   multiSelect: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
+   dataType: STRING # data type of the attribute.  Available Types STRING, INT, FLOAT, FILE
+   allowedValues: [] # optional. only available when multi select == true. Comma separated string or numeric.
+   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.

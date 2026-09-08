@@ -1,0 +1,33 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = """
+map(
+  . as $root
+  |
+  (
+    $root.ListAttachedRolePoliciesResponse
+    .ListAttachedRolePoliciesResult
+    .AttachedPolicies
+    .member
+  )
+  |
+  if type == "array" then .
+  elif . == null then []
+  else [.]
+  end
+  |
+  .[]
+  |
+  {
+    agent_id: $root.agent_id,
+    agent_name: $root.agent_name,
+    agent_type: $root.agent_type,
+    iam_role_arn: $root.iam_role_arn,
+    iam_role_name: $root.iam_role_name,
+    PolicyArn: .PolicyArn,
+    PolicyName: .PolicyName
+  }
+)
+"""

@@ -1,0 +1,62 @@
+SQLQuery = '''
+SELECT
+    agents.agent_id,
+    agents.agent_name,
+    agents.agent_arn,
+    agents.iam_role_arn,
+    CASE
+        WHEN agents.iam_role_arn LIKE 'arn:aws:iam::%:role/%'
+        THEN regexp_extract(
+            agents.iam_role_arn,
+            '[^/]+$',
+            0
+        )
+
+        WHEN agents.iam_role_arn LIKE 'arn:aws:sts::%:assumed-role/%'
+        THEN regexp_extract(
+            agents.iam_role_arn,
+            'assumed-role/([^/]+)/',
+            1
+        )
+
+        ELSE NULL
+    END AS iam_role_name,
+    agents.agent_type,
+    agents.foundation_model,
+    agents.agent_status,
+
+    COUNT(DISTINCT invocations.userIdentity_arn) AS unique_invokers,
+
+    COUNT(invocations.eventID) AS total_invocations,
+
+    MIN(invocations.eventTime) AS first_invocation_date,
+
+    MAX(invocations.eventTime) AS last_invocation_date,
+
+    json_group_array(
+        json_object(
+            'InvokerArn', invocations.userIdentity_arn,
+            'InvokerType', invocations.userIdentity_type,
+            'InvokerPrincipalId', invocations.userIdentity_principalId,
+            'SourceIP', invocations.sourceIPAddress,
+            'MFAAuthenticated',
+                invocations.userIdentity_sessionContext_attributes_mfaAuthenticated,
+            'EventTime', invocations.eventTime
+        )
+    ) AS invoker_details
+
+FROM inputfile1 AS agents
+
+LEFT JOIN inputfile2 AS invocations
+    ON agents.iam_role_arn = invocations.userIdentity_arn
+    OR agents.agent_id = invocations.requestParameters_agentId
+
+GROUP BY
+    agents.agent_id,
+    agents.agent_name,
+    agents.agent_arn,
+    agents.iam_role_arn,
+    agents.agent_type,
+    agents.foundation_model,
+    agents.agent_status
+'''

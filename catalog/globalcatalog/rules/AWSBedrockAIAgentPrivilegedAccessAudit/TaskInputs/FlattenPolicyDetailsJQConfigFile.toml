@@ -1,0 +1,24 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = """
+map(
+  {
+    PolicyId: .GetPolicyResponse.GetPolicyResult.Policy.PolicyId,
+    PolicyName: .GetPolicyResponse.GetPolicyResult.Policy.PolicyName,
+    PolicyArn: .GetPolicyResponse.GetPolicyResult.Policy.Arn,
+    PolicyPath: .GetPolicyResponse.GetPolicyResult.Policy.Path,
+    DefaultVersionId: .GetPolicyResponse.GetPolicyResult.Policy.DefaultVersionId,
+    AttachmentCount: .GetPolicyResponse.GetPolicyResult.Policy.AttachmentCount,
+    IsAttachable: .GetPolicyResponse.GetPolicyResult.Policy.IsAttachable,
+    CreateDate: .GetPolicyResponse.GetPolicyResult.Policy.CreateDate,
+    UpdateDate: .GetPolicyResponse.GetPolicyResult.Policy.UpdateDate,
+    AgentID: .agent_id,
+    AgentName: .agent_name,
+    AgentType: .agent_type,
+    IAMRoleARN: .iam_role_arn,
+    IAMRoleName: .iam_role_name
+  }
+)
+"""

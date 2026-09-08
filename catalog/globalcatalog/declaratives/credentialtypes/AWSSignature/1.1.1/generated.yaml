@@ -35,5 +35,13 @@ spec:
     dataType: STRING
     allowedValues: []
     defaultValue: ""
+  - name: ServiceName
+    displayName: ServiceName
+    secret: false
+    required: false
+    multiSelect: false
+    dataType: STRING
+    allowedValues: []
+    defaultValue: ""
 status: null
 isVersionToBeOverride: true

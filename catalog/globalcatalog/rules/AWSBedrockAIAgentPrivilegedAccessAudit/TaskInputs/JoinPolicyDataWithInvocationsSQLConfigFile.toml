@@ -1,0 +1,32 @@
+SQLQuery = '''
+SELECT
+    p.AgentID AS AgentID,
+    p.AgentName AS AgentName,
+    a.agent_arn AS AgentARN,
+    p.AgentType AS AgentType,
+
+    p.IAMRoleARN AS IAMRoleARN,
+    p.IAMRoleName AS IAMRoleName,
+
+    p.PolicyId AS PolicyId,
+    p.PolicyName AS PolicyName,
+    p.PolicyArn AS PolicyArn,
+    p.PolicyPath AS PolicyPath,
+    p.DefaultVersionId AS DefaultVersionId,
+    p.AttachmentCount AS AttachmentCount,
+    p.IsAttachable AS IsAttachable,
+    p.CreateDate AS CreateDate,
+    p.UpdateDate AS UpdateDate,
+    p.PolicyDocument AS PolicyDocument,
+
+    a.unique_invokers AS UniqueInvokers,
+    a.total_invocations AS TotalInvocations,
+    a.first_invocation_date AS FirstInvocationDate,
+    a.last_invocation_date AS LastInvocationDate,
+    a.invoker_details AS InvokerDetails
+
+FROM inputfile1 AS p
+
+LEFT JOIN inputfile2 AS a
+    ON p.AgentID = a.agent_id
+'''

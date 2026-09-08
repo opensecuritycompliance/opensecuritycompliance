@@ -1,0 +1,198 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = """
+map(
+  . as $root
+  |
+
+  (
+    (
+      [
+        "AdministratorAccess",
+        "PowerUserAccess",
+        "IAMFullAccess",
+        "SecurityAudit",
+        "SystemAdministrator"
+      ]
+      | any(. == $root.PolicyName)
+    )
+    or
+    (
+      [
+        $root.PolicyDocument.Statement[]?.Action?
+        | if type == "array" then .[] else . end
+      ]
+      | any(
+          . as $action
+          |
+          ($action | contains("iam:*"))
+          or ($action | contains("*:*"))
+          or ($action | contains("s3:Delete"))
+          or ($action | contains("ec2:Terminate"))
+          or ($action | contains("lambda:Delete"))
+          or ($action | contains("bedrock:Invoke"))
+          or ($action | contains("kms:Decrypt"))
+          or ($action | contains("secretsmanager:GetSecret"))
+        )
+    )
+  ) as $is_privileged
+  |
+
+  (
+    ($root.UniqueInvokers // 0) > 1
+  ) as $multiple_invokers
+  |
+
+  (
+    [
+      ($root.InvokerDetails // [])[]
+      | select(
+          type == "object"
+          and
+          .InvokerType == "AssumedRole"
+          and
+          (
+            (.InvokerArn // "" | contains("role/svc-"))
+            or
+            (.InvokerArn // "" | contains("role/app-"))
+          )
+        )
+    ]
+    | length > 0
+  ) as $service_account_invoker
+  |
+
+  {
+    System: "aws",
+    Source: "bedrock",
+    ResourceID: $root.AgentARN,
+    ResourceName: $root.AgentName,
+    ResourceType: "BedrockAIAgent",
+    ResourceLocation: "us-west-2",
+    ResourceTags: {},
+
+    AgentID: $root.AgentID,
+    AgentName: $root.AgentName,
+    AgentARN: $root.AgentARN,
+    AgentType: $root.AgentType,
+
+    IAMRoleARN: $root.IAMRoleARN,
+    IAMRoleName: $root.IAMRoleName,
+
+    PolicyId: $root.PolicyId,
+    PolicyName: $root.PolicyName,
+    PolicyArn: $root.PolicyArn,
+    PolicyPath: $root.PolicyPath,
+    DefaultVersionId: $root.DefaultVersionId,
+    AttachmentCount: $root.AttachmentCount,
+    IsAttachable: $root.IsAttachable,
+    CreateDate: $root.CreateDate,
+    UpdateDate: $root.UpdateDate,
+    PolicyDocument: $root.PolicyDocument,
+
+    UniqueInvokers: $root.UniqueInvokers,
+    TotalInvocations: $root.TotalInvocations,
+    FirstInvocationDate: $root.FirstInvocationDate,
+    LastInvocationDate: $root.LastInvocationDate,
+    InvokerDetails:
+    if (
+        ($root.InvokerDetails // [])
+        | all(
+            .InvokerArn == null
+            and .InvokerType == null
+            and .InvokerPrincipalId == null
+            and .SourceIP == null
+            and .MFAAuthenticated == null
+            and .EventTime == null
+        )
+    )
+    then []
+    else $root.InvokerDetails
+    end,
+
+    ValidationStatusCode:
+      if $is_privileged
+      then "PRIV_AI_AGNT_ACCS"
+      else "NO_PRIV_AI_AGNT_ACCS"
+      end,
+
+    ValidationStatusNotes:
+    if $is_privileged
+    then
+        "AI agent with privileged access detected. "
+        + "Agent type: "
+        + ($root.AgentType // "UNKNOWN")
+        + ". "
+        + "Privileged policy/action detected in policy: "
+        + ($root.PolicyName // "UNKNOWN")
+        + ". "
+        + "Invokers observed: "
+        + (($root.UniqueInvokers // 0) | tostring)
+        + ". "
+        + "Total invocations observed: "
+        + (($root.TotalInvocations // 0) | tostring)
+        + "."
+    else
+        "AI agent evaluated and no privileged access was detected. "
+        + "Agent type: "
+        + ($root.AgentType // "UNKNOWN")
+        + ". "
+        + "Policy evaluated: "
+        + ($root.PolicyName // "UNKNOWN")
+        + ". "
+        + "Invokers observed: "
+        + (($root.UniqueInvokers // 0) | tostring)
+        + ". "
+        + "Total invocations observed: "
+        + (($root.TotalInvocations // 0) | tostring)
+        + "."
+    end,
+
+    ComplianceStatus:
+      if $is_privileged
+      then "NON_COMPLIANT"
+      else "COMPLIANT"
+      end,
+
+    ComplianceStatusReason:
+    if ($is_privileged | not)
+    then
+        "AI agent is compliant because no privileged permissions were detected in the evaluated policy actions."
+
+    elif ($multiple_invokers)
+    then
+        "Privileged AI agent with multiple invokers ("
+        + ($root.UniqueInvokers | tostring)
+        + ") - unclear accountability and potential for misuse. "
+        + "Autonomous AI agent with privileged permissions requires enhanced manual review and continuous monitoring due to prompt injection risks, model hallucination potential, and autonomous decision-making capabilities."
+
+    elif ($service_account_invoker)
+    then
+        "Privileged AI agent invoked by service account - fully autonomous privileged operations without human oversight. "
+        + "Requires enhanced manual review and continuous monitoring due to autonomous decision-making risks."
+
+    elif (($root.UniqueInvokers // 0) == 0)
+    then
+        "Privileged AI agent with no observed invokers. "
+        + "The agent has privileged permissions, but no invocation activity was identified during the evaluated period. "
+        + "Requires manual review to validate intended usage, access controls, and potential autonomous execution risks."
+
+    else
+        "Privileged AI agent requires manual review. "
+        + "The agent has privileged permissions and "
+        + (($root.UniqueInvokers // 0) | tostring)
+        + " observed invoker. "
+        + "Autonomous AI agent with privileged permissions requires enhanced monitoring due to prompt injection risks, model hallucination potential, and autonomous decision-making capabilities."
+    end,
+
+    EvaluatedTime:
+      (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
+
+    UserAction: "",
+    ActionStatus: "",
+    ActionResponseURL: ""
+  }
+)
+"""
