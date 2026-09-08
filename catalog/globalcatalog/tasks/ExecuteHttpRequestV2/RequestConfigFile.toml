@@ -34,7 +34,7 @@ Method = ""
 # Content Type (MANDATORY):
 # - Specify the Content-Type header to define the format of the request body.
 # - Supported values: 
-#   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream.
+#   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream, application/x-amz-json-*.
 ContentType = ""
 
 # Follow Redirects (MANDATORY):
@@ -85,6 +85,7 @@ Redirect = true
 #   - Option 2 (manual): Authorization = "{%{validationCURLresponse.token}%}" (if using validationCURL)
 #
 CredentialType = ""
+
 
 # Timeout (MANDATORY):
 # - Specify the timeout for the request in seconds.
@@ -213,7 +214,7 @@ MaxWorkers = 5
     # field2 = "Value2"
 
     # Raw Body:
-    # - Used with ContentType = "application/json", "text/html", "text/plain", or "application/xml".
+    # - Used with ContentType = "application/json", "text/html", "text/plain", "application/x-amz-json-*" or "application/xml".
     # - Define raw data as JSON or plain text.
     [Request.Data.Raw]
     # Example:

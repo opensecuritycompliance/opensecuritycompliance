@@ -1,0 +1,42 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = """
+map(
+  . as $root
+  |
+  select(
+    (
+      [
+        "AdministratorAccess",
+        "PowerUserAccess",
+        "IAMFullAccess",
+        "SecurityAudit",
+        "SystemAdministrator"
+      ]
+      | any(. == $root.PolicyName)
+    )
+    or
+    (
+      any(
+        $root.PolicyDocument.Statement[]?.Action?
+        |
+        if type == "array" then
+          .[]
+        else
+          .
+        end;
+        contains("iam:*")
+        or contains("*:*")
+        or contains("s3:Delete")
+        or contains("ec2:Terminate")
+        or contains("lambda:Delete")
+        or contains("bedrock:Invoke")
+        or contains("kms:Decrypt")
+        or contains("secretsmanager:GetSecret")
+      )
+    )
+  )
+)
+"""

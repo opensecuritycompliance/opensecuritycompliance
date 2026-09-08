@@ -1,0 +1,4 @@
+[JQConfig]
+OutputMethod = "ALL"
+
+JQExpression = "{StartTime: (\"<<fromdate>>\" | strptime(\"%d/%m/%Y %H:%M\") | mktime), EndTime: (\"<<todate>>\" | strptime(\"%d/%m/%Y %H:%M\") | mktime)}"

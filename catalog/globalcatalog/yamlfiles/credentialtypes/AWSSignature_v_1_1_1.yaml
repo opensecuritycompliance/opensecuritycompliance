@@ -4,13 +4,15 @@ apiVersion: v1alpha1
 kind: credentialType
 meta:
   name: AWSSignature # <name of the credential type. Examples, activeDirectory> only alpha
-  displayName:  AWSSignature # <optional. How do you want this to show up in the ComplianceCow UI. Example, Active Directory> 
+  displayName: AWSSignature # <optional. How do you want this to show up in the ComplianceCow UI. Example, Active Directory> 
+  description: "Credential type for AWS authentication using access keys and secret keys for secure connection to AWS services."
   version: 1.1.1 # optional. semver
 spec:
  extends: [] # optional. The attributes section will add to the extended attributes
  attributes:
  - name: ValidationCURL #Attribute Name -  only alpha
    displayName: ValidationCURL # Display Name
+   description: "CURL endpoint used to validate and verify if the provided AWS Access Key and Secret Key are correct and have proper access permissions."
    secret: false # optional. boolean: true | false. If true, this attribute value should go to the vault
    required: false # boolean: true | false
    multiSelect: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
@@ -19,6 +21,7 @@ spec:
    defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
  - name: AccessKey #Attribute Name -  only alpha
    displayName: AccessKey # Display Name
+   description: "AWS Access Key ID - unique identifier for AWS account authentication, typically 20 characters in length."
    secret: true # optional. boolean: true | false. If true, this attribute value should go to the vault
    required: true # boolean: true | false
    multiSelect: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
@@ -27,8 +30,18 @@ spec:
    defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
  - name: SecretKey #Attribute Name -  only alpha
    displayName: SecretKey # Display Name
+   description: "AWS Secret Access Key - private authentication key paired with Access Key ID, typically 40 characters in length and must remain confidential."
    secret: true # optional. boolean: true | false. If true, this attribute value should go to the vault
    required: true # boolean: true | false
+   multiSelect: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
+   dataType: STRING # data type of the attribute.  Available Types STRING, INT, FLOAT, FILE
+   allowedValues: [] # optional. only available when multi select == true. Comma separated string or numeric.
+   defaultValue: # optional. You can specify the default value (either a string or a number) at this point, for now, it supports a single value.
+ - name: ServiceName #Attribute Name -  only alpha
+   displayName: ServiceName # Display Name
+   description: "AWS Service Name - the name of the AWS service for which to generate signatures."
+   secret: false # optional. boolean: true | false. If true, this attribute value should go to the vault
+   required: false # boolean: true | false
    multiSelect: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
    dataType: STRING # data type of the attribute.  Available Types STRING, INT, FLOAT, FILE
    allowedValues: [] # optional. only available when multi select == true. Comma separated string or numeric.

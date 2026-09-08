@@ -1,0 +1,48 @@
+SQLQuery = '''
+SELECT DISTINCT
+    agentId AS agent_id,
+    agentName AS agent_name,
+    agentArn AS agent_arn,
+    agentResourceRoleArn AS iam_role_arn,
+    'BEDROCK_NATIVE' AS agent_type,
+    foundationModel AS foundation_model,
+    agentStatus AS agent_status
+FROM inputfile1
+WHERE agentId IS NOT NULL
+
+UNION ALL
+
+SELECT DISTINCT
+    'CUSTOM-' || SUBSTR(
+        json_extract(CloudTrailEvent, '$.userIdentity.arn'),
+        -12
+    ) AS agent_id,
+
+    'CustomAIAgent' AS agent_name,
+
+    json_extract(
+        CloudTrailEvent,
+        '$.userIdentity.arn'
+    ) AS agent_arn,
+
+    json_extract(
+        CloudTrailEvent,
+        '$.userIdentity.arn'
+    ) AS iam_role_arn,
+
+    'CUSTOM_API_CALLER' AS agent_type,
+
+    NULL AS foundation_model,
+
+    NULL AS agent_status
+
+FROM inputfile2
+
+WHERE EventSource = 'bedrock.amazonaws.com'
+  AND EventName IN (
+      'InvokeModel',
+      'InvokeAgent',
+      'Converse',
+      'ConverseStream'
+  );
+'''

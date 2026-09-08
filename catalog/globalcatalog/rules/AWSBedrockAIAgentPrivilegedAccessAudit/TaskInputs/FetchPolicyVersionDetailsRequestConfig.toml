@@ -1,0 +1,31 @@
+[Variables]
+Method = "POST"
+CredentialType = "AWSSignature"
+
+[Request]
+URL = "https://iam.amazonaws.com/"
+Method = "<<Method>>"
+ContentType = "application/x-www-form-urlencoded"
+Redirect = false
+CredentialType = "<<CredentialType>>"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Headers]
+
+[Request.Params]
+Action = "GetPolicyVersion"
+Version = "2010-05-08"
+PolicyArn = "<<inputfile.PolicyArn>>"
+VersionId = "<<inputfile.DefaultVersionId>>"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429|400"
+TimeInterval = 10
+MaxRetries = 6
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data]

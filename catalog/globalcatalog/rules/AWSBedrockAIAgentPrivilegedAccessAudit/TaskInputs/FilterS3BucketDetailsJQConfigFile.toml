@@ -1,0 +1,15 @@
+[JQConfig]
+OutputMethod = "ALL"
+
+JQExpression = """
+.[].trailList.[]
+|
+{
+    "S3BucketName": .S3BucketName,
+    "HomeRegion": .HomeRegion,
+    "CloudTrailName": .Name,
+    "CloudTrailARN": .TrailARN,
+    "IsMultiRegionTrail": .IsMultiRegionTrail,
+    "LogGroupName": .CloudWatchLogsLogGroupArn | capture("log-group:(?<name>[^:]+)") | .name
+}
+"""

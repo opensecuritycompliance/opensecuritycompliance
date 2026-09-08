@@ -12,6 +12,7 @@ userInputs:
       AccessKey: "$AWS_ACCESS_KEY" 
       SecretKey: "$AWS_SECRET_KEY"
       ValidationCURL: "$VALIDATION_CURL"
+      ServiceName: "$AWS_SERVICE_NAME"
     BasicAuthentication:
       UserName: "$USERNAME"
       Password: "$PASSWORD"
@@ -30,5 +31,6 @@ userInputs:
     JWTBearer:
         Algorithm: "$ALGORITHM"
         Payload: "$PAYLOAD"
+        Headers: "$HEADERS"
         PrivateKey: "$PRIVATE_KEY"
         ValidationCURL:  "$VALIDATION_CURL"

@@ -1,0 +1,30 @@
+[Variables]
+Method = "POST"
+CredentialType = "AWSSignature"
+
+[Request]
+URL = "https://iam.amazonaws.com/"
+Method = "<<Method>>"
+ContentType = "application/x-www-form-urlencoded"
+Redirect = false
+CredentialType = "<<CredentialType>>"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Headers]
+
+[Request.Params]
+Action = "ListAttachedRolePolicies"
+Version = "2010-05-08"
+RoleName = "<<inputfile.iam_role_name>>"
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429|400"
+TimeInterval = 3
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data]

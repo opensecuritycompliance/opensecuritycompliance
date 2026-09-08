@@ -1,0 +1,24 @@
+[JQConfig]
+
+OutputMethod = "ALL"
+
+JQExpression = """
+.[].results[]
+| map({ (.field): .value })
+| add
+| (."@message" | fromjson) as $event
+| {
+    timestamp: ."@timestamp",
+    eventTime: $event.eventTime,
+    eventSource: $event.eventSource,
+    eventName: $event.eventName,
+    eventID: $event.eventID,
+    sourceIPAddress: $event.sourceIPAddress,
+    userIdentity_userName: $event.userIdentity.userName,
+    userIdentity_arn: $event.userIdentity.arn,
+    userIdentity_type: $event.userIdentity.type,
+    userIdentity_principalId: $event.userIdentity.principalId,
+    userIdentity_sessionContext_attributes_mfaAuthenticated: $event.userIdentity.sessionContext.attributes.mfaAuthenticated,
+    requestParameters_agentId: $event.requestParameters.agentId
+  }
+"""
