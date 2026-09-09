@@ -32,6 +32,11 @@ def from_int(x: Any) -> int:
     return x
 
 
+def from_bool(x: Any) -> bool:
+    assert isinstance(x, bool)
+    return x
+
+
 def to_class(c: Type[T], x: Any) -> dict:
     if isinstance(x, c):
         return cast(Any, x).to_dict()
@@ -914,6 +919,286 @@ def meta_data_template_from_dict(s: Any) -> MetaDataTemplate:
 def meta_data_template_to_dict(x: MetaDataTemplate) -> Any:
     return to_class(MetaDataTemplate, x)
 
+
+
+
+class TaskMetaInputs:
+    """One entry from the `inputs` list in __meta.yaml."""
+
+    name: str
+    description: str
+    data_type: str
+    repeated: Optional[bool]
+    allowed_values: Optional[list]
+    template_file: Optional[str]
+    format: Optional[str]
+    default_value: Optional[Any]
+    show_field: Optional[bool]
+    required: Optional[bool]
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        data_type: str,
+        repeated: Optional[bool],
+        allowed_values: Optional[list],
+        template_file: Optional[str],
+        format: Optional[str],
+        default_value: Optional[Any],
+        show_field: Optional[bool],
+        required: Optional[bool],
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.data_type = data_type
+        self.repeated = repeated
+        self.allowed_values = allowed_values
+        self.template_file = template_file
+        self.format = format
+        self.default_value = default_value
+        self.show_field = show_field
+        self.required = required
+
+    @staticmethod
+    def from_dict(obj: Any) -> "TaskMetaInputs":
+        (name, description, data_type, repeated, allowed_values,
+         template_file, meta_format, default_value, show_field, required) = (
+            None, None, None, None, None, None, None, None, None, None
+        )
+        if isinstance(obj, dict):
+            if cowdictutils.is_valid_key(obj, "name"):
+                name = from_union([from_str, from_none], obj.get("name"))
+            if cowdictutils.is_valid_key(obj, "description"):
+                description = from_union([from_str, from_none], obj.get("description"))
+            if cowdictutils.is_valid_key(obj, "dataType"):
+                data_type = from_union([from_str, from_none], obj.get("dataType"))
+            if cowdictutils.is_valid_key(obj, "repeated"):
+                repeated = from_union([from_bool, from_none], obj.get("repeated"))
+            if cowdictutils.is_valid_array(obj, "allowedValues"):
+                allowed_values = obj.get("allowedValues")
+            if cowdictutils.is_valid_key(obj, "templateFile"):
+                template_file = from_union([from_str, from_none], obj.get("templateFile"))
+            if cowdictutils.is_valid_key(obj, "format"):
+                meta_format = from_union([from_str, from_none], obj.get("format"))
+            if cowdictutils.is_valid_key(obj, "defaultValue"):
+                default_value = obj.get("defaultValue")
+            if cowdictutils.is_valid_key(obj, "showField"):
+                show_field = from_union([from_bool, from_none], obj.get("showField"))
+            if cowdictutils.is_valid_key(obj, "required"):
+                required = from_union([from_bool, from_none], obj.get("required"))
+
+        return TaskMetaInputs(
+            name, description, data_type, repeated, allowed_values,
+            template_file, meta_format, default_value, show_field, required,
+        )
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["name"] = from_union([from_str, from_none], self.name)
+        result["description"] = from_union([from_str, from_none], self.description)
+        result["dataType"] = from_union([from_str, from_none], self.data_type)
+        result["repeated"] = from_union([from_bool, from_none], self.repeated)
+        result["allowedValues"] = self.allowed_values
+        result["templateFile"] = from_union([from_str, from_none], self.template_file)
+        result["format"] = from_union([from_str, from_none], self.format)
+        result["defaultValue"] = self.default_value
+        result["showField"] = from_union([from_bool, from_none], self.show_field)
+        result["required"] = from_union([from_bool, from_none], self.required)
+        return result
+
+
+class TaskMetaOutputs:
+    """One entry from the `outputs` list in __meta.yaml."""
+
+    name: str
+    description: str
+    data_type: str
+
+    def __init__(
+        self,
+        name: Optional[str],
+        description: Optional[str],
+        data_type: Optional[str],
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.data_type = data_type
+
+    @staticmethod
+    def from_dict(obj: Any) -> "TaskMetaOutputs":
+        name, description, data_type = (None, None, None)
+        if isinstance(obj, dict):
+            if cowdictutils.is_valid_key(obj, "name"):
+                name = from_union([from_str, from_none], obj.get("name"))
+            if cowdictutils.is_valid_key(obj, "description"):
+                description = from_union([from_str, from_none], obj.get("description"))
+            if cowdictutils.is_valid_key(obj, "dataType"):
+                data_type = from_union([from_str, from_none], obj.get("dataType"))
+
+        return TaskMetaOutputs(name, description, data_type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["name"] = from_union([from_str, from_none], self.name)
+        result["description"] = from_union([from_str, from_none], self.description)
+        result["dataType"] = from_union([from_str, from_none], self.data_type)
+        return result
+
+class TaskMetaTemplate:
+    authors: list[str]
+    domain: str
+    created_date: str
+    name: str
+    display_name: str
+    version: str
+    description: Optional[str]
+    sha_token: Optional[str]
+    show_in_catalog: Optional[bool]
+    icon: Optional[str]
+    type: Optional[str]
+    tags: Optional[list]
+    application_type: Optional[str]
+    user_object_json_in_base64: Optional[str]
+    system_object_json_in_base64: Optional[str]
+    inputs: List[TaskMetaInputs]
+    outputs: List[TaskMetaOutputs]
+
+    def __init__(
+        self,
+        authors: Optional[list],
+        domain: Optional[str],
+        created_date: Optional[str],
+        name: Optional[str],
+        display_name: Optional[str],
+        version: Optional[str],
+        description: Optional[str],
+        sha_token: Optional[str],
+        show_in_catalog: Optional[bool],
+        icon: Optional[str],
+        meta_type: Optional[str],
+        tags: Optional[list],
+        application_type: Optional[str],
+        user_object_json_in_base64: Optional[str],
+        system_object_json_in_base64: Optional[str],
+        inputs: Optional[List[TaskMetaInputs]],
+        outputs: Optional[List[TaskMetaOutputs]],
+    ) -> None:
+        self.authors = authors
+        self.domain = domain
+        self.created_date = created_date
+        self.name = name
+        self.display_name = display_name
+        self.version = version
+        self.description = description
+        self.sha_token = sha_token
+        self.show_in_catalog = show_in_catalog
+        self.icon = icon
+        self.type = meta_type
+        self.tags = tags
+        self.application_type = application_type
+        self.user_object_json_in_base64 = user_object_json_in_base64
+        self.system_object_json_in_base64 = system_object_json_in_base64
+        self.inputs = inputs or []
+        self.outputs = outputs or []
+
+    @staticmethod
+    def from_dict(obj: Any) -> "TaskMetaTemplate":
+        (
+            authors, domain, created_date, name, display_name, version,
+            description, sha_token, show_in_catalog, icon, meta_type, tags,
+            application_type, user_object_json_in_base64, system_object_json_in_base64,
+            inputs, outputs,
+        ) = (None,) * 17
+
+        if isinstance(obj, dict):
+            if cowdictutils.is_valid_array(obj, "authors"):
+                authors = obj.get("authors")
+            if cowdictutils.is_valid_key(obj, "domain"):
+                domain = from_union([from_str, from_none], obj.get("domain"))
+            if cowdictutils.is_valid_key(obj, "createdDate"):
+                created_date = from_union([from_str, from_none], obj.get("createdDate"))
+            if cowdictutils.is_valid_key(obj, "name"):
+                name = from_union([from_str, from_none], obj.get("name"))
+            if cowdictutils.is_valid_key(obj, "displayName"):
+                display_name = from_union([from_str, from_none], obj.get("displayName"))
+            if cowdictutils.is_valid_key(obj, "version"):
+                version = from_union([from_str, from_none], obj.get("version"))
+            if cowdictutils.is_valid_key(obj, "description"):
+                description = from_union([from_str, from_none], obj.get("description"))
+            if cowdictutils.is_valid_key(obj, "shaToken"):
+                sha_token = from_union([from_str, from_none], obj.get("shaToken"))
+            if cowdictutils.is_valid_key(obj, "showInCatalog"):
+                show_in_catalog = from_union([from_bool, from_none], obj.get("showInCatalog"))
+            if cowdictutils.is_valid_key(obj, "icon"):
+                icon = from_union([from_str, from_none], obj.get("icon"))
+            if cowdictutils.is_valid_key(obj, "type"):
+                meta_type = from_union([from_str, from_none], obj.get("type"))
+            if cowdictutils.is_valid_array(obj, "tags"):
+                tags = obj.get("tags")
+            if cowdictutils.is_valid_key(obj, "applicationType"):
+                application_type = from_union([from_str, from_none], obj.get("applicationType"))
+            if cowdictutils.is_valid_key(obj, "userObjectJSONInBase64"):
+                user_object_json_in_base64 = from_union([from_str, from_none], obj.get("userObjectJSONInBase64"))
+            if cowdictutils.is_valid_key(obj, "systemObjectJSONInBase64"):
+                system_object_json_in_base64 = from_union([from_str, from_none], obj.get("systemObjectJSONInBase64"))
+            # FIX: inputs -> TaskMetaInputs, outputs -> TaskMetaFieldTemplate
+            if cowdictutils.is_valid_array(obj, "inputs"):
+                inputs = from_list(TaskMetaInputs.from_dict, obj.get("inputs"))
+            if cowdictutils.is_valid_array(obj, "outputs"):
+                outputs = from_list(TaskMetaOutputs.from_dict, obj.get("outputs"))
+
+        return TaskMetaTemplate(
+            authors, domain, created_date, name, display_name, version,
+            description, sha_token, show_in_catalog, icon, meta_type, tags,
+            application_type, user_object_json_in_base64, system_object_json_in_base64,
+            inputs, outputs,
+        )
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["authors"] = self.authors
+        result["domain"] = from_union([from_str, from_none], self.domain)
+        result["createdDate"] = from_union([from_str, from_none], self.created_date)
+        result["name"] = from_union([from_str, from_none], self.name)
+        result["displayName"] = from_union([from_str, from_none], self.display_name)
+        result["version"] = from_union([from_str, from_none], self.version)
+        result["description"] = from_union([from_str, from_none], self.description)
+        result["shaToken"] = from_union([from_str, from_none], self.sha_token)
+        result["showInCatalog"] = from_union([from_bool, from_none], self.show_in_catalog)
+        result["icon"] = from_union([from_str, from_none], self.icon)
+        result["type"] = from_union([from_str, from_none], self.type)
+        result["tags"] = self.tags
+        result["applicationType"] = from_union([from_str, from_none], self.application_type)
+        result["userObjectJSONInBase64"] = from_union([from_str, from_none], self.user_object_json_in_base64)
+        result["systemObjectJSONInBase64"] = from_union([from_str, from_none], self.system_object_json_in_base64)
+        result["inputs"] = from_union(
+            [lambda x: from_list(lambda y: to_class(TaskMetaInputs, y), x), from_none],
+            self.inputs,
+        )
+        result["outputs"] = from_union(
+            [lambda x: from_list(lambda y: to_class(TaskMetaOutputs, y), x), from_none],
+            self.outputs,
+        )
+        return result
+
+    # ---- NEW: dict-keyed-by-name accessors ----
+
+    def get_inputs_to_dict(self) -> dict:
+        """{"InputFile": {...}, "JQConfigFile": {...}, ...}"""
+        return {f.name: f.to_dict() for f in (self.inputs or []) if f.name}
+
+    def get_outputs_to_dict(self) -> dict:
+        """{"OutputFile": {...}, "LogFile": {...}, ...}"""
+        return {f.name: f.to_dict() for f in (self.outputs or []) if f.name}
+
+
+def task_meta_template_from_dict(s: Any) -> TaskMetaTemplate:
+    return TaskMetaTemplate.from_dict(s)
+
+
+def task_meta_template_to_dict(x: TaskMetaTemplate) -> Any:
+    return to_class(TaskMetaTemplate, x)
 
 class TaskOutputs:
     outputs: Optional[dict]

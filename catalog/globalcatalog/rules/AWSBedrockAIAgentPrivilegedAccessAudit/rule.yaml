@@ -32,9 +32,9 @@ meta:
   app: HttpRequest
 spec:
   inputs:
-    fetch_bedrock_agents_RequestConfigFile: <<MINIO_FILE_PATH>>
-    fetch_bedrock_api_callers_RequestConfigFile: <<MINIO_FILE_PATH>>
-    fetch_ai_agent_policies_RequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchBedrockAgentsRequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchBedrockApiCallersRequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchAiAgentPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
     FetchAPICallersResponseConfigFile: <<MINIO_FILE_PATH>>
     FormatDateTimeJQConfigFile: <<MINIO_FILE_PATH>>
     GetCloudTrialDetailsRequestConfig: <<MINIO_FILE_PATH>>
@@ -47,7 +47,7 @@ spec:
     FormatQueryResponseJQConfigFile: <<MINIO_FILE_PATH>>
     ConsolidateAIAgentsSQLConfig: <<MINIO_FILE_PATH>>
     GetBedrockAgentsDetailsRequestConfigFile: <<MINIO_FILE_PATH>>
-    FlattenAIAgentsJQExpression: .[].agent
+    FlattenAiAgentsJqExpression: .[].agent
     OutputMethod: ALL
     JoinAgentsWithInvocationsSQLConfig: <<MINIO_FILE_PATH>>
     FilterBedrockNativeAgentsJQConfigFile: <<MINIO_FILE_PATH>>
@@ -64,7 +64,7 @@ spec:
     JoinPolicyDataWithInvocationsSQLConfigFile: <<MINIO_FILE_PATH>>
     ComplianceLogicJQConfigFile: <<MINIO_FILE_PATH>>
   inputsMeta__:
-    - name: fetch_bedrock_agents_RequestConfigFile
+    - name: FetchBedrockAgentsRequestConfigFile
       dataType: HTTP_CONFIG
       defaultValue: <<MINIO_FILE_PATH>>
       format: toml
@@ -73,7 +73,7 @@ spec:
       allowedValues: []
       repeated: false
       explanation: ''
-    - name: fetch_bedrock_api_callers_RequestConfigFile
+    - name: FetchBedrockApiCallersRequestConfigFile
       dataType: HTTP_CONFIG
       defaultValue: <<MINIO_FILE_PATH>>
       format: toml
@@ -82,7 +82,7 @@ spec:
       allowedValues: []
       repeated: false
       explanation: ''
-    - name: fetch_ai_agent_policies_RequestConfigFile
+    - name: FetchAiAgentPoliciesRequestConfigFile
       dataType: HTTP_CONFIG
       defaultValue: <<MINIO_FILE_PATH>>
       format: toml
@@ -198,7 +198,7 @@ spec:
       allowedValues: []
       repeated: false
       explanation: ''
-    - name: FlattenAIAgentsJQExpression
+    - name: FlattenAiAgentsJqExpression
       dataType: JQ_EXPRESSION
       defaultValue: .[].agent
       showField: true
@@ -336,7 +336,7 @@ spec:
       explanation: ''
   tasks:
     - name: ExecuteHttpRequestV2
-      alias: fetch_bedrock_agents
+      alias: Fetch Bedrock Agents
       type: task
       description: Detailed info about the task
       appTags:
@@ -349,7 +349,7 @@ spec:
         service:
           - bedrock
     - name: ExecuteHttpRequestV2
-      alias: get_bedrock_agent_details
+      alias: Get Bedrock Agent Details
       type: task
       description: >-
         Executes HTTP API requests with configurable authentication, data
@@ -366,7 +366,7 @@ spec:
         service:
           - bedrock
     - name: ExtractDataUsingJQV2
-      alias: flatten_ai_agent_details
+      alias: Flatten AI Agent Details
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -380,7 +380,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: format_start_and_end_date
+      alias: Format Start And End Date
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -394,7 +394,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: fetch_bedrock_api_callers
+      alias: Fetch Bedrock API Callers
       type: task
       description: Detailed info about the task
       appTags:
@@ -405,7 +405,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: get_cloud_trail_details
+      alias: Get CloudTrail Details
       type: task
       description: >-
         Executes HTTP API requests with configurable authentication, data
@@ -420,7 +420,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: filter_s3_bucket_details
+      alias: Filter S3 Bucket Details
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -434,7 +434,7 @@ spec:
         execlevel:
           - app
     - name: MergeDataV2
-      alias: merge_cloudtrialdetails_with_timedetails
+      alias: Merge CloudTrail With Time Details
       type: task
       description: >-
         Combine data from two input files using flexible merge strategies.
@@ -449,7 +449,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: query_cloudwatch
+      alias: Query CloudWatch Logs
       type: task
       description: >-
         Executes HTTP API requests with configurable authentication, data
@@ -464,7 +464,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: fetch_data_from_query
+      alias: Fetch Query Results
       type: task
       description: >-
         Executes HTTP API requests with configurable authentication, data
@@ -479,7 +479,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: format_query_response_from_cloudwatch
+      alias: Format CloudWatch Query Response
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -493,7 +493,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteSqlQueryV2
-      alias: consolidate_ai_agents
+      alias: Consolidate AI Agents
       type: task
       description: Detailed info about the task
       appTags:
@@ -504,7 +504,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteSqlQueryV2
-      alias: join_agents_with_invocations
+      alias: Join Agents With Invocations
       type: task
       description: Detailed info about the task
       appTags:
@@ -515,7 +515,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: filter_bedrock_native_agents
+      alias: Filter Bedrock Native Agents
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -529,7 +529,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: fetch_ai_agent_policies
+      alias: Fetch AI Agent Policies
       type: task
       description: Detailed info about the task
       appTags:
@@ -540,7 +540,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: filter_custom_apicallers
+      alias: Filter Custom API Callers
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -554,7 +554,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: fetch_custom_caller_policies
+      alias: Fetch Custom Caller Policies
       type: task
       description: >-
         Executes HTTP API requests with configurable authentication, data
@@ -569,7 +569,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: flatten_bedrock_policies
+      alias: Flatten Bedrock Policies
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -583,7 +583,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: flatten_custom_api_caller_policies
+      alias: Flatten Custom Caller Policies
       type: task
       description: >-
         Extract and transform JSON data using JQ expressions. Supports batch
@@ -597,7 +597,7 @@ spec:
         execlevel:
           - app
     - name: MergeDataV2
-      alias: merge_bedrock_custom_policies
+      alias: Merge Bedrock And Custom Policies
       type: task
       description: >-
         Combine data from two input files using flexible merge strategies.
@@ -612,7 +612,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: fetch_policy_details
+      alias: Fetch Policy Details
       type: task
       purpose: ExecuteHttpRequestV2
       description: >-
@@ -628,7 +628,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: flatten_policy_details
+      alias: Flatten Policy Details
       type: task
       purpose: ExtractDataUsingJQV2
       description: >-
@@ -643,7 +643,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteHttpRequestV2
-      alias: get_policy_version_details
+      alias: Get Policy Version Details
       type: task
       purpose: ExecuteHttpRequestV2
       description: >-
@@ -659,7 +659,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: flatten_policy_document_details
+      alias: Flatten Policy Document Details
       type: task
       purpose: ExtractDataUsingJQV2
       description: >-
@@ -674,7 +674,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: filter_privileged_ai_agents
+      alias: Filter Privileged AI Agents
       type: task
       purpose: ExtractDataUsingJQV2
       description: >-
@@ -689,7 +689,7 @@ spec:
         execlevel:
           - app
     - name: ExecuteSqlQueryV2
-      alias: join_policy_data_with_invocations
+      alias: Join Policy Data With Invocations
       type: task
       purpose: ExecuteSqlQueryV2
       description: >-
@@ -708,7 +708,7 @@ spec:
         execlevel:
           - app
     - name: ExtractDataUsingJQV2
-      alias: add_compliance_logic
+      alias: Add Compliance Logic
       type: task
       purpose: ExtractDataUsingJQV2
       description: >-
@@ -723,133 +723,286 @@ spec:
         execlevel:
           - app
   ioMap:
-    - 'fetch_bedrock_agents.Input.RequestConfigFile:=*.Input.fetch_bedrock_agents_RequestConfigFile'
-    
-    - 'get_bedrock_agent_details.Input.RequestConfigFile:=*.Input.GetBedrockAgentsDetailsRequestConfigFile'
-    - 'get_bedrock_agent_details.Input.InputFile:=fetch_bedrock_agents.Output.OutputFile'
-    - 'get_bedrock_agent_details.Input.LogFile:=fetch_bedrock_agents.Output.LogFile'
-    
-    - 'flatten_ai_agent_details.Input.InputFile:=get_bedrock_agent_details.Output.OutputFile'
-    - 'flatten_ai_agent_details.Input.JQExpression:=*.Input.FlattenAIAgentsJQExpression'
-    - 'flatten_ai_agent_details.Input.OutputMethod:=*.Input.OutputMethod'
-    - 'flatten_ai_agent_details.Input.LogFile:=get_bedrock_agent_details.Output.LogFile'
-    
-    - 'format_start_and_end_date.Input.InputFile:=get_bedrock_agent_details.Output.OutputFile'
-    - 'format_start_and_end_date.Input.JQConfigFile:=*.Input.FormatDateTimeJQConfigFile'
-    - 'format_start_and_end_date.Input.LogFile:=flatten_ai_agent_details.Output.LogFile'
-    
-    - 'fetch_bedrock_api_callers.Input.RequestConfigFile:=*.Input.fetch_bedrock_api_callers_RequestConfigFile'
-    - 'fetch_bedrock_api_callers.Input.ResponseConfigFile:=*.Input.FetchAPICallersResponseConfigFile'
-    - 'fetch_bedrock_api_callers.Input.InputFile:=format_start_and_end_date.Output.OutputFile'
-    - 'fetch_bedrock_api_callers.Input.LogFile:=format_start_and_end_date.Output.LogFile'
-    
-    - 'get_cloud_trail_details.Input.RequestConfigFile:=*.Input.GetCloudTrialDetailsRequestConfig'
-    - 'get_cloud_trail_details.Input.LogFile:=fetch_bedrock_api_callers.Output.LogFile'
-    
-    - 'filter_s3_bucket_details.Input.InputFile:=get_cloud_trail_details.Output.OutputFile'
-    - 'filter_s3_bucket_details.Input.JQConfigFile:=*.Input.FilterS3BucketDetailsJQConfigFile'
-    - 'filter_s3_bucket_details.Input.LogFile:=get_cloud_trail_details.Output.LogFile'
-    
-    - 'merge_cloudtrialdetails_with_timedetails.Input.InputFile1:=format_start_and_end_date.Output.OutputFile'
-    - 'merge_cloudtrialdetails_with_timedetails.Input.InputFile2:=filter_s3_bucket_details.Output.OutputFile'
-    - 'merge_cloudtrialdetails_with_timedetails.Input.MergeType:=*.Input.MergeType'
-    - 'merge_cloudtrialdetails_with_timedetails.Input.OutputFileFormat:=*.Input.OutputFileFormat'
-    - 'merge_cloudtrialdetails_with_timedetails.Input.LogFile:=filter_s3_bucket_details.Output.LogFile'
-    
-    - 'query_cloudwatch.Input.RequestConfigFile:=*.Input.QueryCloudWatchLogsRequestConfig'
-    - 'query_cloudwatch.Input.InputFile:=merge_cloudtrialdetails_with_timedetails.Output.MergedData'
-    - 'query_cloudwatch.Input.LogFile:=merge_cloudtrialdetails_with_timedetails.Output.LogFile'
-    
-    - 'fetch_data_from_query.Input.RequestConfigFile:=*.Input.GetQueryResultRequestConfig'
-    - 'fetch_data_from_query.Input.InputFile:=query_cloudwatch.Output.OutputFile'
-    - 'fetch_data_from_query.Input.LogFile:=query_cloudwatch.Output.LogFile'
-    
-    - 'format_query_response_from_cloudwatch.Input.InputFile:=fetch_data_from_query.Output.OutputFile'
-    - 'format_query_response_from_cloudwatch.Input.JQConfigFile:=*.Input.FormatQueryResponseJQConfigFile'
-    - 'format_query_response_from_cloudwatch.Input.LogFile:=fetch_data_from_query.Output.LogFile'
-    
-    - 'consolidate_ai_agents.Input.InputFile1:=flatten_ai_agent_details.Output.OutputFile'
-    - 'consolidate_ai_agents.Input.InputFile2:=fetch_bedrock_api_callers.Output.OutputFile'
-    - 'consolidate_ai_agents.Input.SQLConfig:=*.Input.ConsolidateAIAgentsSQLConfig'
-    - 'consolidate_ai_agents.Input.OutputFileFormat:=*.Input.OutputFileFormat'
-    - 'consolidate_ai_agents.Input.LogFile:=format_query_response_from_cloudwatch.Output.LogFile'
-    
-    - 'join_agents_with_invocations.Input.InputFile1:=consolidate_ai_agents.Output.OutputFile'
-    - 'join_agents_with_invocations.Input.InputFile2:=format_query_response_from_cloudwatch.Output.OutputFile'
-    - 'join_agents_with_invocations.Input.SQLConfig:=*.Input.JoinAgentsWithInvocationsSQLConfig'
-    - 'join_agents_with_invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat'
-    - 'join_agents_with_invocations.Input.LogFile:=consolidate_ai_agents.Output.LogFile'
-    
-    - 'filter_bedrock_native_agents.Input.InputFile:=join_agents_with_invocations.Output.OutputFile'
-    - 'filter_bedrock_native_agents.Input.JQConfigFile:=*.Input.FilterBedrockNativeAgentsJQConfigFile'
-    - 'filter_bedrock_native_agents.Input.LogFile:=join_agents_with_invocations.Output.LogFile'
-    
-    - 'fetch_ai_agent_policies.Input.RequestConfigFile:=*.Input.fetch_ai_agent_policies_RequestConfigFile'
-    - 'fetch_ai_agent_policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile'
-    - 'fetch_ai_agent_policies.Input.InputFile:=filter_bedrock_native_agents.Output.OutputFile'
-    - 'fetch_ai_agent_policies.Input.LogFile:=filter_bedrock_native_agents.Output.LogFile'
-    
-    - 'filter_custom_apicallers.Input.InputFile:=join_agents_with_invocations.Output.OutputFile'
-    - 'filter_custom_apicallers.Input.JQConfigFile:=*.Input.FilterCustomAPICallersJQConfigFile'
-    - 'filter_custom_apicallers.Input.LogFile:=fetch_ai_agent_policies.Output.LogFile'
-    
-    - 'fetch_custom_caller_policies.Input.RequestConfigFile:=*.Input.FetchCustomCallerPoliciesRequestConfigFile'
-    - 'fetch_custom_caller_policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile'
-    - 'fetch_custom_caller_policies.Input.InputFile:=filter_custom_apicallers.Output.OutputFile'
-    - 'fetch_custom_caller_policies.Input.LogFile:=filter_custom_apicallers.Output.LogFile'
-    
-    - 'flatten_bedrock_policies.Input.InputFile:=fetch_ai_agent_policies.Output.OutputFile'
-    - 'flatten_bedrock_policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile'
-    - 'flatten_bedrock_policies.Input.OutputMethod:=*.Input.OutputMethod'
-    - 'flatten_bedrock_policies.Input.LogFile:=fetch_custom_caller_policies.Output.LogFile'
-    
-    - 'flatten_custom_api_caller_policies.Input.InputFile:=fetch_custom_caller_policies.Output.OutputFile'
-    - 'flatten_custom_api_caller_policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile'
-    - 'flatten_custom_api_caller_policies.Input.OutputMethod:=*.Input.OutputMethod'
-    - 'flatten_custom_api_caller_policies.Input.LogFile:=flatten_bedrock_policies.Output.LogFile'
-    
-    - 'merge_bedrock_custom_policies.Input.InputFile1:=flatten_bedrock_policies.Output.OutputFile'
-    - 'merge_bedrock_custom_policies.Input.InputFile2:=flatten_custom_api_caller_policies.Output.OutputFile'
-    - 'merge_bedrock_custom_policies.Input.MergeType:=*.Input.PoliciesMergeType'
-    - 'merge_bedrock_custom_policies.Input.OutputFileFormat:=*.Input.OutputFileFormat'
-    - 'merge_bedrock_custom_policies.Input.LogFile:=flatten_custom_api_caller_policies.Output.LogFile'
-    
-    - 'fetch_policy_details.Input.RequestConfigFile:=*.Input.FetchPolicyDetailsRequestConfig'
-    - 'fetch_policy_details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile'
-    - 'fetch_policy_details.Input.InputFile:=merge_bedrock_custom_policies.Output.MergedData'
-    - 'fetch_policy_details.Input.LogFile:=merge_bedrock_custom_policies.Output.LogFile'
-    
-    - 'flatten_policy_details.Input.InputFile:=fetch_policy_details.Output.OutputFile'
-    - 'flatten_policy_details.Input.JQConfigFile:=*.Input.FlattenPolicyDetailsJQConfigFile'
-    - 'flatten_policy_details.Input.LogFile:=fetch_policy_details.Output.LogFile'
-    
-    - 'get_policy_version_details.Input.RequestConfigFile:=*.Input.FetchPolicyVersionDetailsRequestConfig'
-    - 'get_policy_version_details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile'
-    - 'get_policy_version_details.Input.InputFile:=flatten_policy_details.Output.OutputFile'
-    - 'get_policy_version_details.Input.LogFile:=flatten_policy_details.Output.LogFile'
-    
-    - 'flatten_policy_document_details.Input.InputFile:=get_policy_version_details.Output.OutputFile'
-    - 'flatten_policy_document_details.Input.JQConfigFile:=*.Input.FlattenPolicyDocumentDetailsJQConfig'
-    - 'flatten_policy_document_details.Input.LogFile:=get_policy_version_details.Output.LogFile'
-    
-    - 'filter_privileged_ai_agents.Input.InputFile:=flatten_policy_document_details.Output.OutputFile'
-    - 'filter_privileged_ai_agents.Input.JQConfigFile:=*.Input.FilterPrivilegedPolicyDetailsJQConfigFile'
-    - 'filter_privileged_ai_agents.Input.LogFile:=flatten_policy_document_details.Output.LogFile'
-    
-    - 'join_policy_data_with_invocations.Input.InputFile1:=filter_privileged_ai_agents.Output.OutputFile'
-    - 'join_policy_data_with_invocations.Input.InputFile2:=join_agents_with_invocations.Output.OutputFile'
-    - 'join_policy_data_with_invocations.Input.SQLConfig:=*.Input.JoinPolicyDataWithInvocationsSQLConfigFile'
-    - 'join_policy_data_with_invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat'
-    - 'join_policy_data_with_invocations.Input.LogFile:=filter_privileged_ai_agents.Output.LogFile'
-    
-    - 'add_compliance_logic.Input.InputFile:=join_policy_data_with_invocations.Output.OutputFile'
-    - 'add_compliance_logic.Input.JQConfigFile:=*.Input.ComplianceLogicJQConfigFile'
-    - 'add_compliance_logic.Input.LogFile:=join_policy_data_with_invocations.Output.LogFile'
-    
-    - '*.Output.PrivilegedAIAgentsComplianceReport:=add_compliance_logic.Output.OutputFile'
-    - '*.Output.CompliancePCT_:=add_compliance_logic.Output.CompliancePCT_'
-    - '*.Output.ComplianceStatus_:=add_compliance_logic.Output.ComplianceStatus_'
-    - '*.Output.LogFile:=add_compliance_logic.Output.LogFile'
+    - >-
+      Fetch Bedrock
+      Agents.Input.RequestConfigFile:=*.Input.FetchBedrockAgentsRequestConfigFile
+    - >-
+      Get Bedrock Agent
+      Details.Input.RequestConfigFile:=*.Input.GetBedrockAgentsDetailsRequestConfigFile
+    - >-
+      Get Bedrock Agent Details.Input.InputFile:=Fetch Bedrock
+      Agents.Output.OutputFile
+    - >-
+      Get Bedrock Agent Details.Input.LogFile:=Fetch Bedrock
+      Agents.Output.LogFile
+    - >-
+      Flatten AI Agent Details.Input.InputFile:=Get Bedrock Agent
+      Details.Output.OutputFile
+    - >-
+      Flatten AI Agent
+      Details.Input.JQExpression:=*.Input.FlattenAiAgentsJqExpression
+    - Flatten AI Agent Details.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten AI Agent Details.Input.LogFile:=Get Bedrock Agent
+      Details.Output.LogFile
+    - >-
+      Format Start And End Date.Input.InputFile:=Get Bedrock Agent
+      Details.Output.OutputFile
+    - >-
+      Format Start And End
+      Date.Input.JQConfigFile:=*.Input.FormatDateTimeJQConfigFile
+    - >-
+      Format Start And End Date.Input.LogFile:=Flatten AI Agent
+      Details.Output.LogFile
+    - >-
+      Fetch Bedrock API
+      Callers.Input.RequestConfigFile:=*.Input.FetchBedrockApiCallersRequestConfigFile
+    - >-
+      Fetch Bedrock API
+      Callers.Input.ResponseConfigFile:=*.Input.FetchAPICallersResponseConfigFile
+    - >-
+      Fetch Bedrock API Callers.Input.InputFile:=Format Start And End
+      Date.Output.OutputFile
+    - >-
+      Fetch Bedrock API Callers.Input.LogFile:=Format Start And End
+      Date.Output.LogFile
+    - >-
+      Get CloudTrail
+      Details.Input.RequestConfigFile:=*.Input.GetCloudTrialDetailsRequestConfig
+    - >-
+      Get CloudTrail Details.Input.LogFile:=Fetch Bedrock API
+      Callers.Output.LogFile
+    - >-
+      Filter S3 Bucket Details.Input.InputFile:=Get CloudTrail
+      Details.Output.OutputFile
+    - >-
+      Filter S3 Bucket
+      Details.Input.JQConfigFile:=*.Input.FilterS3BucketDetailsJQConfigFile
+    - >-
+      Filter S3 Bucket Details.Input.LogFile:=Get CloudTrail
+      Details.Output.LogFile
+    - >-
+      Merge CloudTrail With Time Details.Input.InputFile1:=Format Start And End
+      Date.Output.OutputFile
+    - >-
+      Merge CloudTrail With Time Details.Input.InputFile2:=Filter S3 Bucket
+      Details.Output.OutputFile
+    - Merge CloudTrail With Time Details.Input.MergeType:=*.Input.MergeType
+    - >-
+      Merge CloudTrail With Time
+      Details.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Merge CloudTrail With Time Details.Input.LogFile:=Filter S3 Bucket
+      Details.Output.LogFile
+    - >-
+      Query CloudWatch
+      Logs.Input.RequestConfigFile:=*.Input.QueryCloudWatchLogsRequestConfig
+    - >-
+      Query CloudWatch Logs.Input.InputFile:=Merge CloudTrail With Time
+      Details.Output.MergedData
+    - >-
+      Query CloudWatch Logs.Input.LogFile:=Merge CloudTrail With Time
+      Details.Output.LogFile
+    - >-
+      Fetch Query
+      Results.Input.RequestConfigFile:=*.Input.GetQueryResultRequestConfig
+    - >-
+      Fetch Query Results.Input.InputFile:=Query CloudWatch
+      Logs.Output.OutputFile
+    - Fetch Query Results.Input.LogFile:=Query CloudWatch Logs.Output.LogFile
+    - >-
+      Format CloudWatch Query Response.Input.InputFile:=Fetch Query
+      Results.Output.OutputFile
+    - >-
+      Format CloudWatch Query
+      Response.Input.JQConfigFile:=*.Input.FormatQueryResponseJQConfigFile
+    - >-
+      Format CloudWatch Query Response.Input.LogFile:=Fetch Query
+      Results.Output.LogFile
+    - >-
+      Consolidate AI Agents.Input.InputFile1:=Flatten AI Agent
+      Details.Output.OutputFile
+    - >-
+      Consolidate AI Agents.Input.InputFile2:=Fetch Bedrock API
+      Callers.Output.OutputFile
+    - >-
+      Consolidate AI
+      Agents.Input.SQLConfig:=*.Input.ConsolidateAIAgentsSQLConfig
+    - Consolidate AI Agents.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Consolidate AI Agents.Input.LogFile:=Format CloudWatch Query
+      Response.Output.LogFile
+    - >-
+      Join Agents With Invocations.Input.InputFile1:=Consolidate AI
+      Agents.Output.OutputFile
+    - >-
+      Join Agents With Invocations.Input.InputFile2:=Format CloudWatch Query
+      Response.Output.OutputFile
+    - >-
+      Join Agents With
+      Invocations.Input.SQLConfig:=*.Input.JoinAgentsWithInvocationsSQLConfig
+    - >-
+      Join Agents With
+      Invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Join Agents With Invocations.Input.LogFile:=Consolidate AI
+      Agents.Output.LogFile
+    - >-
+      Filter Bedrock Native Agents.Input.InputFile:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Filter Bedrock Native
+      Agents.Input.JQConfigFile:=*.Input.FilterBedrockNativeAgentsJQConfigFile
+    - >-
+      Filter Bedrock Native Agents.Input.LogFile:=Join Agents With
+      Invocations.Output.LogFile
+    - >-
+      Fetch AI Agent
+      Policies.Input.RequestConfigFile:=*.Input.FetchAiAgentPoliciesRequestConfigFile
+    - >-
+      Fetch AI Agent
+      Policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch AI Agent Policies.Input.InputFile:=Filter Bedrock Native
+      Agents.Output.OutputFile
+    - >-
+      Fetch AI Agent Policies.Input.LogFile:=Filter Bedrock Native
+      Agents.Output.LogFile
+    - >-
+      Filter Custom API Callers.Input.InputFile:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Filter Custom API
+      Callers.Input.JQConfigFile:=*.Input.FilterCustomAPICallersJQConfigFile
+    - >-
+      Filter Custom API Callers.Input.LogFile:=Fetch AI Agent
+      Policies.Output.LogFile
+    - >-
+      Fetch Custom Caller
+      Policies.Input.RequestConfigFile:=*.Input.FetchCustomCallerPoliciesRequestConfigFile
+    - >-
+      Fetch Custom Caller
+      Policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch Custom Caller Policies.Input.InputFile:=Filter Custom API
+      Callers.Output.OutputFile
+    - >-
+      Fetch Custom Caller Policies.Input.LogFile:=Filter Custom API
+      Callers.Output.LogFile
+    - >-
+      Flatten Bedrock Policies.Input.InputFile:=Fetch AI Agent
+      Policies.Output.OutputFile
+    - >-
+      Flatten Bedrock
+      Policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile
+    - Flatten Bedrock Policies.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten Bedrock Policies.Input.LogFile:=Fetch Custom Caller
+      Policies.Output.LogFile
+    - >-
+      Flatten Custom Caller Policies.Input.InputFile:=Fetch Custom Caller
+      Policies.Output.OutputFile
+    - >-
+      Flatten Custom Caller
+      Policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile
+    - Flatten Custom Caller Policies.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten Custom Caller Policies.Input.LogFile:=Flatten Bedrock
+      Policies.Output.LogFile
+    - >-
+      Merge Bedrock And Custom Policies.Input.InputFile1:=Flatten Bedrock
+      Policies.Output.OutputFile
+    - >-
+      Merge Bedrock And Custom Policies.Input.InputFile2:=Flatten Custom Caller
+      Policies.Output.OutputFile
+    - >-
+      Merge Bedrock And Custom
+      Policies.Input.MergeType:=*.Input.PoliciesMergeType
+    - >-
+      Merge Bedrock And Custom
+      Policies.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Merge Bedrock And Custom Policies.Input.LogFile:=Flatten Custom Caller
+      Policies.Output.LogFile
+    - >-
+      Fetch Policy
+      Details.Input.RequestConfigFile:=*.Input.FetchPolicyDetailsRequestConfig
+    - >-
+      Fetch Policy
+      Details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch Policy Details.Input.InputFile:=Merge Bedrock And Custom
+      Policies.Output.MergedData
+    - >-
+      Fetch Policy Details.Input.LogFile:=Merge Bedrock And Custom
+      Policies.Output.LogFile
+    - >-
+      Flatten Policy Details.Input.InputFile:=Fetch Policy
+      Details.Output.OutputFile
+    - >-
+      Flatten Policy
+      Details.Input.JQConfigFile:=*.Input.FlattenPolicyDetailsJQConfigFile
+    - Flatten Policy Details.Input.LogFile:=Fetch Policy Details.Output.LogFile
+    - >-
+      Get Policy Version
+      Details.Input.RequestConfigFile:=*.Input.FetchPolicyVersionDetailsRequestConfig
+    - >-
+      Get Policy Version
+      Details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Get Policy Version Details.Input.InputFile:=Flatten Policy
+      Details.Output.OutputFile
+    - >-
+      Get Policy Version Details.Input.LogFile:=Flatten Policy
+      Details.Output.LogFile
+    - >-
+      Flatten Policy Document Details.Input.InputFile:=Get Policy Version
+      Details.Output.OutputFile
+    - >-
+      Flatten Policy Document
+      Details.Input.JQConfigFile:=*.Input.FlattenPolicyDocumentDetailsJQConfig
+    - >-
+      Flatten Policy Document Details.Input.LogFile:=Get Policy Version
+      Details.Output.LogFile
+    - >-
+      Filter Privileged AI Agents.Input.InputFile:=Flatten Policy Document
+      Details.Output.OutputFile
+    - >-
+      Filter Privileged AI
+      Agents.Input.JQConfigFile:=*.Input.FilterPrivilegedPolicyDetailsJQConfigFile
+    - >-
+      Filter Privileged AI Agents.Input.LogFile:=Flatten Policy Document
+      Details.Output.LogFile
+    - >-
+      Join Policy Data With Invocations.Input.InputFile1:=Filter Privileged AI
+      Agents.Output.OutputFile
+    - >-
+      Join Policy Data With Invocations.Input.InputFile2:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Join Policy Data With
+      Invocations.Input.SQLConfig:=*.Input.JoinPolicyDataWithInvocationsSQLConfigFile
+    - >-
+      Join Policy Data With
+      Invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Join Policy Data With Invocations.Input.LogFile:=Filter Privileged AI
+      Agents.Output.LogFile
+    - >-
+      Add Compliance Logic.Input.InputFile:=Join Policy Data With
+      Invocations.Output.OutputFile
+    - >-
+      Add Compliance
+      Logic.Input.JQConfigFile:=*.Input.ComplianceLogicJQConfigFile
+    - >-
+      Add Compliance Logic.Input.LogFile:=Join Policy Data With
+      Invocations.Output.LogFile
+    - >-
+      *.Output.PrivilegedAIAgentsComplianceReport:=Add Compliance
+      Logic.Output.OutputFile
+    - '*.Output.CompliancePCT_:=Add Compliance Logic.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=Add Compliance Logic.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=Add Compliance Logic.Output.LogFile'
   outputsMeta__:
     - name: PrivilegedAIAgentsComplianceReport
       dataType: FILE

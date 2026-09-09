@@ -31,10 +31,26 @@ userObject:
     userDefinedCredentials:
       NoCred:
         Dummy: ""
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+        ServiceName: ""
 userInputs:
-  fetch_bedrock_agents_RequestConfigFile: <<MINIO_FILE_PATH>>
-  fetch_bedrock_api_callers_RequestConfigFile: <<MINIO_FILE_PATH>>
-  fetch_ai_agent_policies_RequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchBedrockAgentsRequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchBedrockApiCallersRequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchAiAgentPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
   FetchAPICallersResponseConfigFile: <<MINIO_FILE_PATH>>
   FormatDateTimeJQConfigFile: <<MINIO_FILE_PATH>>
   GetCloudTrialDetailsRequestConfig: <<MINIO_FILE_PATH>>
@@ -47,7 +63,7 @@ userInputs:
   FormatQueryResponseJQConfigFile: <<MINIO_FILE_PATH>>
   ConsolidateAIAgentsSQLConfig: <<MINIO_FILE_PATH>>
   GetBedrockAgentsDetailsRequestConfigFile: <<MINIO_FILE_PATH>>
-  FlattenAIAgentsJQExpression: .[].agent
+  FlattenAiAgentsJqExpression: .[].agent
   OutputMethod: ALL
   JoinAgentsWithInvocationsSQLConfig: <<MINIO_FILE_PATH>>
   FilterBedrockNativeAgentsJQConfigFile: <<MINIO_FILE_PATH>>

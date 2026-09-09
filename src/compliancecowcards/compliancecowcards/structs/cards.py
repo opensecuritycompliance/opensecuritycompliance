@@ -3,6 +3,7 @@ from typing import Optional, Tuple, List, Any, Callable, Dict, BinaryIO
 from abc import abstractmethod
 from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils, cowdictutils
 from compliancecowcards.structs import cowvo, cowsynthesizerservice_pb2
+from compliancecowcards.utils import cowtaskinputsutils
 import pandas as pd
 import uuid
 import os
@@ -44,17 +45,97 @@ class AbstractTask(object):
         No Need to implement the common methods which is required by task like getappgroup based on tag.
         They can get it from our common library
     """
-    task_inputs: cowvo.TaskInputs  # TaskInputs -  It'll contains all the inputs for task like Go
+    task_inputs: cowvo.TaskInputs  # TaskInputs — contains all runtime inputs (from inputs.yaml)
+    task_meta: cowvo.TaskMetaTemplate # TaskMetaTemplate — contains all metadata about the task (from __meta.yaml)
     minio_client: minio.Minio
     _log_file_name: str
     prev_log_data: List[dict[str, Any]]
 
-    def __init__(self, task_inputs: cowvo.TaskInputs = None, minio_client: minio.Minio = None) -> None:
-        self.task_inputs = task_inputs
+    def __init__(self, task_inputs: cowvo.TaskInputs = None, minio_client: minio.Minio = None , task_meta: cowvo.TaskMetaTemplate = None) -> None:
+        self.task_inputs  = task_inputs
+        self.task_meta    = task_meta
         self.minio_client = minio_client
         self._log_file_name = 'LogFile'
         self.prev_log_data = []
         pass
+
+    def upload_output_file(
+        self, output: List[Dict[str, Any]], file_name: str
+        ) -> Dict[str, str]:
+        """
+        Uploads output file to MinIO storage.
+
+        Args:
+            output (List[Dict[str, Any]]): The data to upload.
+            file_name (str): The name for the output file.
+
+        Returns:
+            Dict[str, str]: Dictionary containing either the 'LogFile' URL or 'Error' message.
+        """
+        absolute_file_path, error = self.upload_iterable_as_json_file_to_minio(
+            file_name=file_name,
+            data=output
+        )
+        if error:
+            return {"error": error}
+        return {"OutputFile": absolute_file_path}
+
+    def upload_log_file(self, error_msg: List[Dict[str, str]]) -> Dict[str, str]:
+        """
+        Upload error messages to a log file in MinIO.
+
+        Args:
+            errors: List of error dictionaries to log.
+
+        Returns:
+            Dict with 'LogFile' path or 'Error' message.
+        """
+        log_file_path, error = self.upload_log_file_to_minio(error_data=error_msg)
+        if error:
+            return {"error": error}
+        return {"LogFile": log_file_path}
+
+    def validate_task_inputs(
+        self,
+        optional_inputs: Optional[List[str]] = None
+    ) -> str:
+        """
+        Validates the task's user inputs against its metadata schema definition (typically __meta.yaml).
+        
+        This method retrieves user inputs provided to the task, extracts the expected input schemas
+        defined in metadata, and runs data-type, presence, pattern, and constraint validation checks.
+        
+        Args:
+            optional_inputs: List of input field names to treat as optional 
+                             during this run, bypassing metadata presence validation 
+                             (e.g., bypass validation on 'LogFile' output targets).
+                             
+        Returns:
+            A list of validation error dictionaries in standard format: [{"Error": "..."}].
+            Returns an empty list if all inputs comply with the metadata specification.
+        """
+        
+        # Step 1: Safely extract runtime user inputs from task parameters
+        user_inputs = {}
+        if self.task_inputs and self.task_inputs.user_inputs:
+            user_inputs = self.task_inputs.user_inputs
+            
+        # Step 2: Convert the metadata input definitions to a name-keyed dict mapping
+        meta_inputs = {}
+        if self.task_meta and hasattr(self.task_meta, "get_inputs_to_dict"):
+            meta_inputs = self.task_meta.get_inputs_to_dict()
+            
+        # Step 3: Run the input validator helper
+        error = cowtaskinputsutils.validate_inputs(
+            task_inputs=user_inputs,
+            task_meta_inputs=meta_inputs,
+            optional_inputs=optional_inputs
+        )
+        
+        # If an error is found, return it wrapped in the standard task error list of dicts format
+        if error:
+            return  error
+        return ""
 
     def get_minio_file_size_mb(self, file_url: str) -> Tuple[Optional[float], Optional[str]]:
         """
@@ -600,7 +681,31 @@ class AbstractTask(object):
             return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
 
         return df, None
+    
+    def download_parquet_file_from_minio_as_list(self, file_url=None) -> Tuple[list, dict]:
+        """
+        Downloads a Parquet file from MinIO as a list of dicts.
+        ### Parameters:
+        - file_url (str): The URL of the Parquet file in MinIO.
+        ### Returns:
+        - list[dict]: List of records from the downloaded Parquet file.
+        - dict: Dictionary containing error information if any, otherwise None.
+        """
 
+        parquet_bytes, error = self.download_file_from_minio(file_url=file_url)
+        if error:
+            return None, error
+
+        try:
+            buffer = io.BytesIO(parquet_bytes)
+            table = pq.read_table(buffer)
+            data = table.to_pylist()  
+
+        except (pyarrow.ArrowInvalid, OSError):
+            return None, {"error": "Invalid file format: The provided file does not adhere to any recognized format."}
+
+        return data, None
+    
     def download_json_file_from_minio_as_dict(self, file_url=None) -> Tuple[dict, dict]:
         """
         Downloads a JSON file from MinIO as a Python Dictionary.
