@@ -352,6 +352,46 @@ The output contains one compliance record for each evaluated AI agent. The recor
 }
 ```
 
+---
+
+## Validation & Compliance Logic
+
+
+| Validation                 | Validation Code     | Compliance Status | Validation Reason               | Compliance & Validation Logic                                                                                                                                                                                                                                                               |
+| -------------------------- | ------------------- | ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Privileged Access Detected | `PRIV_AI_AGNT_ACCS` | `NON_COMPLIANT`   | AI agent has privileged access. | `PolicyName` is one of `AdministratorAccess`, `PowerUserAccess`, `IAMFullAccess`, `SecurityAudit`, `SystemAdministrator` **OR** any policy `Action` contains `iam:*`, `*:*`, `s3:Delete`, `ec2:Terminate`, `lambda:Delete`, `bedrock:Invoke`, `kms:Decrypt`, or `secretsmanager:GetSecret`. |
+
+**Note:** Non-privileged AI agents will not be flagged by this rule, as it only identifies and reports privileged access as `NON_COMPLIANT`.
+
+## Validation Logic
+An AI agent is **NON_COMPLIANT** when either of the following conditions is met:
+
+### Privileged Policy Names
+
+* `AdministratorAccess`
+* `PowerUserAccess`
+* `IAMFullAccess`
+* `SecurityAudit`
+* `SystemAdministrator`
+
+### Privileged Policy Actions
+
+* `iam:*`
+* `*:*`
+* `s3:Delete`
+* `ec2:Terminate`
+* `lambda:Delete`
+* `bedrock:Invoke`
+* `kms:Decrypt`
+* `secretsmanager:GetSecret`
+
+### Validation and Compliance Status Codes
+
+| Condition                  | Validation Status Code | Compliance Status |
+| -------------------------- | ---------------------- | ----------------- |
+| Privileged access detected | `PRIV_AI_AGNT_ACCS`    | `NON_COMPLIANT`   |
+
+
 ## Authors
 - Shradha Krish
 - Ram Manavalan
