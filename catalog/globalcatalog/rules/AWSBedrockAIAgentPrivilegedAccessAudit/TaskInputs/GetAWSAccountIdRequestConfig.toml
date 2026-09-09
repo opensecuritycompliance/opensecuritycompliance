@@ -1,0 +1,30 @@
+[Variables]
+# No variables needed for this request.
+
+[Request]
+URL = "https://sts.amazonaws.com/"
+Method = "POST"
+ContentType = "application/x-www-form-urlencoded"
+Redirect = true
+CredentialType = "AWSSignature"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "{%{response.status_code}%}"
+ConditionValue = "503|504|429|400"
+TimeInterval = 2
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Headers]
+Content-Type = "application/x-www-form-urlencoded"
+
+[Request.Params]
+
+[Request.Data]
+[Request.Data.URLEncoded]
+Action = "GetCallerIdentity"
+Version = "2011-06-15"

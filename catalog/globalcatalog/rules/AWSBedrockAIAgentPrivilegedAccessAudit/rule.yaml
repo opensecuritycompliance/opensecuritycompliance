@@ -1,0 +1,1024 @@
+apiVersion: rule.policycow.live/v1alpha1
+kind: rule
+meta:
+  name: AWSBedrockAIAgentPrivilegedAccessAudit
+  purpose: >-
+    Identify and audit AWS Bedrock AI agents with privileged access, tracking
+    who invokes them, and flag as NON_COMPLIANT for mandatory manual review due
+    to autonomous decision-making risks
+  description: >-
+    This rule audits AWS Bedrock AI agents (both native agents and custom
+    applications using Bedrock APIs) to identify those with privileged IAM
+    permissions. It tracks invocation history to determine who invokes each
+    agent (humans vs service accounts), detects privileged access patterns
+    including IAM admin rights, data destruction capabilities, and AI-calling-AI
+    scenarios, and flags all privileged AI agents as NON_COMPLIANT with detailed
+    reasoning about autonomous operation risks, prompt injection
+    vulnerabilities, and accountability concerns.
+  labels:
+    appType:
+      - httprequest
+    environment:
+      - logical
+    execlevel:
+      - app
+    service:
+      - bedrock
+  annotations:
+    annotateType:
+      - httprequest
+  tags:
+    - MCP
+  app: HttpRequest
+spec:
+  inputs:
+    FetchBedrockAgentsRequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchBedrockApiCallersRequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchAiAgentPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
+    FetchAPICallersResponseConfigFile: <<MINIO_FILE_PATH>>
+    FormatDateTimeJQConfigFile: <<MINIO_FILE_PATH>>
+    GetCloudTrialDetailsRequestConfig: <<MINIO_FILE_PATH>>
+    GetAWSAccountIdRequestConfig: <<MINIO_FILE_PATH>>
+    FilterS3BucketDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+    MergeType: CONCATENATE
+    OutputFileFormat: JSON
+    QueryCloudWatchLogsRequestConfig: <<MINIO_FILE_PATH>>
+    GetQueryResultRequestConfig: <<MINIO_FILE_PATH>>
+    FormatQueryResponseJQConfigFile: <<MINIO_FILE_PATH>>
+    ConsolidateAIAgentsSQLConfig: <<MINIO_FILE_PATH>>
+    GetBedrockAgentsDetailsRequestConfigFile: <<MINIO_FILE_PATH>>
+    FlattenAiAgentsJqExpression: .[].agent
+    OutputMethod: ALL
+    JoinAgentsWithInvocationsSQLConfig: <<MINIO_FILE_PATH>>
+    FilterBedrockNativeAgentsJQConfigFile: <<MINIO_FILE_PATH>>
+    FilterCustomAPICallersJQConfigFile: <<MINIO_FILE_PATH>>
+    FetchCustomCallerPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
+    IncludeInputFieldsResponseConfigFile: <<MINIO_FILE_PATH>>
+    FlattenPoliciesJQConfigFile: <<MINIO_FILE_PATH>>
+    PoliciesMergeType: APPEND
+    FetchPolicyDetailsRequestConfig: <<MINIO_FILE_PATH>>
+    FlattenPolicyDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+    FetchPolicyVersionDetailsRequestConfig: <<MINIO_FILE_PATH>>
+    FlattenPolicyDocumentDetailsJQConfig: <<MINIO_FILE_PATH>>
+    FilterPrivilegedPolicyDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+    JoinPolicyDataWithInvocationsSQLConfigFile: <<MINIO_FILE_PATH>>
+    ComplianceLogicJQConfigFile: <<MINIO_FILE_PATH>>
+  inputsMeta__:
+    - name: FetchBedrockAgentsRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FetchBedrockApiCallersRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FetchAiAgentPoliciesRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FetchAPICallersResponseConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FormatDateTimeJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: GetCloudTrialDetailsRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: GetAWSAccountIdRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FilterS3BucketDetailsJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: MergeType
+      dataType: STRING
+      defaultValue: CONCATENATE
+      showField: true
+      required: true
+      allowedValues:
+        - APPEND
+        - CONCATENATE
+      repeated: false
+      explanation: ''
+    - name: OutputFileFormat
+      dataType: STRING
+      defaultValue: JSON
+      showField: true
+      required: true
+      allowedValues:
+        - JSON
+        - CSV
+        - PARQUET
+      repeated: false
+      explanation: ''
+    - name: QueryCloudWatchLogsRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: GetQueryResultRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FormatQueryResponseJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ConsolidateAIAgentsSQLConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: GetBedrockAgentsDetailsRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FlattenAiAgentsJqExpression
+      dataType: JQ_EXPRESSION
+      defaultValue: .[].agent
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: OutputMethod
+      dataType: STRING
+      defaultValue: ALL
+      showField: true
+      required: true
+      allowedValues:
+        - FIRST
+        - ALL
+      repeated: false
+      explanation: ''
+    - name: JoinAgentsWithInvocationsSQLConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FilterBedrockNativeAgentsJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FilterCustomAPICallersJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FetchCustomCallerPoliciesRequestConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: IncludeInputFieldsResponseConfigFile
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FlattenPoliciesJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: PoliciesMergeType
+      dataType: STRING
+      defaultValue: APPEND
+      showField: true
+      required: true
+      allowedValues:
+        - APPEND
+        - CONCATENATE
+      repeated: false
+      explanation: ''
+    - name: FetchPolicyDetailsRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FlattenPolicyDetailsJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FetchPolicyVersionDetailsRequestConfig
+      dataType: HTTP_CONFIG
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FlattenPolicyDocumentDetailsJQConfig
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: FilterPrivilegedPolicyDetailsJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: JoinPolicyDataWithInvocationsSQLConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      format: toml
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+    - name: ComplianceLogicJQConfigFile
+      dataType: FILE
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+      allowedValues: []
+      repeated: false
+      explanation: ''
+  tasks:
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Bedrock Agents
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+        service:
+          - bedrock
+    - name: ExecuteHttpRequestV2
+      alias: Get Bedrock Agent Details
+      type: task
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+        service:
+          - bedrock
+    - name: ExtractDataUsingJQV2
+      alias: Flatten AI Agent Details
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Format Start And End Date
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Bedrock API Callers
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Get CloudTrail Details
+      type: task
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Filter S3 Bucket Details
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: MergeDataV2
+      alias: Merge CloudTrail With Time Details
+      type: task
+      description: >-
+        Combine data from two input files using flexible merge strategies.
+        Supports APPEND (stack rows vertically) and CONCATENATE (join columns
+        horizontally by position). Handles multiple file formats with error
+        handling for reliable integration.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Query CloudWatch Logs
+      type: task
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Query Results
+      type: task
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Format CloudWatch Query Response
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: Consolidate AI Agents
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: Join Agents With Invocations
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Filter Bedrock Native Agents
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Fetch AI Agent Policies
+      type: task
+      description: Detailed info about the task
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Filter Custom API Callers
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Custom Caller Policies
+      type: task
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Flatten Bedrock Policies
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Flatten Custom Caller Policies
+      type: task
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: MergeDataV2
+      alias: Merge Bedrock And Custom Policies
+      type: task
+      description: >-
+        Combine data from two input files using flexible merge strategies.
+        Supports APPEND (stack rows vertically) and CONCATENATE (join columns
+        horizontally by position). Handles multiple file formats with error
+        handling for reliable integration.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Fetch Policy Details
+      type: task
+      purpose: ExecuteHttpRequestV2
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Flatten Policy Details
+      type: task
+      purpose: ExtractDataUsingJQV2
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteHttpRequestV2
+      alias: Get Policy Version Details
+      type: task
+      purpose: ExecuteHttpRequestV2
+      description: >-
+        Executes HTTP API requests with configurable authentication, data
+        handling, and response processing. Supports batch requests, flexible
+        response transformation, and error management for reliable API
+        integration and data collection.
+      appTags:
+        appType:
+          - httprequest
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Flatten Policy Document Details
+      type: task
+      purpose: ExtractDataUsingJQV2
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Filter Privileged AI Agents
+      type: task
+      purpose: ExtractDataUsingJQV2
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExecuteSqlQueryV2
+      alias: Join Policy Data With Invocations
+      type: task
+      purpose: ExecuteSqlQueryV2
+      description: >-
+        Executes a validated SQL query (from a TOML SQLConfig) against one or
+        two input JSON files by loading them into an in-memory DuckDB database.
+        The task accepts InputFile1 (required) and InputFile2 (optional),
+        automatically normalizes JSON into tables named inputfile1/inputfile2,
+        supports SQL operations including JOINs, GROUP BY, aggregates, and can
+        also merge the two JSON files using SQL. IMPORTANT: The task uses DuckDB
+        to evaluate the query.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+    - name: ExtractDataUsingJQV2
+      alias: Add Compliance Logic
+      type: task
+      purpose: ExtractDataUsingJQV2
+      description: >-
+        Extract and transform JSON data using JQ expressions. Supports batch
+        processing with configurable chunk sizes and error handling for reliable
+        processing.
+      appTags:
+        appType:
+          - nocredapp
+        environment:
+          - logical
+        execlevel:
+          - app
+  ioMap:
+    - >-
+      Fetch Bedrock
+      Agents.Input.RequestConfigFile:=*.Input.FetchBedrockAgentsRequestConfigFile
+    - >-
+      Get Bedrock Agent
+      Details.Input.RequestConfigFile:=*.Input.GetBedrockAgentsDetailsRequestConfigFile
+    - >-
+      Get Bedrock Agent Details.Input.InputFile:=Fetch Bedrock
+      Agents.Output.OutputFile
+    - >-
+      Get Bedrock Agent Details.Input.LogFile:=Fetch Bedrock
+      Agents.Output.LogFile
+    - >-
+      Flatten AI Agent Details.Input.InputFile:=Get Bedrock Agent
+      Details.Output.OutputFile
+    - >-
+      Flatten AI Agent
+      Details.Input.JQExpression:=*.Input.FlattenAiAgentsJqExpression
+    - Flatten AI Agent Details.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten AI Agent Details.Input.LogFile:=Get Bedrock Agent
+      Details.Output.LogFile
+    - >-
+      Format Start And End Date.Input.InputFile:=Get Bedrock Agent
+      Details.Output.OutputFile
+    - >-
+      Format Start And End
+      Date.Input.JQConfigFile:=*.Input.FormatDateTimeJQConfigFile
+    - >-
+      Format Start And End Date.Input.LogFile:=Flatten AI Agent
+      Details.Output.LogFile
+    - >-
+      Fetch Bedrock API
+      Callers.Input.RequestConfigFile:=*.Input.FetchBedrockApiCallersRequestConfigFile
+    - >-
+      Fetch Bedrock API
+      Callers.Input.ResponseConfigFile:=*.Input.FetchAPICallersResponseConfigFile
+    - >-
+      Fetch Bedrock API Callers.Input.InputFile:=Format Start And End
+      Date.Output.OutputFile
+    - >-
+      Fetch Bedrock API Callers.Input.LogFile:=Format Start And End
+      Date.Output.LogFile
+    - >-
+      Get CloudTrail
+      Details.Input.RequestConfigFile:=*.Input.GetCloudTrialDetailsRequestConfig
+    - >-
+      Get CloudTrail Details.Input.LogFile:=Fetch Bedrock API
+      Callers.Output.LogFile
+    - >-
+      Filter S3 Bucket Details.Input.InputFile:=Get CloudTrail
+      Details.Output.OutputFile
+    - >-
+      Filter S3 Bucket
+      Details.Input.JQConfigFile:=*.Input.FilterS3BucketDetailsJQConfigFile
+    - >-
+      Filter S3 Bucket Details.Input.LogFile:=Get CloudTrail
+      Details.Output.LogFile
+    - >-
+      Merge CloudTrail With Time Details.Input.InputFile1:=Format Start And End
+      Date.Output.OutputFile
+    - >-
+      Merge CloudTrail With Time Details.Input.InputFile2:=Filter S3 Bucket
+      Details.Output.OutputFile
+    - Merge CloudTrail With Time Details.Input.MergeType:=*.Input.MergeType
+    - >-
+      Merge CloudTrail With Time
+      Details.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Merge CloudTrail With Time Details.Input.LogFile:=Filter S3 Bucket
+      Details.Output.LogFile
+    - >-
+      Query CloudWatch
+      Logs.Input.RequestConfigFile:=*.Input.QueryCloudWatchLogsRequestConfig
+    - >-
+      Query CloudWatch Logs.Input.InputFile:=Merge CloudTrail With Time
+      Details.Output.MergedData
+    - >-
+      Query CloudWatch Logs.Input.LogFile:=Merge CloudTrail With Time
+      Details.Output.LogFile
+    - >-
+      Fetch Query
+      Results.Input.RequestConfigFile:=*.Input.GetQueryResultRequestConfig
+    - >-
+      Fetch Query Results.Input.InputFile:=Query CloudWatch
+      Logs.Output.OutputFile
+    - Fetch Query Results.Input.LogFile:=Query CloudWatch Logs.Output.LogFile
+    - >-
+      Format CloudWatch Query Response.Input.InputFile:=Fetch Query
+      Results.Output.OutputFile
+    - >-
+      Format CloudWatch Query
+      Response.Input.JQConfigFile:=*.Input.FormatQueryResponseJQConfigFile
+    - >-
+      Format CloudWatch Query Response.Input.LogFile:=Fetch Query
+      Results.Output.LogFile
+    - >-
+      Consolidate AI Agents.Input.InputFile1:=Flatten AI Agent
+      Details.Output.OutputFile
+    - >-
+      Consolidate AI Agents.Input.InputFile2:=Fetch Bedrock API
+      Callers.Output.OutputFile
+    - >-
+      Consolidate AI
+      Agents.Input.SQLConfig:=*.Input.ConsolidateAIAgentsSQLConfig
+    - Consolidate AI Agents.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Consolidate AI Agents.Input.LogFile:=Format CloudWatch Query
+      Response.Output.LogFile
+    - >-
+      Join Agents With Invocations.Input.InputFile1:=Consolidate AI
+      Agents.Output.OutputFile
+    - >-
+      Join Agents With Invocations.Input.InputFile2:=Format CloudWatch Query
+      Response.Output.OutputFile
+    - >-
+      Join Agents With
+      Invocations.Input.SQLConfig:=*.Input.JoinAgentsWithInvocationsSQLConfig
+    - >-
+      Join Agents With
+      Invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Join Agents With Invocations.Input.LogFile:=Consolidate AI
+      Agents.Output.LogFile
+    - >-
+      Filter Bedrock Native Agents.Input.InputFile:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Filter Bedrock Native
+      Agents.Input.JQConfigFile:=*.Input.FilterBedrockNativeAgentsJQConfigFile
+    - >-
+      Filter Bedrock Native Agents.Input.LogFile:=Join Agents With
+      Invocations.Output.LogFile
+    - >-
+      Fetch AI Agent
+      Policies.Input.RequestConfigFile:=*.Input.FetchAiAgentPoliciesRequestConfigFile
+    - >-
+      Fetch AI Agent
+      Policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch AI Agent Policies.Input.InputFile:=Filter Bedrock Native
+      Agents.Output.OutputFile
+    - >-
+      Fetch AI Agent Policies.Input.LogFile:=Filter Bedrock Native
+      Agents.Output.LogFile
+    - >-
+      Filter Custom API Callers.Input.InputFile:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Filter Custom API
+      Callers.Input.JQConfigFile:=*.Input.FilterCustomAPICallersJQConfigFile
+    - >-
+      Filter Custom API Callers.Input.LogFile:=Fetch AI Agent
+      Policies.Output.LogFile
+    - >-
+      Fetch Custom Caller
+      Policies.Input.RequestConfigFile:=*.Input.FetchCustomCallerPoliciesRequestConfigFile
+    - >-
+      Fetch Custom Caller
+      Policies.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch Custom Caller Policies.Input.InputFile:=Filter Custom API
+      Callers.Output.OutputFile
+    - >-
+      Fetch Custom Caller Policies.Input.LogFile:=Filter Custom API
+      Callers.Output.LogFile
+    - >-
+      Flatten Bedrock Policies.Input.InputFile:=Fetch AI Agent
+      Policies.Output.OutputFile
+    - >-
+      Flatten Bedrock
+      Policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile
+    - Flatten Bedrock Policies.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten Bedrock Policies.Input.LogFile:=Fetch Custom Caller
+      Policies.Output.LogFile
+    - >-
+      Flatten Custom Caller Policies.Input.InputFile:=Fetch Custom Caller
+      Policies.Output.OutputFile
+    - >-
+      Flatten Custom Caller
+      Policies.Input.JQConfigFile:=*.Input.FlattenPoliciesJQConfigFile
+    - Flatten Custom Caller Policies.Input.OutputMethod:=*.Input.OutputMethod
+    - >-
+      Flatten Custom Caller Policies.Input.LogFile:=Flatten Bedrock
+      Policies.Output.LogFile
+    - >-
+      Merge Bedrock And Custom Policies.Input.InputFile1:=Flatten Bedrock
+      Policies.Output.OutputFile
+    - >-
+      Merge Bedrock And Custom Policies.Input.InputFile2:=Flatten Custom Caller
+      Policies.Output.OutputFile
+    - >-
+      Merge Bedrock And Custom
+      Policies.Input.MergeType:=*.Input.PoliciesMergeType
+    - >-
+      Merge Bedrock And Custom
+      Policies.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Merge Bedrock And Custom Policies.Input.LogFile:=Flatten Custom Caller
+      Policies.Output.LogFile
+    - >-
+      Fetch Policy
+      Details.Input.RequestConfigFile:=*.Input.FetchPolicyDetailsRequestConfig
+    - >-
+      Fetch Policy
+      Details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Fetch Policy Details.Input.InputFile:=Merge Bedrock And Custom
+      Policies.Output.MergedData
+    - >-
+      Fetch Policy Details.Input.LogFile:=Merge Bedrock And Custom
+      Policies.Output.LogFile
+    - >-
+      Flatten Policy Details.Input.InputFile:=Fetch Policy
+      Details.Output.OutputFile
+    - >-
+      Flatten Policy
+      Details.Input.JQConfigFile:=*.Input.FlattenPolicyDetailsJQConfigFile
+    - Flatten Policy Details.Input.LogFile:=Fetch Policy Details.Output.LogFile
+    - >-
+      Get Policy Version
+      Details.Input.RequestConfigFile:=*.Input.FetchPolicyVersionDetailsRequestConfig
+    - >-
+      Get Policy Version
+      Details.Input.ResponseConfigFile:=*.Input.IncludeInputFieldsResponseConfigFile
+    - >-
+      Get Policy Version Details.Input.InputFile:=Flatten Policy
+      Details.Output.OutputFile
+    - >-
+      Get Policy Version Details.Input.LogFile:=Flatten Policy
+      Details.Output.LogFile
+    - >-
+      Flatten Policy Document Details.Input.InputFile:=Get Policy Version
+      Details.Output.OutputFile
+    - >-
+      Flatten Policy Document
+      Details.Input.JQConfigFile:=*.Input.FlattenPolicyDocumentDetailsJQConfig
+    - >-
+      Flatten Policy Document Details.Input.LogFile:=Get Policy Version
+      Details.Output.LogFile
+    - >-
+      Filter Privileged AI Agents.Input.InputFile:=Flatten Policy Document
+      Details.Output.OutputFile
+    - >-
+      Filter Privileged AI
+      Agents.Input.JQConfigFile:=*.Input.FilterPrivilegedPolicyDetailsJQConfigFile
+    - >-
+      Filter Privileged AI Agents.Input.LogFile:=Flatten Policy Document
+      Details.Output.LogFile
+    - >-
+      Join Policy Data With Invocations.Input.InputFile1:=Filter Privileged AI
+      Agents.Output.OutputFile
+    - >-
+      Join Policy Data With Invocations.Input.InputFile2:=Join Agents With
+      Invocations.Output.OutputFile
+    - >-
+      Join Policy Data With
+      Invocations.Input.SQLConfig:=*.Input.JoinPolicyDataWithInvocationsSQLConfigFile
+    - >-
+      Join Policy Data With
+      Invocations.Input.OutputFileFormat:=*.Input.OutputFileFormat
+    - >-
+      Join Policy Data With Invocations.Input.LogFile:=Filter Privileged AI
+      Agents.Output.LogFile
+    - >-
+      Add Compliance Logic.Input.InputFile:=Join Policy Data With
+      Invocations.Output.OutputFile
+    - >-
+      Add Compliance
+      Logic.Input.JQConfigFile:=*.Input.ComplianceLogicJQConfigFile
+    - >-
+      Add Compliance Logic.Input.LogFile:=Join Policy Data With
+      Invocations.Output.LogFile
+    - >-
+      *.Output.PrivilegedAIAgentsComplianceReport:=Add Compliance
+      Logic.Output.OutputFile
+    - '*.Output.CompliancePCT_:=Add Compliance Logic.Output.CompliancePCT_'
+    - '*.Output.ComplianceStatus_:=Add Compliance Logic.Output.ComplianceStatus_'
+    - '*.Output.LogFile:=Add Compliance Logic.Output.LogFile'
+  outputsMeta__:
+    - name: PrivilegedAIAgentsComplianceReport
+      dataType: FILE
+      description: >-
+        Comprehensive compliance report of all privileged AI agents with invoker
+        tracking and NON_COMPLIANT status
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true
+    - name: LogFile
+      dataType: FILE
+      description: Execution log file with error details
+      repeated: false
+      allowedValues: []
+      defaultValue: <<MINIO_FILE_PATH>>
+      showField: true
+      required: true

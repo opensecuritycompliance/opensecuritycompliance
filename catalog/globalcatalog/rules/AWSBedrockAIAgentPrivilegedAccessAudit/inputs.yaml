@@ -1,0 +1,83 @@
+userObject:
+  apps:
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+      service:
+      - bedrock
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+        ServiceName: ""
+  - name: NoCredApp
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - nocredapp
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      NoCred:
+        Dummy: ""
+  - name: HttpRequest
+    appURL: http://localhost.com
+    appPort: "0"
+    appTags:
+      appType:
+      - httprequest
+      environment:
+      - logical
+      execlevel:
+      - app
+    userDefinedCredentials:
+      AWSSignature:
+        ValidationCURL: ""
+        AccessKey: ""
+        SecretKey: ""
+        ServiceName: ""
+userInputs:
+  FetchBedrockAgentsRequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchBedrockApiCallersRequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchAiAgentPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
+  FetchAPICallersResponseConfigFile: <<MINIO_FILE_PATH>>
+  FormatDateTimeJQConfigFile: <<MINIO_FILE_PATH>>
+  GetCloudTrialDetailsRequestConfig: <<MINIO_FILE_PATH>>
+  GetAWSAccountIdRequestConfig: <<MINIO_FILE_PATH>>
+  FilterS3BucketDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+  MergeType: CONCATENATE
+  OutputFileFormat: JSON
+  QueryCloudWatchLogsRequestConfig: <<MINIO_FILE_PATH>>
+  GetQueryResultRequestConfig: <<MINIO_FILE_PATH>>
+  FormatQueryResponseJQConfigFile: <<MINIO_FILE_PATH>>
+  ConsolidateAIAgentsSQLConfig: <<MINIO_FILE_PATH>>
+  GetBedrockAgentsDetailsRequestConfigFile: <<MINIO_FILE_PATH>>
+  FlattenAiAgentsJqExpression: .[].agent
+  OutputMethod: ALL
+  JoinAgentsWithInvocationsSQLConfig: <<MINIO_FILE_PATH>>
+  FilterBedrockNativeAgentsJQConfigFile: <<MINIO_FILE_PATH>>
+  FilterCustomAPICallersJQConfigFile: <<MINIO_FILE_PATH>>
+  FetchCustomCallerPoliciesRequestConfigFile: <<MINIO_FILE_PATH>>
+  IncludeInputFieldsResponseConfigFile: <<MINIO_FILE_PATH>>
+  FlattenPoliciesJQConfigFile: <<MINIO_FILE_PATH>>
+  PoliciesMergeType: APPEND
+  FetchPolicyDetailsRequestConfig: <<MINIO_FILE_PATH>>
+  FlattenPolicyDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+  FetchPolicyVersionDetailsRequestConfig: <<MINIO_FILE_PATH>>
+  FlattenPolicyDocumentDetailsJQConfig: <<MINIO_FILE_PATH>>
+  FilterPrivilegedPolicyDetailsJQConfigFile: <<MINIO_FILE_PATH>>
+  JoinPolicyDataWithInvocationsSQLConfigFile: <<MINIO_FILE_PATH>>
+  ComplianceLogicJQConfigFile: <<MINIO_FILE_PATH>>
+fromDate: 2026-09-01T06:25:40Z
+toDate: 2026-09-07T06:25:40Z

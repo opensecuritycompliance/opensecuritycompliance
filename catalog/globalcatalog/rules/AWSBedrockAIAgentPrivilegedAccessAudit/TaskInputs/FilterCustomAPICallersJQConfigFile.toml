@@ -1,0 +1,5 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = 'map(select(.agent_type == "CUSTOM_API_CALLER")) | unique_by(.iam_role_name)'

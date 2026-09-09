@@ -1,0 +1,5 @@
+[JQConfig]
+
+OutputMethod = "FIRST"
+
+JQExpression = 'map( . as $root | {PolicyId: $root.PolicyId,PolicyName: $root.PolicyName,PolicyArn: $root.PolicyArn,PolicyPath: $root.PolicyPath,DefaultVersionId: $root.DefaultVersionId,AttachmentCount: $root.AttachmentCount,IsAttachable: $root.IsAttachable,CreateDate: $root.CreateDate,UpdateDate: $root.UpdateDate,AgentID: $root.AgentID,AgentName: $root.AgentName,AgentType: $root.AgentType,IAMRoleARN: $root.IAMRoleARN,IAMRoleName: $root.IAMRoleName,PolicyDocument: ( $root.GetPolicyVersionResponse  .GetPolicyVersionResult .PolicyVersion .Document | gsub("%7B"; "{") | gsub("%7D"; "}") | gsub("%22"; "\u0022") | gsub("%3A"; ":") | gsub("%2C"; ",") | gsub("%5B"; "[") | gsub("%5D"; "]") | gsub("%20"; " ") | gsub("%0A"; "\n") | gsub("%2F"; "/") | gsub("%2A"; "*") | fromjson ) })'

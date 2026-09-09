@@ -1,0 +1,31 @@
+[Variables]
+# No variables needed.
+
+[Request]
+URL = "https://logs.us-east-1.amazonaws.com/"
+Method = "POST"
+ContentType = "application/x-amz-json-1.1"
+Redirect = true
+CredentialType = "AWSSignature"
+TimeOut = 30
+Verify = true
+MaxWorkers = 5
+
+[Request.Retries.RetryOnCondition]
+# Retry while the query is still Scheduled or Running (status lives in the response body).
+ConditionField = "{%{response.body.status}%}"
+ConditionValue = "Scheduled|Running"
+TimeInterval = 3
+MaxRetries = 10
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Headers]
+Content-Type = "application/x-amz-json-1.1"
+X-Amz-Target = "Logs_20140328.GetQueryResults"
+
+[Request.Params]
+
+[Request.Data]
+[Request.Data.Raw]
+Value = '{"queryId": "{%{inputfile.queryId}%}"}'

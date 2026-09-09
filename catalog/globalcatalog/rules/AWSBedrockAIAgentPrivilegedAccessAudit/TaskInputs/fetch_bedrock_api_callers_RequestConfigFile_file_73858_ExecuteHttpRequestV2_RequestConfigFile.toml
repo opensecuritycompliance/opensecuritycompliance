@@ -1,0 +1,30 @@
+[Variables]
+Method = "POST"
+CredentialType = "AWSSignature"
+
+[Request]
+URL = "https://cloudtrail.us-west-2.amazonaws.com/"
+Method = "<<Method>>"
+ContentType = "application/x-amz-json-1.1"
+Redirect = false
+CredentialType = "<<CredentialType>>"
+TimeOut = 60
+Verify = true
+MaxWorkers = 1
+
+[Request.Headers]
+X-Amz-Target = "com.amazonaws.cloudtrail.v20131101.CloudTrail_20131101.LookupEvents"
+Content-Type = "application/x-amz-json-1.1"
+
+[Request.Params]
+
+[Request.Retries.RetryOnCondition]
+ConditionField = "<<response.status_code>>"
+ConditionValue = "503|504|429|400"
+TimeInterval = 3
+MaxRetries = 3
+RetryBaseDelay = 2
+RetryMaxDelay = 60
+
+[Request.Data.Raw]
+Value = "{\n        \"LookupAttributes\": [\n            {\n                \"AttributeKey\": \"EventSource\",\n                \"AttributeValue\": \"bedrock.amazonaws.com\"\n            }\n        ],\n        \"MaxResults\": 50,\n        \"StartTime\": <<inputfile.StartTime>>,\n        \"EndTime\": <<inputfile.EndTime>>\n    }"

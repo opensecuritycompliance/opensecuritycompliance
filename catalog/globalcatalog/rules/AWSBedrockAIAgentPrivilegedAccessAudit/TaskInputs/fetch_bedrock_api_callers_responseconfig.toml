@@ -1,0 +1,26 @@
+[Response]
+
+[Response.Filter]
+    JQExpression = ".Events"  
+    OutputMethod = "FIRST"
+    
+[Response.RuleSet]
+    [Response.RuleSet.AppendColumnCondition]
+    ConditionField = "{%{response.status_code}%}"
+    ConditionValue = "200"
+
+    [Response.RuleSet.AppendColumn]
+    IncludeAllInputFields = false
+    
+    [Response.RuleSet.AppendColumn.Fields]
+
+
+    [Response.RuleSet.PaginationCondition]
+        ConditionField = "{%{response.body.NextToken}%}"
+        ConditionValue = ""
+
+    [Response.RuleSet.Pagination]
+
+        [Response.RuleSet.Pagination.Data.Raw]
+        Value = '{"NextToken": "{%{response.body.NextToken}%}"}'
+

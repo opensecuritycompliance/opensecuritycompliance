@@ -108,7 +108,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
     # Content Type --> Required when the request has 'Data' (Refer 'Request.Data' field for more information)
     # - Specify the Content-Type header to define the format of the request body.
     # - Supported values: 
-    #   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream.
+    #   multipart/form-data, application/x-www-form-urlencoded, application/json, application/octet-stream, application/x-amz-json-*.
     ContentType = "multipart/form-data"
 
     # Follow Redirects --> OPTIONAL - default is 'false'
@@ -127,6 +127,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
     #    - Adds Authorization, x-amz-date, and x-amz-content-sha256 headers
     #    - Do NOT specify Authorization header manually
     #    - Does NOT require 'ValidationCurl'
+    #    - If the AWS service name is not present in the URL or it is different from the one in the URL, you can specify it in the application configuration under 'ServiceName'.
 
     # -> BasicAuthentication:
     #    - Automatically adds "Authorization: Basic <base64(username:password)>"
@@ -321,7 +322,7 @@ The purpose of this task is to automate API requests. It allows users to make AP
         field2 = "Value2"
 
         # Raw Body:
-        # - Used with ContentType = "application/json", "text/html", "text/plain", or "application/xml".
+        # - Used with ContentType = "application/json", "text/html", "text/plain", "application/x-amz-json-*" or "application/xml".
         # - Define raw data as JSON or plain text.
         [Request.Data.Raw]
         Value = '{"key": "{%{Raw}%}", "field1": "Value1"}'
@@ -566,29 +567,30 @@ macOS:
 The following content types are supported for generating output files, along with their corresponding file extensions:
 
 #### **Binary Formats:**
-- `binary/octet-stream`  
-- `application/octet-stream`  
+- `binary/octet-stream`
+- `application/octet-stream`
 
 #### **Data Formats:**
-- `application/csv` (`.csv`)  
-- `application/x-yaml` (`.yaml`)  
-- `application/yaml` (`.yaml`)  
-- `application/x-tar` (`.tar`)  
-- `application/tar` (`.tar`)  
-- `application/x-gzip` (`.tgz`, `.gz`)  
-- `application/gzip` (`.tgz`, `.gz`)  
-- `application/zip` (`.zip`)  
-- `application/x-zip` (`.zip`)  
-- `application/json` (`.json`)  
-- `application/ld+json` (`.jsonld`)  
-- `application/xml` (`.xml`)  
+- `application/csv` (`.csv`)
+- `application/x-yaml` (`.yaml`)
+- `application/yaml` (`.yaml`)
+- `application/x-tar` (`.tar`)
+- `application/tar` (`.tar`)
+- `application/x-gzip` (`.tgz`, `.gz`)
+- `application/gzip` (`.tgz`, `.gz`)
+- `application/zip` (`.zip`)
+- `application/x-zip` (`.zip`)
+- `application/json` (`.json`)
+- `application/ld+json` (`.jsonld`)
+- `application/xml` (`.xml`)
+- `application/x-amz-json-*` (`.json`)
 
 #### **Text Formats:**
-- `text/css` (`.css`)  
-- `text/csv` (`.csv`)  
-- `text/html` (`.html`)  
-- `text/plain` (`.txt`)  
-- `text/javascript` (`.js`)  
-- `text/xml` (`.xml`)  
+- `text/css` (`.css`)
+- `text/csv` (`.csv`)
+- `text/html` (`.html`)
+- `text/plain` (`.txt`)
+- `text/javascript` (`.js`)
+- `text/xml` (`.xml`)
 
 Please ensure the response content type matches one of the supported types for correct processing.

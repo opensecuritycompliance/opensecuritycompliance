@@ -216,12 +216,12 @@ class Task(cards.AbstractTask):
             error_details.append({"Error": request_query_info})
             return self.upload_log_file(error_details)
 
-        task_credential_type = http_request_file_data.get("Request").get("CredentialType")
+        task_credential_type = http_request_file_data.get("Request").get(
+            "CredentialType"
+        )
         is_valid_credential_type = (
             task_credential_type == HTTPCredentialType.NO_AUTH.value
-        ) or (
-            self.http_connector.validate_credetials_type(task_credential_type)
-        )
+        ) or (self.http_connector.validate_credetials_type(task_credential_type))
         if not is_valid_credential_type:
             return self.upload_log_file_panic(
                 error_data=self.log_manager.get_error_message(
@@ -384,7 +384,7 @@ class Task(cards.AbstractTask):
                     error_details.extend(
                         [
                             {
-                                "Error": f"The content type '{response.get('headers', {}).get('Content-Type', '')}' does not support pagination. This feature is only supported for 'application/json' and 'application/ld+json'."
+                                "Error": f"The content type '{response.get('headers', {}).get('Content-Type', '')}' does not support pagination. This feature is only supported for 'application/json', 'application/ld+json', and 'application/x-amz-json-*'."
                             }
                         ]
                     )
@@ -421,11 +421,9 @@ class Task(cards.AbstractTask):
                 condition_field,
                 {"response": response, "responsebody": response.get("body", {})},
             )
+            # Missing/unresolvable pagination field means no next page — stop
             if error:
-                if error.endswith("is not present."):
-                    parsed_value = None
-                else:
-                    error_details.append({"Error": error})
+                parsed_value = None
             if (
                 parsed_value is None
                 or f"{parsed_value}" == f"{pagination_condition['ConditionValue']}"
@@ -567,8 +565,16 @@ class Task(cards.AbstractTask):
             if "Data" in request_data and body_type in request_data.get("Data", {}):
                 request_data_body = request_data["Data"].get(body_type, {})
                 if body_type == "Raw":
+                    parsed_body_temp, error = self.replace_placeholders(
+                        json.dumps(request_data_body.get("Value", "")),
+                        "",
+                        context_dict.get("application"),
+                        context_dict.get("inputfile"),
+                    )
+                    if error:
+                        return has_body, error
                     request_data_body, body_error = self.load_json(
-                        request_data_body.get("Value", ""),
+                        parsed_body_temp,
                         "Invalid JSON string provided in 'RequestConfigFile.Request.Data.Raw'",
                         error_details,
                     )
@@ -595,7 +601,7 @@ class Task(cards.AbstractTask):
 
             request_body, body_error = self.load_json(
                 updated_query_body_str,
-                "Invalid value provided in response body :: 'ResponseConfigFile.RuleSet.Pagination.Data'",
+                "Invalid value provided in response body :: 'ResponseConfigFile.Response.RuleSet.Pagination.Data'",
                 error_details,
             )
             if body_error:
@@ -624,7 +630,7 @@ class Task(cards.AbstractTask):
     ):
         has_param = False
         if "Params" in pagination:
-            context_dict['request'] = request_data 
+            context_dict["request"] = request_data
             request_params = {}
             query_params = pagination.get("Params", {})
             # Initialize request_data["Params"] if not present
@@ -675,16 +681,29 @@ class Task(cards.AbstractTask):
         return result
 
     def response_query_replace_placeholders(
-        self, value_string: str, context_dict: dict, replace_double_quotes=True
+        self,
+        value_string: str,
+        context_dict: dict,
+        strict: bool = True,
+        replace_double_quotes=True,
+        default_missing_placeholder_value=None,
     ):
         updated_value_string, _, error = (
             cowplaceholderutils.replace_placeholders_using_jq(
-                value_string, context_dict, replace_double_quotes=replace_double_quotes
+                value_string,
+                context_dict,
+                strict=strict,
+                replace_double_quotes=replace_double_quotes,
+                default_missing_placeholder_value=default_missing_placeholder_value,
             )
         )
         if re.search(r"<<(.+?)>>", updated_value_string):
             return self.response_query_replace_placeholders(
-                updated_value_string, context_dict, replace_double_quotes
+                updated_value_string,
+                context_dict,
+                strict=strict,
+                replace_double_quotes=replace_double_quotes,
+                default_missing_placeholder_value=default_missing_placeholder_value,
             )
 
         return updated_value_string, error
@@ -758,7 +777,10 @@ class Task(cards.AbstractTask):
             if append_column_fields:
                 append_columns_str = json.dumps(append_column_fields)
                 append_columns_str, error = self.response_query_replace_placeholders(
-                    append_columns_str, context_dict
+                    append_columns_str,
+                    context_dict,
+                    strict=False,
+                    default_missing_placeholder_value="",
                 )
                 if error:
                     return response_json, error
@@ -970,7 +992,8 @@ class Task(cards.AbstractTask):
         missing_variable = [
             m
             for m in missing_variable
-            if not any(m.startswith(black) for black in blacklisted_prefixes) and m != HTTPCredentialType.JWT.value
+            if not any(m.startswith(black) for black in blacklisted_prefixes)
+            and m != HTTPCredentialType.JWT.value
         ]
 
         error_obj = {}
@@ -1034,7 +1057,9 @@ class Task(cards.AbstractTask):
 
         app_info = {}
         if self.task_inputs.user_object.app.user_defined_credentials:
-            app_info = self.task_inputs.user_object.app.user_defined_credentials.get(credential_type, {})
+            app_info = self.task_inputs.user_object.app.user_defined_credentials.get(
+                credential_type, {}
+            )
 
         if not app_info and credential_type != HTTPCredentialType.NO_AUTH.value:
             return (
@@ -1245,7 +1270,18 @@ class Task(cards.AbstractTask):
             if error:
                 error_details.extend(error)
 
-            service_name, region, error = self.extract_service_region(url_endpoint)
+            # Check if service name is explicitly provided in credentials
+            explicit_service_name = None
+            if app_info and app_info.get("ServiceName"):
+                explicit_service_name = app_info["ServiceName"]
+
+            # Use explicit service name if provided, otherwise extract from URL
+            if explicit_service_name:
+                service_name = explicit_service_name
+                _, region, error = self.extract_service_region(url_endpoint)
+            else:
+                service_name, region, error = self.extract_service_region(url_endpoint)
+
             if error:
                 error_details.append(
                     {
@@ -1677,6 +1713,7 @@ class Task(cards.AbstractTask):
                 "application/x-www-form-urlencoded",
                 "application/json",
                 "application/octet-stream",
+                "application/x-amz-json-1.1",
             ],
             "Redirect": bool,
             "Verify": bool,
@@ -1934,7 +1971,7 @@ class Task(cards.AbstractTask):
 
             return (response_df).to_parquet(index=False), "parquet", None
 
-        elif "text/csv" in content_type or "application/csv" in content_type:         
+        elif "text/csv" in content_type or "application/csv" in content_type:
             try:
                 csv_df = pd.DataFrame()
                 if isinstance(response, (bytes, str)):
@@ -1951,8 +1988,12 @@ class Task(cards.AbstractTask):
                             [csv_df, pd.read_csv(bytes_io)], ignore_index=True
                         )
                 if csv_df.empty:
-                    return csv_df, "csv", self.log_manager.get_error_message(
-                        "ExecuteHttpRequest.FormateResponse.CSV.EmptyFile"
+                    return (
+                        csv_df,
+                        "csv",
+                        self.log_manager.get_error_message(
+                            "ExecuteHttpRequest.FormateResponse.CSV.EmptyFile"
+                        ),
                     )
                 return csv_df, "csv", None
             except Exception as e:
@@ -2016,7 +2057,9 @@ class Task(cards.AbstractTask):
                 )
 
         elif (
-            "application/json" in content_type or "application/ld+json" in content_type
+            "application/json" in content_type
+            or "application/ld+json" in content_type
+            or "application/x-amz-json" in content_type
         ) or isinstance(response, (dict, list)):
             try:
                 extension = "json"
@@ -2083,7 +2126,18 @@ class Task(cards.AbstractTask):
 
     def load_json(self, data, error_message, error_details):
         try:
-            return json.loads(data) if data else {}, None
+            if not data:
+                return {}, None
+
+            if isinstance(data, dict):
+                return data, None
+
+            parsed_data = json.loads(data)
+
+            if isinstance(parsed_data, str):
+                return self.load_json(parsed_data, error_message, error_details)
+
+            return parsed_data, None
         except json.JSONDecodeError:
             error_details.append({"Error": error_message})
             return None, error_message
@@ -2101,7 +2155,10 @@ class Task(cards.AbstractTask):
         if content_type == "multipart/form-data":
             if "FormData" in body_info:
                 body = body_info["FormData"]
-        elif content_type == "application/json":
+        elif (
+            content_type == "application/json"
+            or "application/x-amz-json" in content_type
+        ):
             if "Raw" in body_info:
                 body_info_ = body_info["Raw"].get("Value", "")
                 # Replace InputFile placeholders

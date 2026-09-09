@@ -175,27 +175,38 @@ class AWSSignature:
     validation_curl: str
     access_key: str
     secret_key: str
+    service_name: str = None  # Optional: Override service name extracted from URL
 
-    def __init__(self, validation_curl: str, access_key: str, secret_key: str) -> None:
+    def __init__(
+        self,
+        validation_curl: str,
+        access_key: str,
+        secret_key: str,
+        service_name: str = None,
+    ) -> None:
         self.validation_curl = validation_curl
         self.access_key = access_key
         self.secret_key = secret_key
+        self.service_name = service_name
 
     @staticmethod
     def from_dict(obj) -> "AWSSignature":
-        validation_curl, access_key, secret_key = "", "", ""
+        validation_curl, access_key, secret_key, service_name = "", "", "", None
         if isinstance(obj, dict):
             validation_curl = obj.get("ValidationCURL", "")
             access_key = obj.get("AccessKey", "")
             secret_key = obj.get("SecretKey", "")
+            service_name = obj.get("ServiceName", None)
 
-        return AWSSignature(validation_curl, access_key, secret_key)
+        return AWSSignature(validation_curl, access_key, secret_key, service_name)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["ValidationCURL"] = self.validation_curl
         result["AccessKey"] = self.access_key
         result["SecretKey"] = self.secret_key
+        if self.service_name:
+            result["ServiceName"] = self.service_name
         return result
 
 
@@ -516,9 +527,7 @@ class HttpRequest:
         algorithm = self.user_defined_credentials.jwt_bearer.algorithm
         headers = self.user_defined_credentials.jwt_bearer.headers
 
-        token, error = self.generate_jwt_token(
-            algorithm, private_key, payload, headers
-        )
+        token, error = self.generate_jwt_token(algorithm, private_key, payload, headers)
         if error:
             return False, {"Error": error}
 
@@ -838,28 +847,20 @@ class HttpRequest:
         )
 
         try:
-            # Execute the curl command to get the status code
+            # Execute curl once and capture both body and status code
             result = subprocess.run(
-                curl_cmd + ' -s -o /dev/null -w "%{http_code}"',  # Get the status code
-                shell=True,  # Use shell to execute the command
-                check=True,  # Raise an error on non-zero exit status
-                stdout=subprocess.PIPE,  # Capture standard output
-                stderr=subprocess.PIPE,  # Capture standard error
-                text=True,  # Return output as string
+                curl_cmd + ' -s -w "\n%{http_code}"',
+                shell=True,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
             )
 
-            # Get the status code from the output
-            status_code = result.stdout.strip()
+            # Split response body and status code
+            output = result.stdout.strip()
 
-            # Create a temporary file to capture the body response
-            with tempfile.NamedTemporaryFile() as temp_file:
-                # Use -o to write the body response to the temporary file
-                body_cmd = curl_cmd + f" -s -o {temp_file.name}"
-                subprocess.run(body_cmd, shell=True, check=True)
-
-                # Read the body response from the temporary file
-                temp_file.seek(0)  # Ensure we're at the beginning of the file
-                response_body = temp_file.read()
+            response_body, status_code = output.rsplit("\n", 1)
 
             return status_code, response_body, None
 
@@ -894,11 +895,11 @@ class HttpRequest:
                 _body.append(
                     (k, json.dumps(v) if isinstance(v, (dict, list)) else str(v))
                 )
-            
+
             if _body:
                 body, content_type = encode_multipart_formdata(_body)
                 headers["Content-Type"] = content_type
-                headers[ "Content-Length"]= str(len(body))
+                headers["Content-Length"] = str(len(body))
             else:
                 headers["Content-Type"] = None
 
@@ -1093,13 +1094,14 @@ class HttpRequest:
 
                     if (
                         "application/json" in content_type
-                        or "application/ld+json" in content_type
+                        or "application/ld+json" in content_type 
+                        or "application/x-amz-json" in content_type
                     ):
                         response_dict["body"] = response.json()
                     elif ".body" in modified_condition_field:
                         return (
                             None,
-                            f"Expected 'application/json' or 'application/ld+json' for .body access, but received: '{content_type}'.",
+                            f"Expected 'application/json' or 'application/ld+json' or 'application/x-amz-json' for .body access, but received: '{content_type}'.",
                         )
 
                     try:
@@ -1262,11 +1264,7 @@ class HttpRequest:
             if params:
                 if not isinstance(params, dict):
                     raise TypeError("params must be a dictionary")
-                query_string = urlencode(
-                    params,
-                    doseq=True,
-                    quote_via=quote
-                )
+                query_string = urlencode(params, doseq=True, quote_via=quote)
                 url = f"{url}?{query_string}"
 
             if body and not isinstance(body, (str, bytes, dict)):
@@ -1351,9 +1349,7 @@ class HttpRequest:
         algorithm = self.user_defined_credentials.jwt_bearer.algorithm
         headers = self.user_defined_credentials.jwt_bearer.headers
 
-        token, error = self.generate_jwt_token(
-            algorithm, private_key, payload, headers
-        )
+        token, error = self.generate_jwt_token(algorithm, private_key, payload, headers)
         if error:
             return False, {"Error": error}
 
@@ -1598,6 +1594,7 @@ class HttpRequest:
         functions = {
             "CURRENT_TIME": int(time.time()),
             "CURRENT_DATE": datetime.datetime.now().isoformat(),
+            "RANDOM_UUID": str(uuid.uuid4()),
         }
 
         updated_value = string
