@@ -1,4 +1,4 @@
-Django==6.0.4
+Django==6.0.5
 jmespath==1.0.1
 minio==7.2.18
 pandas==2.3.3
@@ -12,3 +12,6 @@ tomli-w==1.2.0
 jq==1.10.0
 typing-extensions==4.15.0
 fastparquet==2024.11.0
+sqlparse==0.6.0
+httplib2==0.32.0
+jaraco.context==6.1.0

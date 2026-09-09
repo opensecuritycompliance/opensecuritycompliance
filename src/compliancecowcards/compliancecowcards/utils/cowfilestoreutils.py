@@ -12,6 +12,7 @@ import pandas as pd
 import base64
 from posixpath import join as urljoin
 import time
+import mimetypes
 
 file_store_bucket_name = os.getenv("COW_STORAGE_BUCKET_NAME")
 file_store_prefix = os.getenv("COW_STORAGE_FILE_PREFIX")
@@ -497,13 +498,54 @@ def get_persistence_type():
     return os.getenv("COW_DATA_PERSISTENCE_TYPE", "file")
 
 
-def add_extension_if_missing(filename, extension):
-    if isinstance(filename, str) and extension and not filename.endswith(extension):
+# Custom overrides for MIME types that mimetypes doesn't recognize,
+# or where it returns an extension we don't want.
+CCOW_CUSTOM_EXT_MAP = {
+    "application/toml": ".toml",
+    "application/x-yaml": ".yaml",
+    "application/x-parquet": ".parquet",
+    "application/vnd.apache.parquet": ".parquet",
+    "application/xml": ".xml",  # mimetypes returns .xsl for this, override it
+}
+
+
+def add_extension_if_missing(filename: str, extension: str) -> str:
+    """
+    Appends the specified file extension (or MIME type extension) to the
+    filename, but only if the filename doesn't already end with it.
+
+    You can pass either:
+      - a plain extension, e.g. "pdf" or ".pdf"
+      - a MIME type, e.g. "application/json"
+
+    Example:
+        add_extension_if_missing("form.json", "application/json") -> "form.json"
+        add_extension_if_missing("form", "application/json")      -> "form.json"
+        add_extension_if_missing("document", "pdf")                -> "document.pdf"
+        add_extension_if_missing("data", "application/xml")        -> "data.xml"
+    """
+    if isinstance(filename, str) and extension:
+
+        # If a MIME type was passed (contains "/"), resolve it to a real extension
+        if "/" in extension:
+            # Step 1: check our custom map first (known overrides/missing types)
+            # Step 2: fall back to Python's built-in mimetypes module
+            # Step 3: last resort, use the subtype after "/" (e.g. "foo" -> ".foo")
+            extension = (
+                CCOW_CUSTOM_EXT_MAP.get(extension)      # Step 1
+                or mimetypes.guess_extension(extension)  # Step 2
+                or f".{extension.split('/')[-1]}"        # Step 3
+            )
+
+        # ensure leading dot
         if not extension.startswith("."):
             extension = f".{extension}"
-        filename = f"{filename}{extension}"
-    return filename
 
+        # append only if not already present
+        if not filename.lower().endswith(extension.lower()):
+            filename = f"{filename}{extension}"
+
+    return filename
 
 def get_absolute_path(minio_url: str = "localhost:9000", folder_path: str = None, file_name: str = None) -> str:
     return "http://" + minio_url + urljoin(folder_path, file_name)

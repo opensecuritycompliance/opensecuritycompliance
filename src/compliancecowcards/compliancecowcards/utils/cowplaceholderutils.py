@@ -26,7 +26,8 @@ def _replace_placeholders(
     placeholder_prefix: str = "",
     strict: bool = True,
     replace_double_quotes: bool = False,
-    placeholders: list[str] | set[str] = []
+    placeholders: list[str] | set[str] = [],
+    default_missing_placeholder_value: str | None = None
 ) -> tuple[str, list[str], str | None]:
     placeholder_prefix = (placeholder_prefix + ".") if placeholder_prefix and not placeholder_prefix.endswith(".") else placeholder_prefix
     if not placeholders:
@@ -65,6 +66,11 @@ def _replace_placeholders(
             return "", [], error_message
         else:
             missing_placeholders.append(key)
+            if default_missing_placeholder_value is not None:
+                            result = result \
+                .replace(f"<<{placeholder_prefix}{key}>>", default_missing_placeholder_value) \
+                .replace("{{" + placeholder_prefix + key + "}}", default_missing_placeholder_value) \
+                .replace("{%{" + placeholder_prefix + key + "}%}", default_missing_placeholder_value)
 
     return result, missing_placeholders, None
     
@@ -92,14 +98,15 @@ def replace_placeholders_using_jq(
     placeholder_prefix: str = "",
     strict: bool = True,
     replace_double_quotes: bool = False,
-    placeholders: list[str] | set[str] = []
+    placeholders: list[str] | set[str] = [],
+    default_missing_placeholder_value: str | None = None
 ):
     resolution_func = lambda key: evaluate_jq_filter(
         data, 
         (key if key.startswith(".") else f".{key}").replace('\\"', '"')
     )
             
-    return _replace_placeholders(template, resolution_func, placeholder_prefix, strict, replace_double_quotes, placeholders)
+    return _replace_placeholders(template, resolution_func, placeholder_prefix, strict, replace_double_quotes, placeholders, default_missing_placeholder_value)
     
 def get_delimited_placeholder_variants(string: str):
     return [
