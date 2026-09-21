@@ -910,7 +910,7 @@ userObjectJSONInBase64: ''
 systemObjectJSONInBase64: ''
 inputs:
 - name: BucketName # A unique identifier of the task input
-  description: minio bucket name for the process # A concise description of the task input
+  description: Minio bucket name for the process # A concise description of the task input
   dataType: STRING # data type of the input. Available Types STRING, INT, FLOAT, FILE, JSON, JQ_EXPRESSION, SQL_EXPRESSION
   repeated: false # boolean: true | false. true indicates that one or more data type values can be input for this attribute
   allowedValues: [] # Optional. Specifies allowed values for the input. Use a comma-separated list for multiple values.
@@ -924,4 +924,7 @@ outputs:
 - name: CompliancePCT_
   description: Compliance percentage of the task
   dataType: INT
+- name: LogFile
+  description: This is a record-keeping file that captures errors, exceptions, and system events to facilitate debugging the task.
+  dataType: FILE
 `

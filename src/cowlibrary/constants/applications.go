@@ -318,3 +318,5 @@ const LinkedApplicationClassYaml = `
   linkableApplicationClasses:
 {{LINKED_APPLICATION_NAMES}}
 `
+
+const ApplicationTypeOverrideNote = "\nNote: Overriding the credential types will update the current credential configuration in the system. The updated credentials will apply to newly created applications. Existing applications will continue using their original credential configuration when viewed. The latest published credential type configuration will apply only when the application credentials are edited and saved (e.g., during credential rotation)."

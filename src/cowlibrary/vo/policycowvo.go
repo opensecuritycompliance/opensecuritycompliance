@@ -54,6 +54,8 @@ type CowPathConfiguration struct {
 	ApplicationScopePath      string `json:"applicationScopePath" yaml:"applicationScopePath"`
 	DashboardsPath            string `json:"dashboardsPath" yaml:"dashboardsPath"`
 	LocalCatalogPath          string `json:"localCatalogPath" yaml:"localCatalogPath"`
+	ActionsPath               string `json:"actionsPath" yaml:"actionsPath"`
+	WorkflowsPath             string `json:"workflowsPath" yaml:"workflowsPath"`
 	DeclarativePath           string `json:"declarativePath" yaml:"declarativePath"`
 	ApplicationTypesPath      string `json:"applicationTypesPath" yaml:"applicationTypesPath"`
 	ApplicationTypeConfigPath string `json:"applicationTypeConfigPath" yaml:"applicationTypeConfigPath"`
@@ -69,6 +71,7 @@ type AdditionalInfo struct {
 	ExecutionID                string                   `json:"executionID" yaml:"executionID"`
 	RuleExecutionID            string                   `json:"ruleExecutionID" yaml:"ruleExecutionID"`
 	TaskExecutionID            string                   `json:"taskExecutionID" yaml:"taskExecutionID"`
+	PublishedRuleID            string                   `json:"publishedRuleId" yaml:"publishedRuleId"`
 	DownloadsPath              string                   `json:"downloadsPath" yaml:"downloadsPath"`
 	TempDirPath                string                   `json:"tempDirPath" yaml:"tempDirPath"`
 	ExportFileType             string                   `json:"exportFileType" yaml:"exportFileType"`

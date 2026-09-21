@@ -19,20 +19,21 @@ type RuleSet struct {
 }
 
 type RuleBase struct {
-	RuleGUID      string `json:"ruleGUID,omitempty"`
-	RuleName      string `json:"rulename,omitempty"`
-	Purpose       string `json:"purpose,omitempty"`
-	Description   string `json:"description,omitempty"`
-	AliasRef      string `json:"aliasref,omitempty"`
-	SeqNo         int    `json:"seqno,omitempty"`
-	InstanceName  string `json:"instanceName,omitempty"`
-	ObjectType    string `json:"objectType,omitempty"`
-	ObjectGUID    string `json:"objectGUID,omitempty"`
-	RuleType      string `json:"ruletype,omitempty"`
-	CoreHash      string `json:"coreHash,omitempty"`
-	ExtendedHash  string `json:"extendedHash,omitempty"`
-	State         int    `json:"-"`
-	CompliancePCT int    `json:"compliancePCT,omitempty"`
+	RuleGUID      string              `json:"ruleGUID,omitempty"`
+	RuleName      string              `json:"rulename,omitempty"`
+	Purpose       string              `json:"purpose,omitempty"`
+	Description   string              `json:"description,omitempty"`
+	AliasRef      string              `json:"aliasref,omitempty"`
+	SeqNo         int                 `json:"seqno,omitempty"`
+	InstanceName  string              `json:"instanceName,omitempty"`
+	ObjectType    string              `json:"objectType,omitempty"`
+	ObjectGUID    string              `json:"objectGUID,omitempty"`
+	RuleType      string              `json:"ruletype,omitempty"`
+	CoreHash      string              `json:"coreHash,omitempty"`
+	ExtendedHash  string              `json:"extendedHash,omitempty"`
+	State         int                 `json:"-"`
+	CompliancePCT int                 `json:"compliancePCT,omitempty"`
+	Annotations   map[string][]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
 type GeneralVO struct {
@@ -227,6 +228,7 @@ type UserData struct {
 			ClientID     string `json:"clientId" yaml:"clientId"`
 			ClientSecret string `json:"clientSecret" yaml:"clientSecret"`
 			SubDomain    string `json:"subDomain" yaml:"subDomain"`
+			Domain       string `json:"domain" yaml:"domain"`
 		} `json:"compliancecow" yaml:"compliancecow"`
 	} `json:"credentials" yaml:"credentials"`
 }
@@ -477,8 +479,8 @@ type DomainDetailVO struct {
 }
 
 type LogEntry struct {
-	CreatedTime string            `json:"createdTime"`
-	Payload     map[string]string `json:"payload"`
+	CreatedTime string `json:"createdTime"`
+	Payload     any    `json:"payload"`
 }
 
 type TaskLog struct {
@@ -509,8 +511,9 @@ type DesignNotesResponseVO struct {
 }
 
 type RuleEntry struct {
-	Name    string `yaml:"name"`
-	Catalog string `yaml:"catalog"`
+	Name            string `yaml:"name"`
+	Catalog         string `yaml:"catalog"`
+	PublishRuleName string `yaml:"publishRuleName"`
 }
 type RuleListSpec struct {
 	RuleOverrideEnabled            bool        `yaml:"ruleOverrideEnabled"`
