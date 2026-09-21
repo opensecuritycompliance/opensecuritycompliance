@@ -19,7 +19,7 @@ services:
     hostname: cowlibrary
     container_name: cowlibrary
   cowstorage:
-    image: minio/minio:RELEASE.2024-07-04T14-25-45Z
+    image: docker.io/pgsty/silo:latest
     container_name: cowstorage
     hostname: cowstorage
     ports:
