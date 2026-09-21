@@ -121,7 +121,7 @@ func runE(cmd *cobra.Command) error {
 		if strings.Contains(titleWithCatalog, "localcatalog") {
 			catalog = "localcatalog"
 		}
-		rules = append(rules, vo.RuleEntry{Name: title, Catalog: catalog})
+		rules = append(rules, vo.RuleEntry{Name: title, Catalog: catalog, PublishRuleName: title})
 	}
 
 	ruleList := vo.RuleListYAML{

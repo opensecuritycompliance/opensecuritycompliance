@@ -68,7 +68,7 @@ func runE(cmd *cobra.Command) error {
 			}
 			rulePath := cowlibutils.GetRulePathFromCatalog(additionalInfo, rule.Name)
 			if cowlibutils.IsNotValidRulePath(rulePath) {
-				return fmt.Errorf("invalid rule path: %s", rulePath)
+				return fmt.Errorf("rule '%s' not found", rule.Name)
 			}
 
 			inputFile := filepath.Join(rulePath, constants.TaskInputYAMLFile)
@@ -111,6 +111,8 @@ func runE(cmd *cobra.Command) error {
 			}
 
 			if cowlibutils.IsFolderExist(appPath) {
+				additionalInfo.Language = ruleList.Spec.ApplicationTypeLanguage
+
 				errorDetails := applications.PublishApplication(namePointer, additionalInfo)
 				if len(errorDetails) > 0 {
 					if errorDetails[0].Issue == constants.ErrorAppAlreadyPresent {
@@ -128,27 +130,41 @@ func runE(cmd *cobra.Command) error {
 	fmt.Println("\n📘 Starting Rule publishing process...")
 	fmt.Println(strings.Repeat("─", 50))
 
+	isAnyRulePublished := false
+
 	for _, rule := range ruleList.Spec.Rules {
 		if strings.ToLower(rule.Catalog) == "globalcatalog" {
 			additionalInfo.GlobalCatalog = true
 		}
 		rulesPath := cowlibutils.GetRulePathFromCatalog(additionalInfo, rule.Name)
 		if cowlibutils.IsNotValidRulePath(rulesPath) {
-			return fmt.Errorf("%s not valid rule path", rulesPath)
+			return fmt.Errorf("rule '%s' not found", rule.Name)
 		}
 
-		if ruleList.Spec.RuleOverrideEnabled {
-			additionalInfo.CanOverride = true
-		}
 		additionalInfo.RulePublisher = &vo.RulePublisher{}
-		isRuleAlreadyPresent, err := cowlibrule.IsRuleAlreadyPresent(rule.Name, additionalInfo)
+		additionalInfo.RuleGUID = ""
+
+		ruleNameToCheck := rule.Name
+		if cowlibutils.IsNotEmpty(rule.PublishRuleName) {
+			ruleNameToCheck = rule.PublishRuleName
+		}
+
+		isRuleAlreadyPresent, err := cowlibrule.IsRuleAlreadyPresent(ruleNameToCheck, additionalInfo)
 		if err != nil {
 			return err
 		}
+
+		additionalInfo.CanOverride = isRuleAlreadyPresent
+
 		if isRuleAlreadyPresent && !ruleList.Spec.RuleOverrideEnabled {
 			fmt.Printf("🟡  %-35s → already published, skipping\n", rule.Name)
 			continue
 		}
+
+		if ruleList.Spec.RuleOverrideEnabled && cowlibutils.IsNotEmpty(rule.PublishRuleName) {
+			additionalInfo.RulePublisher.Name = rule.PublishRuleName
+		}
+
 		additionalInfo.RuleName = rule.Name
 		additionalInfo.ExportFileType = "tar"
 
@@ -159,9 +175,16 @@ func runE(cmd *cobra.Command) error {
 			fmt.Printf("❌  %-35s → %s\n", rule.Name, err.Error())
 			break
 		}
+		isAnyRulePublished = true
 		fmt.Println(strings.Repeat("·", 50) + "\n")
 
 	}
+
+	if isAnyRulePublished {
+		rulesCatalogURL := fmt.Sprintf("%s/ui/rules-workflow", cowlibutils.GetCowDomain(additionalInfo))
+		fmt.Println(cowlibutils.ColorLink("You can view the published rules in the rules catalog.\n", rulesCatalogURL, "italic green"))
+	}
+
 	return nil
 
 }

@@ -36,7 +36,8 @@ func init() {
 	})
 
 	Validate.RegisterValidation("rulename", func(fl validator.FieldLevel) bool {
-		matched, err := regexp.MatchString(`^[A-Z][A-Za-z0-9]{0,49}$`, fl.Field().String())
+		ruleNameMaxLength := Getenv("RULE_NAME_MAX_LENGTH", "200")
+		matched, err := regexp.MatchString(fmt.Sprintf(`^[A-Z][A-Za-z0-9]{0,%s}$`, ruleNameMaxLength), fl.Field().String())
 		if err != nil {
 			return false
 		}
@@ -275,7 +276,8 @@ func RegisterPCDefinedValidators() {
 		})
 
 		v.RegisterValidation("rulename", func(fl validator.FieldLevel) bool {
-			matched, err := regexp.MatchString(`^[A-Z][A-Za-z0-9]{0,49}$`, fl.Field().String())
+			ruleNameMaxLength := Getenv("RULE_NAME_MAX_LENGTH", "200")
+			matched, err := regexp.MatchString(fmt.Sprintf(`^[A-Z][A-Za-z0-9]{0,%s}$`, ruleNameMaxLength), fl.Field().String())
 			if err != nil {
 				return false
 			}
