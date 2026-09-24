@@ -30,4 +30,5 @@ const (
 	ErrorCircularDependency             = "circular dependency found"
 	ErrorInternalServerError            = "INTERNAL_SERVER_ERROR"
 	ErrorInternalServerErrorDescription = "Internal server error"
+	ErrorApplicationTypeOverrideNotAllowedDescription = "The existing Application Type cannot be overridden. Only administrators are allowed to override Application Credential Types. Please contact an administrator to proceed."
 )

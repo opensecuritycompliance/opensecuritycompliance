@@ -720,6 +720,13 @@ func GetCowDomain(additionalInfo *vo.AdditionalInfo) string {
 		return constants.COWAPIServiceURL
 	}
 	subDomain := constants.CowPublishSubDomain
+
+	if additionalInfo.PolicyCowConfig.UserData != nil {
+		if IsNotEmpty(additionalInfo.PolicyCowConfig.UserData.Credentials.Compliancecow.Domain) {
+			additionalInfo.Host = additionalInfo.PolicyCowConfig.UserData.Credentials.Compliancecow.Domain
+		}
+	}
+
 	host := additionalInfo.Host
 	if host != "" {
 		if strings.HasPrefix(host, "https://") {
@@ -741,6 +748,33 @@ func GetCowDomain(additionalInfo *vo.AdditionalInfo) string {
 	domain = strings.Join([]string{subDomain, domain}, ".")
 
 	return fmt.Sprintf("https://%s", domain)
+}
+
+func IsUserAdmin(additionalInfo *vo.AdditionalInfo) (bool, error) {
+	headerMap, err := GetAuthHeader(additionalInfo)
+	if err != nil {
+		return false, errors.New(constants.ErrorCannotGetAuthToken)
+	}
+
+	client := resty.New()
+	url := fmt.Sprintf("%s/v1/users/me", GetCowAPIEndpoint(additionalInfo))
+
+	var userDataMap map[string]interface{}
+	errorData := json.RawMessage{}
+
+	resp, err := client.R().SetHeaders(headerMap).SetQueryParams(map[string]string{
+		"page_size": "1",
+	}).SetResult(&userDataMap).SetError(&errorData).Get(url)
+
+	if err != nil || resp.StatusCode() != http.StatusOK {
+		return false, errors.New(constants.ErrorInternalServerError)
+	}
+	role, ok := userDataMap["RoleName"].(string)
+	if !ok || role == "" {
+		return false, errors.New("cannot get user role")
+	}
+
+	return strings.ToLower(role) == "admin", nil
 }
 
 func GetAuthHeader(additionalInfo *vo.AdditionalInfo) (map[string]string, error) {
@@ -1443,6 +1477,309 @@ func GetTasksV2(additionalInfo *vo.AdditionalInfo) []*vo.PolicyCowTaskVO {
 	return availableTasks
 }
 
+func GetActions(additionalInfo *vo.AdditionalInfo, actionCriteria *vo.CowActionCriteriaVO) (*vo.Collection, error) {
+	actionYamlsPath := filepath.Join(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "actionyamls")
+
+	page := actionCriteria.Page
+	pageSize := actionCriteria.PageSize
+	names := actionCriteria.Name
+	if additionalInfo.GlobalCatalog {
+		actionYamlsPath = filepath.Join(filepath.Dir(additionalInfo.PolicyCowConfig.PathConfiguration.ActionsPath), "actionyamls")
+	}
+
+	matches, err := filepath.Glob(filepath.Join(actionYamlsPath, "*"))
+	if err != nil {
+		return nil, err
+	}
+
+	actions := make(map[string]interface{})
+	for _, path := range matches {
+		info, err := os.Stat(path)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+
+		actionName := filepath.Base(path)
+		if len(names) > 0 && !StringInSlice(actionName, names) {
+			continue
+		}
+
+		bindingFile := filepath.Join(path, fmt.Sprintf("%s-Binding.yaml", actionName))
+		specFile := filepath.Join(path, fmt.Sprintf("%s-Spec.yaml", actionName))
+		deploymentFile := filepath.Join(path, fmt.Sprintf("%s-Deployment.yaml", actionName))
+
+		action := map[string]interface{}{}
+		if IsFileExist(bindingFile) {
+			binding, err := readActionYAML(bindingFile)
+			if err != nil {
+				fmt.Printf("error reading binding for action '%s': %v\n", actionName, err)
+				continue
+			}
+			action["binding"] = binding
+		}
+
+		if IsFileExist(specFile) {
+			spec, err := readActionYAML(specFile)
+			if err != nil {
+				fmt.Printf("error reading spec for action '%s': %v\n", actionName, err)
+				continue
+			}
+			action["spec"] = spec
+		}
+
+		if IsFileExist(deploymentFile) {
+			deployment, err := readActionYAML(deploymentFile)
+			if err != nil {
+				fmt.Printf("error reading deployment for action '%s': %v\n", actionName, err)
+				continue
+			}
+			action["deployment"] = deployment
+		}
+		if len(action) == 0 {
+			continue
+		}
+		actions[actionName] = action
+	}
+
+	actionNames := make([]string, 0, len(actions))
+	for actionName := range actions {
+		actionNames = append(actionNames, actionName)
+	}
+
+	sort.Strings(actionNames)
+	totalItems := len(actionNames)
+
+	start := 0
+	end := totalItems
+	if page > 0 && pageSize > 0 {
+		start = (page - 1) * pageSize
+		if start > totalItems {
+			start = totalItems
+		}
+
+		end = start + pageSize
+		if end > totalItems {
+			end = totalItems
+		}
+	}
+
+	paginatedActions := make(map[string]interface{})
+	for _, actionName := range actionNames[start:end] {
+		paginatedActions[actionName] = actions[actionName]
+	}
+
+	collection := &vo.Collection{
+		Items:      paginatedActions,
+		TotalItems: totalItems,
+	}
+	if page > 0 && pageSize > 0 {
+		collection.Page = page
+		collection.TotalPage = totalItems / pageSize
+		if totalItems%pageSize != 0 {
+			collection.TotalPage++
+		}
+	}
+	return collection, nil
+}
+
+func readActionYAML(filePath string) (interface{}, error) {
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	var data interface{}
+	if err := yaml.Unmarshal(bytes, &data); err != nil {
+		return nil, err
+	}
+	return normalizeYAMLData(data), nil
+}
+
+func normalizeYAMLData(data interface{}) interface{} {
+	switch value := data.(type) {
+	case map[interface{}]interface{}:
+		result := make(map[string]interface{})
+		for key, val := range value {
+			result[fmt.Sprint(key)] = normalizeYAMLData(val)
+		}
+		return result
+
+	case []interface{}:
+		result := make([]interface{}, len(value))
+		for i, item := range value {
+			result[i] = normalizeYAMLData(item)
+		}
+		return result
+
+	default:
+		return value
+	}
+}
+
+func GetWorkflows(additionalInfo *vo.AdditionalInfo, workflowCriteria *vo.CowWorkflowCriteriaVO) (*vo.Collection, error) {
+	workflowYamlsPath := filepath.Join(
+		additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath,
+		"workflowyamls",
+	)
+	if additionalInfo.GlobalCatalog {
+		workflowYamlsPath = filepath.Join(
+			filepath.Dir(additionalInfo.PolicyCowConfig.PathConfiguration.WorkflowsPath),
+			"workflowyamls",
+		)
+	}
+
+	matches, err := filepath.Glob(filepath.Join(workflowYamlsPath, "*"))
+	if err != nil {
+		return nil, err
+	}
+
+	workflows := make(map[string]interface{})
+	names := workflowCriteria.Name
+
+	for _, path := range matches {
+		info, err := os.Stat(path)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+		workflowName := filepath.Base(path)
+		if len(names) > 0 && !StringInSlice(workflowName, names) {
+			continue
+		}
+		workflow := make(map[string]interface{})
+		files, err := filepath.Glob(filepath.Join(path, "*.yaml"))
+		if err != nil {
+			continue
+		}
+
+		subworkflows := make(map[string]interface{})
+		fields := workflowCriteria.Fields
+		for _, file := range files {
+			fileName := filepath.Base(file)
+			switch {
+			case strings.HasSuffix(fileName, "-Binding.yaml"):
+				binding, err := readActionYAML(file)
+				if err != nil {
+					fmt.Printf("error reading binding '%s' for workflow '%s': %v\n", file, workflowName, err)
+					continue
+				}
+				workflow["binding"] = getWorkflowBasicData(binding)
+
+			case strings.HasSuffix(fileName, "-Spec.yaml"):
+				spec, err := readActionYAML(file)
+				if err != nil {
+					fmt.Printf("error reading spec '%s' for workflow '%s': %v\n", file, workflowName, err)
+					continue
+				}
+				workflow["spec"] = getWorkflowBasicData(spec)
+
+			case strings.HasSuffix(fileName, "-Config.yaml"):
+				config, err := readActionYAML(file)
+				if err != nil {
+					fmt.Printf(
+						"error reading config '%s' for workflow '%s': %v\n", file, workflowName, err)
+					continue
+				}
+				if fields == "basic" {
+					workflow["config"] = map[string]interface{}{
+						"metadata": getMetadata(config),
+					}
+				} else {
+					workflow["config"] = config
+				}
+
+			case strings.HasSuffix(fileName, "-Subworkflow.yaml"):
+				if fields != "basic" {
+					subworkflowName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+					subworkflowName = strings.TrimSuffix(subworkflowName, "-SubWorkflow")
+					subworkflowConfig, err := readActionYAML(file)
+					if err != nil {
+						fmt.Printf("error reading subworkflow '%s' for workflow '%s': %v\n", file, workflowName, err)
+						continue
+					}
+					subworkflows[subworkflowName] = subworkflowConfig
+				}
+			}
+		}
+		if len(subworkflows) > 0 {
+			if config, ok := workflow["config"].(map[string]interface{}); ok {
+				config["subworkflow"] = subworkflows
+			} else {
+				workflow["config"] = map[string]interface{}{
+					"subworkflow": subworkflows,
+				}
+			}
+		}
+		if len(workflow) == 0 {
+			continue
+		}
+		workflows[workflowName] = workflow
+	}
+	workflowNames := make([]string, 0, len(workflows))
+	for workflowName := range workflows {
+		workflowNames = append(workflowNames, workflowName)
+	}
+
+	sort.Strings(workflowNames)
+	totalItems := len(workflowNames)
+
+	start := 0
+	end := totalItems
+	page := workflowCriteria.Page
+	pageSize := workflowCriteria.PageSize
+	if page > 0 && pageSize > 0 {
+		start = (page - 1) * pageSize
+		if start > totalItems {
+			start = totalItems
+		}
+		end = start + pageSize
+		if end > totalItems {
+			end = totalItems
+		}
+	}
+	paginatedWorkflows := make(map[string]interface{})
+	for _, workflowName := range workflowNames[start:end] {
+		paginatedWorkflows[workflowName] = workflows[workflowName]
+	}
+	collection := &vo.Collection{
+		Items:      paginatedWorkflows,
+		TotalItems: totalItems,
+	}
+	if page > 0 && pageSize > 0 {
+		collection.Page = page
+		collection.TotalPage = totalItems / pageSize
+		if totalItems%pageSize != 0 {
+			collection.TotalPage++
+		}
+	}
+	return collection, nil
+}
+
+func getMetadata(data interface{}) interface{} {
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	metadata, ok := dataMap["metadata"]
+	if !ok {
+		return nil
+	}
+	return metadata
+}
+
+func getWorkflowBasicData(data interface{}) interface{} {
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	result := make(map[string]interface{})
+	if metadata, ok := dataMap["metadata"]; ok {
+		result["metadata"] = metadata
+	}
+	if spec, ok := dataMap["spec"]; ok {
+		result["spec"] = spec
+	}
+	return result
+}
+
 func GetAdditionalInfoFromEnv() (additionalInfo *vo.AdditionalInfo, err error) {
 
 	configPath := constants.CowDataDefaultConfigFilePath
@@ -1455,6 +1792,9 @@ func GetAdditionalInfoFromEnv() (additionalInfo *vo.AdditionalInfo, err error) {
 			additionalInfo = &vo.AdditionalInfo{}
 			pathConfig := &vo.PolicyCowConfig{}
 			yaml.Unmarshal(fileByts, pathConfig)
+			if pathConfig.UserData != nil && IsNotEmpty(pathConfig.UserData.Credentials.Compliancecow.Domain) {
+				additionalInfo.Host = pathConfig.UserData.Credentials.Compliancecow.Domain
+			}
 			additionalInfo.PolicyCowConfig = pathConfig
 		}
 	}
@@ -1877,13 +2217,33 @@ func GetRulesV2(additionalInfo *vo.AdditionalInfo, cowRulesCriteriaVO *vo.CowRul
 
 				if rulevo.Spec != nil {
 					for key, value := range rulevo.Spec.Input {
-						if inputsMap, ok := value.(map[interface{}]interface{}); ok {
-							rulevo.Spec.Input[key] = ConvertMap(inputsMap)
+						switch v := value.(type) {
+						case map[interface{}]interface{}:
+							rulevo.Spec.Input[key] = ConvertMap(v)
+
+						case []interface{}:
+							for i, item := range v {
+								if m, ok := item.(map[interface{}]interface{}); ok {
+									v[i] = ConvertMap(m)
+								}
+							}
+							rulevo.Spec.Input[key] = v
 						}
 					}
-					for key, input := range rulevo.Spec.InputsMeta__ {
-						if inputsMetaMap, ok := input.DefaultValue.(map[interface{}]interface{}); ok {
-							rulevo.Spec.InputsMeta__[key].DefaultValue = ConvertMap(inputsMetaMap)
+
+					for i, input := range rulevo.Spec.InputsMeta__ {
+						switch v := input.DefaultValue.(type) {
+
+						case map[interface{}]interface{}:
+							rulevo.Spec.InputsMeta__[i].DefaultValue = ConvertMap(v)
+
+						case []interface{}:
+							for j, item := range v {
+								if m, ok := item.(map[interface{}]interface{}); ok {
+									v[j] = ConvertMap(m)
+								}
+							}
+							rulevo.Spec.InputsMeta__[i].DefaultValue = v
 						}
 					}
 				}
@@ -2427,4 +2787,92 @@ func GetReadMeFileContentAsBase64EncodedString(folderPath string) string {
 	}
 
 	return readMeBase64EncodedString
+}
+
+func IsVirtualEnv(dir string) bool {
+	info, err := os.Stat(filepath.Join(dir, "pyvenv.cfg"))
+	return err == nil && !info.IsDir()
+}
+
+func RemoveUnwantedFolders(root string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if IsVirtualEnv(path) || info.Name() == "userdata" || info.Name() == "__pycache__" {
+				if err := os.RemoveAll(path); err != nil {
+					return err
+				}
+				return filepath.SkipDir
+			}
+		}
+		return nil
+	})
+}
+
+func ExtractBraceBlock(content string) string {
+	start := strings.Index(content, "{")
+	if start == -1 {
+		return ""
+	}
+	braces := 0
+	for i := start; i < len(content); i++ {
+		if content[i] == '{' {
+			braces++
+		}
+		if content[i] == '}' {
+			braces--
+			if braces == 0 {
+				return content[:i+1]
+			}
+		}
+	}
+	return ""
+}
+
+func ExtractIndentedBlock(s string) string {
+	lines := strings.Split(s, "\n")
+	if len(lines) == 0 {
+		return s
+	}
+	baseIndent := len(lines[0]) - len(strings.TrimLeft(lines[0], " \t"))
+	out := []string{lines[0]}
+	for _, line := range lines[1:] {
+		if strings.TrimSpace(line) == "" {
+			out = append(out, line)
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if indent <= baseIndent {
+			break
+		}
+		out = append(out, line)
+	}
+	return strings.Join(out, "\n")
+}
+
+func ValidatePythonPackages(taskPath string) error {
+	reqPath := filepath.Join(taskPath, "requirements.txt")
+
+	cmd := exec.Command("python3", "-m", "pip", "install", "-r", reqPath)
+	cmd.Dir = taskPath
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		outputStr := strings.TrimSpace(string(output))
+
+		var errors []string
+		for _, line := range strings.Split(outputStr, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "ERROR:") {
+				errors = append(errors, line)
+			}
+		}
+		if len(errors) > 0 {
+			return fmt.Errorf("%s", strings.Join(errors, "\n"))
+		}
+		return fmt.Errorf("%s", outputStr)
+	}
+	return nil
 }

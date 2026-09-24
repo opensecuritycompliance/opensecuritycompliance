@@ -301,11 +301,11 @@ type LinkedAppsCredentials struct {
 
 type ApplicationCredVO struct {
 	ApplicationID      string                   `json:"applicationId,omitempty" yaml:"applicationId,omitempty"`
-	ApplicationName    string                   `json:"appName,omitempty" yaml:"name" binding:"required" validate:"required"`
+	ApplicationName    string                   `json:"appName,omitempty" yaml:"name"`
 	CredentialValues   map[string]interface{}   `json:"credentialValues,omitempty" yaml:"credentialValues,omitempty"`
 	AppTags            map[string][]string      `json:"appTags,omitempty" yaml:"appTags,omitempty"`
 	CredentialType     string                   `json:"credentialType,omitempty" yaml:"credentialType,omitempty"`
-	ApplicationURL     string                   `json:"appURL,omitempty" yaml:"appURL,omitempty" binding:"required"`
+	ApplicationURL     string                   `json:"appURL,omitempty" yaml:"appURL,omitempty"`
 	LinkedApplications []*LinkedAppsCredentials `json:"linkedApps,omitempty" yaml:"linkedApps,omitempty"`
 }
 

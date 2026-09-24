@@ -82,7 +82,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "f", "q", "ctrl+c":
+		case "ctrl+c":
 			m.done = true
 			return m, tea.Quit
 
@@ -120,6 +120,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.list.Items()) > 0 {
 				m.list.Select(min(idx, len(m.list.Items())-1))
 			}
+		
+		case "tab":
+			m.done = true
+			return m, tea.Quit
 		}
 	}
 
@@ -130,7 +134,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	instructions := lipgloss.NewStyle().
 		Bold(true).
-		Render("[space/enter to select, double Enter or 'f' to finish | / filter, esc clear, q quit]")
+		Render("[space/enter to select | tab to finish | / filter, esc clear | ctrl+c quit]")
 
 	return appStyle.Render(m.list.View() + "\n" + instructions)
 }

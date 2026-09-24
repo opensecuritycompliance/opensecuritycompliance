@@ -1,7 +1,7 @@
 package vo
 
 type Meta struct {
-	Name        string              `yaml:"name" json:"name" binding:"required,rulename,lte=120" validate:"required,rulename,lte=120"`
+	Name        string              `yaml:"name" json:"name" binding:"required,rulename" validate:"required,rulename"`
 	Purpose     string              `yaml:"purpose,omitempty" json:"purpose,omitempty"`
 	Description string              `yaml:"description,omitempty" json:"description,omitempty"`
 	Icon        string              `json:"icon,omitempty" yaml:"icon,omitempty"`
@@ -137,4 +137,9 @@ type RuleUserInputVOV2 struct {
 	ShowField     bool          `json:"showField,omitempty" yaml:"showField,omitempty"`
 	Required      bool          `json:"required,omitempty" yaml:"required,omitempty"`
 	Explanation   string        `json:"explanation" yaml:"explanation,omitempty"`
+}
+
+type UpdateRuleYAMLVO struct {
+	RuleYAMLVO       `yaml:",inline"`
+	ExistingRuleName string `json:"existingRuleName" yaml:"existingRuleName"`
 }

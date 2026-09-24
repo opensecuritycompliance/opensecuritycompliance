@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -142,6 +143,10 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 					rule.Meta.Labels[annotation] = tags
 				}
 			}
+
+			if len(additionalInfo.RuleYAMLVO.Meta.Tags) > 0 {
+				rule.Meta.Tags = additionalInfo.RuleYAMLVO.Meta.Tags
+			}
 		}
 
 		if len(additionalInfo.RuleYAMLVO.Spec.IoMap) > 0 {
@@ -155,7 +160,11 @@ func writeRuleYaml(directoryPath string, taskInfos []*vo.TaskInputVO, additional
 			input.Required = true
 		}
 		rule.Spec.InputsMeta__ = additionalInfo.RuleYAMLVO.Spec.InputsMeta__
-		rule.Spec.OutputsMeta__ = additionalInfo.RuleYAMLVO.Spec.OutputsMeta__
+
+		if len(additionalInfo.RuleYAMLVO.Spec.OutputsMeta__) > 0 {
+			rule.Spec.OutputsMeta__ = additionalInfo.RuleYAMLVO.Spec.OutputsMeta__
+		}
+
 		// commenting rule input not mapped filter for nocode auto save
 		// ruleIoMapInfo, _ := utils.GetRuleIOMapInfo(rule.Spec.IoMap)
 		// inputs := make(map[string]bool)
@@ -1006,16 +1015,18 @@ func ExecuteTask(executeTaskVO *vo.TaskExecutionVO, taskPath string, additionalI
 
 	if utils.IsPythonFlow(executionDir) {
 		appConnPath := additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath
-		err = cp.Copy(filepath.Join(appConnPath, "python", filepath.Base(appConnPath)), filepath.Join(executionDir, filepath.Base(appConnPath)))
+		appTypesFolderName := filepath.Base(appConnPath)
+		appTypesDir := filepath.Join(executionDir, appTypesFolderName)
+
+		err = cp.Copy(filepath.Join(appConnPath, "python", appTypesFolderName), appTypesDir)
 		if err != nil {
 			return nil, fmt.Errorf("error happens while copying applicationtypes folder: %s", err.Error())
 		}
-		cp.Copy(filepath.Join(appConnPath, "python", "requirements.txt"), filepath.Join(executionDir, filepath.Base(appConnPath), "requirements.txt"))
+		cp.Copy(filepath.Join(appConnPath, "python", "requirements.txt"), filepath.Join(appTypesDir, "requirements.txt"))
 
-		InstallPythonDependenciesWithRequirementsTxtFile(executionDir)
-		InstallPythonDependenciesWithRequirementsTxtFile(filepath.Join(executionDir, "applicationtypes"))
+		InstallPythonDependenciesWithRequirementsTxtFile(executionDir, executionDir)
+		InstallPythonDependenciesWithRequirementsTxtFile(appTypesDir, executionDir)
 	}
-
 	yamlPath := filepath.Join(executionDir, constants.TaskInputYAMLFile)
 	yamlBytes, err := os.ReadFile(yamlPath)
 	if err != nil {
@@ -1034,13 +1045,105 @@ func ExecuteTask(executeTaskVO *vo.TaskExecutionVO, taskPath string, additionalI
 		}
 	}
 	if taskInput.UserObject.App != nil && executeTaskVO.Application != nil {
-		if utils.IsNotEmpty(executeTaskVO.Application.CredentialType) && len(executeTaskVO.Application.CredentialValues) > 0 {
-			taskInput.UserObject.App.UserDefinedCredentials = map[string]interface{}{
-				executeTaskVO.Application.CredentialType: executeTaskVO.Application.CredentialValues,
+		if utils.IsNotEmpty(executeTaskVO.Application.ApplicationID) {
+			fetchedCredentials, err := FetchAppCredentials(executeTaskVO.Application.ApplicationID, additionalInfo)
+			if err != nil {
+				return &vo.TaskOutputResponse{TaskOutputs: &vo.TaskOutputsVO{Error: fmt.Sprintf("error fetching credentials for app %s: %v", executeTaskVO.Application.ApplicationID, err)}}, nil
 			}
-		}
-		if utils.IsNotEmpty(executeTaskVO.Application.ApplicationURL) {
-			taskInput.UserObject.App.ApplicationURL = executeTaskVO.Application.ApplicationURL
+
+			if executeTaskVO.IsAppTagMatchRequired {
+
+				if len(executeTaskVO.Tags) == 0 {
+					return &vo.TaskOutputResponse{TaskOutputs: &vo.TaskOutputsVO{Error: "Task tags are required but not provided"}}, nil
+				}
+
+				appTags, ok := fetchedCredentials["othersTags"].(map[string]interface{})
+				if !ok {
+					return &vo.TaskOutputResponse{
+						TaskOutputs: &vo.TaskOutputsVO{
+							Error: fmt.Sprintf(
+								"Invalid or missing appTags in fetched credentials for ApplicationID %s",
+								executeTaskVO.Application.ApplicationID,
+							),
+						},
+					}, nil
+				}
+				normalizedTags := make(map[string][]string, len(appTags))
+				for k, v := range appTags {
+					if arr, ok := v.([]interface{}); ok {
+						s := make([]string, len(arr))
+						for i, x := range arr {
+							s[i] = fmt.Sprint(x)
+						}
+						normalizedTags[k] = s
+					}
+				}
+
+				if !reflect.DeepEqual(normalizedTags, executeTaskVO.Tags) {
+					return &vo.TaskOutputResponse{
+						TaskOutputs: &vo.TaskOutputsVO{
+							Error: fmt.Sprintf(
+								"Task tags %v do not exactly match fetched application credential tags %v",
+								executeTaskVO.Tags,
+								normalizedTags,
+							),
+						},
+					}, nil
+				}
+			}
+
+			if credentialType, ok := fetchedCredentials["credentialType"].(string); ok {
+				if appCredential, ok := taskInput.UserObject.App.UserDefinedCredentials.(map[interface{}]interface{}); ok {
+					appCred := utils.ConvertMap(appCredential)
+					if _, exists := appCred[credentialType]; !exists {
+						return &vo.TaskOutputResponse{TaskOutputs: &vo.TaskOutputsVO{Error: fmt.Sprintf("credentialType %s not matched with fetched credentials from ApplicationID %s", credentialType, executeTaskVO.Application.ApplicationID)}}, nil
+					}
+
+					if userDefinedData, ok := fetchedCredentials["userDefinedData"].([]interface{}); ok {
+						credentialValues := make(map[string]interface{})
+						for _, data := range userDefinedData {
+							if dataMap, ok := data.(map[string]interface{}); ok {
+								if name, ok := dataMap["name"].(string); ok {
+									if value, ok := dataMap["value"].(string); ok {
+										credentialValues[name] = value
+									}
+								}
+							}
+						}
+						taskInput.UserObject.App.UserDefinedCredentials = map[string]interface{}{
+							credentialType: credentialValues,
+						}
+					} else {
+						return &vo.TaskOutputResponse{TaskOutputs: &vo.TaskOutputsVO{Error: fmt.Sprintf("credentialType %s not matched with fetched credentials from ApplicationID %s", credentialType, executeTaskVO.Application.ApplicationID)}}, nil
+					}
+				}
+				if appURL, ok := fetchedCredentials["appURL"].(string); ok {
+					taskInput.UserObject.App.ApplicationURL = appURL
+				}
+			}
+		} else {
+			if executeTaskVO.IsAppTagMatchRequired {
+				if !reflect.DeepEqual(executeTaskVO.Tags, executeTaskVO.Application.AppTags) {
+					return &vo.TaskOutputResponse{
+						TaskOutputs: &vo.TaskOutputsVO{
+							Error: fmt.Sprintf(
+								"Task tags %v do not exactly match application tags %v",
+								executeTaskVO.Tags,
+								executeTaskVO.Application.AppTags,
+							),
+						},
+					}, nil
+				}
+			}
+
+			if utils.IsNotEmpty(executeTaskVO.Application.CredentialType) && len(executeTaskVO.Application.CredentialValues) > 0 {
+				taskInput.UserObject.App.UserDefinedCredentials = map[string]interface{}{
+					executeTaskVO.Application.CredentialType: executeTaskVO.Application.CredentialValues,
+				}
+			}
+			if utils.IsNotEmpty(executeTaskVO.Application.ApplicationURL) {
+				taskInput.UserObject.App.ApplicationURL = executeTaskVO.Application.ApplicationURL
+			}
 		}
 	}
 
@@ -1055,14 +1158,23 @@ func ExecuteTask(executeTaskVO *vo.TaskExecutionVO, taskPath string, additionalI
 
 	var commandSeq string
 
+	var cmd *exec.Cmd
 	if utils.IsPythonFlow(executionDir) {
-		commandSeq = "python3 -u autogenerated_main.py"
+		venvDir := filepath.Join(executionDir, ".venv")
+		pythonPath := filepath.Join(venvDir, "bin", "python")
+
+		if _, err := os.Stat(pythonPath); err != nil {
+			return &vo.TaskOutputResponse{TaskOutputs: &vo.TaskOutputsVO{
+				Error: fmt.Sprintf("venv python not found for task %s at %s: %v", executeTaskVO.TaskName, pythonPath, err),
+			}}, nil
+		}
+		cmd = exec.Command(pythonPath, "-u", "autogenerated_main.py")
 	} else {
 		replaceLibraryPathsInGoMod(executionDir, additionalInfo)
 		commandSeq = "go mod tidy && go run *.go"
+		cmd = exec.Command("bash", "-c", commandSeq)
 	}
 
-	cmd := exec.Command("bash", "-c", commandSeq)
 	cmd.Dir = executionDir
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1234,6 +1346,41 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 					if len(additionalInfo.RuleExecutionVO.LinkedApplications) > 0 {
 						updateLinkedApplicationCredentials(taskInput.UserObject.App.LinkedApplications, additionalInfo.RuleExecutionVO.LinkedApplications)
 					}
+				}
+
+				for _, app := range taskInput.UserObject.Apps {
+					if appType, ok := app.AppTags["appType"]; ok {
+						skip := false
+						for _, t := range appType {
+							if t == "nocredapp" {
+								skip = true
+								break
+							}
+						}
+						if skip {
+							continue
+						}
+					}
+
+					matched := false
+					for _, ruleApp := range additionalInfo.RuleExecutionVO.Applications {
+						if reflect.DeepEqual(app.AppTags, ruleApp.AppTags) {
+							matched = true
+							break
+						}
+					}
+					if !matched {
+						for _, task := range ruleYAML.Spec.Tasks {
+							if reflect.DeepEqual(app.AppTags, task.AppTags) {
+								return fmt.Errorf(
+									"app tag validation failed for task '%s' (%s). Expected tags: %v.",
+									task.Alias,
+									task.Name,
+									task.AppTags)
+							}
+						}
+					}
+
 				}
 
 				for _, app := range taskInput.UserObject.Apps {
@@ -1919,6 +2066,7 @@ func GetRuleSetFromYAML(path string) (*vo.RuleSet, error) {
 			Description: ruleYaml.Meta.Description,
 			AliasRef:    ruleYaml.Meta.AliasRef,
 			RuleType:    "sequential",
+			Annotations: ruleYaml.Meta.Annotations,
 		},
 		RuleTags: ruleTags,
 		RuleIOValues: &vo.IOValues{
@@ -2467,7 +2615,7 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 						ruleFilePath := filepath.Join(rulePath, constants.LocalFolder, fileName)
 						catalogFilePath := filepath.Join(taskPath, "../../", constants.LocalFolder, fileName)
 
-						if utils.IsFileNotExist(taskFilePath) {
+						if utils.IsFileExist(ruleFilePath) || utils.IsFileNotExist(taskFilePath) {
 							userdataDir := filepath.Join(tasksNewFolder, constants.LocalFolder)
 							if err := os.MkdirAll(userdataDir, os.ModePerm); err != nil {
 								fmt.Printf("Error creating userdata directory: %v\n", err)
@@ -3238,6 +3386,129 @@ func ExportRule(filePath string, additionalInfo *vo.AdditionalInfo) (exportedDat
 
 	}
 
+	ruleYamlPath := filepath.Join(directoryPath, constants.RuleYamlFile)
+	ruleSet, err := GetRuleSetFromYAML(ruleYamlPath)
+	if err != nil {
+		return exportedData, err
+	}
+	tasks := make(map[string]string)
+
+	if ruleSet != nil && len(ruleSet.Rules) > 0 {
+		rule := ruleSet.Rules[0]
+		if len(rule.TasksInfo) > 0 {
+			taskInfos := make([]*vo.TaskInfo, 0)
+
+			byts, err := json.Marshal(rule.TasksInfo)
+			if err != nil {
+				return exportedData, err
+			}
+
+			err = json.Unmarshal(byts, &taskInfos)
+			if err != nil {
+				return exportedData, err
+			}
+			for _, task := range taskInfos {
+				taskName := strings.NewReplacer("{{", "", "}}", "").Replace(task.TaskGUID)
+				taskPath := utils.GetTaskPathFromCatalog(additionalInfo, additionalInfo.RuleName, taskName)
+
+				tasks[taskName] = taskPath // UNIQUE
+			}
+		}
+	}
+
+	versionRegex := regexp.MustCompile(`^[a-zA-Z0-9_.-]+==[^=]+$`)
+
+	var validationErrors []string
+	validatedRequirements := make(map[string]bool)
+
+	for taskName, taskPath := range tasks {
+		if constants.ExceptionHandlingEnabled == "true" {
+			if utils.IsGoTask(taskPath) {
+				data, err := os.ReadFile(filepath.Join(taskPath, "autogenerated_main.go"))
+				if err != nil {
+					validationErrors = append(validationErrors,
+						fmt.Sprintf(`Task "%s": autogenerated_main.go not found`, taskName))
+					continue
+				}
+
+				content := string(data)
+
+				handlerIndex := strings.Index(content, "func handlePanic()")
+				if handlerIndex == -1 {
+					validationErrors = append(validationErrors,
+						fmt.Sprintf(`Task "%s": handlePanic() not found in autogenerated_main.go`, taskName))
+				} else {
+					body := utils.ExtractBraceBlock(content[handlerIndex:])
+					if !strings.Contains(body, "panic(r)") {
+						validationErrors = append(validationErrors,
+							fmt.Sprintf(`Task "%s": panic(r) is missing in handlePanic()`, taskName))
+					}
+				}
+				continue
+			}
+		}
+
+		reqPath := filepath.Join(taskPath, "requirements.txt")
+
+		data, err := os.ReadFile(reqPath)
+		if err != nil {
+			validationErrors = append(validationErrors,
+				fmt.Sprintf(`Task "%s": requirements.txt not found`, taskName))
+			continue
+		}
+
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+
+			if idx := strings.Index(line, "#"); idx != -1 {
+				line = strings.TrimSpace(line[:idx])
+			}
+
+			if !versionRegex.MatchString(line) {
+				validationErrors = append(validationErrors,
+					fmt.Sprintf(`Task "%s": missing version for "%s" in requirements.txt`, taskName, line))
+			}
+		}
+
+		if !validatedRequirements[reqPath] {
+			if err := utils.ValidatePythonPackages(taskPath); err != nil {
+				validationErrors = append(validationErrors,
+					fmt.Sprintf(`Task "%s": failed to install requirements.txt:\n%s`,
+						taskName, err.Error()))
+			}
+			validatedRequirements[reqPath] = true
+		}
+
+		if constants.ExceptionHandlingEnabled == "true" {
+			data, err := os.ReadFile(filepath.Join(taskPath, "autogenerated_main.py"))
+			if err != nil {
+				validationErrors = append(validationErrors,
+					fmt.Sprintf(`Task "%s": autogenerated_main.py not found`, taskName))
+				continue
+			}
+
+			content := string(data)
+			handlerIndex := strings.Index(content, "except Exception as error:")
+			if handlerIndex == -1 {
+				validationErrors = append(validationErrors,
+					fmt.Sprintf(`Task "%s": exception handler not found in autogenerated_main.py`, taskName))
+			} else {
+				block := utils.ExtractIndentedBlock(content[handlerIndex:])
+				if !strings.Contains(block, "raise") {
+					validationErrors = append(validationErrors,
+						fmt.Sprintf(`Task "%s": raise is missing in the exception handler`, taskName))
+				}
+			}
+		}
+	}
+
+	if len(validationErrors) > 0 {
+		return exportedData, fmt.Errorf("task validation failed:\n- %s", strings.Join(validationErrors, "\n- "))
+	}
+
 	ruleOutputs := make(map[string]*vo.RuleOutputs)
 	ruleNameAndAliasInfo := map[string]string{}
 
@@ -3316,6 +3587,10 @@ func ExportRule(filePath string, additionalInfo *vo.AdditionalInfo) (exportedDat
 
 	} else {
 		return nil, errors.New("the folder should either rule or rulegroup")
+	}
+
+	if err := utils.RemoveUnwantedFolders(filepath.Join(tempDir, additionalInfo.RuleName)); err != nil {
+		return nil, err
 	}
 
 	updateRuleInputFilePath(tempDir, additionalInfo)
@@ -3479,6 +3754,8 @@ func PublishRule(filePath string, additionalInfo *vo.AdditionalInfo, opts ...boo
 		rulesCatalogURL := fmt.Sprintf("%s/ui/rules-workflow", utils.GetCowDomain(additionalInfo))
 		fmt.Println(utils.ColorLink("You can view the published rule in the rules catalog.", rulesCatalogURL, "italic green"))
 	}
+
+	additionalInfo.PublishedRuleID = resultData.ID
 
 	return nil
 }
@@ -4000,29 +4277,28 @@ func ValidateApplication(applicationValidatorVO *vo.ApplicationValidatorVO, rule
 		if err != nil {
 			fmt.Println("Error copying files to validateApplicationTask:", err)
 		}
-		if requirementsFilePath := filepath.Join(filepath.Dir(baseFolder), "requirements.txt"); utils.IsFileExist(requirementsFilePath) {
-			cmd := exec.Command("python3", "-m", "pip", "install", "-r", "requirements.txt")
-			cmd.Dir = filepath.Dir(baseFolder)
-			_, err := cmd.Output()
-			if err != nil {
-				return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-					Message: "VALIDATION_FAILED", Description: "Error while installing appconnection packages",
-					ErrorDetails: utils.GetValidationError(err)}}
-			}
+
+		if err := InstallPythonDependenciesWithRequirementsTxtFile(filepath.Dir(baseFolder), validateApplicationTask); err != nil {
+			return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+				Message: "VALIDATION_FAILED", Description: "Error while installing appconnection packages",
+				ErrorDetails: utils.GetValidationError(err)}}
 		}
 
-		if requirementsFilePath := filepath.Join(validateApplicationTask, "requirements.txt"); utils.IsFileExist(requirementsFilePath) {
-			cmd := exec.Command("python3", "-m", "pip", "install", "-r", "requirements.txt")
-			cmd.Dir = validateApplicationTask
-			_, err := cmd.Output()
-			if err != nil {
-				return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
-					Message: "VALIDATION_FAILED", Description: "Error while installing validation task packages",
-					ErrorDetails: utils.GetValidationError(err)}}
-			}
+		if err := InstallPythonDependenciesWithRequirementsTxtFile(validateApplicationTask, validateApplicationTask); err != nil {
+			return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+				Message: "VALIDATION_FAILED", Description: "Error while installing validation task packages",
+				ErrorDetails: utils.GetValidationError(err)}}
 		}
 
-		cmd = exec.Command("python3", "-u", "autogenerated_main.py")
+		venvDir := filepath.Join(validateApplicationTask, ".venv")
+		pythonPath := filepath.Join(venvDir, "bin", "python")
+		if _, err := os.Stat(pythonPath); err != nil {
+			return nil, &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+				Message: "VALIDATION_FAILED", Description: "venv python not found",
+				ErrorDetails: utils.GetValidationError(err)}}
+		}
+
+		cmd = exec.Command(pythonPath, "-u", "autogenerated_main.py")
 
 	} else {
 		cmd = exec.Command("bash", "-c", "go mod tidy && go run *.go")
@@ -4165,31 +4441,29 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 	for _, userInput := range ruleInputs {
 
 		if userInput.DataType == constants.DeclarativesDataTypeFILE || userInput.DataType == constants.DeclarativesDataTypeHTTP_CONFIG {
-			if strValue, ok := userInput.DefaultValue.(string); ok && utils.IsNotEmpty(strValue) {
-				if strings.HasPrefix(strValue, "http://") || strings.HasPrefix(strValue, "https://") {
-					userInputs[userInput.Name] = strValue
-				} else {
-					folderPath := fmt.Sprintf("%s/%s", ruleName, userInput.Name)
-
-					fileName := userInput.Name
-					if utils.IsNotEmpty(userInput.Format) {
-						fileName += "." + userInput.Format
-					}
-
-					fileBytes, err := getFileBytesFromInterface(userInput.DefaultValue)
-					if err != nil {
-						return nil, &vo.ErrorVO{
-							Message: "not a valid file data", Description: fmt.Sprintf("File content is invalid for '%s'", userInput.Name)}
-					}
-
-					minioFileVO := &vo.MinioFileVO{FileName: fileName, Path: folderPath, BucketName: constants.BucketNameRuleInputs, FileContent: fileBytes}
-					minioUploadResp, errResp := storage.UploadFileToMinio(minioFileVO, nil)
-					if errResp != nil {
-						return nil, errResp.Error
-					}
-
-					userInputs[userInput.Name] = minioUploadResp.FileURL
+			switch inputVal := userInput.DefaultValue.(type) {
+			case string:
+				processedVal, err := ProcessRuleFileInputValue(inputVal, userInput, userInputs, ruleName)
+				if err != nil {
+					return nil, err
 				}
+				if processedVal != "" {
+					userInputs[userInput.Name] = processedVal
+				}
+			case []interface{}:
+				processedInput := make([]string, 0, len(inputVal))
+				for _, inputItem := range inputVal {
+					if inputItemStr, ok := inputItem.(string); ok {
+						processedVal, err := ProcessRuleFileInputValue(inputItemStr, userInput, userInputs, ruleName)
+						if err != nil {
+							return nil, err
+						}
+						if processedVal != "" {
+							processedInput = append(processedInput, processedVal)
+						}
+					}
+				}
+				userInputs[userInput.Name] = processedInput
 			}
 
 		} else {
@@ -4199,6 +4473,39 @@ func RuleInputsToMap(ruleName string, ruleInputs []*vo.RuleUserInputVO) (map[str
 	}
 
 	return userInputs, nil
+}
+
+func ProcessRuleFileInputValue(strValue string, userInput *cowvo.RuleUserInputVO, userInputs map[string]interface{}, ruleName string) (string, *vo.ErrorVO) {
+	if !utils.IsNotEmpty(strValue) {
+		return strValue, nil
+	}
+
+	if strings.HasPrefix(strValue, "http://") || strings.HasPrefix(strValue, "https://") {
+		return strValue, nil
+	} else {
+		folderPath := fmt.Sprintf("%s/%s", ruleName, userInput.Name)
+
+		fileName := userInput.Name
+		if utils.IsNotEmpty(userInput.Format) {
+			fileName += "." + userInput.Format
+		}
+
+		fileBytes, err := getFileBytesFromInterface(userInput.DefaultValue)
+		if err != nil {
+			return "", &vo.ErrorVO{
+				Message: "not a valid file data", Description: fmt.Sprintf("File content is invalid for '%s'", userInput.Name)}
+		}
+
+		minioFileVO := &vo.MinioFileVO{FileName: fileName, Path: folderPath, BucketName: constants.BucketNameRuleInputs, FileContent: fileBytes}
+		minioUploadResp, errResp := storage.UploadFileToMinio(minioFileVO, nil)
+		if errResp != nil {
+			return "", errResp.Error
+		}
+
+		userInputs[userInput.Name] = minioUploadResp.FileURL
+	}
+
+	return "", nil
 }
 
 func GetAvailableLanguages(applicationVO *vo.ApplicationVO, additionalInfo *vo.AdditionalInfo) ([]string, error) {
@@ -4314,37 +4621,78 @@ func FetchAppCredentials(applicationID string, additionalInfo *vo.AdditionalInfo
 	return result, nil
 }
 
-func InstallPythonDependenciesWithRequirementsTxtFile(srcDir string) {
-	reqPath := filepath.Join(srcDir, "requirements.txt")
-	if _, err := os.Stat(reqPath); err == nil {
-		content, _ := os.ReadFile(reqPath)
-		var installList []string
-		for _, pkg := range strings.Split(string(content), "\n") {
-			pkg = strings.TrimSpace(pkg)
-			if utils.IsEmpty(pkg) || strings.HasPrefix(pkg, "#") {
-				continue
-			}
+func InstallPythonDependenciesWithRequirementsTxtFile(reqDir string, venvBaseDir string) error {
+	reqPath := filepath.Join(reqDir, "requirements.txt")
+	if _, err := os.Stat(reqPath); err != nil {
+		return nil
+	}
 
-			if idx := strings.Index(pkg, "#"); idx != -1 {
-				pkg = strings.TrimSpace(pkg[:idx])
-			}
+	content, err := os.ReadFile(reqPath)
+	if err != nil {
+		return fmt.Errorf("failed to read requirements.txt: %w", err)
+	}
 
-			if _, loaded := pythonPackages.LoadOrStore(pkg, true); !loaded {
-				installList = append(installList, pkg)
-			}
+	var installList []string
+	for _, pkg := range strings.Split(string(content), "\n") {
+		pkg = strings.TrimSpace(pkg)
+		if utils.IsEmpty(pkg) || strings.HasPrefix(pkg, "#") {
+			continue
 		}
-
-		if !utils.IsNoneEmpty(installList) {
-			return
+		if idx := strings.Index(pkg, "#"); idx != -1 {
+			pkg = strings.TrimSpace(pkg[:idx])
 		}
-		cmd := exec.Command("python3", "-m", "pip", "install")
-		cmd.Args = append(cmd.Args, installList...)
-		cmd.Dir = srcDir
-		cmdByts, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println("installation error :", err)
-		} else {
-			fmt.Println("installation output :", string(cmdByts))
+		installList = append(installList, pkg)
+	}
+
+	if len(installList) == 0 {
+		return nil
+	}
+
+	venvDir := filepath.Join(venvBaseDir, ".venv")
+
+	if _, err := os.Stat(venvDir); os.IsNotExist(err) {
+		venvCmd := exec.Command("uv", "venv", venvDir, "--system-site-packages")
+		venvCmd.Dir = venvBaseDir
+		if out, err := venvCmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("venv creation error: %w, output: %s", err, string(out))
 		}
 	}
+
+	pythonPath := filepath.Join(venvDir, "bin", "python")
+	cmd := exec.Command("uv", "pip", "install", "--python", pythonPath)
+	cmd.Args = append(cmd.Args, installList...)
+	cmd.Dir = venvBaseDir
+
+	cmdByts, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("installation error: %w, output: %s", err, string(cmdByts))
+	}
+	fmt.Println("installation output :", string(cmdByts))
+	return nil
+}
+
+func UpdateRule(ruleYAML *vo.RuleYAMLVO, exsitingRuleName string, additionalInfo *vo.AdditionalInfo) *vo.ErrorResponseVO {
+	if additionalInfo == nil {
+		addInfo, err := utils.GetAdditionalInfoFromEnv()
+		if err != nil {
+			return &vo.ErrorResponseVO{StatusCode: http.StatusBadRequest, Error: &vo.ErrorVO{
+				Message: "Essential/basic information is missing", Description: "Essential/basic information is missing.",
+				ErrorDetails: utils.GetValidationError(err),
+			}}
+		}
+
+		additionalInfo = addInfo
+	}
+	fmt.Println("additionalInfo::", additionalInfo)
+	err := CreateRuleWithYAMLV2(ruleYAML, additionalInfo)
+	if err != nil {
+		return err
+	}
+	if exsitingRuleName == ruleYAML.BaseAndMeta.Meta.Name {
+		return nil
+	}
+	rulePath := utils.GetPathFromLocalCatalog(additionalInfo.PolicyCowConfig.PathConfiguration.LocalCatalogPath, "rules", exsitingRuleName)
+	fmt.Println("rulesPath ::", rulePath)
+	os.RemoveAll(rulePath)
+	return nil
 }

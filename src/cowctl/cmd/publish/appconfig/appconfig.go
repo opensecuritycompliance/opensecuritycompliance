@@ -111,7 +111,6 @@ func publishApplicationRecursively(namePointer *vo.CowNamePointersVO, additional
 		if cowlibutils.IsEmpty(namePointer.Name) {
 			return fmt.Errorf("ApplicationType name cannot be empty")
 		}
-
 		appDeclarativesPath = filepath.Join(appDeclarativesPath, namePointer.Name)
 		if cowlibutils.IsFolderNotExist(appDeclarativesPath) {
 			return fmt.Errorf("ApplicationType not available")

@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -1019,4 +1020,67 @@ func GetAvailableApplications(applicationName string, additionalInfo *vo.Additio
 	}
 	return respVO, nil
 
+}
+
+func GetApplicationTypesFromRule(rulePath string, ruleName string, additionalInfo *vo.AdditionalInfo) ([]*vo.CowNamePointersVO, error) {
+
+	var result []*vo.CowNamePointersVO
+
+	inputYAMLFileByts, err := os.ReadFile(filepath.Join(rulePath, constants.TaskInputYAMLFile))
+	if err != nil {
+		return result, nil
+	}
+
+	var appInfo vo.TaskInputV2
+	if err := yaml.Unmarshal(inputYAMLFileByts, &appInfo); err != nil {
+		return nil, fmt.Errorf("invalid rule input structure: %s", err.Error())
+	}
+
+	languages, err := utils.GetApplicationLanguageFromRule(ruleName, additionalInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleFile, err := os.ReadFile(filepath.Join(rulePath, constants.RuleYamlFile))
+	if err != nil {
+		return nil, err
+	}
+
+	ruleYaml := &vo.RuleYAMLVO{}
+	if err := yaml.Unmarshal(ruleFile, ruleYaml); err != nil {
+		return nil, err
+	}
+
+	if appInfo.UserObject.App != nil {
+		for _, task := range ruleYaml.Spec.Tasks {
+			if lang, ok := languages[task.Name]; ok {
+				additionalInfo.Language = lang
+			}
+		}
+		result = append(result, &vo.CowNamePointersVO{
+			Name: appInfo.UserObject.App.ApplicationName,
+		})
+	}
+
+	processed := map[string]bool{}
+	for _, app := range appInfo.UserObject.Apps {
+		if app == nil || processed[app.ApplicationName] {
+			continue
+		}
+
+		for _, task := range ruleYaml.Spec.Tasks {
+			if reflect.DeepEqual(task.AppTags, app.AppTags) {
+				if lang, ok := languages[task.Name]; ok {
+					additionalInfo.Language = lang
+					result = append(result, &vo.CowNamePointersVO{
+						Name: app.ApplicationName,
+					})
+					processed[app.ApplicationName] = true
+					break
+				}
+			}
+		}
+	}
+
+	return result, nil
 }

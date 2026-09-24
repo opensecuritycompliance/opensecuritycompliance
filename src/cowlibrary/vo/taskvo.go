@@ -62,9 +62,11 @@ type CowTaskCriteriaVO struct {
 }
 
 type TaskExecutionVO struct {
-	TaskName    string             `json:"taskName,omitempty" yaml:"taskName,omitempty" binding:"required"`
-	Application *ApplicationCredVO `json:"application,omitempty" yaml:"application,omitempty"`
-	TaskInputs  *TaskUserInputVO   `json:"taskInputs,omitempty" yaml:"taskInputs,omitempty"`
+	TaskName              string              `json:"taskName,omitempty" yaml:"taskName,omitempty" binding:"required"`
+	IsAppTagMatchRequired bool                `json:"isAppTagMatchRequired,omitempty" yaml:"isAppTagMatchRequired,omitempty"`
+	Tags                  map[string][]string `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Application           *ApplicationCredVO  `json:"application,omitempty" yaml:"application,omitempty"`
+	TaskInputs            *TaskUserInputVO    `json:"taskInputs,omitempty" yaml:"taskInputs,omitempty"`
 }
 
 type TaskUpdateVO struct {
@@ -94,4 +96,24 @@ type UpsertReadMe struct {
 	Type          string `json:"type,omitempty" yaml:"type,omitempty"`
 	ReadmeContent string `json:"readmeContent,omitempty" yaml:"readmeContent,omitempty"`
 	RuleName      string `json:"ruleName,omitempty" yaml:"ruleName,omitempty"`
+}
+
+type CowWorkflowCriteriaVO struct {
+	Name     []string `json:"name,omitempty"`
+	Fields   string   `json:"fields,omitempty"`
+	Page     int      `json:"page,omitempty"`
+	PageSize int      `json:"pageSize,omitempty"`
+}
+
+type CowActionCriteriaVO struct {
+	Name     []string `json:"name,omitempty"`
+	Fields   string   `json:"fields,omitempty"`
+	Page     int      `json:"page,omitempty"`
+	PageSize int      `json:"pageSize,omitempty"`
+}
+
+type CowUseCaseVO struct {
+	UseCase     string `json:"useCase,omitempty"`
+	UseCaseType string `json:"UseCaseType,omitempty"`
+	Name        int    `json:"Name,omitempty"`
 }
