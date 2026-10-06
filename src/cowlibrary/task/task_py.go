@@ -201,7 +201,7 @@ func (task *PythonTask) PrepareTask(taskPath string, additionalInfo *vo.Addition
 		return err
 	}
 
-	os.WriteFile(filepath.Join(taskPath, "requirements.txt"), []byte("PyYAML"), os.ModePerm)
+	os.WriteFile(filepath.Join(taskPath, "requirements.txt"), []byte("PyYAML==6.0.3"), os.ModePerm)
 
 	return nil
 }

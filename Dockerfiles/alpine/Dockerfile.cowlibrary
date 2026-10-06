@@ -11,6 +11,10 @@ ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH="/usr/local"
 ENV COW_DATA_PERSISTENCE_TYPE="minio"
 
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+ENV PATH="/root/.local/bin:${PATH}"
+
 COPY ./src/cowlibrary /policycow/src/cowlibrary
 COPY ./catalog/applicationtypes/go /policycow/catalog/applicationtypes/go
 WORKDIR /policycow/src/cowlibrary
