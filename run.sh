@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source export_env.sh
-sh ./up.sh
+source ./export_env.sh
+bash ./up.sh
 sudo docker restart cowctl > /dev/null
-sudo docker exec -it cowctl /bin/sh
+sudo docker exec -it cowctl $COW_SHELL
