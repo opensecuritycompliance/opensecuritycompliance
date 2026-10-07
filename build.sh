@@ -1,13 +1,14 @@
 #!/bin/bash
 
-source export_env.sh
+source ./export_env.sh
 
 if [[ ! $(docker network ls | grep cow_default) ]]; then
-    docker network create cow_default --driver bridge --scope local
+    docker network create cow_default $COW_NETWORK_ARGS
 fi
 
 if [[ ! $(docker network ls | grep cow_internal) ]]; then
    docker network create cow_internal
 fi
-docker compose -f docker-compose.yaml build cowlibrary
-docker compose -f docker-compose.yaml build cowctl
+# the file set comes from COMPOSE_FILE (see export_env.sh)
+docker compose build cowlibrary || exit 1
+docker compose build cowctl || exit 1
