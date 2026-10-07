@@ -1,5 +1,5 @@
 #!/bin/bash
 
-source export_env.sh
-sh ./build.sh
-sh ./run.sh
+source ./export_env.sh
+bash ./build.sh
+bash ./run.sh

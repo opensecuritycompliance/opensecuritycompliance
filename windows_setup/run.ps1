@@ -1,5 +1,2 @@
-# set envs
-
-. "$PSScriptRoot\export_env.ps1"
-
-docker compose -f $dockerComposeFilePath run cowctl
+& "$PSScriptRoot\_bash.ps1" ./run.sh
+exit $LASTEXITCODE
