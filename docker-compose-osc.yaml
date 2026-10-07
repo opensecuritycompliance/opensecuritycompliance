@@ -34,13 +34,17 @@ services:
     networks:
       - internal
       - default
+  # goose, serving ACP on :3000 to the bridge. Built on the published goose image
+  # with this repo's config.yaml and recipes baked in, so edit those and rebuild.
+  # No host port: the old 8976 served `goose web`, which no longer exists, and
+  # ACP is reachable by the bridge over the internal network.
+  # GOOSE_SERVER__SECRET_KEY must be set in etc/userconfig.env and match the
+  # bridge's GOOSE_SERVER_SECRET_KEY.
   ccowmcpclient:
     build:
       context: .
       dockerfile: ./Dockerfiles/alpine/Dockerfile.ccowmcpclient
-      args:
-        buildno: 1
-    image: ccowmcpclient:1.1
+    image: ccowmcpclient:2.0
     logging:
       driver: "json-file"
       options:
@@ -52,11 +56,9 @@ services:
     hostname: ccowmcpclient
     container_name: ccowmcpclient
     restart: always
-    ports:
-      - 8976:8080/tcp
     volumes:
-      - ./mcp-sessions:/home/ccowclient/.local/share/ccowmcp/data/sessions
-      - ./mcp-state:/home/ccowclient/.local/share/ccowmcp/state
+      - ./mcp-sessions:/home/goose/.local/share/goose/sessions
+      - ./mcp-state:/home/goose/.local/state/goose
     depends_on:
       - oscmcpservice
     networks:
@@ -66,8 +68,10 @@ services:
       default:
         aliases:
           - ccowmcpclient
+  # The bridge: browser WebSocket <-> goose ACP. Shares the sessions directory
+  # with goose (it keeps cow_sessions.db there and reads goose's sessions.db).
   ccowmcpbridge:
-    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/ccowmcpbridge:1.1-20260207035035
+    image: ghcr.io/opensecuritycompliance/opensecuritycompliance/ccowmcpbridge:2.0
     logging:
       driver: "json-file"
       options:
@@ -78,13 +82,13 @@ services:
       - ./etc/policycow.env
     environment:
       - GIN_MODE=release
+      - GOOSE_SERVER_URL=http://ccowmcpclient:3000
     hostname: ccowmcpbridge
     container_name: ccowmcpbridge
     restart: always
     ports:
       - 8095:8080/tcp
     volumes:
-      - ./mcp-config:/home/ccowclient/.local/share/ccowmcp/config
       - ./mcp-sessions:/home/ccowclient/.local/share/ccowmcp/data/sessions
     depends_on:
       - ccowmcpclient
