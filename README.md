@@ -10,6 +10,7 @@
 2. [Setting up cowctl CLI](#setting-up-cowctl-cli)
    1. [Prerequisites](#prerequisites)
    2. [Instructions](#instructions)
+   3. [Using Podman instead of Docker](#using-podman-instead-of-docker)
 3. [Getting Started](#getting-started)
    1. [Developing a Rule](#1-developing-a-rule)
       1. [Creating a credential-type](#11-creating-a-credential-type)
@@ -113,6 +114,43 @@ Please make sure to have the following installed in your machine.
     3. Type `exit` to get out of the cowctl prompt any time.
 
 <img src="misc/img/cowctl_prompt.png" alt="build_and_run" width="250"/>
+
+## Using Podman instead of Docker
+
+The scripts (`build_and_run.sh`, `build.sh`, `up.sh`, `run.sh` and `setup.sh`) work with Podman as well. They use Docker when a Docker engine is running, and Podman when Podman is the only one installed. If both are installed (for example Docker Desktop and Podman on a Mac), set `COW_ENGINE=podman` to use Podman.
+
+In Podman mode the scripts point the `docker` CLI and compose at Podman's Docker-compatible socket, build the images with Podman's own builder, skip `sudo`, and start the Podman machine if it is stopped. The engine logic lives in `engine.sh`.
+
+Prerequisites on macOS (Apple Silicon or Intel):
+
+```bash
+brew install podman yq
+podman machine init --memory 6144 --now   # the MCP + UI stack needs about 6 GiB
+```
+
+If you already have a machine, resize it instead: `podman machine stop && podman machine set --memory 6144 && podman machine start`. On Apple Silicon, make sure Rosetta is enabled for the machine (`podman machine inspect --format '{{.Rosetta}}'` prints `true`, the default); the amd64 images run through it.
+
+Prerequisites on Windows: Git for Windows (Git Bash), `yq`, WSL2, and Podman (`podman machine init --memory 6144 --now`). Use the PowerShell wrappers in `windows_setup/`, with `$env:COW_ENGINE = 'podman'` set if Docker Desktop is installed too. See [windows_setup/README.md](windows_setup/README.md).
+
+Then run the same commands as with Docker, with the engine selected:
+
+```bash
+export COW_ENGINE=podman
+sh build_and_run.sh   # cowctl CLI
+sh setup.sh           # MCP + No-Code UI (see the deployment guides)
+```
+
+Things that differ from Docker:
+
+- **Reverse proxy ports.** Rootless Podman cannot publish ports 80 and 443, so the proxy is served on `8081` (HTTP) and `8443` (HTTPS), for example `https://localhost:8443`. Override with `OSC_HTTP_PORT` and `OSC_HTTPS_PORT`. These variables work with Docker too, and `OSC_MCP_PORT` changes the MCP service port (default `45678`).
+- **One-time machine setup.** The scripts set `host_containers_internal_ip` and `pids_limit = 0` in the Podman machine's `containers.conf`, the first time they run. The first makes `host.docker.internal:host-gateway` in the compose file resolve; the second works around WSL2 machines (Windows) that do not provide the `pids` cgroup controller.
+- **No Docker CLI.** If Docker is not installed, the scripts use `podman` for `docker` commands. `podman compose` then needs a compose provider: install the `docker-compose` binary or `pip install podman-compose`. The scripts stop with a message when none is found.
+- **Docker Desktop and Podman at the same time (Windows).** Both want the `docker_engine` named pipe, so run one engine at a time (stop Docker Desktop, or stop the Podman machine with `podman machine stop`).
+- **Builds.** Do not use `docker compose build` through BuildKit with Podman on Apple Silicon: it runs the amd64 images under QEMU, which crashes Go. The scripts avoid this by setting `DOCKER_BUILDKIT=0` and `COMPOSE_BAKE=false`; if you build by hand, do the same.
+- **Stopping.** `sh down.sh` stops and removes the containers of both stacks (`sh down.sh cowctl` or `sh down.sh osc` for one of them). Images and your data are kept. It picks Docker or Podman like the other scripts, so run `export COW_ENGINE=podman` first when you use Podman.
+- **One stack at a time.** The cowctl stack (`docker-compose.yaml`) and the MCP + UI stack (`docker-compose-osc.yaml`) both define a `cowstorage` container, so stop one before starting the other.
+
+Tested with Podman 5.7 on macOS (Apple Silicon), and with Podman 6.1 and Docker Desktop 4.94 on Windows Server 2025 (WSL2). Native Linux (rootless Podman with SELinux needs the `:Z` option on bind mounts) is not tested yet.
 
 # Getting started
 

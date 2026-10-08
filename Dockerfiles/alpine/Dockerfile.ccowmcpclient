@@ -1,12 +1,20 @@
-FROM ghcr.io/opensecuritycompliance/opensecuritycompliance/ccowmcpclient:1.1-20260207035035
+# goose for the open-source stack: the published goose ACP image, plus this
+# repo's goose config and recipes. Its entrypoint is `goose serve` on :3000,
+# which the bridge (ccowmcpbridge) reaches over ACP.
+#
+# Override the base to test a locally built goose image:
+#   docker compose -f docker-compose-osc.yaml build \
+#     --build-arg GOOSE_BASE_IMAGE=goose-acp:local ccowmcpclient
+ARG GOOSE_BASE_IMAGE=ghcr.io/opensecuritycompliance/opensecuritycompliance/ccowmcpclient:2.0
+FROM ${GOOSE_BASE_IMAGE}
 
 LABEL MAINTAINER=arul.g@continube.com
 
-COPY ./src/ccowmcpclient/config/config.yaml /home/ccowclient/.local/share/ccowmcp/config/config.yaml
+COPY --chown=goose:goose ./src/ccowmcpclient/config/config.yaml /home/goose/.config/goose/config.yaml
+COPY --chown=goose:goose ./src/ccowmcpclient/config/custom_anthropic_custom.json /home/goose/.config/goose/custom_providers/custom_anthropic_custom.json
 
-# Create a folder if it doesn't exist
-RUN mkdir -p /home/ccowclient/.local/share/ccowmcp/config/custom_providers
-
-COPY ./src/ccowmcpclient/config/custom_anthropic_custom.json /home/ccowclient/.local/share/ccowmcp/config/custom_providers/custom_anthropic_custom.json
-
-ENTRYPOINT ["goose", "web", "--host", "0.0.0.0", "--port", "8080"]
+# The bridge picks the recipe cow-<session_type> for each session. The open-source
+# stack supports rules only: cow-rules for the main chat, and an identical
+# cow-no-code-task for the rule builder's side panel. GOOSE_RECIPE_PATH points
+# here (base image).
+COPY --chown=goose:goose ./src/ccowmcpclient/recipes/ /home/goose/recipes/
