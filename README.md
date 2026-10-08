@@ -143,6 +143,7 @@ Things that differ from Docker:
 - **Reverse proxy ports.** Rootless Podman cannot publish ports 80 and 443, so the proxy is served on `8081` (HTTP) and `8443` (HTTPS), for example `https://localhost:8443`. Override with `OSC_HTTP_PORT` and `OSC_HTTPS_PORT`. These variables work with Docker too, and `OSC_MCP_PORT` changes the MCP service port (default `45678`).
 - **One-time machine setup.** `setup.sh` sets `host_containers_internal_ip` in the Podman machine's `containers.conf`, so that `host.docker.internal:host-gateway` in the compose file resolves.
 - **Builds.** Do not use `docker compose build` through BuildKit with Podman on Apple Silicon: it runs the amd64 images under QEMU, which crashes Go. The scripts avoid this by setting `DOCKER_BUILDKIT=0` and `COMPOSE_BAKE=false`; if you build by hand, do the same.
+- **Stopping.** `sh down.sh` stops and removes the containers of both stacks (`sh down.sh cowctl` or `sh down.sh osc` for one of them). Images and your data are kept. It picks Docker or Podman like the other scripts, so run `export COW_ENGINE=podman` first when you use Podman.
 - **One stack at a time.** The cowctl stack (`docker-compose.yaml`) and the MCP + UI stack (`docker-compose-osc.yaml`) both define a `cowstorage` container, so stop one before starting the other.
 
 Tested on macOS (Apple Silicon) with Podman 5.7. Native Linux (rootless Podman with SELinux needs the `:Z` option on bind mounts) and Windows are not tested yet.
