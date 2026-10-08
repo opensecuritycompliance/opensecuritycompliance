@@ -2,9 +2,13 @@ FROM python:3.12
 LABEL author=raj.krishnamurthy@continube.com
 RUN apt-get update && apt-get install zip
 
-ARG GOVERSION=go1.25.0.linux-amd64.tar.gz
-RUN wget https://golang.org/dl/${GOVERSION}
-RUN rm -rf /usr/local/go && tar -C /usr/local -xzf ${GOVERSION}
+# TARGETARCH (amd64/arm64) is set by the builder; keeps Go native on Apple Silicon
+ARG TARGETARCH
+ARG GOVERSION=go1.25.5
+RUN wget https://go.dev/dl/${GOVERSION}.linux-${TARGETARCH}.tar.gz \
+    && rm -rf /usr/local/go \
+    && tar -C /usr/local -xzf ${GOVERSION}.linux-${TARGETARCH}.tar.gz \
+    && rm ${GOVERSION}.linux-${TARGETARCH}.tar.gz
 RUN ls /usr/local/go/bin
 ENV PATH=$PATH:/usr/local/go/bin
 

@@ -2,7 +2,9 @@ GOOSE_PROVIDER: anthropic
 CLAUDE_CODE_COMMAND: claude
 OPENAI_HOST: https://api.openai.com
 GOOSE_MODEL: claude-sonnet-4-0
-GOOSE_MODE: approve
+# auto, not approve: the bridge reaches goose over ACP and does not answer
+# permission requests, so under approve every tool call would wait forever.
+GOOSE_MODE: auto
 claude-code_configured: true
 ANTHROPIC_HOST: https://api.anthropic.com
 GOOSE_ROUTER_TOOL_SELECTION_STRATEGY: default
@@ -16,6 +18,168 @@ extensions:
     envs: {}
     env_keys: []
     headers: {}
+    # Session headers goose forwards to cow-mcp on every call. Without this list
+    # nothing is forwarded and the MCP calls reach cow-mcp unauthenticated.
+    # Matches the cow-rules recipe; this copy covers sessions with no recipe.
+    allowed_headers:
+    - authorization
+    - x-cow-security-context
+    - x-domain-name
+    - x-correlation-id
+    - x-forwarded-for
+    - x-forwarded-host
+    - x-forwarded-proto
+    - x-origin-host
+    - x-visitor-id
     timeout: 300
     bundled: null
     available_tools: []
+  # Platform and builtin extensions, listed explicitly. goose turns on any it is
+  # not told about, including developer (shell and file editing inside the
+  # container), and adds it to every session alongside the recipe. Same set and
+  # values as the ComplianceCow deployment.
+  todo:
+    enabled: false
+    type: platform
+    name: todo
+    display_name: Todo
+    description: Enable a todo list for goose so it can keep track of what it is doing
+    bundled: true
+    available_tools: []
+  apps:
+    enabled: false
+    type: platform
+    name: apps
+    display_name: Apps
+    description: Create and manage custom Goose apps through chat. Apps are HTML/CSS/JavaScript
+      and run in sandboxed windows.
+    bundled: true
+    available_tools: []
+  code_execution:
+    enabled: false
+    type: platform
+    name: code_execution
+    display_name: Code Mode
+    description: Goose will make extension calls through code execution, saving tokens
+    bundled: true
+    available_tools: []
+  chatrecall:
+    enabled: false
+    type: platform
+    name: chatrecall
+    display_name: Chat Recall
+    description: Search past conversations and load session summaries for contextual
+      memory
+    bundled: true
+    available_tools: []
+  extensionmanager:
+    enabled: false
+    type: platform
+    name: Extension Manager
+    display_name: Extension Manager
+    description: Enable extension management tools for discovering, enabling, and disabling
+      extensions
+    bundled: true
+    available_tools: []
+  tom:
+    enabled: false
+    type: platform
+    name: tom
+    display_name: Top Of Mind
+    description: Inject custom context into every turn via GOOSE_MOIM_MESSAGE_TEXT and
+      GOOSE_MOIM_MESSAGE_FILE environment variables
+    bundled: true
+    available_tools: []
+  summon:
+    enabled: false
+    type: platform
+    name: summon
+    display_name: Summon
+    description: Load knowledge and delegate tasks to subagents
+    bundled: true
+    available_tools: []
+  analyze:
+    enabled: false
+    type: platform
+    name: analyze
+    display_name: Analyze
+    description: 'Analyze code structure with tree-sitter: directory overviews, file
+      details, symbol call graphs'
+    bundled: true
+    available_tools: []
+  developer:
+    enabled: false
+    type: platform
+    name: developer
+    display_name: Developer
+    description: Write and edit files, and execute shell commands
+    bundled: true
+  summarize:
+    enabled: false
+    type: platform
+    name: summarize
+    display_name: Summarize
+    description: Load files/directories and get an LLM summary in a single call
+    bundled: true
+    available_tools: []
+  computercontroller:
+    enabled: false
+    type: builtin
+    name: computercontroller
+    display_name: Computer Controller
+    description: General computer control tools that don't require you to be a developer
+      or engineer.
+    bundled: true
+    timeout: 300
+    available_tools: []
+  autovisualiser:
+    enabled: false
+    type: builtin
+    name: autovisualiser
+    display_name: Auto Visualiser
+    description: Data visualization and UI generation tools
+    bundled: true
+    timeout: 300
+    available_tools: []
+  memory:
+    enabled: false
+    type: builtin
+    name: memory
+    display_name: Memory
+    description: Teach goose your preferences as you go.
+    bundled: true
+    timeout: 300
+    available_tools: []
+  tutorial:
+    enabled: false
+    type: builtin
+    name: tutorial
+    display_name: Tutorial
+    description: Access interactive tutorials and guides
+    bundled: true
+    timeout: 300
+    available_tools: []
+  orchestrator:
+    enabled: false
+    type: platform
+    name: orchestrator
+    display_name: Orchestrator
+    description: 'Manage agent sessions: list, view, start, send messages, interrupt,
+      and stop agents'
+    bundled: true
+    available_tools: []
+  skills:
+    enabled: true
+    type: platform
+    name: skills
+    display_name: Skills
+    description: Discover and provide skill instructions from filesystem and builtins
+    bundled: true
+    available_tools: []
+  scheduler:
+    enabled: true
+    type: platform
+    name: scheduler
+    display_name: Scheduler
+    description: Create and manage scheduled recipe execution
+    bundled: true

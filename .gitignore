@@ -28,3 +28,10 @@ test/
 localcatalog/
 #codeowners created for default reviewer
 .github
+
+# Runtime data written by the containers (bind-mounted by the compose files)
+cowexecutions/
+exported-data/
+mcp-server/
+mcp-sessions/
+mcp-state/

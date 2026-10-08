@@ -12,6 +12,7 @@ NC='\033[0m' # No Color
 
 # Script constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/engine.sh"
 REQUIRED_SERVICES=("oscmcpservice" "ccowmcpclient" "ccowmcpbridge" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 NO_CODE_UI_SERVICES=("oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 CERT_PATHS=("src/oscreverseproxy/certs" "${HOME}/continube/certs")
@@ -74,13 +75,13 @@ select_setup_mode() {
     echo -e "${CYAN}  Choose your setup mode${NC}"
     echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "  ${GREEN}1)${NC} MCP + No-Code UI  ${YELLOW}(Requires a valid Anthropic API key)${NC}"
+    echo -e "  ${GREEN}1)${NC} MCP + No-Code UI  ${YELLOW}(Requires an LLM API key)${NC}"
     echo "     Enables AI-powered rule creation via MCP along with the"
     echo "     No-Code web interface."
     echo "     Services: oscmcpservice, ccowmcpclient, ccowmcpbridge,"
     echo "               oscwebserver, oscreverseproxy, oscapiservice, cowstorage"
     echo ""
-    echo -e "  ${GREEN}2)${NC} No-Code UI Only   ${YELLOW}(No Anthropic API key needed)${NC}"
+    echo -e "  ${GREEN}2)${NC} No-Code UI Only   ${YELLOW}(No LLM API key needed)${NC}"
     echo "     Enables only the No-Code web interface for manual rule"
     echo "     creation and management. No AI/MCP features."
     echo "     Services: oscapiservice, oscreverseproxy, oscwebserver, cowstorage"
@@ -93,8 +94,7 @@ select_setup_mode() {
                 SETUP_MODE="full"
                 log_info "Selected: MCP + No-Code UI (full setup)"
                 echo ""
-                log_warning "You will need a valid Anthropic API key to proceed."
-                echo "  Get your API key from: https://console.anthropic.com/"
+                log_warning "You will need an API key for one of: Anthropic, OpenAI, Google Gemini or DeepSeek."
                 echo ""
                 break
                 ;;
@@ -262,309 +262,409 @@ check_system_requirements() {
     echo "  - 7 services will be running simultaneously"
 }
 
-# Validate Anthropic API key
-check_anthropic_key() {
-    log_info "Checking Anthropic API key..."
-    
-    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
-    
-    # Check if key is already in environment
-    if [ -z "$ANTHROPIC_API_KEY" ]; then
-        # Check in userconfig.env
-        if [ -f "$ENV_FILE" ] && grep -q "^ANTHROPIC_API_KEY=" "$ENV_FILE"; then
-            source "$ENV_FILE"
-        fi
+# ---------------------------------------------------------------------------
+# LLM provider and model selection
+#
+# The MCP client (goose) talks to one LLM provider. This step picks the provider,
+# finds or asks for its API key, verifies the key against the provider's own API,
+# lets the user choose from the models that key can actually use, and confirms
+# the chosen model accepts tool calls — the rules assistant depends on them.
+#
+# Result, written to etc/userconfig.env as literal values:
+#   GOOSE_PROVIDER, GOOSE_MODEL, the provider's key variable, MCP_MODEL
+# ---------------------------------------------------------------------------
+
+# id|label|goose provider|API key variable|where to get a key
+LLM_PROVIDERS=(
+    "anthropic|Anthropic (Claude)|anthropic|ANTHROPIC_API_KEY|https://console.anthropic.com/settings/keys"
+    "openai|OpenAI (GPT)|openai|OPENAI_API_KEY|https://platform.openai.com/api-keys"
+    "gemini|Google Gemini|google|GOOGLE_API_KEY|https://aistudio.google.com/apikey"
+    "deepseek|DeepSeek|custom_deepseek|DEEPSEEK_API_KEY|https://platform.deepseek.com/api_keys"
+)
+
+LLM_PROVIDER=""
+LLM_PROVIDER_LABEL=""
+LLM_GOOSE_PROVIDER=""
+LLM_KEY_VAR=""
+LLM_KEY_URL=""
+LLM_HTTP_CODE=""
+
+select_llm_provider_entry() {
+    local entry=$1
+    IFS='|' read -r LLM_PROVIDER LLM_PROVIDER_LABEL LLM_GOOSE_PROVIDER LLM_KEY_VAR LLM_KEY_URL <<< "$entry"
+}
+
+# Auth headers for the selected provider, one per line. Fed to curl through a
+# file descriptor so the key never appears in the process list.
+llm_auth_headers() {
+    local key=$1
+    case "$LLM_PROVIDER" in
+        anthropic) printf 'x-api-key: %s\nanthropic-version: 2023-06-01\n' "$key" ;;
+        gemini)    printf 'x-goog-api-key: %s\n' "$key" ;;
+        *)         printf 'Authorization: Bearer %s\n' "$key" ;;
+    esac
+    printf 'content-type: application/json\n'
+}
+
+# llm_request KEY URL OUTFILE [JSON_BODY] — sets LLM_HTTP_CODE ("000" on network failure)
+llm_request() {
+    local key=$1 url=$2 out=$3 body=${4:-}
+    if [ -n "$body" ]; then
+        LLM_HTTP_CODE=$(curl -sS -m 90 -w '%{http_code}' -o "$out" -X POST \
+            -H @<(llm_auth_headers "$key") --data-binary "$body" "$url" 2>/dev/null) || LLM_HTTP_CODE="000"
+    else
+        LLM_HTTP_CODE=$(curl -sS -m 30 -w '%{http_code}' -o "$out" \
+            -H @<(llm_auth_headers "$key") "$url" 2>/dev/null) || LLM_HTTP_CODE="000"
     fi
-    
-    # Function to remove invalid key from env file
-    remove_api_key_from_env() {
-        if [ -f "$ENV_FILE" ]; then
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                # macOS
-                sed -i '' '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
-                sed -i '' '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
-                sed -i '' '/# Selected Claude Model/d' "$ENV_FILE"
-                sed -i '' '/# Detected Claude Model/d' "$ENV_FILE"
-                sed -i '' '/^MCP_MODEL=/d' "$ENV_FILE"
-            else
-                # Linux
-                sed -i '/# Anthropic API Key for MCP integration/d' "$ENV_FILE"
-                sed -i '/^ANTHROPIC_API_KEY=/d' "$ENV_FILE"
-                sed -i '/# Selected Claude Model/d' "$ENV_FILE"
-                sed -i '/# Detected Claude Model/d' "$ENV_FILE"
-                sed -i '/^MCP_MODEL=/d' "$ENV_FILE"
-            fi
-            log_info "Removed invalid API key from etc/userconfig.env"
-        fi
-        unset ANTHROPIC_API_KEY
-        unset MCP_MODEL
-    }
-    
-    # Function to validate API key and let the user select an accessible Claude model
-    validate_api_key() {
-        local api_key=$1
-        
-        # Validate the API key format
-        if [[ ! "$api_key" =~ ^sk-ant-[a-zA-Z0-9_-]+$ ]]; then
-            log_error "Invalid API key format. Expected format: sk-ant-..."
-            return 1
-        fi
-        
-        if ! command -v python3 &> /dev/null; then
-            log_error "python3 is required to parse Anthropic model list"
-            echo "  - Install Python 3 and re-run setup"
-            return 1
-        fi
+}
 
-        # Fetch all accessible models from https://api.anthropic.com/v1/models (paginated)
-        log_info "Validating Anthropic API key and fetching accessible models..."
-        local models_file=$(mktemp)
-        local after_id=""
-        local page=0
-        local max_pages=20
-
-        while [ $page -lt $max_pages ]; do
-            page=$((page + 1))
-            local page_file=$(mktemp)
-            local url="https://api.anthropic.com/v1/models?limit=100"
-            if [ -n "$after_id" ]; then
-                url="${url}&after_id=${after_id}"
-            fi
-
-            local http_code=$(curl -s -w "%{http_code}" -o "$page_file" \
-                -H "x-api-key: $api_key" \
-                -H "anthropic-version: 2023-06-01" \
-                -H "content-type: application/json" \
-                "$url")
-
-            if [ "$http_code" != "200" ]; then
-                rm -f "$page_file" "$models_file"
-                log_error "Anthropic API key validation failed (HTTP $http_code)"
-                if [ "$http_code" == "401" ]; then
-                    echo "  - API key is invalid or expired"
-                elif [ "$http_code" == "403" ]; then
-                    echo "  - API key does not have required permissions"
-                elif [ "$http_code" == "429" ]; then
-                    echo "  - API rate limit exceeded, please try again later"
-                else
-                    echo "  - Network connectivity issues or API error"
-                fi
-                return 1
-            fi
-
-            # Merge page data into models_file; print has_more|last_id for pagination
-            local page_meta
-            page_meta=$(python3 - "$page_file" "$models_file" <<'PY'
+# The provider's own error message from a response body, if it has one.
+llm_error_message() {
+    python3 - "$1" <<'PY' 2>/dev/null || true
 import json, sys
-page_path, out_path = sys.argv[1], sys.argv[2]
-with open(page_path, encoding="utf-8") as f:
-    payload = json.load(f)
-existing = []
 try:
-    with open(out_path, encoding="utf-8") as f:
-        existing = json.load(f)
+    body = json.load(open(sys.argv[1], encoding="utf-8"))
 except Exception:
-    existing = []
-if not isinstance(existing, list):
-    existing = []
-existing.extend(payload.get("data") or [])
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(existing, f)
-has_more = "1" if payload.get("has_more") else "0"
-last_id = payload.get("last_id") or ""
-print(f"{has_more}|{last_id}")
+    sys.exit(0)
+err = body[0] if isinstance(body, list) and body else body
+err = err.get("error", err) if isinstance(err, dict) else err
+msg = err.get("message") if isinstance(err, dict) else err
+if msg:
+    print(str(msg)[:300])
 PY
-)
-            rm -f "$page_file"
+}
 
-            local has_more="${page_meta%%|*}"
-            after_id="${page_meta#*|}"
-            if [ "$has_more" != "1" ] || [ -z "$after_id" ]; then
-                break
-            fi
-        done
+explain_llm_http_failure() {
+    local code=$1 body_file=$2
+    case "$code" in
+        401|403) echo "  - The API key was rejected (HTTP $code): invalid, expired, or without access" ;;
+        400)     echo "  - The provider rejected the request (HTTP 400)" ;;
+        402)     echo "  - The account has no credit or balance left (HTTP 402); top it up with the provider" ;;
+        429)     echo "  - Rate limit or quota exceeded (HTTP 429), or the account has no credit" ;;
+        000)     echo "  - Could not reach the provider: check network access and proxies" ;;
+        *)       echo "  - Unexpected response from the provider (HTTP $code)" ;;
+    esac
+    local detail
+    detail=$(llm_error_message "$body_file")
+    if [ -n "$detail" ]; then
+        echo "  - Provider says: $detail"
+    fi
+}
 
-        log_success "Anthropic API key is valid"
+# Fetch the models the key can use. Writes "id<TAB>display" lines to $2, best
+# default first. Returns 1 if the key is rejected or nothing usable comes back.
+llm_fetch_models() {
+    local key=$1 out=$2
+    local raw page next_token="" pages=0
+    raw=$(mktemp)
+    echo "[]" > "$raw"
 
-        DETECTED_MODEL=""
-        DETECTED_MODEL_NAME=""
-
-        # Build selectable list from API response, newest first (by created_at)
-        # Output lines as: model_id<TAB>display_name
-        local parsed_models
-        parsed_models=$(python3 - "$models_file" <<'PY'
-import json, sys
-
-with open(sys.argv[1], encoding="utf-8") as f:
-    models = json.load(f)
-
-seen = set()
-entries = []
-
-for item in models:
-    item = item or {}
-    model_id = item.get("id") or ""
-    if not model_id or model_id in seen:
-        continue
-    # Skip non-Claude entries if any appear
-    if not model_id.lower().startswith("claude"):
-        continue
-    seen.add(model_id)
-    display = item.get("display_name") or model_id
-    created_at = item.get("created_at") or ""
-    entries.append((created_at, model_id, display))
-
-# Latest → oldest by ISO created_at; missing timestamps sort last
-entries.sort(key=lambda x: (x[0], x[1]), reverse=True)
-
-for _, model_id, display in entries:
-    # TAB-separated to avoid colon issues in display names
-    print(f"{model_id}\t{display}")
-PY
-)
-        rm -f "$models_file"
-
-        local accessible_ids=()
-        local accessible_names=()
-
-        if [ -n "$parsed_models" ]; then
-            while IFS=$'\t' read -r model_id model_name; do
-                [ -z "$model_id" ] && continue
-                accessible_ids+=("$model_id")
-                accessible_names+=("$model_name")
-                log_success "$model_name ($model_id) available"
-            done <<< "$parsed_models"
-        fi
-
-        # Fallback: probe known aliases if /v1/models returned nothing usable
-        if [ ${#accessible_ids[@]} -eq 0 ]; then
-            log_warning "No models returned from /v1/models; probing known Sonnet aliases..."
-            local supported_models=(
-                "claude-sonnet-4-6:Claude Sonnet 4.6"
-                "claude-sonnet-4-5:Claude Sonnet 4.5"
-            )
-            for model_entry in "${supported_models[@]}"; do
-                local model_id="${model_entry%%:*}"
-                local model_name="${model_entry##*:}"
-
-                log_info "Testing access to $model_name ($model_id)..."
-                local test_temp_file=$(mktemp)
-                local test_code=$(curl -s -w "%{http_code}" -o "$test_temp_file" \
-                    -X POST \
-                    -H "x-api-key: $api_key" \
-                    -H "anthropic-version: 2023-06-01" \
-                    -H "content-type: application/json" \
-                    -d "{
-                        \"model\": \"$model_id\",
-                        \"max_tokens\": 10,
-                        \"messages\": [{\"role\": \"user\", \"content\": \"Hi\"}]
-                    }" \
-                    https://api.anthropic.com/v1/messages)
-
-                rm -f "$test_temp_file"
-
-                if [ "$test_code" == "200" ]; then
-                    log_success "$model_name access confirmed"
-                    accessible_ids+=("$model_id")
-                    accessible_names+=("$model_name")
-                elif [ "$test_code" == "404" ] || [ "$test_code" == "403" ]; then
-                    log_warning "$model_name not accessible with this API key"
-                else
-                    log_warning "Could not verify $model_name access (HTTP $test_code)"
-                fi
-            done
-        fi
-
-        if [ ${#accessible_ids[@]} -eq 0 ]; then
-            log_error "No compatible Claude model found"
-            echo "  - This platform requires access to Anthropic Claude models"
-            echo "  - Your API key does not have access to any models via /v1/models"
+    while [ $pages -lt 20 ]; do
+        pages=$((pages + 1))
+        page=$(mktemp)
+        local url
+        case "$LLM_PROVIDER" in
+            anthropic) url="https://api.anthropic.com/v1/models?limit=100${next_token:+&after_id=$next_token}" ;;
+            openai)    url="https://api.openai.com/v1/models" ;;
+            gemini)    url="https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000${next_token:+&pageToken=$next_token}" ;;
+            deepseek)  url="https://api.deepseek.com/models" ;;
+        esac
+        llm_request "$key" "$url" "$page"
+        if [ "$LLM_HTTP_CODE" != "200" ]; then
+            log_error "$LLM_PROVIDER_LABEL API key verification failed"
+            explain_llm_http_failure "$LLM_HTTP_CODE" "$page"
+            rm -f "$page" "$raw"
             return 1
         fi
-
-        # Prompt user to select a model
-        echo ""
-        echo "Accessible Claude models:"
-        local i=1
-        for idx in "${!accessible_ids[@]}"; do
-            echo "  $i) ${accessible_names[$idx]} (${accessible_ids[$idx]})"
-            i=$((i + 1))
-        done
-
-        local max_choice=${#accessible_ids[@]}
-        local selection=""
-        while true; do
-            read -p "Select model [1-$max_choice] (default: 1): " -r selection
-            if [ -z "$selection" ]; then
-                selection=1
-            fi
-            if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le "$max_choice" ]; then
-                break
-            fi
-            log_warning "Invalid selection. Enter a number between 1 and $max_choice."
-        done
-
-        local chosen_idx=$((selection - 1))
-        DETECTED_MODEL="${accessible_ids[$chosen_idx]}"
-        DETECTED_MODEL_NAME="${accessible_names[$chosen_idx]}"
-
-        log_success "Selected model: $DETECTED_MODEL_NAME ($DETECTED_MODEL)"
-        return 0
-    }
-    
-    # Main validation loop
-    while true; do
-        if [ -z "$ANTHROPIC_API_KEY" ]; then
-            log_warning "Anthropic API key not found in environment"
-            echo ""
-            echo "Open Security Compliance MCP integration requires an Anthropic API key."
-            echo "Get your API key from: https://console.anthropic.com/"
-            echo ""
-            read -p "Enter your Anthropic API key: " -r ANTHROPIC_API_KEY
-            echo ""
-            
-            if [ -z "$ANTHROPIC_API_KEY" ]; then
-                log_error "Anthropic API key is required for MCP setup"
-                exit 1
-            fi
-        fi
-        
-        # Validate the key
-        if validate_api_key "$ANTHROPIC_API_KEY"; then
-            # Valid key - save it
-            if [ ! -f "$ENV_FILE" ]; then
-                log_info "Creating etc/userconfig.env file..."
-                mkdir -p "$(dirname "$ENV_FILE")"
-                touch "$ENV_FILE"
-            fi
-
-            # Update API key in-place
-            update_env_variable "$ENV_FILE" "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" "# Anthropic API Key for MCP integration"
-            
-            # Update MCP_MODEL in-place with selected model
-            update_env_variable "$ENV_FILE" "MCP_MODEL" "$DETECTED_MODEL" "# Selected Claude Model"
-            
-            log_success "API key saved to etc/userconfig.env"
-            log_success "MCP_MODEL set to: $DETECTED_MODEL_NAME"
-            
-            export ANTHROPIC_API_KEY
-            export MCP_MODEL="$DETECTED_MODEL"
-            break
-        else
-            # Invalid key - remove from env and ask again
-            remove_api_key_from_env
-            log_error "API key validation failed"
-            echo ""
-            read -p "Would you like to try another API key? (Y/n): " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Nn]$ ]]; then
-                log_error "Setup cancelled. Valid Anthropic API key with Claude Sonnet 4.5+ access is required."
-                exit 1
-            fi
-            # Clear the key to prompt for a new one
-            ANTHROPIC_API_KEY=""
-        fi
+        # Append this page's models; print the token for the next page, if any.
+        next_token=$(python3 - "$LLM_PROVIDER" "$page" "$raw" <<'PY'
+import json, sys
+provider, page_path, raw_path = sys.argv[1:4]
+page = json.load(open(page_path, encoding="utf-8"))
+acc = json.load(open(raw_path, encoding="utf-8"))
+if provider == "gemini":
+    acc.extend(page.get("models") or [])
+    nxt = page.get("nextPageToken") or ""
+else:
+    acc.extend(page.get("data") or [])
+    nxt = (page.get("last_id") or "") if provider == "anthropic" and page.get("has_more") else ""
+json.dump(acc, open(raw_path, "w", encoding="utf-8"))
+print(nxt)
+PY
+) || { log_error "Could not read the model list from $LLM_PROVIDER_LABEL"; rm -f "$page" "$raw"; return 1; }
+        rm -f "$page"
+        [ -z "$next_token" ] && break
     done
+
+    python3 - "$LLM_PROVIDER" "$raw" > "$out" <<'PY'
+import json, re, sys
+provider, raw_path = sys.argv[1:3]
+models = json.load(open(raw_path, encoding="utf-8"))
+
+# One ranking for every provider: newest version first, then the flagship tier
+# before smaller ones, then stable before preview. The recommended model is the
+# newest flagship, so the default does not drift to a small or dated model.
+def version(model_id):
+    m = re.search(r"(\d+(?:\.\d+)?)", model_id)
+    return float(m.group(1)) if m else -1.0
+
+rows = {}
+for m in models:
+    if provider == "anthropic":
+        mid, display, created = m.get("id") or "", m.get("display_name"), m.get("created_at") or ""
+        if not mid.startswith("claude"):
+            continue
+        tier = 0 if "sonnet" in mid else 1 if "opus" in mid else 2
+        flagship = "sonnet" in mid
+    elif provider == "openai":
+        mid, created = m.get("id") or "", str(m.get("created") or 0).zfill(12)
+        display = mid
+        # Chat models only: the list also has embedding, audio, image and moderation models.
+        if not re.match(r"^(gpt-|o\d|chatgpt-)", mid) or re.search(
+                r"embedding|tts|whisper|transcribe|dall-e|image|audio|realtime|moderation|search|instruct|babbage|davinci|codex|computer-use|deep-research", mid):
+            continue
+        tier = 2 if "nano" in mid else 1 if re.search(r"mini|luna|-pro\b", mid) else 0
+        flagship = tier == 0 and mid.startswith("gpt-")
+    elif provider == "gemini":
+        name = m.get("name") or ""
+        mid, display, created = name[len("models/"):], m.get("displayName"), ""
+        if not name.startswith("models/gemini") or "generateContent" not in (m.get("supportedGenerationMethods") or []):
+            continue
+        # Speech, image, transcription, robotics and similar specialised models.
+        if re.search(r"embedding|image|tts|live|audio|aqa|vision|transcribe|robotics|computer-use|customtools|nano-banana|omni", mid):
+            continue
+        tier = 2 if "flash-lite" in mid else 1 if "flash" in mid else 0 if "pro" in mid else 3
+        flagship = tier == 0 and version(mid) > 0
+    else:  # deepseek
+        mid = m.get("id") or ""
+        display, created = mid, ""
+        tier = 1 if "reasoner" in mid else 0
+        flagship = tier == 0
+    if not mid:
+        continue
+    preview = 1 if re.search(r"preview|exp|latest", mid) else 0
+    rows[mid] = (-version(mid), tier, preview, created, mid, display or mid, flagship)
+
+# Newest version, then tier, then stable before preview, then most recently created.
+ordered = sorted(rows.values(), key=lambda r: r[3], reverse=True)
+ordered = sorted(ordered, key=lambda r: (r[0], r[1], r[2]))
+best = next((r for r in ordered if r[6]), None)
+if best:
+    ordered.remove(best)
+    ordered.insert(0, best)
+for r in ordered:
+    print(f"{r[4]}\t{r[5]}")
+PY
+    rm -f "$raw"
+    if [ ! -s "$out" ]; then
+        log_error "$LLM_PROVIDER_LABEL returned no chat models usable with this key"
+        return 1
+    fi
+    return 0
+}
+
+# One small request with a tool attached. Proves the key can use this model and
+# that the model accepts tool definitions; the rules assistant cannot work without.
+llm_test_model() {
+    local key=$1 model=$2
+    local out url body
+    out=$(mktemp)
+    case "$LLM_PROVIDER" in
+        anthropic)
+            url="https://api.anthropic.com/v1/messages"
+            body="{\"model\":\"$model\",\"max_tokens\":64,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with OK.\"}],\"tools\":[{\"name\":\"ping\",\"description\":\"Health check\",\"input_schema\":{\"type\":\"object\",\"properties\":{}}}]}" ;;
+        openai)
+            # Test the endpoint goose will use: it sends GPT-5, GPT-6 and o-series
+            # models to the Responses API (is_openai_responses_model in goose), and
+            # some of them refuse function tools on Chat Completions.
+            local lower_model
+            lower_model=$(printf '%s' "$model" | tr '[:upper:]' '[:lower:]')
+            if [[ "$lower_model" =~ (^|[-/])(o[0-9]+($|-)|gpt-(5|6)($|[-.])) ]]; then
+                url="https://api.openai.com/v1/responses"
+                body="{\"model\":\"$model\",\"max_output_tokens\":256,\"input\":\"Reply with OK.\",\"tools\":[{\"type\":\"function\",\"name\":\"ping\",\"description\":\"Health check\",\"parameters\":{\"type\":\"object\",\"properties\":{}}}]}"
+            else
+                url="https://api.openai.com/v1/chat/completions"
+                body="{\"model\":\"$model\",\"max_completion_tokens\":256,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with OK.\"}],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"ping\",\"description\":\"Health check\",\"parameters\":{\"type\":\"object\",\"properties\":{}}}}]}"
+            fi ;;
+        gemini)
+            url="https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent"
+            body="{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"Reply with OK.\"}]}],\"tools\":[{\"functionDeclarations\":[{\"name\":\"ping\",\"description\":\"Health check\"}]}],\"generationConfig\":{\"maxOutputTokens\":256}}" ;;
+        deepseek)
+            url="https://api.deepseek.com/chat/completions"
+            body="{\"model\":\"$model\",\"max_tokens\":64,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with OK.\"}],\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"ping\",\"description\":\"Health check\",\"parameters\":{\"type\":\"object\",\"properties\":{}}}}]}" ;;
+    esac
+    log_info "Testing $model with a tool-enabled request..."
+    llm_request "$key" "$url" "$out" "$body"
+    if [ "$LLM_HTTP_CODE" = "200" ]; then
+        rm -f "$out"
+        log_success "$model works with this key and accepts tool calls"
+        return 0
+    fi
+    log_error "$model failed the test request"
+    explain_llm_http_failure "$LLM_HTTP_CODE" "$out"
+    rm -f "$out"
+    return 1
+}
+
+remove_env_variable() {
+    local env_file=$1 var_name=$2
+    [ -f "$env_file" ] || return 0
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "/^${var_name}=/d" "$env_file"
+    else
+        sed -i "/^${var_name}=/d" "$env_file"
+    fi
+}
+
+check_llm_provider() {
+    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
+
+    if ! command -v python3 &> /dev/null; then
+        log_error "python3 is required to read the providers' model lists"
+        echo "  - Install Python 3 and re-run setup"
+        exit 1
+    fi
+    if ! command -v curl &> /dev/null; then
+        log_error "curl is required to verify the API key"
+        exit 1
+    fi
+
+    local current_provider="${GOOSE_PROVIDER:-}"
+    local default_choice=1 i=1 entry
+    echo ""
+    echo -e "${CYAN}Choose the LLM provider for the MCP assistant${NC}"
+    for entry in "${LLM_PROVIDERS[@]}"; do
+        select_llm_provider_entry "$entry"
+        local marker=""
+        if [ "$LLM_GOOSE_PROVIDER" = "$current_provider" ]; then
+            marker=" (current)"
+            default_choice=$i
+        fi
+        echo "  $i) $LLM_PROVIDER_LABEL$marker"
+        i=$((i + 1))
+    done
+
+    while true; do
+        local choice
+        read -p "Select provider [1-${#LLM_PROVIDERS[@]}] (default: $default_choice): " -r choice
+        choice=${choice:-$default_choice}
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le ${#LLM_PROVIDERS[@]} ]; then
+            break
+        fi
+        log_warning "Enter a number between 1 and ${#LLM_PROVIDERS[@]}."
+    done
+    select_llm_provider_entry "${LLM_PROVIDERS[$((choice - 1))]}"
+    log_info "Selected provider: $LLM_PROVIDER_LABEL"
+
+    # Use the key already in etc/userconfig.env (or the environment) when there is one.
+    local api_key="${!LLM_KEY_VAR:-}"
+    local key_from_file=false
+    [ -n "$api_key" ] && key_from_file=true
+
+    # Whole-line reads for yes/no: a single-keypress read leaves the Enter typed
+    # after "Y" in the buffer, where the next prompt takes it as an empty answer.
+    ask_retry_key() {
+        local reply
+        read -r -p "Try another API key? (Y/n): " reply
+        if [[ "$reply" =~ ^[Nn] ]]; then
+            log_error "Setup cancelled: a working $LLM_PROVIDER_LABEL API key is required"
+            rm -f "$models_file"
+            exit 1
+        fi
+    }
+
+    local models_file
+    models_file=$(mktemp)
+    while true; do
+        if [ -z "$api_key" ]; then
+            echo ""
+            echo "An API key for $LLM_PROVIDER_LABEL is required."
+            echo "Get one from: $LLM_KEY_URL"
+            read -r -s -p "Enter your $LLM_PROVIDER_LABEL API key (input hidden): " api_key
+            echo ""
+            if [ -z "$api_key" ]; then
+                log_warning "No API key entered"
+                ask_retry_key
+                continue
+            fi
+        elif $key_from_file; then
+            log_info "Using $LLM_KEY_VAR from etc/userconfig.env"
+        fi
+
+        log_info "Verifying the $LLM_PROVIDER_LABEL API key..."
+        if llm_fetch_models "$api_key" "$models_file"; then
+            log_success "$LLM_PROVIDER_LABEL API key is valid"
+            break
+        fi
+
+        if $key_from_file; then
+            remove_env_variable "$ENV_FILE" "$LLM_KEY_VAR"
+            log_info "Removed the rejected $LLM_KEY_VAR from etc/userconfig.env"
+            key_from_file=false
+        fi
+        api_key=""
+        ask_retry_key
+    done
+
+    local model_ids=() model_names=()
+    local model_id model_name
+    while IFS=$'\t' read -r model_id model_name; do
+        [ -z "$model_id" ] && continue
+        model_ids+=("$model_id")
+        model_names+=("$model_name")
+    done < "$models_file"
+    rm -f "$models_file"
+
+    echo ""
+    echo "Models available with this key:"
+    local idx
+    for idx in "${!model_ids[@]}"; do
+        local label="${model_names[$idx]}"
+        [ "$label" = "${model_ids[$idx]}" ] && label="" || label=" — $label"
+        echo "  $((idx + 1))) ${model_ids[$idx]}$label$([ "$idx" -eq 0 ] && echo "  (recommended)")"
+    done
+
+    while true; do
+        local selection
+        read -p "Select model [1-${#model_ids[@]}] (default: 1): " -r selection
+        selection=${selection:-1}
+        if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt ${#model_ids[@]} ]; then
+            log_warning "Enter a number between 1 and ${#model_ids[@]}."
+            continue
+        fi
+        DETECTED_MODEL="${model_ids[$((selection - 1))]}"
+        DETECTED_MODEL_NAME="${model_names[$((selection - 1))]}"
+        if llm_test_model "$api_key" "$DETECTED_MODEL"; then
+            break
+        fi
+        log_warning "Choose a different model."
+    done
+
+    update_env_variable "$ENV_FILE" "GOOSE_PROVIDER" "$LLM_GOOSE_PROVIDER" "# LLM provider for the MCP assistant (goose): anthropic, openai, google or custom_deepseek"
+    update_env_variable "$ENV_FILE" "GOOSE_MODEL" "$DETECTED_MODEL" "# LLM model for the MCP assistant (goose)"
+    update_env_variable "$ENV_FILE" "$LLM_KEY_VAR" "$api_key" "# API key for $LLM_PROVIDER_LABEL"
+    update_env_variable "$ENV_FILE" "MCP_MODEL" "$DETECTED_MODEL" "# Selected model (goose reads GOOSE_MODEL; kept for compatibility)"
+    if [ "$LLM_PROVIDER" = "deepseek" ]; then
+        # Same as the ComplianceCow deployment: DeepSeek runs with thinking off.
+        update_env_variable "$ENV_FILE" "GOOSE_THINKING_DISABLE_MODELS" "$DETECTED_MODEL" "# DeepSeek models that run with thinking disabled"
+    fi
+
+    export GOOSE_PROVIDER="$LLM_GOOSE_PROVIDER" GOOSE_MODEL="$DETECTED_MODEL" MCP_MODEL="$DETECTED_MODEL"
+    log_success "Saved to etc/userconfig.env: GOOSE_PROVIDER=$LLM_GOOSE_PROVIDER, GOOSE_MODEL=$DETECTED_MODEL, $LLM_KEY_VAR"
+}
+
+# goose refuses to start without GOOSE_SERVER__SECRET_KEY, and the bridge must
+# send the same value. An existing secret is kept so the two stay paired across
+# re-runs; the insecure built-in default "mysecret" is replaced.
+ensure_goose_server_secret() {
+    ENV_FILE="${SCRIPT_DIR}/etc/userconfig.env"
+    local secret="${GOOSE_SERVER__SECRET_KEY:-${GOOSE_SERVER_SECRET_KEY:-}}"
+    if [ -z "$secret" ] || [ "$secret" = "mysecret" ]; then
+        secret=$(openssl rand -hex 32 2>/dev/null || python3 -c 'import secrets; print(secrets.token_hex(32))')
+        log_info "Generated the shared secret for the MCP client and bridge"
+    fi
+    update_env_variable "$ENV_FILE" "GOOSE_SERVER__SECRET_KEY" "$secret" "# Shared secret between the MCP bridge and the MCP client (goose); both must match"
+    update_env_variable "$ENV_FILE" "GOOSE_SERVER_SECRET_KEY" "$secret" ""
 }
 
 # Validate MinIO credentials
@@ -794,11 +894,20 @@ cleanup_docker() {
 create_directories() {
     log_info "Creating necessary directories..."
     
-    mkdir -p "${HOME}/tmp/cowctl/minio" && chown -R "$(id -un)":"$(id -gn)" "${HOME}/tmp/cowctl/minio"
-    mkdir -p exported-data && chown -R "$(id -un)":"$(id -gn)" exported-data
-    mkdir -p catalog/localcatalog && chown -R "$(id -un)":"$(id -gn)" catalog/localcatalog
-    mkdir -p mcp-config && chown -R "$(id -un)":"$(id -gn)" mcp-config
-    mkdir -p "$MCP_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn)" "$MCP_SESSION_DIR"
+    mkdir -p "${HOME}/tmp/cowctl/minio" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "${HOME}/tmp/cowctl/minio"
+    mkdir -p exported-data && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" exported-data
+    mkdir -p catalog/localcatalog && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" catalog/localcatalog
+    mkdir -p mcp-config && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" mcp-config
+    mkdir -p "$MCP_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "$MCP_SESSION_DIR"
+
+    # Every other host folder the compose file bind-mounts. Docker creates missing ones itself
+    # (as root); Podman refuses to start the container, so create them as the current user.
+    local dir
+    for dir in catalog/localcatalog/rules catalog/applicationscope catalog/designnotes \
+               catalog/globalcatalog/dashboards catalog/globalcatalog/methods catalog/globalcatalog/rulegroups \
+               cowexecutions mcp-server mcp-sessions mcp-state; do
+        mkdir -p "$dir" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "$dir"
+    done
     
     log_success "Directories created"
     log_info "MCP sessions will persist in: $MCP_SESSION_DIR"
@@ -820,7 +929,7 @@ build_services() {
 wait_for_mcp_health() {
     local max_attempts=60
     local attempt=0
-    local mcp_port=45678
+    local mcp_port="${OSC_MCP_PORT:-45678}"
     local mcp_health_endpoint="http://localhost:${mcp_port}/health"
     
     log_info "Waiting for MCP service to be ready..."
@@ -918,19 +1027,19 @@ wait_for_services() {
         services_ready=0
         
         if $DOCKER_CMD ps --filter "name=oscapiservice" --filter "status=running" | grep -q oscapiservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if $DOCKER_CMD ps --filter "name=ccowmcpclient" --filter "status=running" | grep -q ccowmcpclient; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=ccowmcpbridge" --filter "status=running" | grep -q ccowmcpbridge; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if $DOCKER_CMD ps --filter "name=oscmcpservice" --filter "status=running" | grep -q oscmcpservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if [ $services_ready -ge 3 ]; then
@@ -963,40 +1072,40 @@ show_mcp_info() {
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Access URLs:"
-    echo "  - Web UI (HTTPS): https://localhost:443"
+    echo "  - Web UI (HTTPS): https://localhost:${OSC_HTTPS_PORT:-443}"
     echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
     echo "  - MCP Bridge: http://localhost:8095"
-    echo "  - MCP Client Web: http://localhost:8976"
-    echo "  - MCP Service: http://localhost:45678"
-    echo "  - MCP Health Check: http://localhost:45678/health"
+    echo "  - MCP Service: http://localhost:${OSC_MCP_PORT:-45678}"
+    echo "  - MCP Health Check: http://localhost:${OSC_MCP_PORT:-45678}/health"
     echo ""
     log_info "AI Model Configuration:"
-    echo "  - Provider: Anthropic only"
-    echo "  - Selected Model: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.6}"
-    echo "  - Model ID: ${DETECTED_MODEL:-claude-sonnet-4-6}"
+    echo "  - Provider: ${LLM_PROVIDER_LABEL:-${GOOSE_PROVIDER:-not configured}}"
+    echo "  - Model: ${DETECTED_MODEL:-${GOOSE_MODEL:-not configured}}"
     echo "  - MCP Sessions: $MCP_SESSION_DIR"
     echo "  - API Key: Configured (from environment)"
     echo ""
     log_info "Rule Creation Methods:"
     echo "  1. Manual UI: Web UI → Reverse Proxy → API Service"
     echo "  2. MCP UI Mode: Web UI → Reverse Proxy → MCP Bridge → MCP Client → MCP Service"
-    echo "  3. External MCP: Goose/Claude → MCP (port 45678)"
+    echo "  3. External MCP: Goose/Claude → MCP (port ${OSC_MCP_PORT:-45678})"
     echo ""
     log_info "Useful Commands:"
-    echo "  - View all logs: $COMPOSE_CMD logs -f"
-    echo "  - View MCP Client logs: $COMPOSE_CMD logs -f ccowmcpclient"
-    echo "  - View MCP Bridge logs: $COMPOSE_CMD logs -f ccowmcpbridge"
-    echo "  - View MCP logs: $COMPOSE_CMD logs -f oscmcpservice"
-    echo "  - Check MCP health: curl http://localhost:45678/health"
-    echo "  - Stop services: $COMPOSE_CMD down"
-    echo "  - Restart services: $COMPOSE_CMD restart"
+    echo "  - View all logs: $COMPOSE_CMD -f docker-compose-osc.yaml logs -f"
+    echo "  - View MCP Client logs: $COMPOSE_CMD -f docker-compose-osc.yaml logs -f ccowmcpclient"
+    echo "  - View MCP Bridge logs: $COMPOSE_CMD -f docker-compose-osc.yaml logs -f ccowmcpbridge"
+    echo "  - View MCP logs: $COMPOSE_CMD -f docker-compose-osc.yaml logs -f oscmcpservice"
+    echo "  - Check MCP health: curl http://localhost:${OSC_MCP_PORT:-45678}/health"
+    echo "  - Stop services: sh down.sh osc"
+    echo "  - Restart services: $COMPOSE_CMD -f docker-compose-osc.yaml restart"
+    if [ "$COW_ENGINE" = "podman" ]; then
+        echo "  (Podman: run 'export COW_ENGINE=podman' first in a new shell)"
+    fi
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
-    echo "  ⚠️  Only Anthropic Claude is supported (selected: ${DETECTED_MODEL_NAME:-Claude Sonnet 4.5})"
-    echo "  ⚠️  Requires ANTHROPIC_API_KEY environment variable"
+    echo "  ⚠️  Change the LLM provider or model later with: ./setup.sh --configure-llm"
     echo "  ⚠️  MCP sessions persist across restarts"
     echo "  ⚠️  This setup does NOT support multi-tenancy"
     echo "  ⚠️  Not tested at scale - for development/testing only"
@@ -1051,15 +1160,15 @@ wait_for_services_nocode() {
         services_ready=0
 
         if $DOCKER_CMD ps --filter "name=oscapiservice" --filter "status=running" | grep -q oscapiservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=oscwebserver" --filter "status=running" | grep -q oscwebserver; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=oscreverseproxy" --filter "status=running" | grep -q oscreverseproxy; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if [ $services_ready -ge 3 ]; then
@@ -1108,20 +1217,23 @@ show_nocode_info() {
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Access URLs:"
-    echo "  - Web UI (HTTPS): https://localhost:443"
+    echo "  - Web UI (HTTPS): https://localhost:${OSC_HTTPS_PORT:-443}"
     echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
     echo ""
     log_info "Useful Commands:"
     echo "  - View all logs: $COMPOSE_CMD -f docker-compose-osc.yaml logs -f"
-    echo "  - Stop services: $COMPOSE_CMD -f docker-compose-osc.yaml down"
+    echo "  - Stop services: sh down.sh osc"
     echo "  - Restart services: $COMPOSE_CMD -f docker-compose-osc.yaml restart"
+    if [ "$COW_ENGINE" = "podman" ]; then
+        echo "  (Podman: run 'export COW_ENGINE=podman' first in a new shell)"
+    fi
     echo "  - Check status: $DOCKER_CMD ps"
     echo ""
     log_warning "Important Notes:"
     echo "  - MCP/AI features are not enabled in this mode"
-    echo "  - To enable MCP features, re-run setup and select option 1 with a valid Anthropic API key"
+    echo "  - To enable MCP features, re-run setup and select option 1 with an LLM API key"
     echo "  - This setup does NOT support multi-tenancy"
     echo "  - Not tested at scale - for development/testing only"
     echo ""
@@ -1129,6 +1241,18 @@ show_nocode_info() {
 
 # Main execution
 main() {
+    # Change only the LLM provider/model of an existing installation.
+    if [ "${1:-}" = "--configure-llm" ]; then
+        print_banner
+        check_llm_provider
+        ensure_goose_server_secret
+        echo ""
+        log_success "LLM configuration saved to etc/userconfig.env"
+        echo "  Apply it to the running services:"
+        echo "    docker compose -f docker-compose-osc.yaml up -d ccowmcpclient ccowmcpbridge"
+        exit 0
+    fi
+
     print_banner
 
     # Ask user to select setup mode first
@@ -1142,14 +1266,20 @@ main() {
     echo ""
 
     # Pre-flight checks (common)
+    cow_engine_detect || exit 1
+    if [ "$COW_ENGINE" = "podman" ]; then
+        log_info "Using Podman (docker CLI and compose are pointed at Podman's socket)"
+        cow_engine_prepare_vm
+    fi
     check_docker
     check_privileges
     check_docker_compose
     check_system_requirements
 
-    # Anthropic key check only for full mode
+    # LLM provider, model and the MCP client/bridge secret only for full mode
     if [ "$SETUP_MODE" = "full" ]; then
-        check_anthropic_key
+        check_llm_provider
+        ensure_goose_server_secret
     fi
 
     check_minio_credentials
@@ -1199,6 +1329,9 @@ main() {
         exit 0
     fi
 
+    # Host folders the compose files bind-mount; Podman does not create them on its own
+    create_directories
+
     # Setup process based on mode
     if [ "$SETUP_MODE" = "full" ]; then
         cleanup_docker
@@ -1211,9 +1344,9 @@ main() {
         log_success "Open Security Compliance setup completed successfully!"
         echo ""
         log_info "Next steps:"
-        echo "  1. Access the Web UI at https://localhost:443"
+        echo "  1. Access the Web UI at https://localhost:${OSC_HTTPS_PORT:-443}"
         echo "  2. Create rules manually or using MCP mode"
-        echo "  3. Configure external MCP clients (Goose/Claude) at http://localhost:45678"
+        echo "  3. Configure external MCP clients (Goose/Claude) at http://localhost:${OSC_MCP_PORT:-45678}"
         echo "  4. Check the README for detailed usage instructions"
     else
         cleanup_docker_nocode
@@ -1226,7 +1359,7 @@ main() {
         log_success "Open Security Compliance No-Code UI setup completed successfully!"
         echo ""
         log_info "Next steps:"
-        echo "  1. Access the Web UI at https://localhost:443"
+        echo "  1. Access the Web UI at https://localhost:${OSC_HTTPS_PORT:-443}"
         echo "  2. Create and manage rules using the No-Code web interface"
         echo "  3. To enable AI/MCP features later, re-run this setup with option 1"
     fi

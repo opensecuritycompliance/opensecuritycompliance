@@ -82,6 +82,15 @@ func (task *PythonTask) InitTask(taskName, tasksPath string, taskInputVO *vo.Tas
 		if err != nil {
 			return fmt.Errorf("error writing updated taskInput.yaml: %w", err)
 		}
+	} else {
+		if len(additionalInfo.ApplicationInfo) > 0 {
+			for _, appInfo := range additionalInfo.ApplicationInfo {
+				if appInfo != nil && appInfo.App != nil {
+					ruleAppTags = appInfo.App.AppTags
+					break
+				}
+			}
+		}
 	}
 
 	// if err := CreateJsonFiles(taskDetails.TaskPath, taskName); err != nil {
