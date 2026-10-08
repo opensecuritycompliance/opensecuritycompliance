@@ -1,7 +1,6 @@
 version: "3.8"
 services:
   cowlibrary:
-    platform: linux/x86_64
     build:
       context: ./
       dockerfile: ./Dockerfiles/alpine/Dockerfile.cowlibrary
@@ -39,7 +38,6 @@ services:
         aliases:
           - cowstorage
   cowctl:
-    platform: linux/x86_64
     dns:
       - 8.8.8.8
       - 1.1.1.1
