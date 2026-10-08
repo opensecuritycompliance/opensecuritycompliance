@@ -10,6 +10,7 @@
 2. [Setting up cowctl CLI](#setting-up-cowctl-cli)
    1. [Prerequisites](#prerequisites)
    2. [Instructions](#instructions)
+   3. [Using Podman instead of Docker](#using-podman-instead-of-docker)
 3. [Getting Started](#getting-started)
    1. [Developing a Rule](#1-developing-a-rule)
       1. [Creating a credential-type](#11-creating-a-credential-type)
@@ -113,6 +114,38 @@ Please make sure to have the following installed in your machine.
     3. Type `exit` to get out of the cowctl prompt any time.
 
 <img src="misc/img/cowctl_prompt.png" alt="build_and_run" width="250"/>
+
+## Using Podman instead of Docker
+
+The scripts (`build_and_run.sh`, `build.sh`, `up.sh`, `run.sh` and `setup.sh`) work with Podman as well. They use Docker when a Docker engine is running, and Podman when Podman is the only one installed. If both are installed (for example Docker Desktop and Podman on a Mac), set `COW_ENGINE=podman` to use Podman.
+
+In Podman mode the scripts point the `docker` CLI and compose at Podman's Docker-compatible socket, build the images with Podman's own builder, skip `sudo`, and start the Podman machine if it is stopped. The engine logic lives in `engine.sh`.
+
+Prerequisites on macOS (Apple Silicon or Intel):
+
+```bash
+brew install podman yq
+podman machine init --memory 6144 --now   # the MCP + UI stack needs about 6 GiB
+```
+
+If you already have a machine, resize it instead: `podman machine stop && podman machine set --memory 6144 && podman machine start`. On Apple Silicon, make sure Rosetta is enabled for the machine (`podman machine inspect --format '{{.Rosetta}}'` prints `true`, the default); the amd64 images run through it.
+
+Then run the same commands as with Docker, with the engine selected:
+
+```bash
+export COW_ENGINE=podman
+sh build_and_run.sh   # cowctl CLI
+sh setup.sh           # MCP + No-Code UI (see the deployment guides)
+```
+
+Things that differ from Docker:
+
+- **Reverse proxy ports.** Rootless Podman cannot publish ports 80 and 443, so the proxy is served on `8081` (HTTP) and `8443` (HTTPS), for example `https://localhost:8443`. Override with `OSC_HTTP_PORT` and `OSC_HTTPS_PORT`. These variables work with Docker too, and `OSC_MCP_PORT` changes the MCP service port (default `45678`).
+- **One-time machine setup.** `setup.sh` sets `host_containers_internal_ip` in the Podman machine's `containers.conf`, so that `host.docker.internal:host-gateway` in the compose file resolves.
+- **Builds.** Do not use `docker compose build` through BuildKit with Podman on Apple Silicon: it runs the amd64 images under QEMU, which crashes Go. The scripts avoid this by setting `DOCKER_BUILDKIT=0` and `COMPOSE_BAKE=false`; if you build by hand, do the same.
+- **One stack at a time.** The cowctl stack (`docker-compose.yaml`) and the MCP + UI stack (`docker-compose-osc.yaml`) both define a `cowstorage` container, so stop one before starting the other.
+
+Tested on macOS (Apple Silicon) with Podman 5.7. Native Linux (rootless Podman with SELinux needs the `:Z` option on bind mounts) and Windows are not tested yet.
 
 # Getting started
 

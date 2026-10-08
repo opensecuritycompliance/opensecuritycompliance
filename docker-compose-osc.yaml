@@ -28,7 +28,7 @@ services:
       - etc/userconfig.env
       - etc/policycow.env
     ports:
-      - "45678:8080"
+      - "${OSC_MCP_PORT:-45678}:8080"
     volumes:
       - ./mcp-server:/home/cow-mcp
     networks:
@@ -136,8 +136,8 @@ services:
       - etc/userconfig.env
       - etc/policycow.env
     ports:
-      - 443:443
-      - 80:80
+      - "${OSC_HTTPS_PORT:-443}:443"
+      - "${OSC_HTTP_PORT:-80}:80"
     environment:
       - etc/userconfig.env
       - etc/policycow.env

@@ -12,6 +12,7 @@ NC='\033[0m' # No Color
 
 # Script constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/engine.sh"
 REQUIRED_SERVICES=("oscmcpservice" "ccowmcpclient" "ccowmcpbridge" "oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 NO_CODE_UI_SERVICES=("oscwebserver" "oscreverseproxy" "oscapiservice" "cowstorage")
 CERT_PATHS=("src/oscreverseproxy/certs" "${HOME}/continube/certs")
@@ -919,7 +920,7 @@ build_services() {
 wait_for_mcp_health() {
     local max_attempts=60
     local attempt=0
-    local mcp_port=45678
+    local mcp_port="${OSC_MCP_PORT:-45678}"
     local mcp_health_endpoint="http://localhost:${mcp_port}/health"
     
     log_info "Waiting for MCP service to be ready..."
@@ -1062,13 +1063,13 @@ show_mcp_info() {
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Access URLs:"
-    echo "  - Web UI (HTTPS): https://localhost:443"
+    echo "  - Web UI (HTTPS): https://localhost:${OSC_HTTPS_PORT:-443}"
     echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
     echo "  - MCP Bridge: http://localhost:8095"
-    echo "  - MCP Service: http://localhost:45678"
-    echo "  - MCP Health Check: http://localhost:45678/health"
+    echo "  - MCP Service: http://localhost:${OSC_MCP_PORT:-45678}"
+    echo "  - MCP Health Check: http://localhost:${OSC_MCP_PORT:-45678}/health"
     echo ""
     log_info "AI Model Configuration:"
     echo "  - Provider: ${LLM_PROVIDER_LABEL:-${GOOSE_PROVIDER:-not configured}}"
@@ -1079,14 +1080,14 @@ show_mcp_info() {
     log_info "Rule Creation Methods:"
     echo "  1. Manual UI: Web UI → Reverse Proxy → API Service"
     echo "  2. MCP UI Mode: Web UI → Reverse Proxy → MCP Bridge → MCP Client → MCP Service"
-    echo "  3. External MCP: Goose/Claude → MCP (port 45678)"
+    echo "  3. External MCP: Goose/Claude → MCP (port ${OSC_MCP_PORT:-45678})"
     echo ""
     log_info "Useful Commands:"
     echo "  - View all logs: $COMPOSE_CMD logs -f"
     echo "  - View MCP Client logs: $COMPOSE_CMD logs -f ccowmcpclient"
     echo "  - View MCP Bridge logs: $COMPOSE_CMD logs -f ccowmcpbridge"
     echo "  - View MCP logs: $COMPOSE_CMD logs -f oscmcpservice"
-    echo "  - Check MCP health: curl http://localhost:45678/health"
+    echo "  - Check MCP health: curl http://localhost:${OSC_MCP_PORT:-45678}/health"
     echo "  - Stop services: $COMPOSE_CMD down"
     echo "  - Restart services: $COMPOSE_CMD restart"
     echo "  - Check status: $DOCKER_CMD ps"
@@ -1204,7 +1205,7 @@ show_nocode_info() {
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Access URLs:"
-    echo "  - Web UI (HTTPS): https://localhost:443"
+    echo "  - Web UI (HTTPS): https://localhost:${OSC_HTTPS_PORT:-443}"
     echo "  - Web UI (HTTP): http://localhost:3001"
     echo "  - API Service: http://localhost:9080"
     echo "  - MinIO Console: http://localhost:9001"
@@ -1250,6 +1251,11 @@ main() {
     echo ""
 
     # Pre-flight checks (common)
+    cow_engine_detect || exit 1
+    if [ "$COW_ENGINE" = "podman" ]; then
+        log_info "Using Podman (docker CLI and compose are pointed at Podman's socket)"
+        cow_engine_prepare_vm
+    fi
     check_docker
     check_privileges
     check_docker_compose
@@ -1320,9 +1326,9 @@ main() {
         log_success "Open Security Compliance setup completed successfully!"
         echo ""
         log_info "Next steps:"
-        echo "  1. Access the Web UI at https://localhost:443"
+        echo "  1. Access the Web UI at https://localhost:${OSC_HTTPS_PORT:-443}"
         echo "  2. Create rules manually or using MCP mode"
-        echo "  3. Configure external MCP clients (Goose/Claude) at http://localhost:45678"
+        echo "  3. Configure external MCP clients (Goose/Claude) at http://localhost:${OSC_MCP_PORT:-45678}"
         echo "  4. Check the README for detailed usage instructions"
     else
         cleanup_docker_nocode
@@ -1335,7 +1341,7 @@ main() {
         log_success "Open Security Compliance No-Code UI setup completed successfully!"
         echo ""
         log_info "Next steps:"
-        echo "  1. Access the Web UI at https://localhost:443"
+        echo "  1. Access the Web UI at https://localhost:${OSC_HTTPS_PORT:-443}"
         echo "  2. Create and manage rules using the No-Code web interface"
         echo "  3. To enable AI/MCP features later, re-run this setup with option 1"
     fi

@@ -12,6 +12,10 @@ export COMPOSE_PROJECT_NAME=policycow
 command -v sudo >/dev/null 2>&1 || sudo() { "$@"; }
 export MSYS_NO_PATHCONV=1
 
+# Docker by default; Podman when that is what is installed (see engine.sh)
+source ./engine.sh
+cow_engine_detect
+
 export COMPOSE_FILE=docker-compose.yaml
 export COW_SHELL=/bin/sh
 export COW_NETWORK_ARGS="--driver bridge --scope local"
