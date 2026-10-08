@@ -9,11 +9,24 @@
 #   OSC_HTTP_PORT / OSC_HTTPS_PORT   host ports of the reverse proxy; rootless Podman cannot
 #                                    publish 80/443, so they default to 8081/8443 there
 
+# Git Bash on Windows has no sudo, and Docker Desktop there needs no elevation: make `sudo cmd` run cmd.
+# (setup.sh calls `sudo docker ...` before it has sourced anything else.)
+command -v sudo >/dev/null 2>&1 || sudo() { "$@"; }
+
+# Run a command with a time limit when `timeout` exists (not on stock macOS); a half-started
+# Docker Desktop can make `docker info` hang instead of fail.
+cow_with_timeout() {
+    local secs=$1; shift
+    if command -v timeout >/dev/null 2>&1; then timeout "$secs" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then gtimeout "$secs" "$@"
+    else "$@"; fi
+}
+
 cow_engine_detect() {
     case "${COW_ENGINE:-auto}" in
         docker|podman) ;;
         *)
-            if docker info >/dev/null 2>&1; then
+            if cow_with_timeout 20 docker info >/dev/null 2>&1; then
                 COW_ENGINE=docker
             elif command -v podman >/dev/null 2>&1; then
                 COW_ENGINE=podman
@@ -23,7 +36,9 @@ cow_engine_detect() {
             ;;
     esac
     export COW_ENGINE
-    [ "$COW_ENGINE" = "podman" ] && cow_engine_podman
+    if [ "$COW_ENGINE" = "podman" ]; then
+        cow_engine_podman || return 1
+    fi
     return 0
 }
 
@@ -36,7 +51,7 @@ cow_engine_podman() {
     # macOS/Windows: the engine lives in a VM that may not be running yet
     if ! podman info >/dev/null 2>&1 && podman machine list --format '{{.Name}}' 2>/dev/null | grep -q .; then
         echo "Starting the podman machine..."
-        podman machine start >/dev/null 2>&1
+        podman machine start >/dev/null 2>&1 </dev/null
     fi
     if ! podman info >/dev/null 2>&1; then
         echo "ERROR: podman is not running (try: podman machine start)" >&2
@@ -73,7 +88,20 @@ cow_engine_podman() {
     sudo() { "$@"; }
 
     # no docker CLI installed: let `docker ...` (and `docker compose ...`) mean podman
-    command -v docker >/dev/null 2>&1 || docker() { podman "$@"; }
+    if ! command -v docker >/dev/null 2>&1; then
+        docker() { podman "$@"; }
+        # `podman compose` only forwards to an external provider; without a docker CLI there is none by default
+        if ! podman compose version >/dev/null 2>&1 </dev/null; then
+            echo "ERROR: Podman has no compose provider. Install one of:" >&2
+            echo "         - docker-compose (standalone binary: https://docs.docker.com/compose/install/standalone/," >&2
+            echo "           or: brew install docker-compose)" >&2
+            echo "         - podman-compose (pip install podman-compose)" >&2
+            return 1
+        fi
+    fi
+
+    export MSYS_NO_PATHCONV=1
+    cow_engine_prepare_vm
 
     local mem
     mem=$(podman machine inspect --format '{{.Resources.Memory}}' 2>/dev/null | head -n1)
@@ -84,27 +112,40 @@ cow_engine_podman() {
     return 0
 }
 
-# One-time VM setup for the compose files' `host.docker.internal:host-gateway`.
-# Podman cannot resolve host-gateway in a machine until host_containers_internal_ip is set.
+# One-time setup of the Podman machine's user containers.conf (idempotent, runs once per shell chain):
+#  - host_containers_internal_ip: lets `host.docker.internal:host-gateway` in the compose files resolve
+#  - pids_limit=0: WSL2 machines (Windows) do not delegate the pids cgroup controller to the user,
+#    so crun fails with "controller `pids` is not available" unless the PID limit is off
+# The remote script is passed base64-encoded so it needs no quoting, which differs between
+# Git Bash, PowerShell and zsh when handed to `podman machine ssh`.
 cow_engine_prepare_vm() {
     [ "$COW_ENGINE" = "podman" ] || return 0
+    [ -n "$COW_VM_PREPARED" ] && return 0
     podman machine list --format '{{.Name}}' 2>/dev/null | grep -q . || return 0   # native Linux: nothing to do
 
-    local ip conf='~/.config/containers/containers.conf'
-    ip=$(podman machine ssh 'getent hosts host.containers.internal' 2>/dev/null | awk '{print $1}' | head -n1)
-    [ -n "$ip" ] || return 0
-    if podman machine ssh "grep -qs host_containers_internal_ip $conf" 2>/dev/null; then
-        return 0
+    local script b64
+    script='f=$HOME/.config/containers/containers.conf
+mkdir -p "$(dirname "$f")"; touch "$f"
+set_key() {
+  grep -q "^[[:space:]]*$1[[:space:]]*=" "$f" && return 1
+  if grep -q "^\[containers\]" "$f"; then sed -i "/^\[containers\]/a $1 = $2" "$f"
+  else printf "[containers]\n%s = %s\n" "$1" "$2" >> "$f"; fi
+  return 0
+}
+changed=0
+ip=$(getent hosts host.containers.internal | cut -d" " -f1)
+[ -n "$ip" ] && set_key host_containers_internal_ip "\"$ip\"" && changed=1
+set_key pids_limit 0 && changed=1
+if [ $changed = 1 ]; then
+  systemctl --user stop podman.service podman.socket >/dev/null 2>&1
+  systemctl --user start podman.socket >/dev/null 2>&1
+  echo changed
+fi'
+    b64=$(printf '%s\n' "$script" | base64 | tr -d '\n\r')
+    # </dev/null: `podman machine ssh` forwards stdin and would swallow piped/typed-ahead input
+    if [ "$(podman machine ssh "echo $b64 | base64 -d | sh" 2>/dev/null </dev/null | tr -d '\r')" = "changed" ]; then
+        echo "Configured the podman machine (containers.conf)"
     fi
-
-    echo "Configuring the podman machine (host.containers.internal = $ip)..."
-    # insert into the existing [containers] table; a second table header would break podman
-    podman machine ssh "mkdir -p ~/.config/containers && touch $conf &&
-        if grep -q '^\[containers\]' $conf; then
-            sed -i '/^\[containers\]/a host_containers_internal_ip = \"$ip\"' $conf
-        else
-            printf '[containers]\nhost_containers_internal_ip = \"$ip\"\n' >> $conf
-        fi" >/dev/null 2>&1
-    podman machine ssh 'systemctl --user restart podman.socket' >/dev/null 2>&1
+    export COW_VM_PREPARED=1
     return 0
 }

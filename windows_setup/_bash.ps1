@@ -1,7 +1,10 @@
 # Runs a repo-root shell script with Git Bash, so Windows and Linux share one code path.
-param([Parameter(Mandatory)][string]$Script)
-# Pick up tools installed after this shell was opened (Docker, Git, yq ...) without a restart.
-$env:Path = ([Environment]::GetEnvironmentVariable('Path', 'Machine'), [Environment]::GetEnvironmentVariable('Path', 'User')) -join ';'
+param([Parameter(Mandatory)][string]$Script, [Parameter(ValueFromRemainingArguments)][string[]]$ScriptArgs)
+# Pick up tools installed after this shell was opened (Docker, Git, yq ...) without a restart:
+# add the registry PATH entries this session lacks, keeping whatever the session already has.
+$current = @($env:Path -split ';' | Where-Object { $_ })
+$registry = @([Environment]::GetEnvironmentVariable('Path', 'Machine'), [Environment]::GetEnvironmentVariable('Path', 'User')) -split ';' | Where-Object { $_ }
+$env:Path = (@($current) + @($registry | Where-Object { $current -notcontains $_ })) -join ';'
 $root = Split-Path -Parent $PSScriptRoot
 # Prefer Git Bash: with WSL installed, `bash` on PATH is the WSL launcher (System32\bash.exe).
 $gitBash = @("$env:ProgramFiles\Git\bin\bash.exe", "${env:ProgramFiles(x86)}\Git\bin\bash.exe",
@@ -14,4 +17,4 @@ if (-not $gitBash -or -not (Test-Path $gitBash)) { throw "Git Bash not found. In
 $bash = $gitBash
 if (-not (Get-Command yq -ErrorAction SilentlyContinue)) { throw "yq not found on PATH." }
 Push-Location $root
-try { & $bash $Script; exit $LASTEXITCODE } finally { Pop-Location }
+try { & $bash $Script @ScriptArgs; exit $LASTEXITCODE } finally { Pop-Location }

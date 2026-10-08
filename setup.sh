@@ -894,11 +894,20 @@ cleanup_docker() {
 create_directories() {
     log_info "Creating necessary directories..."
     
-    mkdir -p "${HOME}/tmp/cowctl/minio" && chown -R "$(id -un)":"$(id -gn)" "${HOME}/tmp/cowctl/minio"
-    mkdir -p exported-data && chown -R "$(id -un)":"$(id -gn)" exported-data
-    mkdir -p catalog/localcatalog && chown -R "$(id -un)":"$(id -gn)" catalog/localcatalog
-    mkdir -p mcp-config && chown -R "$(id -un)":"$(id -gn)" mcp-config
-    mkdir -p "$MCP_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn)" "$MCP_SESSION_DIR"
+    mkdir -p "${HOME}/tmp/cowctl/minio" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "${HOME}/tmp/cowctl/minio"
+    mkdir -p exported-data && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" exported-data
+    mkdir -p catalog/localcatalog && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" catalog/localcatalog
+    mkdir -p mcp-config && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" mcp-config
+    mkdir -p "$MCP_SESSION_DIR" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "$MCP_SESSION_DIR"
+
+    # Every other host folder the compose file bind-mounts. Docker creates missing ones itself
+    # (as root); Podman refuses to start the container, so create them as the current user.
+    local dir
+    for dir in catalog/localcatalog/rules catalog/applicationscope catalog/designnotes \
+               catalog/globalcatalog/dashboards catalog/globalcatalog/methods catalog/globalcatalog/rulegroups \
+               cowexecutions mcp-server mcp-sessions mcp-state; do
+        mkdir -p "$dir" && chown -R "$(id -un)":"$(id -gn 2>/dev/null)" "$dir"
+    done
     
     log_success "Directories created"
     log_info "MCP sessions will persist in: $MCP_SESSION_DIR"
@@ -1018,19 +1027,19 @@ wait_for_services() {
         services_ready=0
         
         if $DOCKER_CMD ps --filter "name=oscapiservice" --filter "status=running" | grep -q oscapiservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if $DOCKER_CMD ps --filter "name=ccowmcpclient" --filter "status=running" | grep -q ccowmcpclient; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=ccowmcpbridge" --filter "status=running" | grep -q ccowmcpbridge; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if $DOCKER_CMD ps --filter "name=oscmcpservice" --filter "status=running" | grep -q oscmcpservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
         
         if [ $services_ready -ge 3 ]; then
@@ -1151,15 +1160,15 @@ wait_for_services_nocode() {
         services_ready=0
 
         if $DOCKER_CMD ps --filter "name=oscapiservice" --filter "status=running" | grep -q oscapiservice; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=oscwebserver" --filter "status=running" | grep -q oscwebserver; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if $DOCKER_CMD ps --filter "name=oscreverseproxy" --filter "status=running" | grep -q oscreverseproxy; then
-            ((services_ready++))
+            services_ready=$((services_ready + 1))
         fi
 
         if [ $services_ready -ge 3 ]; then
@@ -1319,6 +1328,9 @@ main() {
         log_info "Setup cancelled by user"
         exit 0
     fi
+
+    # Host folders the compose files bind-mount; Podman does not create them on its own
+    create_directories
 
     # Setup process based on mode
     if [ "$SETUP_MODE" = "full" ]; then

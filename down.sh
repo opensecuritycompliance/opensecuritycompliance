@@ -18,7 +18,8 @@ esac
 CONTAINERS_COWCTL="cowctl cowlibrary cowstorage"
 CONTAINERS_OSC="oscmcpservice ccowmcpclient ccowmcpbridge oscwebserver oscreverseproxy oscapiservice cowstorage"
 
-NETWORKS_COWCTL="policycow_default policycow_internal"
+# cow_default / cow_internal are created (and left unused) by build.sh
+NETWORKS_COWCTL="policycow_default policycow_internal cow_default cow_internal"
 NETWORKS_OSC="osc_default osc_internal"
 
 # $1 = compose file, $2 = container names, $3 = network names. The sweep afterwards catches
