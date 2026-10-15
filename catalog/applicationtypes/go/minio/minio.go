@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"cowlibrary/constants"
+	"cowlibrary/localstorage"
 	cowlibutils "cowlibrary/utils"
 	"cowlibrary/vo"
 	cowvo "cowlibrary/vo"
@@ -186,11 +187,7 @@ func CreateAndUploadJSONFile(data interface{}, fileName string, bucketName strin
 	if bucketName == "" {
 		bucketName = "demo"
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	_, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", "", err
 	}
@@ -220,11 +217,7 @@ func UploadJSONFile(fileName string, fileContent interface{}, systemInputs inter
 	if err != nil {
 		return "", err
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", err
 	}
@@ -233,21 +226,12 @@ func UploadJSONFile(fileName string, fileContent interface{}, systemInputs inter
 	if err != nil {
 		return "", err
 	}
-	reader := bytes.NewReader(payload)
 	objectName := folderName + fileName
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName = prefix + objectName
 
-	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, int64(len(payload)), minio.PutObjectOptions{ContentType: "application/json"})
-	if err != nil {
-		return "", err
-	}
-	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
-	if err != nil {
-		return "", err
-	}
-	return absoluteFilePath, nil
+	return putObject(minioClient, endpoint, bucketName, objectName, objectName, payload, "application/json")
 }
 
 func UploadNDJSONFile(fileName string, fileContent interface{}, systemInputs interface{}) (string, error) {
@@ -256,11 +240,7 @@ func UploadNDJSONFile(fileName string, fileContent interface{}, systemInputs int
 	if err != nil {
 		return "", err
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", err
 	}
@@ -291,24 +271,12 @@ func UploadNDJSONFile(fileName string, fileContent interface{}, systemInputs int
 		buffer.WriteByte('\n')
 	}
 
-	reader := bytes.NewReader(buffer.Bytes())
-
 	objectName := folderName + fileName
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName = prefix + objectName
 
-	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/ndjson"})
-	if err != nil {
-		return "", err
-	}
-
-	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
-	if err != nil {
-		return "", err
-	}
-
-	return absoluteFilePath, nil
+	return putObject(minioClient, endpoint, bucketName, objectName, objectName, buffer.Bytes(), "application/ndjson")
 }
 
 func UploadCSVFile(fileName string, fileContent interface{}, systemInputs interface{}) (string, error) {
@@ -317,21 +285,17 @@ func UploadCSVFile(fileName string, fileContent interface{}, systemInputs interf
 	if err != nil {
 		return "", err
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", err
 	}
 	folderName := GetFolderName(systemInputsVO.MetaData)
 
-	var reader *bytes.Reader
+	var payload []byte
 
 	if rawBytes, ok := fileContent.([]byte); ok {
 		// fileContent is already []byte, skip MarshalBytes
-		reader = bytes.NewReader(rawBytes)
+		payload = rawBytes
 	} else {
 		// https://github.com/gocarina/
 		// fileContent is a struct slice, marshal it
@@ -339,22 +303,14 @@ func UploadCSVFile(fileName string, fileContent interface{}, systemInputs interf
 		if err != nil {
 			return "", err
 		}
-		reader = bytes.NewReader(csvBytes)
+		payload = csvBytes
 	}
 	objectName := folderName + fileName
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName = prefix + objectName
 
-	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, reader.Size(), minio.PutObjectOptions{ContentType: "application/csv"})
-	if err != nil {
-		return "", err
-	}
-	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
-	if err != nil {
-		return "", err
-	}
-	return absoluteFilePath, nil
+	return putObject(minioClient, endpoint, bucketName, objectName, objectName, payload, "application/csv")
 }
 
 func UploadTOMLFile(fileName string, fileContent interface{}, systemInputs interface{}) (string, error) {
@@ -367,11 +323,7 @@ func UploadTOMLFile(fileName string, fileContent interface{}, systemInputs inter
 	if err != nil {
 		return "", err
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", err
 	}
@@ -380,21 +332,12 @@ func UploadTOMLFile(fileName string, fileContent interface{}, systemInputs inter
 	if err != nil {
 		return "", err
 	}
-	reader := bytes.NewReader(payload)
 	objectName := folderName + fileName
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName = prefix + objectName
 
-	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, reader, int64(len(payload)), minio.PutObjectOptions{ContentType: "application/toml"})
-	if err != nil {
-		return "", err
-	}
-	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
-	if err != nil {
-		return "", err
-	}
-	return absoluteFilePath, nil
+	return putObject(minioClient, endpoint, bucketName, objectName, objectName, payload, "application/toml")
 }
 
 func UploadZipFile(fileName string, outputBytes []byte, systemInputs interface{}) (string, error) {
@@ -403,32 +346,17 @@ func UploadZipFile(fileName string, outputBytes []byte, systemInputs interface{}
 	if err != nil {
 		return "", err
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", err
 	}
 
 	folderName := GetFolderName(systemInputsVO.MetaData)
-	contentBuffer := bytes.NewReader(outputBytes)
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName := prefix + folderName + fileName
 
-	_, err = minioClient.PutObject(context.Background(), bucketName, objectName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
-	if err != nil {
-		return "", err
-	}
-
-	absoluteFilePath, err := BuildObjectURLWithHost(minioClient, bucketName, objectName, endpoint)
-	if err != nil {
-		return "", err
-	}
-
-	return absoluteFilePath, nil
+	return putObject(minioClient, endpoint, bucketName, objectName, objectName, outputBytes, "application/gzip")
 }
 
 func UploadParquetFile[T any](fileName string, instance interface{}, fileContent []T, systemInputs interface{}) (string, error) {
@@ -438,14 +366,16 @@ func UploadParquetFile[T any](fileName string, instance interface{}, fileContent
 		return "", fmt.Errorf("failed to load system inputs: %v", err)
 	}
 
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", fmt.Errorf("failed to get Minio credentials: %v", err)
-	}
-
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
-	if err != nil {
-		return "", fmt.Errorf("failed to register Minio client: %v", err)
+	var minioClient *minio.Client
+	if !localstorage.Enabled() {
+		endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
+		if err != nil {
+			return "", fmt.Errorf("failed to get Minio credentials: %v", err)
+		}
+		minioClient, err = RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+		if err != nil {
+			return "", fmt.Errorf("failed to register Minio client: %v", err)
+		}
 	}
 	folderName := GetFolderName(systemInputsVO.MetaData)
 	fw, err := local.NewLocalFileWriter(fileName)
@@ -481,6 +411,9 @@ func UploadParquetFile[T any](fileName string, instance interface{}, fileContent
 }
 
 func DownloadParquetFile(absoluteFilePath string, systemInputs interface{}) ([]interface{}, error) {
+	if localstorage.Enabled() && localstorage.IsLocalURL(absoluteFilePath) {
+		return readLocalParquet(absoluteFilePath)
+	}
 	fileURL, err := url.Parse(absoluteFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("invalid file URL: %w", err)
@@ -551,6 +484,9 @@ func DownloadParquetFile(absoluteFilePath string, systemInputs interface{}) ([]i
 }
 
 func DownloadFile(absoluteFilePath string, systemInputs interface{}) ([]byte, error) {
+	if localstorage.Enabled() && localstorage.IsLocalURL(absoluteFilePath) {
+		return localstorage.Read(absoluteFilePath)
+	}
 	if strings.HasPrefix(absoluteFilePath, "file://") {
 		fileName := filepath.Base(absoluteFilePath)
 		userdataFilePath := filepath.Join(constants.LocalFolder, fileName)
@@ -719,11 +655,7 @@ func CreateAndUploadCSVFile(data [][]string, fileName string, bucketName string,
 	if bucketName == "" {
 		bucketName = "demo"
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	_, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", "", err
 	}
@@ -758,11 +690,7 @@ func CreateAndUploadYAMLFile(data []byte, fileName string, bucketName string, sy
 	if bucketName == "" {
 		bucketName = "demo"
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	_, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", "", err
 	}
@@ -791,24 +719,15 @@ func UploadZipFileInMinio(outputBytes []byte, fileName string, bucketName string
 	if bucketName == "" {
 		bucketName = "demo"
 	}
-	endpoint, accessKey, secretKey, err := GetMinioCredential(systemInputsVO)
-	if err != nil {
-		return "", "", err
-	}
-	minioClient, err := RegisterMinio(endpoint, accessKey, secretKey, bucketName)
+	endpoint, minioClient, err := connect(systemInputsVO, bucketName)
 	if err != nil {
 		return "", "", err
 	}
 
 	folderName := GetFolderName(systemInputsVO.MetaData)
-	contentBuffer := bytes.NewReader(outputBytes)
 
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
-	_, err = minioClient.PutObject(context.Background(), bucketName, prefix+folderName+fileName, contentBuffer, int64(len(outputBytes)), minio.PutObjectOptions{ContentType: "application/gzip"})
-	if err != nil {
-		return "", "", err
-	}
-	fileName, err = BuildObjectURLWithHost(minioClient, bucketName, filepath.Join(folderName, fileName), endpoint)
+	fileName, err = putObject(minioClient, endpoint, bucketName, prefix+folderName+fileName, filepath.Join(folderName, fileName), outputBytes, "application/gzip")
 	if err != nil {
 		return "", "", err
 	}
@@ -826,6 +745,13 @@ func UploadFileToMinio(minioClient *minio.Client, bucketName string, objectName 
 func UploadFileToMinioV2(minioClient *minio.Client, bucketName string, objectName string, fileName string, contentType string) (*MinioFileVO, error) {
 	bucketName, prefix := GetBucketAndPrefix(bucketName)
 	objectName = prefix + objectName
+	if localstorage.Enabled() {
+		objectPath, err := localstorage.PutFile(bucketName, objectName, fileName)
+		if err != nil {
+			return nil, err
+		}
+		return &MinioFileVO{ObjectPath: objectPath}, nil
+	}
 	_, err := minioClient.FPutObject(context.Background(), bucketName, objectName, fileName, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		return nil, err
@@ -876,6 +802,9 @@ func IsAmazonS3Host(host string) bool {
 }
 
 func DownloadFileFromMinio(systemInputs interface{}, bucketName string, hash string, fileName string) error {
+	if localstorage.Enabled() {
+		return downloadFromLocal(bucketName, hash, fileName)
+	}
 	systemInputsVO, err := LoadSystemInputsFromInterface(systemInputs)
 	if err != nil {
 		return err
