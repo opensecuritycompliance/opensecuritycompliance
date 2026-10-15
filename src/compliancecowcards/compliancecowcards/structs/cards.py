@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Tuple, List, Any, Callable, Dict, BinaryIO
 from abc import abstractmethod
-from compliancecowcards.utils import cowfilestoreutils, cowstorageserviceutils, cowdfutils, cowdictutils
+from compliancecowcards.utils import cowfilestoreutils, cowlocalstorage, cowstorageserviceutils, cowdfutils, cowdictutils
 from compliancecowcards.structs import cowvo
 from compliancecowcards.utils import cowtaskinputsutils
 import pandas as pd
@@ -155,6 +155,10 @@ class AbstractTask(object):
             if not hasattr(self, 'minio_client'):
                 return None, "MinIO client not available"
             
+            if cowlocalstorage.is_local_url(file_url):
+                return cowlocalstorage.size_bytes(file_url) / (1024 * 1024), None
+
+            
             # Extract bucket and object from URL
             bucket_name, object_name, error = self.parse_minio_url(file_url)
             if error:
@@ -262,6 +266,9 @@ class AbstractTask(object):
             Stream object implements read() method for streaming consumption
         """
         try:
+            if cowlocalstorage.is_local_url(minio_url):
+                return open(cowlocalstorage.path_from_url(minio_url), "rb"), None
+
             # Parse the MinIO URL to get bucket and object name
             bucket_name, object_name, error = self.parse_minio_url(minio_url)
             if error:
@@ -871,15 +878,7 @@ class AbstractTask(object):
     def download_file_from_minio(self, file_url=None) -> Tuple[bytes, dict]:
 
         if file_url.startswith("file://"):
-            file_name = os.path.basename(file_url)
-            userdata_file_path = os.path.join(
-                os.getenv("LOCAL_FOLDER"), file_name)
-            if os.path.exists(userdata_file_path):
-                with open(userdata_file_path, 'rb') as file:
-                    file_content = file.read()
-                    return file_content, None
-            else:
-                return None, {"error": "cannot download the file"}
+            return cowfilestoreutils.read_local_url(file_url)
 
         """
         Downloads a file from a MinIO object storage server.
@@ -1004,8 +1003,10 @@ class AbstractTask(object):
         CSV / NDJSON → CSV / NDJSON 
         """
        
-        # if file_url.startswith("file://"):
-        #     return None, {"error": "select_object_content does not support local files"}
+        if cowlocalstorage.is_enabled() or file_url.startswith("file://"):
+            # MinIO Select runs on the server; callers treat an error as "convert it yourself".
+            return None, {"error": "select_object_content does not support local files"}
+
         
         minio_client = self.minio_client
         if minio_client is None:

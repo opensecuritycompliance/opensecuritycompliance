@@ -16,6 +16,13 @@ NON_COMPLIANT = "NON_COMPLIANT"
 NOT_DETERMINED = "NOT_DETERMINED"
 
 
+def is_local_evidence_url(val) -> bool:
+    """With COW_DATA_PERSISTENCE_TYPE=local the rule's files are file:// URLs, not object storage
+    URLs, and are evidence like any other. Checked here rather than through the library, so that
+    this task keeps working with a library that predates local storage."""
+    local = os.getenv("COW_DATA_PERSISTENCE_TYPE", "").strip().lower() in ("local", "local_file_store_path")
+    return local and isinstance(val, str) and val.startswith("file://")
+
 class Task(cards.AbstractTask):
     def execute(self) -> dict:
         compliance_pct, compliance_status, compliance_weight = 0, NOT_DETERMINED, 5
@@ -29,7 +36,7 @@ class Task(cards.AbstractTask):
             final_evidence_df = pd.DataFrame()
             count = 1
             for key, val in self.task_inputs.user_inputs.items():
-                if isinstance(val, str) and (val.startswith("http://" + os.getenv("MINIO_LOGIN_URL", "cowstorage:9000")) or (val.startswith("https") and ".amazon.com" in val)):
+                if isinstance(val, str) and (val.startswith("http://" + os.getenv("MINIO_LOGIN_URL", "cowstorage:9000")) or (val.startswith("https") and ".amazon.com" in val) or is_local_evidence_url(val)):
                     print("count :::", count)
                     count += 1
                     evidence_df = pd.DataFrame()

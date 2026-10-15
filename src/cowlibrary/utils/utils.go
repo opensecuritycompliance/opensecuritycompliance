@@ -36,6 +36,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"cowlibrary/constants"
+	"cowlibrary/localstorage"
 	"cowlibrary/vo"
 )
 
@@ -2724,8 +2725,12 @@ func ParseDateString(dateStr string) (time.Time, error) {
 	return time.Time{}, errors.New("unable to parse date string")
 }
 
+// IsDefaultConfigPath reports whether cowctl runs in its standard setup, where it asks
+// for what a command is missing instead of failing with "set the flag": the container,
+// whose config is under /policycow, or a run on this machine with local file storage
+// (run_local.sh), whose config is wherever the repository is.
 func IsDefaultConfigPath(path string) bool {
-	return strings.HasPrefix(path, "/policycow")
+	return strings.HasPrefix(path, "/policycow") || localstorage.Enabled()
 }
 
 func GetAvailableApplications(pathPrefixs []string) []vo.AppliactionDetailsVO {
@@ -2856,6 +2861,14 @@ func ValidatePythonPackages(taskPath string) error {
 	reqPath := filepath.Join(taskPath, "requirements.txt")
 
 	cmd := exec.Command("python3", "-m", "pip", "install", "-r", reqPath)
+	if localstorage.Enabled() {
+		// A run on this machine (run_local.sh): python3 is the script's virtual environment,
+		// which is made by uv and has no pip, and installing every task's pins into the
+		// environment the libraries live in would change their versions. Resolve the
+		// requirements against it instead, without installing: a package or a version that
+		// does not exist fails here as it does with pip.
+		cmd = exec.Command("uv", "pip", "install", "--dry-run", "--no-progress", "--python", "python3", "-r", reqPath)
+	}
 	cmd.Dir = taskPath
 
 	output, err := cmd.CombinedOutput()
@@ -2871,6 +2884,16 @@ func ValidatePythonPackages(taskPath string) error {
 		}
 		if len(errors) > 0 {
 			return fmt.Errorf("%s", strings.Join(errors, "\n"))
+		}
+		if localstorage.Enabled() {
+			// uv starts with a line naming the environment it looked at; the reason follows.
+			var reason []string
+			for _, line := range strings.Split(outputStr, "\n") {
+				if !strings.HasPrefix(line, "Using Python") {
+					reason = append(reason, line)
+				}
+			}
+			outputStr = strings.TrimSpace(strings.Join(reason, "\n"))
 		}
 		return fmt.Errorf("%s", outputStr)
 	}

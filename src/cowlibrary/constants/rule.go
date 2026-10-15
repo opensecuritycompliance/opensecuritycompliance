@@ -201,9 +201,14 @@ func main() {
 						}
 					}
 
-					installPythonDependenciesWithRequirementsTxtFile(taskFolderName, taskFolderName)
-					installPythonDependenciesWithRequirementsTxtFile(filepath.Join(taskFolderName, "applicationtypes"), taskFolderName)
-
+					for _, requirementsDir := range []string{taskFolderName, filepath.Join(taskFolderName, "applicationtypes")} {
+						if installErr := installPythonDependenciesWithRequirementsTxtFile(requirementsDir, taskFolderName); installErr != nil {
+							// The task is run all the same and fails on a missing import, which is
+							// not the reason. This is, and it is otherwise only printed to an
+							// output that is not kept.
+							writeErrorMessageWithLogs([]byte("could not install the requirements of "+requirementsDir+": "+installErr.Error()+"\n"), taskFolderName)
+						}
+					}
 					taskFolderNames = append(taskFolderNames, taskFolderName)
 
 					taskProgressVO.StartDateTime = time.Now()
@@ -337,7 +342,7 @@ func installPythonDependenciesWithRequirementsTxtFile(reqDir string, venvBaseDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("installation error:", err, "\noutput:", string(out))
-		return err
+		return fmt.Errorf("%w, output: %s", err, string(out))
 	}
 	fmt.Println("installation output:", string(out))
 	return nil
