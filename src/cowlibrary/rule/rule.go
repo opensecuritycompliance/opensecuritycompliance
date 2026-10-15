@@ -46,6 +46,7 @@ import (
 	cowStorage "applicationtypes/minio"
 	constants "cowlibrary/constants"
 	"cowlibrary/executions"
+	"cowlibrary/localstorage"
 	"cowlibrary/storage"
 	"cowlibrary/task"
 	"cowlibrary/utils"
@@ -258,10 +259,26 @@ func GetAppLabels(labels map[string][]string) []string {
 
 // }
 
+// prepareStorage checks that files can be stored before a rule or task runs:
+// either object-storage credentials are set, or local storage is on
+// (COW_DATA_PERSISTENCE_TYPE=local). In the second case the storage folder is
+// created and exported, so that the tasks, which run in their own processes and
+// folders, write to the same place.
+func prepareStorage() error {
+	if localstorage.Enabled() {
+		_, err := localstorage.Init()
+		return err
+	}
+	if !utils.IsMinioCredAvailable() {
+		return errors.New("the 'minio' credentials are not provided. Kindly include them in the environment file and restart the server, or set COW_DATA_PERSISTENCE_TYPE=local to keep the files on this machine")
+	}
+	return nil
+}
+
 func ExecuteRule(path, ruleExp string, includeRules, excludeRules []string, isVerbose bool, additionalInfo *vo.AdditionalInfo) error {
 
-	if !utils.IsMinioCredAvailable() {
-		return errors.New("the 'minio' credentials are not provided. Kindly include them in the environment file and restart the server")
+	if err := prepareStorage(); err != nil {
+		return err
 	}
 
 	ruleOutputs, err := ExecuteRulesAndReturnOutputs(path, ruleExp, includeRules, excludeRules, isVerbose, additionalInfo)
@@ -980,8 +997,8 @@ func executeRuleHelper(rulePath, ruleName string, ruleOutputs map[string]*vo.Rul
 }
 
 func ExecuteTask(executeTaskVO *vo.TaskExecutionVO, taskPath string, additionalInfo *vo.AdditionalInfo) (*vo.TaskOutputResponse, error) {
-	if !utils.IsMinioCredAvailable() {
-		return nil, errors.New("the 'minio' credentials are not provided. Kindly include them in the environment file and restart the server")
+	if err := prepareStorage(); err != nil {
+		return nil, err
 	}
 	additionalInfo.ExecutionID = uuid.New().String()
 
@@ -1793,20 +1810,27 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 				}
 
 				if utils.IsFileExist(logFilePath) {
-					minioEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
-
-					log.SetOutput(io.Discard)
-
-					minioClient, err := cowStorage.RegisterMinio(minioEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
-
-					if err == nil && minioClient != nil {
+					if localstorage.Enabled() {
 						folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogDataFile
-
-						minioFileVO, err := cowStorage.UploadFileToMinioV2(minioClient, constants.BucketNameLog, folderPath, logFilePath, "application/text")
-						if err == nil {
-							outputs[constants.RuleExecutionLogDataKey] = minioFileVO.ObjectPath
+						if logURL, err := localstorage.PutFile(constants.BucketNameLog, folderPath, logFilePath); err == nil {
+							outputs[constants.RuleExecutionLogDataKey] = logURL
 						}
+					} else {
+						minioEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
 
+						log.SetOutput(io.Discard)
+
+						minioClient, err := cowStorage.RegisterMinio(minioEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
+
+						if err == nil && minioClient != nil {
+							folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogDataFile
+
+							minioFileVO, err := cowStorage.UploadFileToMinioV2(minioClient, constants.BucketNameLog, folderPath, logFilePath, "application/text")
+							if err == nil {
+								outputs[constants.RuleExecutionLogDataKey] = minioFileVO.ObjectPath
+							}
+
+						}
 					}
 					outputsBytes, err := json.MarshalIndent(outputs, "", "  ")
 					if err != nil {
@@ -1823,18 +1847,23 @@ func activityHelper(rulePath, ruleName, action string, ruleOutputs map[string]*v
 			func() {
 
 				if utils.IsFileExist(logFile) {
-					minoEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
-
-					// Supress log
-					log.SetOutput(io.Discard)
-					minioClient, err := cowStorage.RegisterMinio(minoEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
-
-					if err == nil && minioClient != nil {
+					if localstorage.Enabled() {
 						folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogFile
-						bucketName, prefix := cowStorage.GetBucketAndPrefix(constants.BucketNameLog)
-						folderPath = prefix + folderPath
-						_, _ = minioClient.FPutObject(context.Background(), bucketName, folderPath, logFile, minio.PutObjectOptions{})
+						_, _ = localstorage.PutFile(constants.BucketNameLog, folderPath, logFile)
+					} else {
+						minoEndpoint := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
 
+						// Supress log
+						log.SetOutput(io.Discard)
+						minioClient, err := cowStorage.RegisterMinio(minoEndpoint, utils.Getenv(constants.EnvMinioRootUser, ""), utils.Getenv(constants.EnvMinioRootPassword, ""), constants.BucketNameLog)
+
+						if err == nil && minioClient != nil {
+							folderPath := ruleName + "/" + additionalInfo.ExecutionID + "/" + constants.RuleExecutionLogFile
+							bucketName, prefix := cowStorage.GetBucketAndPrefix(constants.BucketNameLog)
+							folderPath = prefix + folderPath
+							_, _ = minioClient.FPutObject(context.Background(), bucketName, folderPath, logFile, minio.PutObjectOptions{})
+
+						}
 					}
 
 				}
@@ -2471,19 +2500,9 @@ func replaceLibraryPathsInGoMod(goModFilePath string, additionalInfo *vo.Additio
 			lines[i] = ""
 		}
 	}
-	applicationTypesPath := "/policycow/catalog/applicationtypes/go"
-	cowlibraryPath := "/policycow/src/cowlibrary"
-	if utils.IsFolderExist(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath) {
-		repoPath := removeLastSubFolder(additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath)
-		if utils.IsFolderExist(repoPath) {
-			if appPath := filepath.Join(repoPath, "catalog/applicationtypes/go"); utils.IsFolderExist(appPath) {
-				applicationTypesPath = filepath.Join(repoPath, "catalog/applicationtypes/go")
-			}
-			if libPath := filepath.Join(repoPath, "src/cowlibrary"); utils.IsFolderExist(libPath) {
-				cowlibraryPath = filepath.Join(repoPath, "src/cowlibrary")
-			}
-		}
-	}
+	applicationTypesPath, cowlibraryPath := goLibraryPaths(additionalInfo.PolicyCowConfig.PathConfiguration.ApplicationTypesPath,
+		additionalInfo.PolicyCowConfig.PathConfiguration.ExecutionPath)
+
 	lines = append(lines, fmt.Sprintf("replace applicationtypes => %s", applicationTypesPath))
 	lines = append(lines, fmt.Sprintf("replace cowlibrary => %s", cowlibraryPath))
 
@@ -2494,6 +2513,36 @@ func replaceLibraryPathsInGoMod(goModFilePath string, additionalInfo *vo.Additio
 	}
 
 	return err
+}
+
+// goLibraryPaths finds the Go libraries a Go task is built against, for the replace lines
+// of its go.mod: the application types and cowlibrary. They are looked for in the
+// repository the configured application-types folder (<repo>/catalog/applicationtypes) is
+// in, then in the one the execution folder (<repo>/cowexecutions) is in, and last in the
+// container's /policycow. The execution folder alone was not enough: a run with its
+// execution folder somewhere else fell through to /policycow, which exists only in the
+// container, and the build failed with "reading /policycow/.../go.mod: no such file".
+func goLibraryPaths(applicationTypesPath, executionPath string) (string, string) {
+	applicationTypes, cowlibrary := "/policycow/catalog/applicationtypes/go", "/policycow/src/cowlibrary"
+
+	var repos []string
+	if utils.IsNotEmpty(applicationTypesPath) {
+		repos = append(repos, filepath.Dir(filepath.Dir(filepath.Clean(applicationTypesPath))))
+	}
+	if utils.IsNotEmpty(executionPath) && utils.IsFolderExist(executionPath) {
+		repos = append(repos, removeLastSubFolder(executionPath))
+	}
+
+	foundApplicationTypes, foundCowlibrary := false, false
+	for _, repo := range repos {
+		if appPath := filepath.Join(repo, "catalog", "applicationtypes", "go"); !foundApplicationTypes && utils.IsFolderExist(appPath) {
+			applicationTypes, foundApplicationTypes = appPath, true
+		}
+		if libPath := filepath.Join(repo, "src", "cowlibrary"); !foundCowlibrary && utils.IsFolderExist(libPath) {
+			cowlibrary, foundCowlibrary = libPath, true
+		}
+	}
+	return applicationTypes, cowlibrary
 }
 
 func removeLastSubFolder(path string) string {
@@ -2609,7 +2658,9 @@ func copyTaskFoldersInToRulePath(rulePath string, ruleSet *vo.RuleSet, additiona
 				}
 
 				for _, val := range ruleSet.Rules[0].RuleIOValues.Inputs {
-					if strVal, ok := val.(string); ok && strings.HasPrefix(strVal, "file://") {
+					if strVal, ok := val.(string); ok && strings.HasPrefix(strVal, "file://") && !localstorage.IsLocalURL(strVal) {
+						// Only the older file://name form: it names a file to copy from
+						// the userdata folders. An absolute file:///path is read where it is.
 						fileName := filepath.Base(strVal)
 						taskFilePath := filepath.Join(taskPath, constants.LocalFolder, fileName)
 						ruleFilePath := filepath.Join(rulePath, constants.LocalFolder, fileName)
@@ -3028,7 +3079,11 @@ func DrawSummaryTable(ruleOutputs []*vo.RuleOutputs, additionalInfo *vo.Addition
 	for _, ruleOutput := range ruleOutputs {
 		var links []string
 		if ruleOutput != nil && len(ruleOutput.Outputs) > 0 {
-			d.Println("\nYou can view the minio file outputs here")
+			if localstorage.Enabled() {
+				d.Println("\nThe file outputs are on this machine")
+			} else {
+				d.Println("\nYou can view the minio file outputs here")
+			}
 			for key, value := range ruleOutput.Outputs {
 				minioLoginURL := utils.Getenv(constants.EnvMinioLoginURL, "cowstorage:9000")
 				if str, ok := value.(string); ok {
@@ -3042,6 +3097,9 @@ func DrawSummaryTable(ruleOutputs []*vo.RuleOutputs, additionalInfo *vo.Addition
 						link := utils.ColorLink(key, minioURL, "italic green")
 						links = append(links, link)
 					} else if cowStorage.IsAmazonS3Host(str) {
+						link := utils.ColorLink(key, str, "italic green")
+						links = append(links, link)
+					} else if localstorage.IsLocalURL(str) {
 						link := utils.ColorLink(key, str, "italic green")
 						links = append(links, link)
 					}

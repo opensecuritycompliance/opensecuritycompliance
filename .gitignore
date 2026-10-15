@@ -35,3 +35,6 @@ exported-data/
 mcp-server/
 mcp-sessions/
 mcp-state/
+
+# cowctl run locally with run_local.sh: binary, Python environment, generated config
+.cowctl-local/

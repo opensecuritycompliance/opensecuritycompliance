@@ -5,7 +5,7 @@ import uuid
 from minio import Minio
 from minio.error import S3Error
 from compliancecowcards.structs import cowvo
-from compliancecowcards.utils import cowdictutils, cowstorageserviceutils
+from compliancecowcards.utils import cowdictutils, cowlocalstorage, cowstorageserviceutils
 import hashlib
 from urllib import parse
 import pandas as pd
@@ -185,32 +185,69 @@ def upload_file_with_content(task_inputs: cowvo.TaskInputs, minio_client: Minio,
     return file_name, folder_structure, error
 
 
-def put_file_in_local_storage(task_inputs: cowvo.TaskInputs, file_name: str = None, file_content: bytes = None):
-    folder_structure = get_folder_name(task_inputs)
+def content_to_bytes(file_content, object_name: str = "") -> bytes:
+    """File content as the bytes to store: a DataFrame in the format its name
+    says, a dict or list as JSON, a string as UTF-8. The same rules as the
+    upload to minio."""
+    if isinstance(file_content, pd.DataFrame):
+        if object_name.endswith(".ndjson"):
+            file_content = file_content.to_json(orient="records", lines=True)
+        elif object_name.endswith(".json"):
+            file_content = file_content.to_json(orient="records")
+        elif object_name.endswith(".csv"):
+            file_content = file_content.to_csv(index=False)
+        else:
+            f = io.BytesIO()
+            file_content.to_parquet(f, index=False, engine="auto", compression="snappy")
+            f.seek(0)
+            file_content = f.read()
+    if isinstance(file_content, (dict, list)):
+        file_content = json.dumps(file_content)
+    if isinstance(file_content, str):
+        file_content = file_content.encode("utf-8")
+    if isinstance(file_content, (bytes, bytearray)):
+        return bytes(file_content)
+    return str(file_content).encode("utf-8")
 
-    # file_hash, file_path, error = self.upload_file(
-    # file_name = "sample.json", file_content = sample_data)
 
-    #     file_name, file_content, error=self.download_file(
-    # file_name = file_path)
+def put_file_in_local_storage(task_inputs: cowvo.TaskInputs, file_name: str = None, file_content: bytes = None, bucket_name: str = None):
+    """Store a file on the local disk (see cowlocalstorage). Returns the folder
+    the task's files go in, the file's file:// URL and an error, like the upload
+    to minio."""
+    try:
+        folder_structure = get_folder_name(task_inputs) if task_inputs is not None else ""
+        object_name = (folder_structure + "/" + file_name) if folder_structure else file_name
+        bucket_name, prefix = get_bucket_and_prefix(bucket_name or cowlocalstorage.DEFAULT_BUCKET)
+        url = cowlocalstorage.put(bucket_name, prefix + object_name, content_to_bytes(file_content, object_name))
+    except (cowlocalstorage.LocalStorageError, OSError) as e:
+        return None, None, {"error": str(e)}
+    return folder_structure, url, None
 
-    file_path = os.path.join(folder_structure, file_name)
 
-    with open(file_path, "w") as f:
-        f.write(str(file_content))
-        f.flush()
-
-    return folder_structure, file_path, None
-
+def read_local_url(file_url: str):
+    """Read a file:// URL. An absolute path is read only when local storage is on:
+    elsewhere a URL from a task input must not be able to name any file on the
+    machine. The older file://name form names a file in LOCAL_FOLDER."""
+    try:
+        if cowlocalstorage.is_local_url(file_url):
+            if not cowlocalstorage.is_enabled():
+                return None, {"error": "local file URLs are only readable when COW_DATA_PERSISTENCE_TYPE=local"}
+            return cowlocalstorage.read(file_url), None
+    except cowlocalstorage.LocalStorageError as e:
+        return None, {"error": str(e)}
+    name = os.path.basename(file_url)
+    legacy_path = os.path.join(os.getenv("LOCAL_FOLDER", "userdata"), name)
+    if os.path.exists(legacy_path):
+        with open(legacy_path, "rb") as f:
+            return f.read(), None
+    return None, {"error": "cannot download the file"}
 
 def get_file_in_local_storage(task_inputs: cowvo.TaskInputs, file_path: str = None):
-    file_name = os.path.basename(file_path)
-    file_content = None
-    with open(file_path, "r") as f:
-        file_content = f.read()
-
-    return file_name, file_content, None
-
+    """Read a file from the local disk: a file:// URL, or a path."""
+    if file_path and not file_path.startswith("file://"):
+        file_path = cowlocalstorage.to_url(os.path.abspath(file_path))
+    content, error = read_local_url(file_path or "")
+    return os.path.basename(file_path or ""), content, error
 
 def get_folder_name(task_inputs: cowvo.TaskInputs) -> str:
     return get_hash(task_inputs.meta_data.plan_execution_guid, task_inputs.meta_data.control_id, task_inputs.meta_data.rule_guid, task_inputs.meta_data.rule_task_guid)
@@ -256,7 +293,8 @@ def get_input_object(task_inputs: cowvo.TaskInputs, app_name: str = None, tag_na
 
 
 def get_minio_client_with_inputs(task_inputs: cowvo.TaskInputs) -> Minio and dict:
-
+    if cowlocalstorage.is_enabled():
+        return None, None  # files are on the local disk; there is no client to build
     url, access_key, secret_key, _, err = get_minio_credentials(task_inputs)
     if err and bool(err):
         return None, err
@@ -331,10 +369,7 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
 
     file_hash, file_path, error = None, None, None
 
-    is_policy_cow_flow = False
-    is_policy_cow_flow = os.getenv("IS_POLICY_COW_FLOW", None)
-    if is_policy_cow_flow and is_policy_cow_flow == "true":
-        is_policy_cow_flow = True
+    is_policy_cow_flow = os.getenv("IS_POLICY_COW_FLOW", "").strip().lower() == "true"
 
     try:
         validate_file_content(file_content)
@@ -342,7 +377,10 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
     except CCowEmptyFileContentException as e:
         # e.to_dict() returns: {"error": "File content is empty: ..."}
         return None, None, e.to_dict()  
-       
+
+    if cowlocalstorage.is_enabled():
+        # Ahead of the flag below: a synthesizer run sets IS_POLICY_COW_FLOW.
+        return put_file_in_local_storage(task_inputs=task_inputs, file_name=object_name or file_name, file_content=file_content, bucket_name=bucket_name)
 
     if (persistence_type == "minio" or is_policy_cow_flow):
 
@@ -390,7 +428,7 @@ def upload_file(task_inputs=None, minio_client=None, bucket_name=None, object_na
 
     else:
 
-        return put_file_in_local_storage(task_inputs=task_inputs, file_name=file_name, file_content=file_content)
+        return put_file_in_local_storage(task_inputs=task_inputs, file_name=file_name, file_content=file_content, bucket_name=bucket_name)
 
     # another elif to be added for local file system
 
@@ -443,6 +481,10 @@ def download_file(task_inputs: cowvo.TaskInputs = None, minio_client=None, bucke
     persistence_type = get_persistence_type()
 
     resp_file_name, resp_file_bytes, error = None, None, None
+
+    if object_name and object_name.startswith("file://"):
+        resp_file_bytes, error = read_local_url(object_name)
+        return (None if error else os.path.basename(object_name)), resp_file_bytes, error
 
     while True:
 

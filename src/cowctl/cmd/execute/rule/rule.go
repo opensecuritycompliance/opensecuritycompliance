@@ -2,6 +2,7 @@ package rule
 
 import (
 	"cowlibrary/constants"
+	"cowlibrary/localstorage"
 	rule "cowlibrary/rule"
 	cowlibutils "cowlibrary/utils"
 	"cowlibrary/vo"
@@ -263,6 +264,9 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 								labelname := fmt.Sprintf("Enter value for %s (current value: %v): ", inputName, ruleSet.Rules[0].RuleIOValues.Inputs[inputName])
 								if metaInput.Name == inputName {
 									userInput, _ = utils.GetValueAsStrFromCmdPrompt(labelname, true, func(input string) error {
+										if metaInput.DataType == constants.DeclarativesDataTypeFILE && localstorage.NormalizeInput(input) != input {
+											return nil // with local storage on, a path to a file on this machine
+										}
 										switch metaInput.DataType {
 										case constants.DeclarativesDataTypeSTRING, constants.DeclarativesDataTypeFILE, constants.DeclarativesDataTypeJQ_EXPRESSION, constants.DeclarativesDataTypeSQL_EXPRESSION:
 											return validationutils.ValidateStringAndFileURL(input)
@@ -278,7 +282,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 						if !inputMatched {
 							unmatchedInputs = append(unmatchedInputs, inputName)
 						} else {
-							userInputs[inputName] = userInput
+							userInputs[inputName] = normalizeLocalFiles(userInput)
 						}
 					}
 					if len(unmatchedInputs) > 0 {
@@ -387,7 +391,7 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 				}
 				for key, value := range userInputs {
 					if _, exists := taskInput.UserInputs[key]; exists {
-						taskInput.UserInputs[key] = value
+						taskInput.UserInputs[key] = normalizeLocalFiles(value)
 					}
 				}
 
@@ -442,4 +446,21 @@ func runE(cmd *cobra.Command, isRuleGroup bool) error {
 
 	return err
 
+}
+
+// normalizeLocalFiles turns a path to an existing file, or a list of them, into
+// file:// URLs when local storage is on, so a FILE input can be given as the
+// path to a file on this machine. Anything else is returned unchanged.
+func normalizeLocalFiles(value interface{}) interface{} {
+	switch v := value.(type) {
+	case string:
+		return localstorage.NormalizeInput(v)
+	case []interface{}:
+		out := make([]interface{}, len(v))
+		for i, item := range v {
+			out[i] = normalizeLocalFiles(item)
+		}
+		return out
+	}
+	return value
 }

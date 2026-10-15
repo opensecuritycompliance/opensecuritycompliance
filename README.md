@@ -22,6 +22,7 @@
 4. [Other Essential Features](#other-essential-features)
    1. [File as a rule input](#file-as-a-rule-input)
    2. [Control period as a rule input](#control-period-as-a-rule-input)
+      1. [Running without Docker (local file storage)](#running-without-docker-local-file-storage)
    3. [Passing large data between tasks](#passing-large-data-between-tasks)
    4. [Adding a task to an existing rule](#adding-a-task-to-an-existing-rule)
 
@@ -605,6 +606,43 @@ To accept file as a rule input and test the same locally, simply upload a file i
 userInputs:
     EmployeesFilePath: "http://localhost:9001/buckets/rule_inputs/input_file.json"
 ```
+
+## Running without Docker (local file storage)
+
+cowctl can run a rule end to end on your machine with no Docker and no minio server. Files that tasks produce are kept in a folder on disk instead of minio, and refer to each other by `file://` URLs. No `OBJECT_STORAGE_*` credentials are needed.
+
+**Quick start** (Mac or Linux; needs Go, Python 3.10+ and [uv](https://docs.astral.sh/uv/)):
+
+```bash
+./run_local.sh
+```
+
+That builds the cowctl binary, creates a Python environment with the libraries the tasks need, and opens the cowctl prompt, the same one you get in the container. The first run downloads Go modules and Python packages; after that it starts straight away, and rebuilds only when the Go source has changed (`--rebuild` forces it, `--reinstall` recreates the Python environment). Pass a command to run it and exit instead of opening the prompt:
+
+```bash
+./run_local.sh exec rule --catalog globalcatalog --rule-name IdentifyActiveAccountsOfTerminatedEmployees \
+  --user-inputs '{"HRRosterFile": "/data/HRRosterFile.csv", "ApplicationAccountsFile": "/data/accounts.json"}'
+```
+
+Give a file input as a path; cowctl turns it into a `file://` URL. The outputs are listed at the end of the run as `file://localhost/...` links and are ordinary files: `<storage folder>/<bucket>/<hashed task folders>/<file>`. The storage folder is `~/.cowctl/storage`, or `COW_LOCAL_STORAGE_PATH` if you set it.
+
+The script keeps everything it creates in `.cowctl-local/` (ignored by git) and does not change tracked files: the binary, the Python environment, and a copy of `etc/cowconfig.yaml` with this machine's paths. Application credentials come from the same `etc/*.env` files as in the container. Nothing has to be configured. If it finds more than one suitable Python it asks which to use and remembers the answer (`--choose-python` asks again).
+
+**What it sets up, if you would rather do it yourself**
+- `COW_DATA_PERSISTENCE_TYPE=local` (and optionally `COW_LOCAL_STORAGE_PATH`). This is the switch; only an explicit `local` (or `local_file_store_path`) turns it on.
+- The CoW Python libraries on the interpreter that `uv` creates the task environments from. Every Python task gets its own virtual environment made with `--system-site-packages`, so the libraries must be visible to that interpreter, not only in a virtual environment of their own. `UV_PYTHON` pins which interpreter that is; `PYTHONPATH` makes the libraries visible. Each task then installs its own `requirements.txt` the first time it runs, which needs network access.
+- A config file with paths on your machine, named by `POLICYCOW_DEFAULTCONFIGPATH`, and the `POLICYCOW_*` folder variables (see `export_env.sh`).
+
+**Good to know**
+- Unset, or `minio`, behaves as before, and the minio credentials check still applies.
+- An absolute `file://` URL is read only in this mode. In a server deployment a URL taken from a task input must not be able to name any file on the machine.
+- The older `file://name` form (a file in the `userdata` folder, see `LOCAL_FOLDER`) still works.
+- MinIO Select is not available locally. `ConvertFileFormatV2` falls back to its normal read-convert-write path.
+- Rules that call an application (AWS, GitHub, …) still need that application's credentials.
+- Not covered yet: synthesizers and rule groups, local-catalog Go tasks that call `minio-go` directly, and the API service.
+
+**Windows.** Use WSL2: open an Ubuntu (WSL2) terminal, clone the repository there (inside the Linux file system, for example under `~`, not under `/mnt/c`, which is slow), install Go, Python 3.10+ and uv in Ubuntu, and run `./run_local.sh` as above. It does not run natively in PowerShell or `cmd`: the script is bash, and cowctl itself assumes the Unix layout of a Python virtual environment (`bin/python`) and starts Go tasks through `bash`. It has not been tried on Windows yet; if you run into a problem there, please report it.
+
 
 ## Control period as a rule input
 
