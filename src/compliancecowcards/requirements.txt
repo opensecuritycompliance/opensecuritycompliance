@@ -1,4 +1,4 @@
-Django==6.0.5
+Django==6.0.8
 jmespath==1.0.1
 minio==7.2.18
 pandas==2.3.3
