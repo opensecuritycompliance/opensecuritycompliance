@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install zip
 
 # TARGETARCH (amd64/arm64) is set by the builder; keeps Go native on Apple Silicon
 ARG TARGETARCH
-ARG GOVERSION=go1.25.5
+ARG GOVERSION=go1.27.3
 RUN wget https://go.dev/dl/${GOVERSION}.linux-${TARGETARCH}.tar.gz \
     && rm -rf /usr/local/go \
     && tar -C /usr/local -xzf ${GOVERSION}.linux-${TARGETARCH}.tar.gz \
